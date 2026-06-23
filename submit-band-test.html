@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BANDtroductions</title>
+<link rel="stylesheet" href="style.css?v=4">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BANDtroductions</title>
+<link rel="stylesheet" href="style.css?v=4">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-60112G8RH3');
+</script>
+
+</head>
+
+<body>
+
+<div id="global-header"></div>
+  
+<section class="form-page">
+
+<h2>Create a Band Profile</h2>
+
+<p>
+Submit your band info and performance video to create your BANDtroductions profile and start getting discovered by fans, venues, and other musicians.
+</p>
+
+
+<form 
+action="https://formsubmit.co/mbergeron79@gmail.com" 
+method="POST" 
+class="submission-form"
+enctype="multipart/form-data"
+onsubmit="return validateBandForm(event)"
+>
+
+<input type="hidden" name="_subject" value="New BANDtroductions Band Submission">
+<input type="hidden" name="_captcha" value="false">
+<input type="hidden" name="_template" value="table">
+<input type="hidden" name="_next" value="https://curiositydrop.com/bandtroductions/thank-you.html">
+
+<p style="display:none;">
+<label>Don't fill this out if you're human: <input name="_honey"></label>
+</p>
+
+<label for="band-plan">Band Listing Plan *</label>
+<select id="band-plan" name="Band Plan" required>
+  <option value="">Select a Plan</option>
+  <option value="basic">Basic Listing (Free - Limited Exposure)</option>
+  <option value="enhanced">Enhanced Profile - $5/month</option>
+  <option value="featured">Featured Band - $15/month</option>
+  <option value="premium">Premium Band - $25/month</option>
+</select>
+
+<p style="font-size: 14px; opacity: 0.8; margin-top: -5px;">
+Not sure which option fits best?
+<a href="band-plans.html">Compare Band Listing Plans</a>
+</p>
+
+<p style="font-size: 14px; opacity: 0.8;">
+Paid plans will redirect to secure checkout after submission. Free listings remain subject to approval.
+</p>
+
+<label for="band-name">Band Name *</label>
+<input type="text" id="band-name" name="Band Name" required>
+
+<label for="band-location">Location *</label>
+<input type="text" id="band-location" name="city/town" placeholder="Ex: City/town" required>
+
+<label for="band-genre">Genre *</label>
+<input 
+  type="text" 
+  id="band-genre" 
+  name="Genre" 
+  placeholder="Ex: Rock, Alternative (pick best 2)" 
+  required
+>
+
+<label for="members">Current Members</label>
+<input type="text" id="members" name="Members">
+
+<label for="looking-for">Looking For</label>
+<input type="text" id="looking-for" name="Looking For">
+
+<label for="band-influences">Influences</label>
+<input type="text" id="band-influences" name="Influences">
+
+<label for="band-video">Performance Video Link * (YouTube or Vimeo only)</label>
+<input type="url" id="band-video" name="Video Link" required>
+
+<p style="font-size: 14px; opacity: 0.8; margin-top: -5px;">
+Video is required — this is how venues and fans discover your sound.
+</p>
+
+<p style="font-size: 14px; opacity: 0.8;">
+Upload a photo OR paste a link (link is recommended for best results)
+</p>
+
+<label for="band-image">Band Logo or Photo (upload)</label>
+<input type="file" id="band-image" name="attachment" accept="image/*">
+
+<label for="band-image-link">Band Photo Link (recommended)</label>
+<input type="url" id="band-image-link" name="Image Link" placeholder="Facebook, Instagram, Google Drive, or website link">
+
+<label for="band-bio">Short Band Bio *</label>
+<textarea id="band-bio" name="Band Bio" rows="6" required></textarea>
+
+<p id="bio-helper" style="font-size: 14px; opacity: 0.8; margin-top: -5px;">
+Basic listings will show a shorter preview on the bands pag. More details can appear on the full profile.
+</p>
+
+<label for="band-contact">Contact Email or social *</label>
+<input type="text" id="band-contact" name="Contact Info" required>
+
+<button type="submit">Submit Band</button>
+
+</form>
+
+<script>
+function validateBandForm(event) {
+    const plan = document.getElementById("band-plan").value;
+    const imageUpload = document.getElementById("band-image").files.length;
+    const imageLink = document.getElementById("band-image-link").value.trim();
+    const videoLink = document.getElementById("band-video").value.trim().toLowerCase();
+
+    if (imageUpload === 0 && imageLink === "") {
+        alert("Please upload a band photo OR provide an image link.");
+        return false;
+    }
+
+    if (
+        !videoLink.includes("youtube.com") &&
+        !videoLink.includes("youtu.be") &&
+        !videoLink.includes("vimeo.com")
+    ) {
+        alert("Please submit a YouTube or Vimeo link only.");
+        return false;
+    }
+
+    if (plan === "basic") {
+        return true;
+    }
+
+    event.preventDefault();
+
+    let paymentLink = "";
+
+    if (plan === "enhanced") {
+        paymentLink = "PASTE_ENHANCED_PROFILE_LINK_HERE";
+    } else if (plan === "featured") {
+        paymentLink = "PASTE_FEATURED_BAND_LINK_HERE";
+    } else if (plan === "premium") {
+        paymentLink = "PASTE_PREMIUM_BAND_LINK_HERE";
+    }
+
+    if (paymentLink !== "") {
+        const form = event.target;
+        fetch(form.action, {
+            method: "POST",
+            body: new FormData(form),
+            headers: {
+                "Accept": "application/json"
+            }
+        })
+        .then(() => {
+            window.location.href = paymentLink;
+        })
+        .catch(() => {
+            alert("There was an issue submitting the form. Please try again.");
+        });
+
+        return false;
+    }
+
+    return true;
+}
+</script>
+
+</section>
+
+<div id="global-footer"></div>
+<div id="falling-guitar-layer"></div>
+
+<style>
+#falling-guitar-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.falling-guitar {
+  position: fixed;
+  top: -70px;
+  font-size: 42px;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  z-index: 10000;
+  animation-name: guitarFall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  text-shadow: 0 0 8px rgba(255,255,255,0.35);
+}
+
+@keyframes guitarFall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(360deg);
+    opacity: 1;
+  }
+}
+</style>
+
+<script>
+const fallingGuitarEnabled = true;
+
+// ==========================================
+// LIVE SETTINGS
+// ==========================================
+
+// Where the guitar goes when clicked
+const guitarClickLink = "support.html";
+
+// Allowed dates (3 days per month example)
+// UNCOMMENT these for live use:
+// const allowedGuitarDates = ["2026-03-28", "2026-03-29", "2026-03-30"];
+
+// For testing, keep this active:
+const allowedGuitarDates = [];
+
+// Spawn check interval
+const guitarCheckEvery = 60000; // checks every 60 seconds
+
+// Spawn at most once per hour
+// UNCOMMENT for live use:
+// const guitarSpawnCooldownMs = 60 * 60 * 1000; // 1 hour
+
+// For testing, keep this active:
+const guitarSpawnCooldownMs = 30000; // 30 seconds for testing
+
+// Fall speed
+const guitarMinDuration = 7000;
+const guitarMaxDuration = 11000;
+
+// Max visible at once
+const guitarMaxOnScreen = 1;
+
+// Local storage keys
+const guitarLastSpawnKey = "bandtroductions_guitar_last_spawn";
+const guitarClaimedKey = "bandtroductions_guitar_claimed";
+
+// ==========================================
+// HELPERS
+// ==========================================
+
+function isAllowedGuitarDay() {
+  if (!allowedGuitarDates.length) return true;
+
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+
+  return allowedGuitarDates.includes(todayStr);
+}
+
+function hasAlreadyClaimedGuitar() {
+  return localStorage.getItem(guitarClaimedKey) === "true";
+}
+
+function canSpawnGuitarNow() {
+  const lastSpawn = localStorage.getItem(guitarLastSpawnKey);
+  if (!lastSpawn) return true;
+
+  const elapsed = Date.now() - Number(lastSpawn);
+  return elapsed >= guitarSpawnCooldownMs;
+}
+
+function markGuitarSpawned() {
+  localStorage.setItem(guitarLastSpawnKey, Date.now().toString());
+}
+
+function markGuitarClaimed() {
+  localStorage.setItem(guitarClaimedKey, "true");
+}
+
+function spawnFallingGuitar() {
+  const layer = document.getElementById("falling-guitar-layer");
+  const current = document.querySelectorAll(".falling-guitar").length;
+
+  if (!fallingGuitarEnabled) return;
+  if (!isAllowedGuitarDay()) return;
+  if (!canSpawnGuitarNow()) return;
+  if (hasAlreadyClaimedGuitar()) return;
+  if (current >= guitarMaxOnScreen) return;
+
+  const guitar = document.createElement("div");
+  guitar.className = "falling-guitar";
+  guitar.innerHTML = "🎸";
+
+  const left = Math.random() * (window.innerWidth - 60);
+  const duration = Math.floor(Math.random() * (guitarMaxDuration - guitarMinDuration + 1)) + guitarMinDuration;
+  const size = Math.floor(Math.random() * 14) + 34;
+
+  guitar.style.left = `${left}px`;
+  guitar.style.fontSize = `${size}px`;
+  guitar.style.animationDuration = `${duration}ms`;
+
+  guitar.addEventListener("click", function () {
+    if (hasAlreadyClaimedGuitar()) return;
+
+    markGuitarClaimed();
+    guitar.remove();
+    window.location.href = guitarClickLink;
+  });
+
+  guitar.addEventListener("animationend", function () {
+    guitar.remove();
+  });
+
+  markGuitarSpawned();
+  layer.appendChild(guitar);
+}
+
+// Run once shortly after load
+setTimeout(spawnFallingGuitar, 2000);
+
+// Keep checking on interval
+setInterval(spawnFallingGuitar, guitarCheckEvery);
+</script>
+
+<script src="/bandtroductions/global.js?v=1"></script>
+</body>
+</html>

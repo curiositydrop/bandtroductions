@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BANDtroductions</title>
+<link rel="stylesheet" href="style.css?v=4">
+
+<style>
+.filter-links a.active {
+  background-color: #ffcc00;
+  color: #000;
+  font-weight: bold;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.filter-dropdown-wrap {
+  margin-top: 0; /* tightened */
+}
+
+.filter-dropdown {
+  width: 100%;
+  max-width: 320px;
+  padding: 10px 12px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #111;
+  color: #fff;
+}
+
+/* 🔧 SPACING FIXES ONLY */
+.page-hero {
+  margin-bottom: 20px;
+}
+
+.page-hero h2 {
+  margin-bottom: 10px;
+}
+
+.page-hero p {
+  margin-bottom: 0;
+}
+
+.filters {
+  margin: 0;
+  padding: 10px 0;
+}
+
+.filters h3 {
+  margin-bottom: 8px;
+  margin-top: 10px;
+}
+
+.musician-directory {
+  margin-top: 10px;
+}
+</style>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-60112G8RH3');
+</script>
+</head>
+
+<body>
+
+<div id="global-header"></div>
+
+<section class="page-hero">
+<h2>Find the Right Musician</h2>
+<p>Browse singers, drummers, guitarists, bassists, keyboard players and more from the local scene.</p>
+</section>
+
+<section class="filters">
+<h3>Browse by Genre</h3>
+<div class="filter-dropdown-wrap">
+<select id="genreFilter" class="filter-dropdown">
+<option value="all">All Genres</option>
+<option value="acoustic">Acoustic</option>
+<option value="alternative">Alternative</option>
+<option value="ambient">Ambient</option>
+<option value="blues">Blues</option>
+<option value="country">Country</option>
+<option value="emo">Emo</option>
+<option value="folk">Folk</option>
+<option value="funk">Funk</option>
+<option value="hardrock">Hard Rock</option>
+<option value="indie">Indie</option>
+<option value="lightrock">Light Rock</option>
+<option value="metal">Metal</option>
+<option value="newrock">New Rock</option>
+<option value="pop">Pop</option>
+<option value="prog">Prog</option>
+<option value="punk">Punk</option>
+<option value="r&b">R&amp;B</option>
+<option value="rock">Rock</option>
+</select>
+</div>
+</section>
+
+<section class="filters">
+<h3>Browse by Instrument</h3>
+<div class="filter-dropdown-wrap">
+<select id="instrumentFilter" class="filter-dropdown">
+<option value="all">All Instruments</option>
+<option value="bass">Bass</option>
+<option value="dj">DJ</option>
+<option value="drums">Drums</option>
+<option value="guitar">Guitar</option>
+<option value="keys">Keys</option>
+<option value="multiinstrumentalist">Multi-Instrumentalist</option>
+<option value="percussion">Percussion</option>
+<option value="rhythmguitar">Rhythm Guitar</option>
+<option value="saxhorns">Sax / Horns</option>
+<option value="violinstrings">Violin / Strings</option>
+<option value="vocals">Vocals</option>
+</select>
+</div>
+</section>
+
+<section class="musician-directory">
+
+<div class="profile-grid">
+
+<div class="profile-card" data-genre="blues, rock, funk" data-instrument="guitar">
+<img src="IMG_9470.jpeg" alt="Fred Guitar profile">
+<h3>Fred</h3>
+<p><strong>Instrument:</strong> Guitar</p>
+<p><strong>Location:</strong> Holden, ME</p>
+<p><strong>Style:</strong> Blues / Rock / Funk</p>
+<p><strong>Availablilty:</strong>Ask</p>
+<a class="button" href="fred-guitar.html">View Profile</a>
+</div>
+
+<div class="profile-card" data-genre="country, lightrock" data-instrument="rhythmguitar, vocals">
+<img src="IMG_9471.jpeg" alt="Purgatory Jack profile">
+<h3>Jack Duggins (Purgatory Jack)</h3>
+<p><strong>Instrument:</strong> Rhythm Guitar / Vocals</p>
+<p><strong>Location:</strong> Gardiner, ME</p>
+<p><strong>Style:</strong> Country / Light Rock</p>
+<p><strong>Availablilty:</strong>Average 150 gigs per year-Solo</p>
+<p><strong>Influences:</strong>John Prine, George Strait, Randy Travis, Joe Diffie, Zack Top</p>
+<a class="button" href="purgatory-jack.html">View Profile</a>
+</div>
+
+<div class="profile-card" data-genre="indie, folk" data-instrument="guitar, vocals">
+<h3>Pat Barceleau</h3>
+<p><strong>Instrument:</strong> Guitar/Vocals</p>
+<p><strong>Location:</strong> Portland, ME</p>
+<p><strong>Style:</strong> Folk / Indie</p>
+<a class="button" href="pat-barceleau.html">View Profile</a>
+</div>
+
+<div class="profile-card" data-genre="americana, folk" data-instrument="guitar">
+<img src="IMG_9525.jpeg" alt="Thomas Charles Clukey profile pic">
+<h3>Thomas Charles Clukey</h3>
+<p><strong>Instrument:</strong> Guitar</p>
+<p><strong>Location:</strong> Saco, ME</p>
+<p><strong>Style:</strong> Americana, Folk, Singer Songwriter</p>
+<a class="button" href="thomas-charles-clukey.html">View Profile</a>
+</div>
+  
+<div class="profile-card"
+     data-genre="rock, alternative, newrock, country, pop, r&b, blues"
+     data-instrument="vocals"
+     data-looking-type="band"
+     data-looking-info="Alternative / Alt-Country / Rock band">
+  <img src="att.nGg2awgt0BdpdwWpoKDB2GR4EvS3prAqpML9m7qTIX8.jpeg" alt="Niomi Larivee / Omi profile">
+  <h3>Niomi Larrivee / Omi</h3>
+  <p><strong>Instrument:</strong> Vocals</p>
+  <p><strong>Location:</strong> Augusta, ME (will travel)</p>
+  <p><strong>Style:</strong> Rock / Alternative / New Rock / Country / Pop / R&amp;B / Blues</p>
+  <p><strong>Looking to Join:</strong> Alternative / Alt-Country / Rock band</p>
+  <a class="button" href="niomi-larrivee-omi.html">View Profile</a>
+</div>
+
+<div class="profile-card" data-genre="metal" data-instrument="guitar, vocals, bass, drums">
+<img src="IMG_9658.jpeg" alt="Pat profile">
+<h3>Pat</h3>
+<p><strong>Instrument:</strong> Guitar, Vocals, Bass, Drums</p>
+<p><strong>Location:</strong> Holden, ME</p>
+<p><strong>Style:</strong> Metal</p>
+<a class="button" href="Pat.html">View Profile</a>
+</div>
+
+<div class="profile-card" data-genre="all kinds" data-instrument="drums">
+<img src="SquirrelnutzLogo.png">
+<h3>SquirrelNutz</h3>
+<p><strong>Location:</strong> Bar Harbor • Maine</p>
+<p><strong>Instrument:</strong> Drums</p>
+<p><strong>Availability:</strong> Negotiable</p>
+<p><strong>Influences:</strong> Shinedown, Metallica, Garth Brooks, Styx, Night Ranger</p>
+<a class="button" href="squirrel-nutz.html">View Profile</a>
+</div>
+
+<div class="profile-card" data-genre="blues rock dance">
+
+<img src="IMG_6355.jpeg">
+
+<h3>Tom Souza</h3>
+
+<p><strong>Location:</strong> Berwick, ME</p>
+
+<p><strong>Instrument:</strong> Drums</p>
+
+<p><strong>Genre:</strong> Blues, Rock, Dance</p>
+
+<a class="button" href="tom-souza.html">View Profile</a>
+
+</div>
+
+<div class="profile-card" data-genre="standards, pop, rock, jazz, classical, blues, classic, original" data-instrument="piano, organ, keyboards" data-video="https://youtu.be/Mc1beIfo_Ic">
+  <img src="PianoPlayerTunerForHire.png" alt="The Maine Piano Man profile pic">
+  <h3>The Maine Piano Man</h3>
+  <p><strong>Instrument:</strong> Piano, Organ, Keyboards</p>
+  <p><strong>Location:</strong> Maine</p>
+  <p><strong>Style:</strong> Standards, Pop, Rock, Jazz, Classical, Blues, Classic, Original</p>
+  <a class="button" href="the-maine-piano-man.html">View Profile</a>
+</div>
+
+<div class="profile-card" data-genre="alternative, country, americana" data-instrument="guitar, voice" data-video="https://youtu.be/bp4QwTqxEb0?si=pQ4JQZQPZ6G2CSIa">
+  <img src="1764343773115_filtered.jpeg" alt="George Lazos profile pic">
+  <h3>George Lazos</h3>
+  <p><strong>Instrument:</strong> Guitar/Voice</p>
+  <p><strong>Location:</strong> Kennebunk, ME</p>
+  <p><strong>Style:</strong> Alternative/Country</p>
+  <a class="button" href="george-lazos.html">View Profile</a>
+</div>
+
+<div class="profile-card" data-genre="mixed" data-instrument="guitar, ukulele" data-video="https://youtu.be/MNmRfrn_O18?si=q683UcigTs4AP2ss">
+  <img src="IMG_7619.jpeg" alt="Michi profile pic">
+  <h3>Michi</h3>
+  <p><strong>Instrument:</strong> Guitar, Ukulele</p>
+  <p><strong>Location:</strong> Standish, ME</p>
+  <p><strong>Style:</strong> Mixed</p>
+  <a class="button" href="michelle-mitchell.html">View Profile</a>
+</div>
+
+<div class="profile-card" data-genre="rock, blues" data-instrument="drums/percussion" data-video="https://youtu.be/HgqZsbx8F1c?si=SyjPOEvsb6r004vV">
+  <img src="inbound1347270576685313782.jpeg" alt="Mike Spencer profile pic">
+  <h3>Mike Spencer</h3>
+  <p><strong>Instrument:</strong> Drums/Percussion</p>
+  <p><strong>Location:</strong> Clifton/Bangor</p>
+  <p><strong>Style:</strong> Rock, Blues</p>
+  <a class="button" href="mike-spencer.html">View Profile</a>
+</div>
+
+<div class="profile-card" 
+data-genre="pop" 
+data-instrument="vocals" 
+data-video="https://youtu.be/DUT5rEU6pqM">
+
+  <img src="IMG_20251227_214532.jpeg" alt="April Wood/Shakira profile pic">
+
+  <h3>April Wood/Shakira</h3>
+
+  <p><strong>Instrument:</strong> Vocals</p>
+  <p><strong>Location:</strong> Biddeford, ME</p>
+  <p><strong>Style:</strong> Pop</p>
+
+  <a class="button" href="april-wood-shakira.html">View Profile</a>
+
+</div>
+
+<div class="profile-card" 
+data-genre="americana, folk-rock" 
+data-instrument="guitar">
+<!-- data-video="https://facebook.com/..." -->
+
+  <img src="IMG_9973.jpeg" alt="Don Blauss profile pic">
+
+  <h3>Don Blauss</h3>
+
+  <p><strong>Instrument:</strong> Guitar</p>
+
+  <p><strong>Location:</strong> Monroe, ME</p>
+
+  <p><strong>Style:</strong> Americana / Folk-Rock</p>
+
+  <a class="button" href="don-blauss.html">View Profile</a>
+
+</div>
+
+<div class="profile-card" data-genre="rock, progressive" data-instrument="multi-instrumentalist">
+  <img src="FB_IMG_1729803516322.jpeg" alt="PK musician profile">
+  <h3>PK</h3>
+  <p><strong>Instrument:</strong> Multi-instrumentalist</p>
+  <p><strong>Location:</strong> Harpswell, ME</p>
+  <p><strong>Style:</strong> Rock / Progressive</p>
+  <p><strong>Availability:</strong> Contact for details</p>
+  <a class="button" href="pk.html">View Profile</a>
+</div>
+  
+</div>
+
+</section>
+
+<section class="cta">
+<h2>Want to be featured here?</h2>
+<a class="button" href="submit-musician.html">Submit Your Performance</a>
+</section>
+
+<div id="global-footer"></div>
+
+<script src="global.js"></script>
+
+<script>
+let selectedGenre = 'all';
+let selectedInstrument = 'all';
+
+const genreFilter = document.getElementById('genreFilter');
+const instrumentFilter = document.getElementById('instrumentFilter');
+const musicianCards = document.querySelectorAll('.profile-card');
+
+function filterMusicians() {
+  musicianCards.forEach(card => {
+    const cardGenres = card.dataset.genre
+      ? card.dataset.genre.split(',').map(g => g.toLowerCase().trim())
+      : [];
+
+    const cardInstruments = card.dataset.instrument
+      ? card.dataset.instrument.split(',').map(i => i.toLowerCase().trim())
+      : [];
+
+    const genreMatch =
+      selectedGenre === 'all' || cardGenres.includes(selectedGenre);
+
+    const instrumentMatch =
+      selectedInstrument === 'all' || cardInstruments.includes(selectedInstrument);
+
+    card.style.display = (genreMatch && instrumentMatch) ? 'block' : 'none';
+  });
+}
+
+genreFilter.addEventListener('change', function() {
+  selectedGenre = this.value.toLowerCase().trim();
+  filterMusicians();
+});
+
+instrumentFilter.addEventListener('change', function() {
+  selectedInstrument = this.value.toLowerCase().trim();
+  filterMusicians();
+});
+</script>
+
+</body>
+</html>

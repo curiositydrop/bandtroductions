@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>BANDtroductions Puzzle Drop</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#000;
+  color:white;
+  text-align:center;
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+.hero{
+  border-left:2px solid #00f5d4;
+  border-right:2px solid #00f5d4;
+  padding:20px;
+  background:
+    radial-gradient(circle at top,
+    rgba(0,245,212,.22),
+    rgba(0,0,0,.96) 60%);
+}
+
+h1{
+  color:#00f5d4;
+  font-size:clamp(2rem,7vw,4rem);
+  margin-top:10px;
+  margin-bottom:20px;
+  text-transform:uppercase;
+  letter-spacing:3px;
+}
+
+.tagline{
+  font-size:1.2rem;
+  color:#ddd;
+  margin-bottom:20px;
+}
+
+.sponsor{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  border:2px solid #00f5d4;
+  border-radius:999px;
+  padding:8px 24px;
+  font-weight:bold;
+  margin-bottom:10px;
+  box-shadow:0 0 18px rgba(0,245,212,.25);
+  max-width:90%;
+}
+
+.sponsor-logo{
+  width:60px;
+  height:46px;
+  object-fit:contain;
+  margin-right:0;
+  border-radius:0;
+  flex-shrink:0;
+}
+
+.buttons{
+  margin-bottom:30px;
+}
+
+button{
+  padding:15px 30px;
+  border:none;
+  border-radius:999px;
+  cursor:pointer;
+  font-size:1rem;
+  font-weight:bold;
+  margin:5px;
+}
+
+.start-btn{
+  background:#00f5d4;
+  color:#00110f;
+  box-shadow:0 0 20px rgba(0,245,212,.55);
+}
+
+.skip-btn{
+  background:#222;
+  color:white;
+  border:1px solid #555;
+}
+
+.puzzle-wrap{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin:10px auto;
+}
+
+#puzzleBoard{
+  width:min(90vw,600px);
+  aspect-ratio:1 / 1;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  grid-template-rows:repeat(4,1fr);
+  border:4px solid #00f5d4;
+  box-shadow:0 0 30px rgba(0,245,212,.35);
+  overflow:hidden;
+  box-sizing:border-box;
+  touch-action:none;
+  position:relative;
+}
+
+.piece{
+  width:100%;
+  height:100%;
+  background-repeat:no-repeat;
+  background-size:400% 400%;
+  border:1px solid rgba(255,255,255,.09);
+  box-sizing:border-box;
+  touch-action:none;
+  user-select:none;
+  cursor:grab;
+}
+
+.piece.dragging{
+  opacity:.35;
+}
+
+.drag-clone{
+  position:fixed;
+  pointer-events:none;
+  z-index:9999;
+  border:2px solid #00f5d4;
+  box-shadow:0 0 22px rgba(0,245,212,.85);
+  transform:scale(1.05);
+}
+
+.message{
+  font-size:1.1rem;
+  color:#ddd;
+  margin-top:20px;
+}
+
+#rewardBox,
+#skipBox{
+  display:none;
+  margin-top:30px;
+  padding:25px;
+  border:2px solid #00f5d4;
+  border-radius:15px;
+  background:#111;
+  box-shadow:0 0 20px rgba(0,245,212,.25);
+}
+
+.reward-btn{
+  display:inline-block;
+  margin-top:15px;
+  background:#00f5d4;
+  color:#00110f;
+  padding:12px 25px;
+  border-radius:999px;
+  text-decoration:none;
+  font-weight:bold;
+}
+
+.win{
+  font-size:2rem;
+  color:#00f5d4;
+  margin-bottom:10px;
+}
+
+.footer{
+  margin-top:30px;
+  color:#999;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<div class="hero">
+
+<h1>Puzzle Drop</h1>
+
+<p class="tagline">
+Discover local music. Unlock sponsored rewards.
+</p>
+
+<div class="sponsor" id="sponsorArea">
+<img class="sponsor-logo" id="sponsorLogo" src="" alt="" style="display:none;">
+<span>Sponsored by: <span id="sponsorName">[Your Business Here]</span></span>
+</div>
+
+<div class="puzzle-wrap">
+<div id="puzzleBoard"></div>
+</div>
+  
+<div class="buttons">
+<button class="start-btn" onclick="startPuzzle()">Start Puzzle</button>
+<button class="skip-btn" onclick="skipPuzzle()">Skip Puzzle</button>
+</div>
+
+<p class="message" id="statusText">
+Drag one piece onto another to swap them.
+</p>
+
+<!-- <button class="start-btn" onclick="checkSolved(true)">
+  Check Puzzle
+</button> -->
+
+<div id="rewardBox">
+
+<div class="win">
+🎉 Puzzle Solved!
+</div>
+
+<p>
+You found the hidden reward. Click below to claim it.
+</p>
+
+<a class="reward-btn"
+href="https://YOUR-LINK-GOES-HERE.com"
+target="_top">
+
+Claim Hidden Reward
+
+</a>
+
+</div>
+
+<div id="skipBox">
+<div class="win">Standard Entry</div>
+<p>Curiosity is optional.</p>
+<a class="reward-btn" href="https://bandtroductions.com/standard-entry" target="_top">
+Enter Giveaway
+</a>
+</div>
+
+<div class="footer">
+Powered by BANDtroductions
+</div>
+
+</div>
+</div>
+
+<script>
+const bands = [
+  {
+    name: "Burning Time",
+    image: "IMG_9383.jpeg",
+    profileUrl: "burning-time.html"
+  },
+  {
+    name: "Paradise is Cancelled",
+    image: "att.ROrnlmqwZqzAJUKGiPaQbvv-mFxw07_gqBXN9jjWGuw.jpeg",
+    profileUrl: "pic.html"
+  },
+  {
+    name: "Sygnal to Noise",
+    image: "IMG_9653.jpeg",
+    profileUrl: "sygnaltonoise.html"
+  },
+  {
+    name: "Continental Shakedown",
+    image: "IMG_9457.jpeg",
+    profileUrl: "continental-shakedown.html"
+  },
+  {
+    name: "Black Rabbit Holes",
+    image: "IMG_9469.jpeg",
+    profileUrl: "black-rabbit-holes.html"
+  },
+  {
+    name: "Magic Bus",
+    image: "IMG_9484.jpeg",
+    profileUrl: "magic-bus.html"
+  },
+  {
+    name: "Sparrow",
+    image: "IMG_9490.png",
+    profileUrl: "sparrow.html"
+  },
+  {
+    name: "Project Firebird",
+    image: "IMG_9491.png",
+    profileUrl: "project-firebird.html"
+  },
+  {
+    name: "Mean Streak",
+    image: "IMG_9480.png",
+    profileUrl: "mean-streak.html"
+  },
+  {
+    name: "Country Roads",
+    image: "IMG_9496.jpeg",
+    profileUrl: "country-roads.html"
+  },
+  {
+    name: "Makin' It Country",
+    image: "IMG_9507.jpeg",
+    profileUrl: "makin-it-country.html"
+  },
+  {
+    name: "Ascent To Power",
+    image: "inbound8324947404328791301.png",
+    profileUrl: "ascent-to-power.html"
+  },
+  {
+    name: "MISBEHAVIN",
+    image: "IMG_0727.jpeg",
+    profileUrl: "misbehavin.html"
+  },
+  {
+    name: "Church of Good Times Trio",
+    image: "COGT Logo Image.png",
+    profileUrl: "church-of-good-times-trio.html"
+  },
+  {
+    name: "Matt Roller",
+    image: "IMG_9721.jpeg",
+    profileUrl: "matt-roller.html"
+  },
+  {
+    name: "First in Maths",
+    image: "IMG_9735.jpeg",
+    profileUrl: "first-in-maths.html"
+  },
+  {
+    name: "Parsonsfield Music Project",
+    image: "1000005332.jpeg",
+    profileUrl: "parsonsfield-music-project.html"
+  },
+  {
+    name: "Bees Deluxe",
+    image: "GASH-bbkings_cropt_x350.jpeg",
+    profileUrl: "bees-deluxe.html"
+  },
+  {
+    name: "Inside Wants Out",
+    image: "IMG_9225.jpeg",
+    profileUrl: "inside-wants-out.html"
+  },
+  {
+    name: "Waxwing",
+    image: "Waxwing Logo.jpeg",
+    profileUrl: "waxwing.html"
+  },
+  {
+    name: "Wildfeuer",
+    image: "Band Pic 1.jpeg",
+    profileUrl: "wildfeuer.html"
+  },
+  {
+    name: "Vices Inc",
+    image: "inbound7220576577020503372.png",
+    profileUrl: "vices-inc.html"
+  },
+  {
+    name: "Scotty Saints and the TrueBelievers",
+    image: "IMG_7021.jpeg",
+    profileUrl: "scotty-saints-and-the-truebelievers.html"
+  }
+];
+
+const sponsors = [
+  {
+    name: "New Leaf Painting Company",
+    logo: "9A3AD6D7-8C0C-4C27-BE09-A19C2F0834AE.png",
+    offerText: "Show this reward to unlock this week’s sponsor offer.",
+    claimUrl: "https://bandtroductions.com/sponsors"
+  },
+  {
+    name: "Rock Rage Radio",
+    logo: "ff796046372b48681a359daff6375626.jpeg",
+    offerText: "Claim a featured local music shoutout opportunity.",
+    claimUrl: "https://bandtroductions.com/sponsors"
+  },
+  {
+    name: "The Plowzone Radio Show",
+    logo: "IMG_0908.jpeg",
+    offerText: "Unlock a sponsor-backed music discovery reward.",
+    claimUrl: "https://bandtroductions.com/sponsors"
+  },
+  {
+    name: "Gone Rogue Records",
+    logo: "IMG_0699.jpeg",
+    offerText: "Claim this week’s sponsor reward for puzzle challengers.",
+    claimUrl: "https://bandtroductions.com/sponsors"
+  }
+];
+
+let puzzleImage = "IMG_5121.jpeg";
+let selectedBand = null;
+let selectedSponsor = null;
+
+const gridSize = 4;
+const board = document.getElementById("puzzleBoard");
+
+let activePiece = null;
+let clone = null;
+let startX = 0;
+let startY = 0;
+let pieceRect = null;
+let puzzleLocked = false;
+
+function selectWithNoRepeat(items, storageKey, uniqueKey){
+  if(!Array.isArray(items) || items.length === 0) return null;
+
+  const repeatWindow = Math.min(3, items.length - 1);
+  let recentItems = [];
+
+  try{
+    recentItems = JSON.parse(localStorage.getItem(storageKey)) || [];
+  }
+  catch(error){
+    recentItems = [];
+  }
+
+  if(repeatWindow <= 0){
+    const onlyChoice = items[0];
+    localStorage.setItem(storageKey, JSON.stringify([onlyChoice[uniqueKey]]));
+    return onlyChoice;
+  }
+
+  const blockedItems = recentItems.slice(-repeatWindow);
+  let eligibleItems = items.filter(item => !blockedItems.includes(item[uniqueKey]));
+
+  if(eligibleItems.length === 0){
+    eligibleItems = items;
+  }
+
+  const selectedItem = eligibleItems[Math.floor(Math.random() * eligibleItems.length)];
+  const updatedRecentItems = recentItems
+    .filter(itemKey => itemKey !== selectedItem[uniqueKey])
+    .concat(selectedItem[uniqueKey])
+    .slice(-repeatWindow);
+
+  localStorage.setItem(storageKey, JSON.stringify(updatedRecentItems));
+
+  return selectedItem;
+}
+
+function selectWeeklyPuzzleContent(){
+  selectedBand = selectWithNoRepeat(
+    bands,
+    "bandtroductionsPuzzleRecentBands",
+    "image"
+  ) || {
+    name: "BANDtroductions Featured Artist",
+    image: "IMG_5121.jpeg",
+    profileUrl: "bands.html"
+  };
+
+  selectedSponsor = selectWithNoRepeat(
+    sponsors,
+    "bandtroductionsPuzzleRecentSponsors",
+    "name"
+  ) || {
+    name: "BANDtroductions Sponsor",
+    logo: "",
+    offerText: "You unlocked this week’s sponsored reward.",
+    claimUrl: "sponsors.html"
+  };
+
+  puzzleImage = selectedBand.image || "IMG_5121.jpeg";
+  updateSponsorArea();
+}
+
+function updateSponsorArea(){
+  const sponsorName = document.getElementById("sponsorName");
+  const sponsorLogo = document.getElementById("sponsorLogo");
+
+  if(sponsorName && selectedSponsor){
+    sponsorName.textContent = selectedSponsor.name;
+  }
+
+  if(sponsorLogo && selectedSponsor && selectedSponsor.logo){
+    sponsorLogo.src = selectedSponsor.logo;
+    sponsorLogo.alt = selectedSponsor.name + " logo";
+    sponsorLogo.style.display = "inline-block";
+  }
+  else if(sponsorLogo){
+    sponsorLogo.style.display = "none";
+  }
+}
+
+function updateRewardContent(){
+  const rewardBox = document.getElementById("rewardBox");
+
+  if(!rewardBox || !selectedSponsor || !selectedBand) return;
+
+  rewardBox.innerHTML = `
+    <div class="win">Reward unlocked!</div>
+    <p>You unlocked this week’s sponsored reward from <strong>${selectedSponsor.name}</strong>.</p>
+    <p>${selectedSponsor.offerText}</p>
+    <a class="reward-btn" href="${selectedSponsor.claimUrl}" target="_top">
+      Claim Sponsor Offer
+    </a>
+    <p style="margin-top:20px;">You also discovered: <strong>${selectedBand.name}</strong>.</p>
+    <a class="reward-btn" href="${selectedBand.profileUrl}" target="_top">
+      View Band Profile
+    </a>
+  `;
+}
+
+function startPuzzle(){
+  puzzleLocked = false;
+
+  document.getElementById("rewardBox").style.display = "none";
+  document.getElementById("skipBox").style.display = "none";
+  document.getElementById("statusText").innerHTML = "Drag one piece onto another to swap them.";
+  createPuzzle();
+}
+function revealPuzzleImage(){
+  const pieces = document.querySelectorAll(".piece");
+
+  pieces.forEach((piece, index) => {
+    const x = index % gridSize;
+    const y = Math.floor(index / gridSize);
+
+    piece.dataset.correct = index;
+    piece.style.backgroundImage = `url("${puzzleImage}")`;
+    piece.style.backgroundPosition =
+      `${(x / (gridSize - 1)) * 100}% ${(y / (gridSize - 1)) * 100}%`;
+  });
+
+  puzzleLocked = true;
+}
+function skipPuzzle(){
+  revealPuzzleImage();
+
+  document.getElementById("skipBox").style.display = "block";
+  document.getElementById("rewardBox").style.display = "none";
+  document.getElementById("statusText").innerHTML =
+    `Puzzle revealed: ${selectedBand.name}`;
+}
+
+function createPuzzle(){
+  board.innerHTML = "";
+
+  let pieces = [];
+
+  for(let i = 0; i < gridSize * gridSize; i++){
+    let piece = document.createElement("div");
+    piece.className = "piece";
+    piece.dataset.correct = i;
+
+    let x = i % gridSize;
+    let y = Math.floor(i / gridSize);
+
+    piece.style.backgroundImage = `url("${puzzleImage}")`;
+piece.style.backgroundPosition =
+  `${(x / (gridSize - 1)) * 100}% ${(y / (gridSize - 1)) * 100}%`;
+
+    pieces.push(piece);
+  }
+
+  pieces.sort(() => Math.random() - 0.5);
+
+  pieces.forEach(piece => {
+    board.appendChild(piece);
+    piece.addEventListener("pointerdown", startDrag);
+  });
+}
+
+function startDrag(e){
+  if(puzzleLocked) return;
+
+  e.preventDefault();
+
+  activePiece = e.currentTarget;
+  activePiece.setPointerCapture(e.pointerId);
+
+  pieceRect = activePiece.getBoundingClientRect();
+  startX = e.clientX;
+  startY = e.clientY;
+
+  clone = activePiece.cloneNode(true);
+  clone.classList.add("drag-clone");
+  clone.style.width = pieceRect.width + "px";
+  clone.style.height = pieceRect.height + "px";
+  clone.style.left = pieceRect.left + "px";
+  clone.style.top = pieceRect.top + "px";
+
+  document.body.appendChild(clone);
+
+  activePiece.classList.add("dragging");
+
+  activePiece.addEventListener("pointermove", moveDrag);
+  activePiece.addEventListener("pointerup", endDrag);
+  activePiece.addEventListener("pointercancel", endDrag);
+}
+
+function moveDrag(e){
+  if(!activePiece || !clone) return;
+
+  const dx = e.clientX - startX;
+  const dy = e.clientY - startY;
+
+  clone.style.left = pieceRect.left + dx + "px";
+  clone.style.top = pieceRect.top + dy + "px";
+}
+
+function endDrag(e){
+  if(!activePiece) return;
+
+  activePiece.releasePointerCapture(e.pointerId);
+
+  const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+
+  if(dropTarget && dropTarget.classList.contains("piece") && dropTarget !== activePiece){
+    swapPieces(activePiece, dropTarget);
+  }
+
+  activePiece.classList.remove("dragging");
+
+  if(clone){
+    clone.remove();
+    clone = null;
+  }
+
+  activePiece.removeEventListener("pointermove", moveDrag);
+  activePiece.removeEventListener("pointerup", endDrag);
+  activePiece.removeEventListener("pointercancel", endDrag);
+
+  activePiece = null;
+}
+
+function swapPieces(piece1, piece2){
+  const tempPosition = piece1.style.backgroundPosition;
+  const tempCorrect = piece1.dataset.correct;
+
+  piece1.style.backgroundPosition = piece2.style.backgroundPosition;
+  piece1.dataset.correct = piece2.dataset.correct;
+
+  piece2.style.backgroundPosition = tempPosition;
+  piece2.dataset.correct = tempCorrect;
+
+  setTimeout(() => {
+    checkSolved();
+  }, 100);
+}
+
+function checkSolved(showMessage = false){
+  const pieces = document.querySelectorAll(".piece");
+  let solved = true;
+
+  pieces.forEach((piece,index) => {
+    if(Number(piece.dataset.correct) !== index){
+      solved = false;
+    }
+  });
+
+  if(solved){
+    puzzleLocked = true;
+
+    updateRewardContent();
+
+    document.getElementById("rewardBox").style.display = "block";
+    document.getElementById("skipBox").style.display = "none";
+    document.getElementById("statusText").innerHTML =
+      "🎉 Puzzle Complete! Hidden reward unlocked.";
+  }
+  else if(showMessage){
+    document.getElementById("statusText").innerHTML =
+      "Not quite yet — a few pieces are still out of place.";
+  }
+}
+
+selectWeeklyPuzzleContent();
+startPuzzle();
+</script>
+
+</body>
+</html>

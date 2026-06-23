@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BANDtroductions</title>
+
+<link rel="stylesheet" href="style.css?v=4">
+
+<style>
+.search-box-wrap{
+text-align:center;
+padding:20px;
+}
+
+.search-box-wrap input{
+width:100%;
+max-width:500px;
+padding:14px 16px;
+font-size:18px;
+border:none;
+border-radius:4px;
+background:#222;
+color:white;
+}
+
+@media (max-width:768px){
+.search-box-wrap input{
+font-size:16px;
+}
+}
+</style>
+
+<!-- Global Header/Footer -->
+<script src="global.js" defer></script>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-60112G8RH3');
+</script>
+
+</head>
+
+<body>
+
+<div id="global-header"></div>
+
+<section class="page-hero">
+
+<h2>Discover Venues Across Maine</h2>
+
+<p>
+Browse venues, bars, restaurants and local stages that support live music across Maine.
+</p>
+
+</section>
+
+<!-- Search (currently disabled) -->
+<!--
+<section class="search-box-wrap">
+<input type="text" id="townSearch" placeholder="Type a town...">
+</section>
+-->
+
+<section class="musician-directory">
+
+<div class="profile-grid" id="venueGrid">
+
+<div class="profile-card" data-town="saco">
+<img src="IMG_9467.jpeg" alt="Venue profile">
+<h3>School Street Coffeehouse</h3>
+<p><strong>Town:</strong> Saco, ME</p>
+<p><strong>Type:</strong> Listening Room</p>
+<p><strong>Hosts:</strong> Folk, pop, bluegrass, singer songwriter, country</p>
+<p><strong>Booking:</strong> Open to local acts</p>
+<a class="button" href="school-street-coffeehouse.html">View Venue</a>
+</div>
+
+<div class="profile-card" data-town="biddeford">
+<img src="IMG_9508.jpeg" alt="Venue profile">
+<h3>Champions Sports Bar</h3>
+<p><strong>Town:</strong> Biddeford, ME</p>
+<p><strong>Type:</strong> Restaurant & Music Spot</p>
+<p><strong>Booking:</strong> Local musicians welcome</p>
+<a class="button" href="champions.html">View Venue</a>
+</div>
+
+<div class="profile-card" data-town="thomaston">
+<img src="IMG_9720.jpeg" alt="Venue profile">
+<h3>Watts Hall Community Arts</h3>
+<p><strong>Town:</strong> Thomaston, ME</p>
+<p><strong>Type:</strong> Non-Profit Performing Arts Center</p>
+<p><strong>Hosts:</strong> Music, dance, theater, community events</p>
+<p><strong>Booking:</strong> Actively booking 2026–2027</p>
+<a class="button" href="watts-hall-community-arts.html">View Venue</a>
+</div>
+
+<div class="profile-card" data-town="biddeford">
+
+<img src="CLR B&W Logo.jpeg" alt="Crystal Listening Room">
+
+<h3>Crystal Listening Room</h3>
+
+<p><strong>Town:</strong> Biddeford, ME</p>
+
+<p><strong>Type:</strong> Listening Room</p>
+
+<p><strong>Hosts:</strong> Singer/Songwriter, Folk, Americana, Bluegrass, Pop, Jazz, Blues</p>
+
+<p><strong>Booking:</strong> Local & Touring Artists</p>
+
+<a class="button" href="crystal-listening-room.html">View Venue</a>
+
+</div>
+
+</div>
+
+</section>
+
+<section class="cta">
+
+<h2>Own or manage a live music venue?</h2>
+<a class="button" href="submit-venue.html">Submit Your Venue</a>
+
+</section>
+
+<div id="global-footer"></div>
+
+<script>
+const townSearch = document.getElementById('townSearch');
+const venueCards = document.querySelectorAll('#venueGrid .profile-card');
+
+if (townSearch) {
+  townSearch.addEventListener('input', function() {
+    const searchValue = this.value.toLowerCase().trim();
+
+    venueCards.forEach(card => {
+      const town = card.dataset.town.toLowerCase();
+
+      if (town.includes(searchValue)) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  });
+}
+</script>
+
+</body>
+</html>

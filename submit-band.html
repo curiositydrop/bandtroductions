@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BANDtroductions</title>
+<link rel="stylesheet" href="style.css?v=4">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BANDtroductions</title>
+<link rel="stylesheet" href="style.css?v=4">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-60112G8RH3');
+</script>
+
+</head>
+
+<body>
+
+<header>
+
+<div class="logo-area">
+<img src="IMG_9367.png" alt="BANDtroductions Logo">
+<p class="tagline">Maine's Musician Hub</p>
+</div>
+
+<nav>
+    <a href="index.html">Home</a>
+    <a href="bands.html">Browse Bands</a>
+    <a href="musicians.html">Browse Musicians</a>
+    <a href="venues.html">Browse Venues</a>
+    <a href="bandmatch.html">BandMatch</a>
+    <a href="submit-band.html">Submit Your Band</a>
+    <a href="submit-musician.html">Submit as Musician</a>
+    <a href="submit-venue.html">Submit Your Venue</a>
+    <a href="sponsors.html">Sponsors</a>
+    <a href="support.html">Support</a>
+    <a href="about.html">About</a>
+    <a href="fan-wall.html" style="color:#ff004c;">Fan Wall-(Live)</a>
+  </nav>
+
+</header>
+
+
+<section class="form-page">
+
+<h2>Get Your Band Featured</h2>
+
+<p>
+Send in your band info and performance video to be featured on BANDtroductions.
+</p>
+
+
+<form 
+action="https://formsubmit.co/mbergeron79@gmail.com" 
+method="POST" 
+class="submission-form"
+enctype="multipart/form-data"
+onsubmit="return validateBandForm()"
+>
+
+<input type="hidden" name="_subject" value="New BANDtroductions Band Submission">
+<input type="hidden" name="_captcha" value="false">
+<input type="hidden" name="_template" value="table">
+<input type="hidden" name="_next" value="https://curiositydrop.com/bandtroductions/thank-you.html">
+
+<p style="display:none;">
+<label>Don't fill this out if you're human: <input name="_honey"></label>
+</p>
+
+<label for="band-name">Band Name *</label>
+<input type="text" id="band-name" name="Band Name" required>
+
+<label for="band-location">Location</label>
+<input type="text" id="band-location" name="Location">
+
+<label for="band-genre">Genre</label>
+<input type="text" id="band-genre" name="Genre">
+
+<label for="members">Current Members</label>
+<input type="text" id="members" name="Members">
+
+<label for="looking-for">Looking For</label>
+<input type="text" id="looking-for" name="Looking For">
+
+<label for="band-influences">Influences</label>
+<input type="text" id="band-influences" name="Influences">
+
+<label for="band-video">Performance Video Link *</label>
+<input type="url" id="band-video" name="Video Link" required>
+
+<!-- 🔥 HELPER TEXT -->
+<p style="font-size: 14px; opacity: 0.8; margin-top: -5px;">
+Video is required — this is how venues and fans discover your sound.
+</p>
+
+<!-- IMAGE HELPER -->
+<p style="font-size: 14px; opacity: 0.8;">
+Upload a photo OR paste a link (link is recommended for best results)
+</p>
+
+<label for="band-image">Band Logo or Photo (upload)</label>
+<input type="file" id="band-image" name="attachment" accept="image/*">
+
+<label for="band-image-link">Band Photo Link (recommended)</label>
+<input type="url" id="band-image-link" name="Image Link" placeholder="Facebook, Instagram, Google Drive, or website link">
+
+<label for="band-bio">Short Band Bio</label>
+<textarea id="band-bio" name="Band Bio" rows="6"></textarea>
+
+<label for="band-contact">Contact Email or Social *</label>
+<input type="text" id="band-contact" name="Contact Info" required>
+
+<button type="submit">Submit Band</button>
+
+</form>
+
+<script>
+function validateBandForm() {
+    const imageUpload = document.getElementById("band-image").files.length;
+    const imageLink = document.getElementById("band-image-link").value.trim();
+
+    if (imageUpload === 0 && imageLink === "") {
+        alert("Please upload a band photo OR provide an image link.");
+        return false;
+    }
+
+    return true;
+}
+</script>
+
+</section>
+
+
+<footer>
+
+<p>© BANDtroductions</p>
+
+</footer>
+
+</body>
+</html>

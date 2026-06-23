@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Submit Music | BANDtroductions Radio</title>
+
+<link rel="stylesheet" href="style.css?v=10">
+
+<style>
+body {
+  background: #050505;
+  color: white;
+}
+
+.radio-submit-page {
+  max-width: 650px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.radio-submit-card {
+  background: #111;
+  border: 1px solid rgba(0,200,180,0.35);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.radio-submit-card h1 {
+  color: #00c8b4;
+}
+
+.radio-submit-card label {
+  display: block;
+  margin-top: 16px;
+  font-weight: 800;
+}
+
+.radio-submit-card input,
+.radio-submit-card select,
+.radio-submit-card textarea {
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,200,180,0.35);
+  background: #050505;
+  color: white;
+  box-sizing: border-box;
+}
+
+.radio-submit-card button {
+  margin-top: 22px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 999px;
+  background: #00c8b4;
+  color: #000;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.back-link,
+.agreement-link {
+  color: #00c8b4;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.checkbox-label {
+  display: flex !important;
+  gap: 10px;
+  align-items: flex-start;
+  line-height: 1.4;
+}
+
+.checkbox-label input {
+  width: auto;
+  margin-top: 3px;
+}
+</style>
+</head>
+
+<body>
+
+<main class="radio-submit-page">
+
+  <a class="back-link" href="radio.html">← Back to BANDtroductions Radio</a>
+
+  <section class="radio-submit-card">
+    <h1>Submit Music</h1>
+    <p>Submit your song for consideration on BANDtroductions Radio.</p>
+
+    <form id="radioSubmitForm">
+
+      <label>Band / Artist Name *</label>
+      <input id="artist" type="text" required>
+
+      <label>Contact Name *</label>
+      <input id="contactName" type="text" required>
+
+      <label>Contact Email *</label>
+      <input id="contactEmail" type="email" required>
+
+      <label>Song Title *</label>
+      <input id="title" type="text" required>
+
+      <label>Album Name</label>
+      <input id="album" type="text" placeholder="Single, EP, Album name, etc.">
+
+      <label>Genre *</label>
+      <select id="genre" required>
+        <option value="">Select Genre</option>
+        <option value="rock">Rock</option>
+        <option value="metal">Metal</option>
+        <option value="country">Country</option>
+        <option value="alternative">Alternative</option>
+        <option value="acoustic">Acoustic</option>
+        <option value="punk">Punk</option>
+        <option value="blues">Blues</option>
+        <option value="hiphop">Hip-Hop</option>
+        <option value="folk">Folk</option>
+        <option value="pop">Pop</option>
+        <option value="other">Other</option>
+      </select>
+
+      <label>Location</label>
+      <input id="location" type="text" placeholder="City, State">
+
+      <label>BANDtroductions Profile Link</label>
+      <input id="profileUrl" type="text" placeholder="burning-time.html">
+
+      <label>Cover Image URL / File Name</label>
+      <input id="coverUrl" type="text" placeholder="IMG_9382.jpeg">
+
+      <label>Audio MP3 URL / File Name *</label>
+      <input id="audioUrl" type="text" placeholder="song.mp3" required>
+
+      <label>Are you signed to a record label?</label>
+      <select id="signedToLabel">
+        <option value="false">No</option>
+        <option value="true">Yes</option>
+      </select>
+
+      <label>Label Name / Contact Info</label>
+      <textarea id="labelContact" placeholder="Leave blank if not signed"></textarea>
+
+      <label>Anything else we should know?</label>
+      <textarea id="notes" placeholder="Optional notes, links, release info, explicit content, etc."></textarea>
+
+      <label class="checkbox-label">
+        <input id="permissionConfirmed" type="checkbox" required>
+        <span>
+          I confirm I own or control the rights to submit this song, or I have permission from the rights holder.
+        </span>
+      </label>
+
+      <label class="checkbox-label">
+        <input id="agreementAccepted" type="checkbox" required>
+        <span>
+          I have read and agree to the
+          <a href="#" id="openAgreementModal" class="agreement-link">BANDtroductions Radio Music Submission & Broadcast Agreement</a>.
+        </span>
+      </label>
+
+      <button type="submit">Submit Song</button>
+
+      <p id="submitMessage"></p>
+
+    </form>
+  </section>
+
+</main>
+
+<!-- AGREEMENT MODAL -->
+<div id="agreementModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#111; border:1px solid rgba(0,200,180,0.45); border-radius:18px; max-width:760px; width:100%; max-height:85vh; overflow:auto; padding:24px; color:white;">
+
+    <h2 style="color:#00c8b4;">BANDtroductions Radio Music Submission & Broadcast Agreement</h2>
+
+    <p>By submitting music to BANDtroductions Radio, you agree to the following terms:</p>
+
+    <h3>Ownership & Authority</h3>
+    <p>You represent and warrant that you own or control all rights necessary to submit the music provided to BANDtroductions Radio.</p>
+    <p>You further represent that you have the authority to grant BANDtroductions Radio permission to stream, broadcast, and promote the submitted music.</p>
+
+    <h3>Grant of Permission</h3>
+    <p>You grant BANDtroductions Radio and BANDtroductions a non-exclusive, worldwide, royalty-free, revocable license to stream and broadcast submitted music, promote submitted music through BANDtroductions.com and associated social media channels, and display artist names, band names, song titles, logos, album artwork, and promotional images in connection with promoting the artist and BANDtroductions Radio.</p>
+    <p>All ownership rights remain with the artist, band, or rights holder.</p>
+
+    <h3>Signed Artists & Label Representation</h3>
+    <p>If the submitted music is subject to a recording contract, publishing agreement, management agreement, or any other rights arrangement, you represent that all necessary permissions have been obtained prior to submission.</p>
+    <p>BANDtroductions reserves the right to request verification of ownership or authorization at any time.</p>
+
+    <h3>Airplay & Compensation</h3>
+    <p>Submission of music does not guarantee airplay, promotion, placement, or continued inclusion in BANDtroductions Radio programming.</p>
+    <p>Unless otherwise agreed in writing, no compensation, royalties, fees, or payments are owed by BANDtroductions Radio for music submitted under this agreement.</p>
+
+    <h3>Removal of Music</h3>
+    <p>Artists may request removal of their music by contacting BANDtroductions.</p>
+    <p>BANDtroductions reserves the right to remove any submitted content at its sole discretion.</p>
+
+    <h3>Indemnification</h3>
+    <p>You agree to hold harmless and indemnify BANDtroductions, BANDtroductions Radio, its owners, operators, sponsors, affiliates, and representatives from any claims, damages, liabilities, losses, costs, or legal expenses arising from the submission of music, ownership disputes, copyright claims, licensing disputes, publishing disputes, or any false or inaccurate representations made during submission.</p>
+
+    <h3>Acceptance</h3>
+    <p>By checking the submission agreement checkbox and submitting music to BANDtroductions Radio, you acknowledge that you have read, understood, and agree to these terms.</p>
+
+    <button id="closeAgreementModal" type="button" style="margin-top:20px; padding:12px 18px; border:none; border-radius:999px; background:#00c8b4; color:#000; font-weight:900; cursor:pointer;">
+      Close Agreement
+    </button>
+
+  </div>
+</div>
+
+<script>
+const openAgreementModal = document.getElementById("openAgreementModal");
+const closeAgreementModal = document.getElementById("closeAgreementModal");
+const agreementModal = document.getElementById("agreementModal");
+
+openAgreementModal.addEventListener("click", function(e) {
+  e.preventDefault();
+  agreementModal.style.display = "flex";
+});
+
+closeAgreementModal.addEventListener("click", function() {
+  agreementModal.style.display = "none";
+});
+
+agreementModal.addEventListener("click", function(e) {
+  if (e.target === agreementModal) {
+    agreementModal.style.display = "none";
+  }
+});
+</script>
+
+<script type="module" src="radio-submit.js?v=2"></script>
+</body>
+</html>

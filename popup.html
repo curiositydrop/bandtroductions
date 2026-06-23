@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>BANDtroductions</title>
+
+<link rel="stylesheet" href="style.css?v=5">
+
+<style>
+.video-popup {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.video-popup-content {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  text-align: center;
+}
+
+.popup-title {
+  color: #ffffff;
+  font-size: 20px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.video-frame {
+  position: relative;
+  border: 2px solid #00d1b2;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+
+.video-popup iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: none;
+  display: block;
+  background: #000;
+}
+
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  gap: 12px;
+}
+
+.play-btn,
+.skip-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.play-btn {
+  background: #00d1b2;
+  color: #000;
+  font-weight: bold;
+}
+
+.skip-btn {
+  background: transparent;
+  color: #ccc;
+  border: 1px solid #666;
+}
+
+.popup-support {
+  margin-top: 12px;
+}
+
+.popup-support a {
+  color: #00d1b2;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.popup-support a:hover {
+  text-decoration: underline;
+}
+
+.close-popup {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #ff004c;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+}
+</style>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-60112G8RH3');
+</script>
+
+</head>
+
+<body>
+
+<!-- GLOBAL HEADER -->
+<div id="global-header"></div>
+
+<section class="hero">
+
+<h2>Where Bands, Fans, Musicians & Venues Meet</h2>
+
+<p>
+Upload performance videos, discover talent, and build the next great band.
+</p>
+
+<p style="color:#888;font-size:18px;margin-top:10px;">
+Built for musicians. Launching soon.
+</p>
+
+<div class="hero-buttons">
+<a class="button" href="bands.html">Browse Bands</a>
+<a class="button" href="musicians.html">Browse Musicians</a>
+</div>
+
+</section>
+
+<section class="featured">
+
+<h2>Maine's Featured Performances</h2>
+
+<div class="featured-performance">
+
+<div class="album-cover">
+<img src="IMG_9382.jpeg" alt="Burning Time Album Cover">
+</div>
+
+<div class="live-video">
+
+<div class="video-embed">
+<iframe src="https://www.youtube.com/embed/rEZltWy13JE"
+title="Burning Time Live"
+frameborder="0"
+allowfullscreen>
+</iframe>
+</div>
+
+<p>Burning Time – Live</p>
+<a class="button" href="burning-time.html">View Band</a>
+
+</div>
+
+</div>
+
+</section>
+
+<section class="local-scene">
+
+<h2>Explore the Local Scene</h2>
+
+<div class="scene-grid">
+
+<div class="scene-card">
+<h3>Maine Bands</h3>
+<p>Discover bands performing across Maine.</p>
+<a href="bands.html">Browse Bands</a>
+</div>
+
+<div class="scene-card">
+<h3>Maine Musicians</h3>
+<p>Find singers, guitarists, drummers and more.</p>
+<a href="musicians.html">Browse Musicians</a>
+</div>
+
+<div class="scene-card">
+<h3>Looking for Bandmates</h3>
+<p>Connect with musicians searching for a band.</p>
+<a href="musicians.html">Find Musicians</a>
+</div>
+
+</div>
+
+</section>
+
+<section class="how-it-works">
+
+<h2>How BANDtroductions Works</h2>
+
+<div class="steps">
+
+<div>
+<h3>1</h3>
+<p>Set up your free profile — show us what you’ve got 🎤</p>
+</div>
+
+<div>
+<h3>2</h3>
+<p>Get discovered by fans, bands, musicians… and yes, even venues</p>
+</div>
+
+<div>
+<h3>3</h3>
+<p>Connect directly, collaborate & book gigs</p>
+</div>
+
+<div>
+<h3>4</h3>
+<p>Jump on the Fan Wall and join the conversation</p>
+</div>
+
+</div>
+
+</section>
+
+<section class="cta">
+
+<h2>Ready to introduce yourself?</h2>
+
+<a class="button" href="submit-musician.html">Submit Your Performance</a>
+
+</section>
+
+<!-- VIDEO POPUP -->
+<div id="video-popup" class="video-popup">
+  <div class="video-popup-content">
+
+    <button class="close-popup" onclick="closeVideoPopup()">×</button>
+
+    <div class="popup-title">
+      Message from the Creator
+    </div>
+
+    <div class="video-frame">
+
+      <iframe
+        id="popup-video"
+        src=""
+        title="Popup Video"
+        allow="autoplay; encrypted-media"
+        allowfullscreen>
+      </iframe>
+
+      <div class="video-overlay" id="video-overlay">
+        <button class="play-btn" onclick="startVideo()">▶ Play Message</button>
+        <button class="skip-btn" onclick="closeVideoPopup()">Skip</button>
+      </div>
+
+    </div>
+
+    <div class="popup-support">
+      <a href="#">Support the movement</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- GLOBAL FOOTER -->
+<div id="global-footer"></div>
+
+<script src="/bandtroductions/global.js?v=1"></script>
+
+<script>
+const videoURL = "https://www.youtube.com/embed/rEZltWy13JE?autoplay=1&rel=0";
+
+// TEST MODE: show every time
+window.addEventListener("load", function () {
+  setTimeout(() => {
+    document.getElementById("video-popup").style.display = "flex";
+  }, 1000);
+
+  setTimeout(closeVideoPopup, 25000);
+});
+
+function startVideo() {
+  const iframe = document.getElementById("popup-video");
+  const overlay = document.getElementById("video-overlay");
+
+  iframe.src = videoURL;
+  overlay.style.display = "none";
+}
+
+function closeVideoPopup() {
+  const popup = document.getElementById("video-popup");
+  const iframe = document.getElementById("popup-video");
+  const overlay = document.getElementById("video-overlay");
+
+  popup.style.display = "none";
+  iframe.src = "";
+  overlay.style.display = "flex";
+}
+</script>
+
+</body>
+</html>

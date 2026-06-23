@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Radio Admin | BANDtroductions</title>
+
+<link rel="stylesheet" href="style.css?v=10">
+
+<style>
+body {
+  background: #050505;
+  color: white;
+}
+
+.radio-admin-page {
+  max-width: 850px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.radio-admin-page h1 {
+  color: #00c8b4;
+}
+
+.back-link {
+  color: #00c8b4;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.submission-card {
+  background: #111;
+  border: 1px solid rgba(0,200,180,0.35);
+  border-radius: 18px;
+  padding: 20px;
+  margin-top: 18px;
+}
+
+.submission-card h2 {
+  color: #00c8b4;
+  margin-top: 0;
+}
+
+.submission-card p {
+  color: #ddd;
+}
+
+.admin-btn {
+  margin-top: 12px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 999px;
+  background: #00c8b4;
+  color: #000;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.admin-btn.delete {
+  background: #ff5555;
+  color: white;
+  margin-left: 8px;
+}
+</style>
+</head>
+
+<body>
+
+<main class="radio-admin-page">
+
+  <a class="back-link" href="radio.html">← Back to Radio</a>
+
+  <h1>BANDtroductions Radio Admin</h1>
+  <p>Review pending radio submissions.</p>
+
+  <div id="adminSubmissions">
+    <p>Loading submissions...</p>
+  </div>
+
+</main>
+
+<script type="module" src="radio-admin.js?v=1"></script>
+
+</body>
+</html>

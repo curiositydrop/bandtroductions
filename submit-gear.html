@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Submit Gear | BANDtroductions</title>
+
+<link rel="stylesheet" href="style.css?v=6">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-60112G8RH3');
+</script>
+</head>
+
+<body>
+
+<div id="global-header"></div>
+
+<section class="form-page">
+  <h2>List Your Gear</h2>
+  <p>
+    Fill out the form below, then continue to the $5 payment page.
+  </p>
+  <p class="gear-form-note">
+    Your listing will not be posted until payment is completed.
+  </p>
+
+  <form
+    action="https://formsubmit.co/mbergeron79@gmail.com"
+    method="POST"
+    enctype="multipart/form-data"
+    class="submission-form"
+  >
+    <input type="hidden" name="_subject" value="New Gear Exchange Submission">
+    <input type="hidden" name="_template" value="table">
+    <input type="hidden" name="_captcha" value="false">
+    <input type="hidden" name="_next" value="https://curiositydrop.com/bandtroductions/gear-payment.html">
+    <input type="hidden" name="_url" value="https://curiositydrop.com/bandtroductions/submit-gear.html">
+    <input type="text" name="_honey" style="display:none">
+
+    <label for="seller-name">Name</label>
+    <input type="text" id="seller-name" name="Seller Name" required>
+
+    <label for="seller-email">Email</label>
+    <input type="email" id="seller-email" name="Seller Email" required>
+
+    <label for="seller-phone">Phone (optional)</label>
+    <input type="text" id="seller-phone" name="Seller Phone">
+
+    <label for="item-name">Item Name</label>
+    <input type="text" id="item-name" name="Item Name" required>
+
+    <label for="category">Category</label>
+    <select id="category" name="Category" required>
+      <option value="">Select one</option>
+      <option>Guitar</option>
+      <option>Bass</option>
+      <option>Drums / Percussion</option>
+      <option>Amp / Cabinet</option>
+      <option>Pedals / Effects</option>
+      <option>PA / Live Sound</option>
+      <option>Recording Gear</option>
+      <option>Keys / Synth</option>
+      <option>Microphones</option>
+      <option>Accessories</option>
+      <option>Other</option>
+    </select>
+
+    <label for="price">Price</label>
+    <input type="text" id="price" name="Price" placeholder="$250" required>
+
+    <label for="condition">Condition</label>
+    <select id="condition" name="Condition" required>
+      <option value="">Select one</option>
+      <option>Excellent</option>
+      <option>Very Good</option>
+      <option>Good</option>
+      <option>Fair</option>
+      <option>Needs Work</option>
+    </select>
+
+    <label for="town">City / Town</label>
+    <input type="text" id="town" name="City / Town" required>
+
+    <label for="state">State</label>
+    <input type="text" id="state" name="State" value="ME" required>
+
+    <label for="description">Description</label>
+    <textarea id="description" name="Description" rows="6" required></textarea>
+
+    <label for="attachment">Photo</label>
+    <input type="file" id="attachment" name="attachment" accept="image/png, image/jpeg, image/webp" required>
+
+    <label for="video-link">Demo Video Link (optional)</label>
+    <input type="url" id="video-link" name="Demo Video Link" placeholder="https://...">
+
+    <label for="pickup-notes">Pickup / Meeting Notes (optional)</label>
+    <textarea id="pickup-notes" name="Pickup / Meeting Notes" rows="3" placeholder="Pickup only, willing to meet, etc."></textarea>
+
+    <button type="submit">Continue to Payment</button>
+  </form>
+</section>
+
+<div id="global-footer"></div>
+
+<script src="/bandtroductions/global.js?v=1"></script>
+
+</body>
+</html>
