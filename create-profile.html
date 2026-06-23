@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Profile | BANDtroductions</title>
+  <link rel="stylesheet" href="style.css?v=5">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-60112G8RH3');
+  </script>
+
+  <style>
+    .form-switcher {
+      max-width: 760px;
+      margin: 0 auto 25px;
+    }
+
+    .helper-text {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-top: -5px;
+      margin-bottom: 15px;
+    }
+
+    .form-panel {
+      display: none;
+    }
+
+    .form-panel.active {
+      display: block;
+    }
+
+    .submission-form label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .submission-form input,
+    .submission-form select,
+    .submission-form textarea {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .venue-paid-note {
+      background: rgba(255, 255, 255, 0.06);
+      border-left: 4px solid #ff004c;
+      padding: 12px 15px;
+      margin: 15px 0 20px;
+      border-radius: 6px;
+    }
+
+    .conditional-field {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo-area">
+    <img src="IMG_9367.png" alt="BANDtroductions Logo">
+    <p class="tagline">Maine's Musician Hub</p>
+  </div>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="bands.html">Browse Bands</a>
+    <a href="musicians.html">Browse Musicians</a>
+    <a href="venues.html">Browse Venues</a>
+    <a href="bandmatch.html">BandMatch</a>
+    <a href="create-profile.html">Create Profile</a>
+    <a href="sponsors.html">Sponsors</a>
+    <a href="support.html">Support</a>
+    <a href="about.html">About</a>
+    <a href="fan-wall.html" style="color:#ff004c;">Fan Wall-(Live)</a>
+  </nav>
+</header>
+
+<section class="form-page">
+
+  <h2>Create a Profile</h2>
+
+  <p>
+    Choose what type of profile you want to create, then fill out the proper form below.
+    Uploads are supported for images, and performance video links must be YouTube or Vimeo where required.
+  </p>
+
+  <div class="form-switcher">
+    <label for="profile-type">Profile Type *</label>
+    <select id="profile-type" name="Profile Type" onchange="showSelectedForm()" required>
+      <option value="">Select Profile Type</option>
+      <option value="band">Band</option>
+      <option value="musician">Musician</option>
+      <option value="venue">Venue</option>
+    </select>
+  </div>
+
+  <!-- BAND FORM -->
+  <div id="band-form-panel" class="form-panel">
+    <h3>Create a Band Profile</h3>
+    <p>
+      Submit your band info and performance video to create your BANDtroductions profile and start getting discovered.
+    </p>
+
+    <form
+      action="https://formsubmit.co/mbergeron79@gmail.com"
+      method="POST"
+      class="submission-form"
+      enctype="multipart/form-data"
+      onsubmit="return validateBandForm()"
+    >
+      <input type="hidden" name="_subject" value="New BANDtroductions Band Submission">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_next" value="https://curiositydrop.com/bandtroductions/thank-you.html">
+      <input type="hidden" name="Profile Type" value="Band">
+
+      <p style="display:none;">
+        <label>Don't fill this out if you're human: <input name="_honey"></label>
+      </p>
+
+      <label for="band-name">Band Name *</label>
+      <input type="text" id="band-name" name="Band Name" required>
+
+      <label for="band-location">Town / City *</label>
+      <input type="text" id="band-location" name="Location" placeholder="Ex: Saco, ME" required>
+
+      <label for="band-genre">Genre *</label>
+      <input type="text" id="band-genre" name="Genre" placeholder="Ex: Rock, Alternative (pick best 2)" required>
+
+      <label for="band-members">Current Members</label>
+      <input type="text" id="band-members" name="Members">
+
+      <label for="band-looking-members">Are you looking for members?</label>
+      <select id="band-looking-members" name="Looking For Members?" onchange="toggleBandLookingFields()">
+        <option value="No" selected>No</option>
+        <option value="Yes">Yes</option>
+      </select>
+
+      <div id="band-looking-members-fields" class="conditional-field">
+        <label for="band-looking-for">Who are you looking for?</label>
+        <input type="text" id="band-looking-for" name="Looking For" placeholder="Ex: Vocalist, guitarist, drummer">
+      </div>
+
+      <label for="band-influences">Influences</label>
+      <input type="text" id="band-influences" name="Influences">
+
+      <label for="band-video">Performance Video Link 1 * (YouTube or Vimeo only)</label>
+      <input type="url" id="band-video" name="Video Link 1" required>
+
+      <label for="band-video-2">Performance Video Link 2 (Optional)</label>
+      <input type="url" id="band-video-2" name="Video Link 2">
+
+      <label for="band-video-3">Performance Video Link 3 (Optional)</label>
+      <input type="url" id="band-video-3" name="Video Link 3">
+
+      <label for="band-video-4">Performance Video Link 4 (Optional)</label>
+      <input type="url" id="band-video-4" name="Video Link 4">
+
+      <label for="band-video-5">Performance Video Link 5 (Optional)</label>
+      <input type="url" id="band-video-5" name="Video Link 5">
+
+      <p class="helper-text">
+        Paste YouTube or Vimeo performance links only. Facebook and Instagram video links do not work properly for profiles.
+      </p>
+
+      <label for="band-image">Band Logo or Photo *</label>
+<input type="file" id="band-image" name="attachment" accept="image/*" required>
+
+<p class="helper-text">
+  Upload a clear band photo or logo. No image links needed.
+</p>
+
+<label for="band-banner-image">Banner / Header Image</label>
+<input type="file" id="band-banner-image" name="Band Banner Image" accept="image/*">
+
+<p class="helper-text">
+  Optional but recommended. Upload a wide banner image for the top of your profile page.
+</p>
+
+      <label for="band-bio">Short Band Bio *</label>
+      <textarea id="band-bio" name="Band Bio" rows="6" required></textarea>
+
+      <p class="helper-text">
+        Tell people about your sound, style, and vibe.
+      </p>
+
+      <label for="band-email">Email *</label>
+      <input type="email" id="band-email" name="Email" placeholder="you@yourband.com" required>
+
+      <p class="helper-text">
+        Enter a valid email address. This is required.
+      </p>
+
+      <label for="band-password">Enter Password *</label>
+      <input type="password" id="band-password" name="Profile Password" required>
+
+      <p class="helper-text">
+        Password must be at least 8 characters and include 1 uppercase letter, 1 number, and 1 special character.
+      </p>
+
+      <label for="band-confirm-password">Confirm Password *</label>
+      <input type="password" id="band-confirm-password" required>
+
+      <button type="submit">Submit Band</button>
+    </form>
+  </div>
+
+  <!-- MUSICIAN FORM -->
+  <div id="musician-form-panel" class="form-panel">
+    <h3>Create a Musician Profile</h3>
+    <p>
+      Send in your info and performance video to be featured on BANDtroductions.
+    </p>
+
+    <form
+      action="https://formsubmit.co/mbergeron79@gmail.com"
+      method="POST"
+      class="submission-form"
+      enctype="multipart/form-data"
+      onsubmit="return validateMusicianForm()"
+    >
+      <input type="hidden" name="_subject" value="New BANDtroductions Musician Submission">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_next" value="https://curiositydrop.com/bandtroductions/thank-you.html">
+      <input type="hidden" name="Profile Type" value="Musician">
+
+      <p style="display:none;">
+        <label>Don't fill this out if you're human: <input name="_honey"></label>
+      </p>
+
+      <label for="musician-name">Name / Stage Name *</label>
+      <input type="text" id="musician-name" name="Musician Name" required>
+
+      <label for="musician-instrument">Instrument *</label>
+      <input type="text" id="musician-instrument" name="Instrument" required>
+
+      <label for="musician-location">Town / City *</label>
+      <input type="text" id="musician-location" name="Location" placeholder="Ex: Portland, ME" required>
+
+      <label for="musician-genre">Style / Genre *</label>
+      <input type="text" id="musician-genre" name="Genre" placeholder="Ex: Rock, Acoustic (pick best 2)" required>
+
+      <label for="musician-looking-band">Are you looking to join a band?</label>
+      <select id="musician-looking-band" name="Looking To Join A Band?" onchange="toggleMusicianLookingFields()">
+        <option value="No" selected>No</option>
+        <option value="Yes">Yes</option>
+      </select>
+
+      <div id="musician-looking-band-fields" class="conditional-field">
+        <label for="musician-looking-for">What kind of band are you looking for?</label>
+        <input type="text" id="musician-looking-for" name="Looking To Join" placeholder="Ex: Rock band, acoustic duo, metal project">
+      </div>
+
+      <label for="musician-influences">Influences</label>
+      <input type="text" id="musician-influences" name="Influences">
+
+      <label for="musician-availability">Availability</label>
+      <input type="text" id="musician-availability" name="Availability">
+
+      <label for="musician-video">Performance Video Link 1 * (YouTube or Vimeo only)</label>
+      <input type="url" id="musician-video" name="Video Link 1" required>
+
+      <label for="musician-video-2">Performance Video Link 2 (Optional)</label>
+      <input type="url" id="musician-video-2" name="Video Link 2">
+
+      <label for="musician-video-3">Performance Video Link 3 (Optional)</label>
+      <input type="url" id="musician-video-3" name="Video Link 3">
+
+      <label for="musician-video-4">Performance Video Link 4 (Optional)</label>
+      <input type="url" id="musician-video-4" name="Video Link 4">
+
+      <label for="musician-video-5">Performance Video Link 5 (Optional)</label>
+      <input type="url" id="musician-video-5" name="Video Link 5">
+
+      <p class="helper-text">
+        Paste YouTube or Vimeo performance links only. Facebook and Instagram video links do not work properly for profiles.
+      </p>
+
+      <label for="musician-photo">Profile Photo *</label>
+<input type="file" id="musician-photo" name="attachment" accept="image/*" required>
+
+<p class="helper-text">
+  Upload a clear profile photo. No image links needed.
+</p>
+
+<label for="musician-banner-image">Banner / Header Image</label>
+<input type="file" id="musician-banner-image" name="Musician Banner Image" accept="image/*">
+
+<p class="helper-text">
+  Optional but recommended. Upload a wide banner image for the top of your profile page.
+</p>
+
+      <label for="musician-bio">Short Bio *</label>
+      <textarea id="musician-bio" name="Bio" rows="6" required></textarea>
+
+      <label for="musician-email">Email *</label>
+      <input type="email" id="musician-email" name="Email" placeholder="you@example.com" required>
+
+      <p class="helper-text">
+        Enter a valid email address. This is required.
+      </p>
+
+      <label for="musician-password">Enter Password *</label>
+      <input type="password" id="musician-password" name="Profile Password" required>
+
+      <p class="helper-text">
+        Password must be at least 8 characters and include 1 uppercase letter, 1 number, and 1 special character.
+      </p>
+
+      <label for="musician-confirm-password">Confirm Password *</label>
+      <input type="password" id="musician-confirm-password" required>
+
+      <button type="submit">Submit Musician Profile</button>
+    </form>
+  </div>
+
+  <!-- VENUE FORM -->
+  <div id="venue-form-panel" class="form-panel">
+    <h3>Create a Venue Profile</h3>
+    <p>
+      Own or manage a venue that supports live music? Send in your venue details to be featured on BANDtroductions.
+    </p>
+
+    <div class="venue-paid-note">
+      <strong>Note:</strong> Venue profiles are a paid listing on BANDtroductions. Payment option coming soon.
+    </div>
+
+    <form
+      action="https://formsubmit.co/mbergeron79@gmail.com"
+      method="POST"
+      class="submission-form"
+      enctype="multipart/form-data"
+      onsubmit="return validateVenueForm()"
+    >
+      <input type="hidden" name="_subject" value="New BANDtroductions Venue Submission">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_next" value="https://curiositydrop.com/bandtroductions/thank-you.html">
+      <input type="hidden" name="Profile Type" value="Venue">
+
+      <p style="display:none;">
+        <label>Don't fill this out if you're human: <input name="_honey"></label>
+      </p>
+
+      <label for="venue-name">Venue Name *</label>
+      <input type="text" id="venue-name" name="Venue Name" required>
+
+      <label for="venue-town">Town / City *</label>
+      <input type="text" id="venue-town" name="Location" required>
+
+      <label for="venue-type">Type of Venue</label>
+      <input type="text" id="venue-type" name="Venue Type" placeholder="Ex: Bar, Brewery, Club, Event Space">
+
+      <label for="venue-genres">Genres Hosted</label>
+      <input type="text" id="venue-genres" name="Genres Hosted">
+
+      <label for="venue-booking-status">Booking Status</label>
+      <input type="text" id="venue-booking-status" name="Booking Status" placeholder="Ex: Currently Booking">
+
+      <label for="venue-website-social">Website or Social Link</label>
+      <input type="text" id="venue-website-social" name="Website / Social">
+
+      <label for="venue-video-1">Venue Video Link 1 (Optional - YouTube or Vimeo only)</label>
+      <input type="url" id="venue-video-1" name="Video Link 1">
+
+      <label for="venue-video-2">Venue Video Link 2 (Optional)</label>
+      <input type="url" id="venue-video-2" name="Video Link 2">
+
+      <label for="venue-video-3">Venue Video Link 3 (Optional)</label>
+      <input type="url" id="venue-video-3" name="Video Link 3">
+
+      <label for="venue-video-4">Venue Video Link 4 (Optional)</label>
+      <input type="url" id="venue-video-4" name="Video Link 4">
+
+      <label for="venue-video-5">Venue Video Link 5 (Optional)</label>
+      <input type="url" id="venue-video-5" name="Video Link 5">
+
+      <p class="helper-text">
+        Paste YouTube or Vimeo video links only if included. Facebook and Instagram video links do not work properly for profiles.
+      </p>
+
+      <label for="venue-photo">Venue Photo or Logo *</label>
+<input type="file" id="venue-photo" name="attachment" accept="image/*" required>
+
+<p class="helper-text">
+  Upload a clear venue photo or logo. No image links needed.
+</p>
+
+<label for="venue-banner-image">Banner / Header Image</label>
+<input type="file" id="venue-banner-image" name="Venue Banner Image" accept="image/*">
+
+<p class="helper-text">
+  Optional but recommended. Upload a wide banner image for the top of your venue profile page.
+</p>
+
+      <label for="venue-description">Short Venue Description *</label>
+      <textarea id="venue-description" name="Venue Description" rows="6" required></textarea>
+
+      <label for="venue-email">Email *</label>
+      <input type="email" id="venue-email" name="Email" placeholder="you@venue.com" required>
+
+      <p class="helper-text">
+        Enter a valid email address. This is required.
+      </p>
+
+      <label for="venue-password">Enter Password *</label>
+      <input type="password" id="venue-password" name="Profile Password" required>
+
+      <p class="helper-text">
+        Password must be at least 8 characters and include 1 uppercase letter, 1 number, and 1 special character.
+      </p>
+
+      <label for="venue-confirm-password">Confirm Password *</label>
+      <input type="password" id="venue-confirm-password" required>
+
+      <button type="submit">Submit Venue</button>
+      <!-- <button type="button">Pay and Submit Venue</button> -->
+    </form>
+  </div>
+
+</section>
+
+<footer>
+  <p>© BANDtroductions</p>
+</footer>
+
+<script>
+  function showSelectedForm() {
+    const selected = document.getElementById("profile-type").value;
+
+    const panels = document.querySelectorAll(".form-panel");
+    panels.forEach(panel => panel.classList.remove("active"));
+
+    if (selected === "band") {
+      document.getElementById("band-form-panel").classList.add("active");
+    } else if (selected === "musician") {
+      document.getElementById("musician-form-panel").classList.add("active");
+    } else if (selected === "venue") {
+      document.getElementById("venue-form-panel").classList.add("active");
+    }
+  }
+
+  function toggleBandLookingFields() {
+    const select = document.getElementById("band-looking-members");
+    const fields = document.getElementById("band-looking-members-fields");
+    fields.style.display = select.value === "Yes" ? "block" : "none";
+  }
+
+  function toggleMusicianLookingFields() {
+    const select = document.getElementById("musician-looking-band");
+    const fields = document.getElementById("musician-looking-band-fields");
+    fields.style.display = select.value === "Yes" ? "block" : "none";
+  }
+
+  function isValidVideoLink(link) {
+    const lower = link.trim().toLowerCase();
+    return (
+      lower.includes("youtube.com") ||
+      lower.includes("youtu.be") ||
+      lower.includes("vimeo.com")
+    );
+  }
+
+  function isStrongPassword(password) {
+    const strongPasswordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    return strongPasswordPattern.test(password);
+  }
+
+  function validatePasswordMatch(passwordId, confirmPasswordId) {
+    const password = document.getElementById(passwordId).value;
+    const confirmPassword = document.getElementById(confirmPasswordId).value;
+
+    if (password !== confirmPassword) {
+      alert("Passwords must match exactly.");
+      return false;
+    }
+
+    return true;
+  }
+
+  function validateOptionalVideoFields(videoIds, errorMessage) {
+    for (let i = 0; i < videoIds.length; i++) {
+      const field = document.getElementById(videoIds[i]);
+      if (field && field.value.trim() !== "" && !isValidVideoLink(field.value)) {
+        alert(errorMessage);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function validateBandForm() {
+    const videoLink = document.getElementById("band-video").value;
+    const password = document.getElementById("band-password").value;
+
+    if (!isValidVideoLink(videoLink)) {
+      alert("Please submit a YouTube or Vimeo link only for the band video.");
+      return false;
+    }
+
+    if (!validateOptionalVideoFields(
+      ["band-video-2", "band-video-3", "band-video-4", "band-video-5"],
+      "Please use YouTube or Vimeo links only for all band video fields."
+    )) {
+      return false;
+    }
+
+    if (!isStrongPassword(password)) {
+      alert("Password must be at least 8 characters and include 1 uppercase letter, 1 number, and 1 special character.");
+      return false;
+    }
+
+    if (!validatePasswordMatch("band-password", "band-confirm-password")) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function validateMusicianForm() {
+    const videoLink = document.getElementById("musician-video").value;
+    const password = document.getElementById("musician-password").value;
+
+    if (!isValidVideoLink(videoLink)) {
+      alert("Please submit a YouTube or Vimeo link only for the musician video.");
+      return false;
+    }
+
+    if (!validateOptionalVideoFields(
+      ["musician-video-2", "musician-video-3", "musician-video-4", "musician-video-5"],
+      "Please use YouTube or Vimeo links only for all musician video fields."
+    )) {
+      return false;
+    }
+
+    if (!isStrongPassword(password)) {
+      alert("Password must be at least 8 characters and include 1 uppercase letter, 1 number, and 1 special character.");
+      return false;
+    }
+
+    if (!validatePasswordMatch("musician-password", "musician-confirm-password")) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function validateVenueForm() {
+    const password = document.getElementById("venue-password").value;
+
+    if (!validateOptionalVideoFields(
+      ["venue-video-1", "venue-video-2", "venue-video-3", "venue-video-4", "venue-video-5"],
+      "Please use YouTube or Vimeo links only for all venue video fields."
+    )) {
+      return false;
+    }
+
+    if (!isStrongPassword(password)) {
+      alert("Password must be at least 8 characters and include 1 uppercase letter, 1 number, and 1 special character.");
+      return false;
+    }
+
+    if (!validatePasswordMatch("venue-password", "venue-confirm-password")) {
+      return false;
+    }
+
+    return true;
+  }
+</script>
+
+</body>
+</html>

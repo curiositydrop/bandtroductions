@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fan Wall | BANDtroductions</title>
+  <link rel="stylesheet" href="style.css?v=5">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-60112G8RH3');
+  </script>
+
+  <style>
+    .fanwall-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 30px 20px 70px;
+    }
+
+    .fanwall-grid {
+      display: flex;
+      gap: 30px;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .fanwall-card,
+    .fanwall-feed {
+      background: #222;
+      border-radius: 8px;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    .fanwall-card {
+      width: 360px;
+      max-width: 100%;
+    }
+
+    .fanwall-feed {
+      flex: 1 1 600px;
+      min-width: 300px;
+    }
+
+    .fanwall-card h3,
+    .fanwall-feed h3 {
+      font-size: 32px;
+      margin-top: 0;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .fanwall-card p,
+    .fanwall-feed p,
+    .fanwall-helper,
+    .fanwall-status,
+    .fanwall-empty,
+    .fanwall-post-time {
+      font-size: 18px;
+      line-height: 1.6;
+    }
+
+    .fanwall-form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .fanwall-form-group label {
+      display: block;
+      font-weight: bold;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .fanwall-form-group input,
+    .fanwall-form-group select,
+    .fanwall-form-group textarea {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 4px;
+      font-size: 18px;
+      background: #111;
+      color: white;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    .fanwall-form-group select {
+      appearance: none;
+    }
+
+    .fanwall-form-group textarea {
+      min-height: 130px;
+      resize: vertical;
+    }
+
+    .fanwall-submit {
+      width: 100%;
+      border: none;
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+    }
+
+    .fanwall-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .fanwall-char-count {
+      text-align: right;
+      margin-top: 8px;
+      font-size: 15px;
+      color: #aaa;
+    }
+
+    .fanwall-helper {
+      color: #aaa;
+      margin-top: 12px;
+    }
+
+    .fanwall-status {
+      color: #0ff;
+      min-height: 24px;
+      margin-top: 12px;
+    }
+
+    .fanwall-feed-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .fanwall-feed-top h3 {
+      margin: 0;
+      text-align: left;
+    }
+
+    .fanwall-feed-top span {
+      color: #aaa;
+      font-size: 16px;
+    }
+
+    .fanwall-posts {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .fanwall-post {
+      background: #111;
+      border-left: 4px solid #ff004c;
+      border-radius: 6px;
+      padding: 16px;
+    }
+
+    .fanwall-post-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .fanwall-post-name {
+      font-size: 20px;
+      font-weight: bold;
+      color: white;
+    }
+
+    .fanwall-post-type {
+      background: rgba(0, 255, 255, 0.08);
+      color: #0ff;
+      padding: 6px 10px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .fanwall-post-message {
+      font-size: 19px;
+      line-height: 1.6;
+      color: white;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 10px;
+    }
+
+    .fanwall-post-time {
+      color: #999;
+      font-size: 15px;
+    }
+
+    .fanwall-post-actions {
+      margin-top: 12px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .fanwall-delete-btn {
+      background: #ff004c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .fanwall-empty {
+      text-align: center;
+      color: #aaa;
+      background: #111;
+      border-radius: 6px;
+      padding: 25px;
+    }
+
+    @media (max-width: 768px) {
+      .fanwall-wrap {
+        padding: 20px 20px 60px;
+      }
+
+      .fanwall-card,
+      .fanwall-feed {
+        width: 100%;
+        padding: 20px;
+      }
+
+      .fanwall-card h3,
+      .fanwall-feed h3 {
+        font-size: 28px;
+      }
+
+      .fanwall-form-group label {
+        font-size: 18px;
+      }
+
+      .fanwall-form-group input,
+      .fanwall-form-group select,
+      .fanwall-form-group textarea {
+        font-size: 16px;
+      }
+
+      .fanwall-post-name {
+        font-size: 18px;
+      }
+
+      .fanwall-post-message {
+        font-size: 17px;
+      }
+    }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, query, limitToLast, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB0OomEFVzP4folbUyuBD-PKEoXKVnnEOg",
+      authDomain: "picfanwall.firebaseapp.com",
+      projectId: "picfanwall",
+      storageBucket: "picfanwall.appspot.com",
+      messagingSenderId: "619099317643",
+      appId: "1:619099317643:web:13fb140e51e01af5983b8e",
+      databaseURL: "https://picfanwall-default-rtdb.firebaseio.com"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const WALL_PATH = "bandtroductionsFanWall";
+
+    const bannedWords = [
+      "fuck", "fucking", "fucker", "shit", "shitty", "bitch", "bitches",
+      "asshole", "assholes", "dick", "pussy", "cunt", "motherfucker",
+      "motherfuckers", "slut", "whore", "bastard", "damn"
+    ];
+
+    const ADMIN_PASSWORD = "Nicholas#1";
+    const COOLDOWN_SECONDS = 30;
+
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function censorProfanity(text) {
+      let cleaned = text || "";
+      bannedWords.forEach(word => {
+        const pattern = new RegExp(`\\b${escapeRegExp(word)}\\b`, "gi");
+        cleaned = cleaned.replace(pattern, match => "*".repeat(match.length));
+      });
+      return cleaned;
+    }
+
+    function formatTime(timestamp) {
+      if (!timestamp) return "Just now";
+      const date = new Date(timestamp);
+      return date.toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      });
+    }
+
+    function isAdmin() {
+      return localStorage.getItem("btFanWallAdmin") === "true";
+    }
+
+    function getCooldownRemaining() {
+      const lastPost = Number(localStorage.getItem("btFanWallLastPost") || "0");
+      const elapsed = Math.floor((Date.now() - lastPost) / 1000);
+      return Math.max(0, COOLDOWN_SECONDS - elapsed);
+    }
+
+    function setLastPostNow() {
+      localStorage.setItem("btFanWallLastPost", Date.now().toString());
+    }
+
+    async function deletePost(postId) {
+      if (!isAdmin()) return;
+      const confirmed = confirm("Delete this post?");
+      if (!confirmed) return;
+
+      try {
+        await remove(ref(database, `${WALL_PATH}/${postId}`));
+      } catch (error) {
+        console.error("Delete error:", error);
+        alert("Could not delete post.");
+      }
+    }
+
+    function createPostElement(postId, data) {
+      const post = document.createElement("div");
+      post.className = "fanwall-post";
+
+      const top = document.createElement("div");
+      top.className = "fanwall-post-top";
+
+      const name = document.createElement("div");
+      name.className = "fanwall-post-name";
+      name.textContent = data.name?.trim() ? data.name.trim() : "Anonymous Fan";
+
+      const type = document.createElement("div");
+      type.className = "fanwall-post-type";
+      type.textContent = data.type || "Fan Shout";
+
+      const message = document.createElement("div");
+      message.className = "fanwall-post-message";
+      message.textContent = data.text || "";
+
+      const time = document.createElement("div");
+      time.className = "fanwall-post-time";
+      time.textContent = formatTime(data.timestamp);
+
+      top.appendChild(name);
+      top.appendChild(type);
+
+      post.appendChild(top);
+      post.appendChild(message);
+      post.appendChild(time);
+
+      if (isAdmin()) {
+        const actions = document.createElement("div");
+        actions.className = "fanwall-post-actions";
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "fanwall-delete-btn";
+        deleteBtn.textContent = "Delete Post";
+        deleteBtn.addEventListener("click", () => deletePost(postId));
+
+        actions.appendChild(deleteBtn);
+        post.appendChild(actions);
+      }
+
+      return post;
+    }
+
+    function updateCooldownUI(button, statusMessage) {
+      const remaining = getCooldownRemaining();
+
+      if (remaining > 0 && !isAdmin()) {
+        button.disabled = true;
+        statusMessage.textContent = `Please wait ${remaining}s before posting again.`;
+      } else {
+        button.disabled = false;
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const postsContainer = document.getElementById("posts");
+      const form = document.getElementById("fanWallForm");
+      const nameInput = document.getElementById("name");
+      const typeInput = document.getElementById("type");
+      const messageInput = document.getElementById("message");
+      const statusMessage = document.getElementById("statusMessage");
+      const charCount = document.getElementById("charCount");
+      const submitButton = document.getElementById("submitButton");
+      const wallLabel = document.getElementById("wallLabel");
+      const title = document.getElementById("fanWallTitle");
+
+      if (isAdmin()) {
+        wallLabel.textContent = "Newest posts first • Admin mode";
+      }
+
+      const wallRef = query(ref(database, WALL_PATH), limitToLast(100));
+
+      onValue(wallRef, (snapshot) => {
+        const allPosts = [];
+
+        snapshot.forEach((childSnapshot) => {
+          allPosts.push({
+            id: childSnapshot.key,
+            ...childSnapshot.val()
+          });
+        });
+
+        allPosts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+        postsContainer.innerHTML = "";
+
+        if (!allPosts.length) {
+          postsContainer.innerHTML = `<div class="fanwall-empty">Nothing on the wall yet. Be the first to leave a message.</div>`;
+          return;
+        }
+
+        allPosts.forEach((postData) => {
+          postsContainer.appendChild(createPostElement(postData.id, postData));
+        });
+      });
+
+      messageInput.addEventListener("input", () => {
+        charCount.textContent = `${messageInput.value.length}/300`;
+      });
+
+      setInterval(() => updateCooldownUI(submitButton, statusMessage), 1000);
+      updateCooldownUI(submitButton, statusMessage);
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        if (!isAdmin() && getCooldownRemaining() > 0) {
+          updateCooldownUI(submitButton, statusMessage);
+          return;
+        }
+
+        let name = nameInput.value.trim();
+        let type = typeInput.value;
+        let text = messageInput.value.trim();
+
+        if (!text) {
+          statusMessage.textContent = "Please enter a message first.";
+          return;
+        }
+
+        if (text.length > 300) {
+          statusMessage.textContent = "Please keep your message under 300 characters.";
+          return;
+        }
+
+        name = censorProfanity(name);
+        text = censorProfanity(text);
+
+        push(ref(database, WALL_PATH), {
+          name,
+          type,
+          text,
+          timestamp: Date.now()
+        })
+        .then(() => {
+
+          fetch("https://hooks.zapier.com/hooks/catch/26890159/upi5zg9/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              name,
+              type,
+              text,
+              timestamp: Date.now()
+            })
+          }).catch(err => console.log("Zapier error:", err));
+
+          form.reset();
+          charCount.textContent = "0/300";
+          setLastPostNow();
+          updateCooldownUI(submitButton, statusMessage);
+          statusMessage.textContent = "Your message just hit the wall.";
+        })
+        .catch((error) => {
+          console.error("Error saving message:", error);
+          statusMessage.textContent = "Something went wrong. Please try again.";
+        });
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "F" && e.shiftKey && e.ctrlKey) {
+          const entered = prompt("Admin password:");
+          if (entered === ADMIN_PASSWORD) {
+            localStorage.setItem("btFanWallAdmin", "true");
+            location.reload();
+          } else if (entered !== null) {
+            alert("Wrong password.");
+          }
+        }
+
+        if (e.key === "Escape" && isAdmin()) {
+          localStorage.removeItem("btFanWallAdmin");
+          location.reload();
+        }
+      });
+
+      let tapCount = 0;
+      let lastTap = 0;
+
+      title.addEventListener("click", () => {
+        const now = Date.now();
+
+        if (now - lastTap < 1000) {
+          tapCount++;
+        } else {
+          tapCount = 1;
+        }
+
+        lastTap = now;
+
+        if (tapCount >= 5) {
+          tapCount = 0;
+
+          const entered = prompt("Admin password:");
+          if (entered === ADMIN_PASSWORD) {
+            localStorage.setItem("btFanWallAdmin", "true");
+            location.reload();
+          } else if (entered !== null) {
+            alert("Wrong password.");
+          }
+        }
+      });
+    });
+  </script>
+</head>
+
+<body>
+
+<div id="global-header"></div>
+
+<section class="hero">
+  <h2 id="fanWallTitle">Fan Wall</h2>
+  <p>
+    Leave a message for the Maine music scene. Shout out a band, post feedback on the site,
+    or let other musicians know what kind of sound you're looking for.
+  </p>
+  <p style="color:#888;font-size:18px;margin-top:10px;">
+    Live updates. Real fans. Real musicians. Real feedback.
+  </p>
+
+  <div class="hero-buttons">
+    <a class="button" href="bands.html">Browse Bands</a>
+    <a class="button" href="musicians.html">Browse Musicians</a>
+  </div>
+</section>
+
+<section class="fanwall-wrap">
+  <div class="fanwall-grid">
+
+    <div class="fanwall-card">
+      <h3>Leave Your Mark</h3>
+      <p>
+        Drop a message on the wall and everyone sees it live. Show love to a band, leave feedback,
+        or tell the Maine scene what you're looking for.
+      </p>
+
+      <form id="fanWallForm">
+        <div class="fanwall-form-group">
+          <label for="name">Name</label>
+          <input id="name" type="text" maxlength="40" placeholder="Your name (optional)">
+        </div>
+
+        <div class="fanwall-form-group">
+          <label for="type">Post Type</label>
+          <select id="type">
+            <option value="Fan Shout">Fan Shout</option>
+            <option value="Band Love">Band Love</option>
+            <option value="Site Feedback">Site Feedback</option>
+            <option value="Looking For Bandmates">Looking For Bandmates</option>
+          </select>
+        </div>
+
+        <div class="fanwall-form-group">
+          <label for="message">Message</label>
+          <textarea id="message" maxlength="300" placeholder="Say something to the scene..."></textarea>
+          <div class="fanwall-char-count" id="charCount">0/300</div>
+        </div>
+
+        <button type="submit" class="button fanwall-submit" id="submitButton">Post to the Wall</button>
+        <div class="fanwall-status" id="statusMessage"></div>
+        <div class="fanwall-helper">Keep it respectful. Profanity is automatically filtered.</div>
+      </form>
+    </div>
+
+    <div class="fanwall-feed">
+      <div class="fanwall-feed-top">
+        <h3>Live Wall</h3>
+        <span id="wallLabel">Newest posts first</span>
+      </div>
+
+      <div id="posts" class="fanwall-posts">
+        <div class="fanwall-empty">Loading wall...</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div id="global-footer"></div>
+
+<script src="global.js"></script>
+
+</body>
+</html>

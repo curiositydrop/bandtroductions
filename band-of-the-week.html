@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Band of the Week | BANDtroductions</title>
+
+<link rel="stylesheet" href="style.css?v=29">
+</head>
+
+<body class="botw-page">
+
+<div id="global-header"></div>
+
+<section class="botw-current botw-hero">
+
+  <h2>🏆 Band of the Week</h2>
+
+  <div class="botw-sponsor">
+    <a href="#" class="botw-sponsor-link">
+      <span>Sponsored by: <strong>New Leaf Painting Co.</strong></span>
+      <img src="E25C1BF6-8B68-40AD-BC11-2427F37BC179.png" alt="New Leaf Painting Co. logo" class="botw-sponsor-logo">
+    </a>
+  </div>
+
+  <div class="botw-winner" id="currentWinnerCard">
+
+    <h3 id="currentWinnerName">Loading...</h3>
+
+    <img id="currentWinnerImage" src="IMG_9383.jpeg" alt="Band of the Week">
+
+    <p id="currentWinnerMeta">Loading band info...</p>
+    <p id="currentWinnerVotes">Loading live stats...</p>
+
+    <div class="band-links">
+      <a class="button" id="currentWinnerLink" href="#">View Band</a>
+      <a class="button" href="bandfeed1.html">Vote 🤘</a>
+    </div>
+
+  </div>
+
+</section>
+
+<section class="botw-description">
+  <p>
+    Vote for your favorite local band across the site. Each week, the top voted band earns the spotlight and gets added to the archive.
+  </p>
+</section>
+
+<section class="botw-previous">
+  <h2>Live Vote Leaderboard</h2>
+  <div class="botw-archive" id="botwLeaderboard">
+    <p class="botw-empty">Loading leaderboard...</p>
+  </div>
+</section>
+
+<section class="botw-previous">
+  <h2>Previous Winners</h2>
+
+  <div class="botw-archive" id="previousWinners">
+    <p class="botw-empty">Previous winners will appear here once voting rounds begin.</p>
+  </div>
+</section>
+
+<div id="global-footer"></div>
+
+<script src="global.js"></script>
+<script type="module" src="band-of-the-week.js?v=5"></script>
+
+</body>
+</html>

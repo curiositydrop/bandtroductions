@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>BANDtroductions Presents: Burning Time LIVE</title>
+
+  <link rel="stylesheet" href="style.css?v=1" />
+
+  <style>
+    body {
+      margin: 0;
+      background: #050505;
+      color: #f5f5f5;
+      font-family: Arial, sans-serif;
+    }
+
+    .live-container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 30px 18px 60px;
+    }
+
+    .live-hero {
+      text-align: center;
+      padding: 35px 20px;
+      border: 1px solid rgba(0, 200, 180, 0.35);
+      border-radius: 18px;
+      background: radial-gradient(circle at top, rgba(0,200,180,0.16), #0b0b0b 60%);
+      margin-bottom: 28px;
+    }
+
+    .live-kicker {
+      color: #00c8b4;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+
+    .live-hero h1 {
+      margin: 12px 0 8px;
+      font-size: clamp(2rem, 5vw, 4rem);
+    }
+
+    .live-subtitle {
+      color: #ccc;
+      max-width: 760px;
+      margin: 0 auto 18px;
+      line-height: 1.5;
+    }
+
+    .logo-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .logo-placeholder {
+      width: 130px;
+      height: 70px;
+      border: 1px dashed rgba(255,255,255,0.35);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaa;
+      font-size: 0.8rem;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .live-content {
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) minmax(280px, 3fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel {
+      background: #0d0d0d;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.35);
+    }
+
+    .main-player {
+      background: #000;
+      border-radius: 14px;
+      aspect-ratio: 16 / 9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #888;
+      border: 1px solid rgba(0,200,180,0.25);
+      margin-bottom: 18px;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .section-title {
+      color: #00c8b4;
+      margin: 0 0 12px;
+      font-size: 1.2rem;
+    }
+
+    .pov-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 14px;
+    }
+
+    .pov-card {
+      background: #151515;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .pov-thumb {
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, #111, #222);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #777;
+      font-size: 0.85rem;
+    }
+
+    .pov-info {
+      padding: 10px;
+      font-size: 0.85rem;
+      color: #ccc;
+    }
+
+    .pov-info strong {
+      color: #fff;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .live-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .merch-item {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .merch-img {
+      width: 78px;
+      height: 78px;
+      border-radius: 10px;
+      background: #1f1f1f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #777;
+      font-size: 0.75rem;
+    }
+
+    .merch-item h4 {
+      margin: 0 0 5px;
+    }
+
+    .btn {
+      display: inline-block;
+      background: #00c8b4;
+      color: #000;
+      padding: 9px 13px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .sponsor-box {
+      border: 1px dashed rgba(0,200,180,0.4);
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      color: #aaa;
+      background: rgba(0,200,180,0.05);
+    }
+
+    .upload-section {
+      margin-top: 26px;
+    }
+
+    .upload-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .upload-grid label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      color: #ccc;
+      font-size: 0.9rem;
+    }
+
+    input, textarea, select {
+      background: #111;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      padding: 11px;
+      font-size: 1rem;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .fine-print {
+      color: #999;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      margin-top: 12px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin: 14px 0;
+      color: #ccc;
+      font-size: 0.9rem;
+    }
+
+    .checkbox-row input {
+      margin-top: 3px;
+    }
+
+    @media (max-width: 850px) {
+      .live-content {
+        grid-template-columns: 1fr;
+      }
+
+      .upload-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header id="global-header"></header>
+
+<main class="live-container">
+
+  <section class="live-hero">
+    <div class="live-kicker">BANDtroductions Presents</div>
+    <h1>Burning Time LIVE</h1>
+
+    <p class="live-subtitle">
+      Fan-shot concert clips uploaded live from the show. Pick your POV, watch the night unfold,
+      share the page, and support the band from wherever you are.
+    </p>
+
+    <div class="logo-row">
+      <div class="logo-placeholder">Band Logo</div>
+      <div class="logo-placeholder">Venue Logo</div>
+      <div class="logo-placeholder">Sponsor Logo</div>
+    </div>
+  </section>
+
+  <section class="live-content">
+
+    <div class="live-video-section panel">
+
+      <div class="main-player">
+        <div>
+          <strong>Featured POV Player</strong><br>
+          Uploaded fan clips will play here.
+        </div>
+      </div>
+
+      <h2 class="section-title">Choose Your POV</h2>
+
+      <div class="pov-grid">
+
+        <div class="pov-card">
+          <div class="pov-thumb">Sample Clip</div>
+          <div class="pov-info">
+            <strong>Front Row POV</strong>
+            Uploaded by Fan
+          </div>
+        </div>
+
+        <div class="pov-card">
+          <div class="pov-thumb">Sample Clip</div>
+          <div class="pov-info">
+            <strong>Stage Left POV</strong>
+            Uploaded by Fan
+          </div>
+        </div>
+
+        <div class="pov-card">
+          <div class="pov-thumb">Sample Clip</div>
+          <div class="pov-info">
+            <strong>Crowd POV</strong>
+            Uploaded by Fan
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <aside class="live-sidebar">
+
+      <div class="panel">
+
+        <h2 class="section-title">Support Burning Time</h2>
+
+        <div class="merch-item">
+          <div class="merch-img">Image</div>
+          <div>
+            <h4>Band Shirt</h4>
+            <a href="#" class="btn">Buy Merch</a>
+          </div>
+        </div>
+
+        <div class="merch-item">
+          <div class="merch-img">Image</div>
+          <div>
+            <h4>Hat / Hoodie</h4>
+            <a href="#" class="btn">Shop Now</a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="sponsor-box">
+        <strong>Event Sponsor Spot #1</strong><br>
+        Your business here.
+      </div>
+
+      <div class="sponsor-box">
+        <strong>Event Sponsor Spot #2</strong><br>
+        Your business here.
+      </div>
+
+    </aside>
+
+  </section>
+
+  <section class="upload-section panel">
+
+    <h2 class="section-title">Upload Your POV</h2>
+
+    <p style="color:#ccc;">
+      At the show? Record a short clip and upload it here so fans can watch your angle.
+    </p>
+
+    <form>
+
+      <div class="upload-grid">
+
+        <label class="full-width">
+          Choose Video
+          <input type="file" accept="video/*">
+        </label>
+
+        <label>
+          Your Name / Nickname
+          <input type="text" placeholder="Optional">
+        </label>
+
+        <label>
+          POV Location
+          <select>
+            <option>Choose one</option>
+            <option>Front Row</option>
+            <option>Stage Left</option>
+            <option>Stage Right</option>
+            <option>Balcony</option>
+            <option>Crowd / Pit</option>
+          </select>
+        </label>
+
+        <label class="full-width">
+          Caption
+          <textarea placeholder="Optional caption"></textarea>
+        </label>
+
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox">
+        <label>
+          I understand this upload may appear publicly on BANDtroductions LIVE.
+        </label>
+      </div>
+
+      <button type="submit" class="btn">Upload Clip</button>
+
+      <p class="fine-print">
+        Viewer discretion advised. Clips are user-submitted live event uploads and may not be pre-screened in real time.
+      </p>
+
+    </form>
+
+  </section>
+
+</main>
+
+<footer id="global-footer"></footer>
+
+<script>
+fetch('global.html?v=1')
+  .then(response => response.text())
+  .then(data => {
+    document.getElementById('global-header').innerHTML = data;
+
+    const footer = document.querySelector('#global-header footer');
+
+    if (footer) {
+      document.getElementById('global-footer').innerHTML = footer.outerHTML;
+      footer.remove();
+    }
+  });
+</script>
+
+<script src="global.js?v=1"></script>
+
+</body>
+</html>

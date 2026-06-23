@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watch Maine Music | BANDtroductions</title>
+
+<link rel="stylesheet" href="style.css?v=4">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-60112G8RH3');
+</script>
+
+<style>
+.loading-message {
+  text-align: center;
+  padding: 20px;
+  font-size: 1rem;
+  opacity: 0.85;
+}
+
+.watch-psa {
+  text-align: center;
+  margin-top: 25px;
+  opacity: 0.85;
+}
+
+.video-item.hidden-item {
+  display: none;
+}
+</style>
+</head>
+
+<body class="watch-page">
+
+<div id="global-header"></div>
+
+<section class="band-hero">
+  <h1>BANDfeed 🎸</h1>
+  <p>Watch, discover, and support Maine’s local music scene — all in one feed.</p>
+</section>
+
+<section class="video-player-wrap">
+  <div class="main-video">
+    <iframe
+      id="mainVideo"
+      src=""
+      title="Main Video Player"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen>
+    </iframe>
+  </div>
+
+  <div class="now-playing">
+    <h2 id="videoTitle">Loading videos...</h2>
+    <a class="button" id="profileLink" href="#">View Profile</a>
+  </div>
+</section>
+
+<section class="band-main">
+  <p class="video-cta">
+    Want your video featured here?
+    <a href="https://venmo.com/Telis-Bergeron" target="_blank">💙 Boost your video for $10</a>.
+  </p>
+
+  <div id="loadingMessage" class="loading-message">
+    Loading BANDfeed...
+  </div>
+
+  <div class="video-browser" id="videoBrowser"></div>
+
+  <div class="watch-psa">
+    Please excuse the appearance… we’re actively loading more bands as they join the movement 🎸
+  </div>
+</section>
+
+<div id="global-footer"></div>
+
+<script>
+const SOURCE_PAGES = [
+  "bands.html",
+  "musicians.html"
+];
+// If your actual file names are different, change them above only.
+
+const browserContainer = document.getElementById("videoBrowser");
+const loadingMessage = document.getElementById("loadingMessage");
+const mainVideo = document.getElementById("mainVideo");
+const videoTitle = document.getElementById("videoTitle");
+const profileLink = document.getElementById("profileLink");
+
+function normalizeYouTubeUrl(url) {
+  if (!url) return null;
+
+  try {
+    const cleanUrl = url.trim();
+
+    // Already embed
+    if (cleanUrl.includes("youtube.com/embed/")) {
+      return cleanUrl;
+    }
+
+    // youtu.be short link
+    if (cleanUrl.includes("youtu.be/")) {
+      const parts = cleanUrl.split("youtu.be/")[1];
+      const videoId = parts.split("?")[0].split("&")[0].split("/")[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+
+    // youtube watch link
+    if (cleanUrl.includes("youtube.com/watch")) {
+      const parsed = new URL(cleanUrl);
+      const videoId = parsed.searchParams.get("v");
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+    }
+
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function isGooglePhotosLink(url) {
+  if (!url) return false;
+  return url.includes("photos.app.goo.gl") || url.includes("photos.google.com");
+}
+
+function swapVideo(videoUrl, title, profileUrl) {
+  if (!videoUrl) return;
+  mainVideo.src = videoUrl;
+  videoTitle.textContent = `🔥 Featured: ${title}`;
+  profileLink.href = profileUrl || "#";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function createVideoItem(item) {
+  const div = document.createElement("div");
+  div.className = "video-item";
+
+  const safeMeta = item.meta ? item.meta : "Maine Music";
+
+  let watchButtonHtml = "";
+
+  if (item.embedUrl) {
+    watchButtonHtml = `
+      <a class="button" href="#"
+         onclick="swapVideo('${item.embedUrl}','${item.title.replace(/'/g, "\\'")}','${item.profileUrl}'); return false;">
+         ▶ Watch
+      </a>
+    `;
+  } else if (item.fallbackUrl) {
+    watchButtonHtml = `
+      <a class="button" href="${item.fallbackUrl}" target="_blank">
+         ▶ Watch
+      </a>
+    `;
+  }
+
+  div.innerHTML = `
+    <img src="${item.image || 'IMG_9383.jpeg'}" alt="${item.title}">
+    <div class="video-meta">
+      <h3>${item.title}</h3>
+      <p>${safeMeta}</p>
+    </div>
+    <div class="video-actions">
+      ${watchButtonHtml}
+      <a class="button" href="${item.profileUrl}">View Profile</a>
+    </div>
+  `;
+
+  return div;
+}
+
+async function fetchHtml(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+  return await response.text();
+}
+
+function parseCardsFromPage(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const cards = [...doc.querySelectorAll(".profile-card")];
+
+  return cards.map(card => {
+    const title = card.querySelector("h3")?.textContent?.trim() || "Untitled Artist";
+    const image = card.querySelector("img")?.getAttribute("src") || "";
+    const profileUrl = card.querySelector("a.button")?.getAttribute("href") || "";
+    const metaLines = [...card.querySelectorAll("p")].map(p => p.textContent.trim());
+    const meta = metaLines.join(" • ");
+    const dataVideo = card.getAttribute("data-video") || "";
+
+    return {
+      title,
+      image,
+      profileUrl,
+      meta,
+      dataVideo
+    };
+  }).filter(item => item.profileUrl);
+}
+
+async function extractVideoFromProfile(profileUrl, fallbackDataVideo) {
+  try {
+    const html = await fetchHtml(profileUrl);
+    const doc = new DOMParser().parseFromString(html, "text/html");
+
+    // 1. Embedded iframe
+    const iframe = doc.querySelector(".video-embed iframe, iframe");
+    if (iframe) {
+      const src = iframe.getAttribute("src");
+      const embedUrl = normalizeYouTubeUrl(src) || src;
+      return { embedUrl, fallbackUrl: null };
+    }
+
+    // 2. Look for YouTube / video button links
+    const links = [...doc.querySelectorAll("a")].map(a => a.getAttribute("href")).filter(Boolean);
+
+    for (const link of links) {
+      const ytEmbed = normalizeYouTubeUrl(link);
+      if (ytEmbed) {
+        return { embedUrl: ytEmbed, fallbackUrl: null };
+      }
+    }
+
+    // 3. Fallback to card data-video if present
+    const ytFromCard = normalizeYouTubeUrl(fallbackDataVideo);
+    if (ytFromCard) {
+      return { embedUrl: ytFromCard, fallbackUrl: null };
+    }
+
+    // 4. Google Photos fallback
+    if (isGooglePhotosLink(fallbackDataVideo)) {
+      return { embedUrl: null, fallbackUrl: fallbackDataVideo };
+    }
+
+    for (const link of links) {
+      if (isGooglePhotosLink(link)) {
+        return { embedUrl: null, fallbackUrl: link };
+      }
+    }
+
+    return null;
+  } catch (err) {
+    console.log("Skipped profile:", profileUrl, err);
+    return null;
+  }
+}
+
+async function loadBandfeed() {
+  const allCards = [];
+
+  for (const page of SOURCE_PAGES) {
+    try {
+      const html = await fetchHtml(page);
+      const cards = parseCardsFromPage(html);
+      allCards.push(...cards);
+    } catch (err) {
+      console.log("Could not load source page:", page, err);
+    }
+  }
+
+  const finalItems = [];
+
+  for (const card of allCards) {
+    const videoData = await extractVideoFromProfile(card.profileUrl, card.dataVideo);
+    if (!videoData) continue;
+
+    finalItems.push({
+      title: card.title,
+      image: card.image,
+      profileUrl: card.profileUrl,
+      meta: card.meta,
+      embedUrl: videoData.embedUrl,
+      fallbackUrl: videoData.fallbackUrl
+    });
+  }
+
+  browserContainer.innerHTML = "";
+
+  if (!finalItems.length) {
+    loadingMessage.textContent = "No videos found yet. Add more band and musician profiles with videos to populate BANDfeed.";
+    videoTitle.textContent = "No videos loaded yet";
+    mainVideo.src = "";
+    profileLink.href = "#";
+    return;
+  }
+
+  loadingMessage.style.display = "none";
+
+  // Put first playable embedded YouTube video in main player
+  const firstPlayable = finalItems.find(item => item.embedUrl);
+  if (firstPlayable) {
+    mainVideo.src = firstPlayable.embedUrl;
+    videoTitle.textContent = `🔥 Featured: ${firstPlayable.title}`;
+    profileLink.href = firstPlayable.profileUrl;
+  } else {
+    videoTitle.textContent = "Videos loaded below";
+    mainVideo.style.display = "none";
+    profileLink.href = "#";
+  }
+
+  finalItems.forEach(item => {
+    const el = createVideoItem(item);
+    browserContainer.appendChild(el);
+  });
+}
+
+loadBandfeed();
+</script>
+
+<script src="global.js"></script>
+
+</body>
+</html>

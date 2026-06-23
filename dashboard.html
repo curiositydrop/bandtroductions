@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Band Dashboard | BANDtroductions</title>
+<link rel="stylesheet" href="style.css?v=8">
+</head>
+
+<body class="new-band-profile-page">
+
+<div id="global-header"></div>
+
+<main class="new-band-profile" style="max-width:850px; margin:40px auto; padding:20px;">
+
+  <section class="profile-action-card">
+    <h1>Band Dashboard</h1>
+    <p class="profile-meta">Update your BANDtroductions profile.</p>
+
+    <div id="dashboard-content" style="display:none; flex-direction:column; gap:14px; margin-top:25px; text-align:left;">
+
+      <label>Band Name</label>
+      <input id="name" type="text">
+
+      <label>Genre / Location</label>
+      <input id="meta" type="text" placeholder="Rock / Metal • Maine">
+
+      <label>Badge Text</label>
+      <input id="badge" type="text">
+
+      <label>Banner Image</label>
+      <input id="bannerImage" type="text" placeholder="Image URL will appear here after upload">
+      <input id="bannerImageUpload" type="file" accept="image/*">
+
+      <label>Profile Image</label>
+      <input id="avatarImage" type="text" placeholder="Image URL will appear here after upload">
+      <input id="avatarImageUpload" type="file" accept="image/*">
+
+      <label>Featured Title</label>
+      <input id="featuredTitle" type="text">
+
+      <label>Featured Description</label>
+      <input id="featuredDescription" type="text">
+
+      <label>Featured YouTube Embed URL</label>
+      <input id="featuredVideo" type="text" placeholder="https://www.youtube.com/embed/...">
+
+      <label>Band Bio</label>
+      <textarea id="bio" rows="6"></textarea>
+
+      <label>Availability</label>
+      <input id="availability" type="text" placeholder="🎤 Available for gigs">
+
+      <label>Location</label>
+      <input id="location" type="text" placeholder="📍 Based in Maine">
+
+      <label>Booking Text</label>
+      <textarea id="bookingText" rows="3"></textarea>
+
+      <label>Booking Email</label>
+      <input id="bookingEmail" type="email">
+
+      <label>Spotify URL</label>
+      <input id="spotifyUrl" type="text">
+
+      <label>YouTube URL</label>
+      <input id="youtubeUrl" type="text">
+
+      <label>Instagram URL</label>
+      <input id="instagramUrl" type="text">
+
+      <label>Facebook URL</label>
+      <input id="facebookUrl" type="text">
+
+      <label>Website URL</label>
+      <input id="websiteUrl" type="text">
+
+      <label>Band Members</label>
+      <textarea id="members" rows="6" placeholder="One member per line"></textarea>
+
+      <button id="save-btn" class="profile-action support-action" type="button">
+        Save Changes
+      </button>
+
+      <button id="logout-btn" class="profile-action share-action" type="button">
+        Log Out
+      </button>
+
+      <p id="dashboard-message" style="margin-top:10px; text-align:center;"></p>
+    </div>
+
+    <p id="loading-message">Checking login...</p>
+  </section>
+
+</main>
+
+<div id="global-footer"></div>
+
+<script src="global.js"></script>
+
+<script type="module">
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyApLiiJsKTw1Fp8J3aQatMqiSZoP_6EycE",
+  authDomain: "bandfanwall.firebaseapp.com",
+  databaseURL: "https://bandfanwall-default-rtdb.firebaseio.com",
+  projectId: "bandfanwall",
+  storageBucket: "bandfanwall.firebasestorage.app",
+  messagingSenderId: "619241154826",
+  appId: "1:619241154826:web:25ddc58eef094e3c0732f3"
+};
+
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+const storage = getStorage(app);
+
+const band = "burning-time";
+
+const dashboardContent = document.getElementById("dashboard-content");
+const loadingMessage = document.getElementById("loading-message");
+const message = document.getElementById("dashboard-message");
+
+const fields = [
+  "name",
+  "meta",
+  "badge",
+  "bannerImage",
+  "avatarImage",
+  "featuredTitle",
+  "featuredDescription",
+  "featuredVideo",
+  "bio",
+  "availability",
+  "location",
+  "bookingText",
+  "bookingEmail"
+];
+
+const socialFields = {
+  spotifyUrl: "Spotify",
+  youtubeUrl: "YouTube",
+  instagramUrl: "Instagram",
+  facebookUrl: "Facebook",
+  websiteUrl: "Website"
+};
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  loadingMessage.style.display = "none";
+  dashboardContent.style.display = "flex";
+
+  const bandRef = ref(db, `Bands/${band}`);
+
+  onValue(bandRef, (snapshot) => {
+    const data = snapshot.val() || {};
+
+    fields.forEach((field) => {
+      const input = document.getElementById(field);
+      if (input) input.value = data[field] || "";
+    });
+
+    if (Array.isArray(data.members)) {
+      document.getElementById("members").value = data.members.join("\n");
+    }
+
+    if (Array.isArray(data.links)) {
+      data.links.forEach((link) => {
+        if (!link.label || !link.url) return;
+
+        if (link.label === "Spotify") document.getElementById("spotifyUrl").value = link.url;
+        if (link.label === "YouTube") document.getElementById("youtubeUrl").value = link.url;
+        if (link.label === "Instagram") document.getElementById("instagramUrl").value = link.url;
+        if (link.label === "Facebook") document.getElementById("facebookUrl").value = link.url;
+        if (link.label === "Website") document.getElementById("websiteUrl").value = link.url;
+      });
+    }
+  });
+});
+
+async function uploadFileIfSelected(fileInputId, saveFieldName, folderName) {
+  const fileInput = document.getElementById(fileInputId);
+
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+    return null;
+  }
+
+  const file = fileInput.files[0];
+  const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+  const filePath = `band-uploads/${band}/${folderName}/${Date.now()}-${cleanFileName}`;
+  const fileRef = storageRef(storage, filePath);
+
+  await uploadBytes(fileRef, file);
+
+  const downloadUrl = await getDownloadURL(fileRef);
+
+  document.getElementById(saveFieldName).value = downloadUrl;
+
+  return downloadUrl;
+}
+
+document.getElementById("save-btn").addEventListener("click", async () => {
+  message.textContent = "Saving...";
+
+  try {
+    const uploadedBannerUrl = await uploadFileIfSelected("bannerImageUpload", "bannerImage", "banner");
+    const uploadedAvatarUrl = await uploadFileIfSelected("avatarImageUpload", "avatarImage", "avatar");
+
+    if (uploadedBannerUrl) {
+      message.textContent = "Banner uploaded...";
+    }
+
+    if (uploadedAvatarUrl) {
+      message.textContent = "Profile image uploaded...";
+    }
+  } catch (error) {
+    console.error(error);
+    message.textContent = "Image upload failed. Check Firebase Storage rules.";
+    return;
+  }
+
+  const updates = {};
+
+  fields.forEach((field) => {
+    updates[field] = document.getElementById(field).value.trim();
+  });
+
+  updates.members = document.getElementById("members").value
+    .split("\n")
+    .map(member => member.trim())
+    .filter(member => member);
+
+  updates.links = Object.entries(socialFields)
+    .map(([inputId, label]) => {
+      const url = document.getElementById(inputId).value.trim();
+      return url ? { label, url } : null;
+    })
+    .filter(Boolean);
+
+  try {
+    await update(ref(db, `Bands/${band}`), updates);
+    message.textContent = "Saved! Refresh test.html to see the update.";
+  } catch (error) {
+    console.error(error);
+    message.textContent = "Save failed. Check the console.";
+  }
+});
+
+document.getElementById("logout-btn").addEventListener("click", async () => {
+  await signOut(auth);
+  window.location.href = "login.html";
+});
+</script>
+
+<style>
+#dashboard-content input,
+#dashboard-content textarea {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  font-size: 1rem;
+}
+
+#dashboard-content label {
+  font-weight: 800;
+  color: #00c8b4;
+  margin-top: 8px;
+}
+</style>
+
+</body>
+</html>

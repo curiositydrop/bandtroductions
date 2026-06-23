@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watch Maine Music | BANDtroductions</title>
+
+<link rel="stylesheet" href="style.css?v=4">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-60112G8RH3');
+</script>
+
+<style>
+.loading-message {
+  text-align: center;
+  padding: 20px;
+  font-size: 1rem;
+  opacity: 0.85;
+}
+
+.watch-psa {
+  text-align: center;
+  margin-top: 25px;
+  opacity: 0.85;
+}
+
+.video-item.hidden-item {
+  display: none;
+}
+
+.video-item.active-video {
+  outline: 2px solid teal;
+  box-shadow: 0 0 12px rgba(0, 128, 128, 0.45);
+}
+
+.video-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.main-video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+#mainPlayer {
+  width: 100%;
+  height: 100%;
+}
+
+.now-playing-meta {
+  margin-top: 10px;
+  opacity: 0.85;
+  font-size: 0.95rem;
+}
+
+.feed-intro {
+  text-align: center;
+  margin-bottom: 20px;
+  opacity: 0.92;
+}
+
+.now-playing-links {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.now-playing-links a {
+  color: teal;
+  font-weight: bold;
+  text-decoration: none;
+  margin: 0 10px;
+}
+
+.now-playing-links a:hover {
+  text-decoration: underline;
+}
+
+/* 🔥 Scroller visibility override for BANDfeed only */
+.watch-page .news-scroller {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.watch-page .watch-nav-toggle {
+  display: block !important;
+}
+</style>
+</head>
+
+<body class="watch-page">
+
+<div id="global-header"></div>
+
+<section class="band-hero">
+  <h1>BANDfeed 🎸</h1>
+  <p>Watch, discover, and support Maine’s local music scene — all in one feed.</p>
+</section>
+
+<section class="video-player-wrap">
+  <div class="main-video">
+    <div id="mainPlayer"></div>
+  </div>
+
+  <div class="now-playing">
+    <h2 id="videoTitle">Loading videos...</h2>
+    <p class="now-playing-meta" id="videoMeta">Please wait while BANDfeed loads.</p>
+
+    <div class="now-playing-links">
+      <a id="profileLink" href="#">View Profile</a>
+      <a href="#" id="shareCurrentBandBtn" onclick="shareCurrentBand(); return false;">Share</a>
+    </div>
+  </div>
+</section>
+
+<section class="band-main">
+  <p class="feed-intro">
+    🎸 Discover local bands. Watch. Share. Repeat.
+  </p>
+
+  <p class="video-cta">
+    Want your video featured here?
+    <a href="https://venmo.com/Telis-Bergeron" target="_blank">💙 Boost your video for $10</a>.
+  </p>
+
+  <div id="loadingMessage" class="loading-message">
+    Loading BANDfeed...
+  </div>
+
+  <div class="video-browser" id="videoBrowser"></div>
+
+  <div class="watch-psa">
+    Please excuse the appearance… we’re actively loading more bands as they join the movement 🎸
+  </div>
+</section>
+
+<div id="global-footer"></div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<script>
+const SOURCE_PAGES = [
+  "bands.html",
+  "musicians.html"
+];
+
+const browserContainer = document.getElementById("videoBrowser");
+const loadingMessage = document.getElementById("loadingMessage");
+const videoTitle = document.getElementById("videoTitle");
+const videoMeta = document.getElementById("videoMeta");
+const profileLink = document.getElementById("profileLink");
+
+let bandfeedItems = [];
+let currentIndex = -1;
+let player = null;
+let youtubeApiReady = false;
+let playerReady = false;
+
+function normalizeYouTubeUrl(url) {
+  if (!url) return null;
+
+  try {
+    const cleanUrl = url.trim();
+
+    if (cleanUrl.includes("youtube.com/embed/")) {
+      return cleanUrl;
+    }
+
+    if (cleanUrl.includes("youtu.be/")) {
+      const parts = cleanUrl.split("youtu.be/")[1];
+      const videoId = parts.split("?")[0].split("&")[0].split("/")[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+
+    if (cleanUrl.includes("youtube.com/watch")) {
+      const parsed = new URL(cleanUrl);
+      const videoId = parsed.searchParams.get("v");
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+    }
+
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function extractYouTubeVideoId(url) {
+  const embedUrl = normalizeYouTubeUrl(url);
+  if (!embedUrl) return null;
+
+  const match = embedUrl.match(/embed\/([^?&/]+)/);
+  return match ? match[1] : null;
+}
+
+function toAbsoluteBandUrl(relativeOrAbsoluteUrl) {
+  if (!relativeOrAbsoluteUrl) return "https://curiositydrop.com/bandtroductions/";
+
+  if (relativeOrAbsoluteUrl.startsWith("http://") || relativeOrAbsoluteUrl.startsWith("https://")) {
+    return relativeOrAbsoluteUrl;
+  }
+
+  const cleanPath = relativeOrAbsoluteUrl.startsWith("/")
+    ? relativeOrAbsoluteUrl
+    : `/bandtroductions/${relativeOrAbsoluteUrl.replace(/^\/+/, "")}`;
+
+  return "https://curiositydrop.com" + cleanPath;
+}
+
+function shareSpecificPage(profileUrl, title) {
+  const fullUrl = toAbsoluteBandUrl(profileUrl);
+
+  if (navigator.share) {
+    navigator.share({
+      title: title || document.title,
+      url: fullUrl
+    }).catch(() => {});
+    return;
+  }
+
+  window.open(
+    'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(fullUrl),
+    '_blank',
+    'width=600,height=500'
+  );
+}
+
+function shareCurrentBand() {
+  if (currentIndex < 0 || !bandfeedItems[currentIndex]) return;
+  const item = bandfeedItems[currentIndex];
+  shareSpecificPage(item.profileUrl, item.title);
+}
+
+function updateNowPlaying(item) {
+  videoTitle.textContent = `🔥 Now Playing: ${item.title}`;
+  videoMeta.textContent = item.meta || "Maine Music";
+  profileLink.href = item.profileUrl || "#";
+}
+
+function highlightActiveItem() {
+  const cards = browserContainer.querySelectorAll(".video-item");
+  cards.forEach((card, index) => {
+    if (index === currentIndex) {
+      card.classList.add("active-video");
+    } else {
+      card.classList.remove("active-video");
+    }
+  });
+}
+
+function findFirstPlayableIndex() {
+  return bandfeedItems.findIndex(item => item.videoId);
+}
+
+function findNextPlayableIndex(fromIndex) {
+  if (!bandfeedItems.length) return -1;
+
+  for (let i = fromIndex + 1; i < bandfeedItems.length; i++) {
+    if (bandfeedItems[i].videoId) return i;
+  }
+
+  for (let i = 0; i <= fromIndex; i++) {
+    if (bandfeedItems[i].videoId) return i;
+  }
+
+  return -1;
+}
+
+function playVideoAt(index) {
+  const item = bandfeedItems[index];
+  if (!item || !item.videoId || !player || !playerReady) return;
+
+  currentIndex = index;
+  player.loadVideoById(item.videoId);
+  updateNowPlaying(item);
+  highlightActiveItem();
+}
+
+function onPlayerStateChange(event) {
+  if (event.data === YT.PlayerState.ENDED) {
+    const nextIndex = findNextPlayableIndex(currentIndex);
+    if (nextIndex !== -1 && nextIndex !== currentIndex) {
+      playVideoAt(nextIndex);
+    }
+  }
+}
+
+function buildPlayerIfReady() {
+  if (!youtubeApiReady || !bandfeedItems.length || player) return;
+
+  const firstPlayableIndex = findFirstPlayableIndex();
+
+  if (firstPlayableIndex === -1) {
+    videoTitle.textContent = "No playable YouTube videos found yet";
+    videoMeta.textContent = "Add more profile videos to populate BANDfeed.";
+    return;
+  }
+
+  currentIndex = firstPlayableIndex;
+  const firstItem = bandfeedItems[firstPlayableIndex];
+
+  player = new YT.Player('mainPlayer', {
+    videoId: firstItem.videoId,
+    playerVars: {
+      autoplay: 0,
+      rel: 0,
+      modestbranding: 1
+    },
+    events: {
+      onReady: function () {
+        playerReady = true;
+        updateNowPlaying(firstItem);
+        highlightActiveItem();
+      },
+      onStateChange: onPlayerStateChange
+    }
+  });
+}
+
+function createVideoItem(item, index) {
+  const div = document.createElement("div");
+  div.className = "video-item";
+
+  if (item.videoId) {
+    div.style.cursor = "pointer";
+    div.onclick = function () {
+      playVideoAt(index);
+    };
+  }
+
+  const safeMeta = item.meta ? item.meta : "Maine Music";
+  const imageSrc = item.image || "IMG_9383.jpeg";
+
+  const watchButtonHtml = `
+    <a class="button" href="#"
+       onclick="event.stopPropagation(); playVideoAt(${index}); return false;">
+       ▶ Watch
+    </a>
+  `;
+
+  div.innerHTML = `
+    <img src="${imageSrc}" alt="${item.title}">
+    <div class="video-meta">
+      <h3>${item.title}</h3>
+      <p>${safeMeta}</p>
+    </div>
+    <div class="video-actions">
+      ${watchButtonHtml}
+      <a class="button" href="${item.profileUrl}" onclick="event.stopPropagation();">View Profile</a>
+      <a class="button" href="#" onclick="event.stopPropagation(); shareSpecificPage('${item.profileUrl.replace(/'/g, "\\'")}','${item.title.replace(/'/g, "\\'")}'); return false;">Share</a>
+    </div>
+  `;
+
+  return div;
+}
+
+async function fetchHtml(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+  return await response.text();
+}
+
+function parseCardsFromPage(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const cards = [...doc.querySelectorAll(".profile-card")];
+
+  return cards.map(card => {
+    const title = card.querySelector("h3")?.textContent?.trim() || "Untitled Artist";
+    const image = card.querySelector("img")?.getAttribute("src") || "";
+    const profileUrl = card.querySelector("a.button")?.getAttribute("href") || "";
+    const metaLines = [...card.querySelectorAll("p")].map(p => p.textContent.trim());
+    const meta = metaLines.join(" • ");
+    const dataVideo = card.getAttribute("data-video") || "";
+
+    return {
+      title,
+      image,
+      profileUrl,
+      meta,
+      dataVideo
+    };
+  }).filter(item => item.profileUrl);
+}
+
+async function extractVideoFromProfile(profileUrl, fallbackDataVideo) {
+  try {
+    const html = await fetchHtml(profileUrl);
+    const doc = new DOMParser().parseFromString(html, "text/html");
+
+    const iframe = doc.querySelector(".video-embed iframe, iframe");
+    if (iframe) {
+      const src = iframe.getAttribute("src");
+      const embedUrl = normalizeYouTubeUrl(src) || src;
+      const videoId = extractYouTubeVideoId(embedUrl);
+
+      if (videoId) {
+        return {
+          embedUrl,
+          videoId,
+          fallbackUrl: null
+        };
+      }
+    }
+
+    const links = [...doc.querySelectorAll("a")]
+      .map(a => a.getAttribute("href"))
+      .filter(Boolean);
+
+    for (const link of links) {
+      const ytEmbed = normalizeYouTubeUrl(link);
+      const videoId = extractYouTubeVideoId(ytEmbed);
+      if (ytEmbed && videoId) {
+        return {
+          embedUrl: ytEmbed,
+          videoId,
+          fallbackUrl: null
+        };
+      }
+    }
+
+    const ytFromCard = normalizeYouTubeUrl(fallbackDataVideo);
+    const cardVideoId = extractYouTubeVideoId(ytFromCard);
+    if (ytFromCard && cardVideoId) {
+      return {
+        embedUrl: ytFromCard,
+        videoId: cardVideoId,
+        fallbackUrl: null
+      };
+    }
+
+    console.log("❌ No usable YouTube video:", profileUrl);
+    return null;
+  } catch (err) {
+    console.log("Skipped profile:", profileUrl, err);
+    return null;
+  }
+}
+
+async function loadBandfeed() {
+  const allCards = [];
+
+  for (const page of SOURCE_PAGES) {
+    try {
+      const html = await fetchHtml(page);
+      const cards = parseCardsFromPage(html);
+      allCards.push(...cards);
+    } catch (err) {
+      console.log("Could not load source page:", page, err);
+    }
+  }
+
+  const finalItems = [];
+
+  for (const card of allCards) {
+    const videoData = await extractVideoFromProfile(card.profileUrl, card.dataVideo);
+    if (!videoData || !videoData.videoId) continue;
+
+    finalItems.push({
+      title: card.title,
+      image: card.image,
+      profileUrl: card.profileUrl,
+      meta: card.meta,
+      embedUrl: videoData.embedUrl,
+      videoId: videoData.videoId,
+      fallbackUrl: null
+    });
+  }
+
+  bandfeedItems = finalItems;
+  browserContainer.innerHTML = "";
+
+  if (!bandfeedItems.length) {
+    loadingMessage.textContent = "No videos found yet. Add more band and musician profiles with videos to populate BANDfeed.";
+    videoTitle.textContent = "No videos loaded yet";
+    videoMeta.textContent = "";
+    return;
+  }
+
+  loadingMessage.style.display = "none";
+
+  bandfeedItems.forEach((item, index) => {
+    const el = createVideoItem(item, index);
+    browserContainer.appendChild(el);
+  });
+
+  buildPlayerIfReady();
+}
+
+function onYouTubeIframeAPIReady() {
+  youtubeApiReady = true;
+  buildPlayerIfReady();
+}
+
+loadBandfeed();
+</script>
+
+<script src="global.js"></script>
+
+<script>
+window.addEventListener("load", function () {
+  const scroller = document.querySelector(".news-scroller");
+  if (scroller) {
+    scroller.style.display = "flex";
+    scroller.style.visibility = "visible";
+    scroller.style.opacity = "1";
+  }
+});
+</script>
+
+</body>
+</html>
