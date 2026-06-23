@@ -57,6 +57,74 @@ function safeNumber(value) {
   return Number(value || 0);
 }
 
+function cleanImagePath(src) {
+  if (!src) return FALLBACK_IMAGE;
+
+  return String(src)
+    .replace(/^https?:\/\/(www\.)?curiositydrop\.com\/bandtroductions\//i, "https://www.bandtroductions.com/")
+    .trim();
+}
+
+function getBandNameFromFirebase(id, bandData) {
+  return (
+    bandData?.name ||
+    bandData?.bandName ||
+    bandData?.title ||
+    bandData?.displayName ||
+    id.replace(/-/g, " ")
+  );
+}
+
+function getImageFromFirebase(bandData) {
+  return cleanImagePath(
+    bandData?.image ||
+    bandData?.profileImage ||
+    bandData?.photo ||
+    bandData?.logo ||
+    bandData?.avatar ||
+    bandData?.banner ||
+    ""
+  );
+}
+
+function addProfileKey(key, card) {
+  const cleanKey = slugify(key);
+  if (!cleanKey) return;
+  profileData[cleanKey] = card;
+}
+
+function findProfileInfo(id, bandData) {
+  const possibleKeys = [
+    id,
+    slugify(id),
+    bandData?.name,
+    bandData?.bandName,
+    bandData?.title,
+    bandData?.displayName,
+    profileUrlToId(bandData?.profileUrl),
+    profileUrlToId(bandData?.url),
+    profileUrlToId(bandData?.link)
+  ].filter(Boolean);
+
+  for (const key of possibleKeys) {
+    const cleanKey = slugify(key);
+    if (profileData[cleanKey]) {
+      return profileData[cleanKey];
+    }
+  }
+
+  const firebaseName = getBandNameFromFirebase(id, bandData);
+  const firebaseImage = getImageFromFirebase(bandData);
+
+  return {
+    id,
+    title: firebaseName,
+    image: firebaseImage || FALLBACK_IMAGE,
+    profileUrl: bandData?.profileUrl || bandData?.url || bandData?.link || "#",
+    meta: bandData?.meta || bandData?.location || "Local Band"
+  };
+}
+
 async function fetchHtml(url) {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Failed to fetch ${url}`);
@@ -69,8 +137,15 @@ function parseCardsFromPage(html) {
 
   return cards.map(card => {
     const title = card.querySelector("h3")?.textContent?.trim() || "Untitled Artist";
-    const image = card.querySelector("img")?.getAttribute("src") || FALLBACK_IMAGE;
+
+    const img = card.querySelector("img");
+    const image =
+      img?.getAttribute("src") ||
+      img?.getAttribute("data-src") ||
+      FALLBACK_IMAGE;
+
     const profileUrl = card.querySelector("a.button")?.getAttribute("href") || "#";
+
     const metaLines = [...card.querySelectorAll("p")]
       .map(p => p.textContent.trim())
       .filter(Boolean);
@@ -84,9 +159,9 @@ function parseCardsFromPage(html) {
       slugify(title);
 
     return {
-      id,
+      id: slugify(id),
       title,
-      image,
+      image: cleanImagePath(image),
       profileUrl,
       meta
     };
@@ -109,7 +184,9 @@ async function loadProfileData() {
   profileData = {};
 
   allCards.forEach(card => {
-    profileData[card.id] = card;
+    addProfileKey(card.id, card);
+    addProfileKey(card.title, card);
+    addProfileKey(profileUrlToId(card.profileUrl), card);
   });
 
   renderBOTW();
@@ -133,13 +210,7 @@ function buildRankedBands() {
         (shareClicks * 4) +
         (views * 0.25);
 
-      const info = profileData[id] || {
-        id,
-        title: id.replace(/-/g, " "),
-        image: FALLBACK_IMAGE,
-        profileUrl: "#",
-        meta: "Local Band"
-      };
+      const info = findProfileInfo(id, bandData);
 
       return {
         id,
@@ -156,7 +227,7 @@ function buildRankedBands() {
 }
 
 function renderBOTW() {
-  if (!firebaseStats || !Object.keys(profileData).length) return;
+  if (!firebaseStats) return;
 
   const rankedBands = buildRankedBands();
 
@@ -173,6 +244,10 @@ function renderBOTW() {
   currentWinnerName.textContent = winner.info.title;
   currentWinnerImage.src = winner.info.image || FALLBACK_IMAGE;
   currentWinnerImage.alt = winner.info.title;
+  currentWinnerImage.onerror = () => {
+    currentWinnerImage.src = FALLBACK_IMAGE;
+  };
+
   currentWinnerMeta.textContent = winner.info.meta || "Maine Music";
   currentWinnerVotes.textContent =
     `${winner.votes} votes • ${winner.likes} likes • ${winner.views} views • Score: ${Math.round(winner.score)}`;
@@ -184,18 +259,44 @@ function renderBOTW() {
     const row = document.createElement("div");
     row.className = "botw-winner";
 
-    row.innerHTML = `
-      <img src="${band.info.image || FALLBACK_IMAGE}" alt="${band.info.title}">
-      <div>
-        <h3>#${index + 1} ${band.info.title}</h3>
-        <p>${band.info.meta || "Maine Music"}</p>
-        <p>${band.votes} votes • ${band.likes} likes • ${band.views} views</p>
-        <p>🔥 Score: ${Math.round(band.score)}</p>
-        <div class="band-links">
-          <a class="button" href="${band.info.profileUrl || "#"}">View Band</a>
-        </div>
-      </div>
-    `;
+    const img = document.createElement("img");
+    img.src = band.info.image || FALLBACK_IMAGE;
+    img.alt = band.info.title;
+    img.onerror = () => {
+      img.src = FALLBACK_IMAGE;
+    };
+
+    const content = document.createElement("div");
+
+    const title = document.createElement("h3");
+    title.textContent = `#${index + 1} ${band.info.title}`;
+
+    const meta = document.createElement("p");
+    meta.textContent = band.info.meta || "Maine Music";
+
+    const stats = document.createElement("p");
+    stats.textContent = `${band.votes} votes • ${band.likes} likes • ${band.views} views`;
+
+    const score = document.createElement("p");
+    score.textContent = `🔥 Score: ${Math.round(band.score)}`;
+
+    const links = document.createElement("div");
+    links.className = "band-links";
+
+    const viewButton = document.createElement("a");
+    viewButton.className = "button";
+    viewButton.href = band.info.profileUrl || "#";
+    viewButton.textContent = "View Band";
+
+    links.appendChild(viewButton);
+    content.appendChild(title);
+    content.appendChild(meta);
+    content.appendChild(stats);
+    content.appendChild(score);
+    content.appendChild(links);
+
+    row.appendChild(img);
+    row.appendChild(content);
 
     leaderboard.appendChild(row);
   });
