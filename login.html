@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Band Login | BANDtroductions</title>
+<link rel="stylesheet" href="style.css?v=8">
+</head>
+
+<body class="new-band-profile-page">
+
+<div id="global-header"></div>
+
+<main class="new-band-profile" style="max-width:600px; margin:40px auto; padding:20px;">
+
+  <section class="profile-action-card">
+    <h1>Band Login</h1>
+    <p class="profile-meta">Log in to update your BANDtroductions profile.</p>
+
+    <div style="display:flex; flex-direction:column; gap:14px; margin-top:25px;">
+      <input id="login-email" type="email" placeholder="Email address" style="padding:14px; border-radius:10px; border:1px solid #333;">
+      <input id="login-password" type="password" placeholder="Password" style="padding:14px; border-radius:10px; border:1px solid #333;">
+
+      <button id="login-btn" class="profile-action support-action" type="button">
+        Log In
+      </button>
+
+      <p id="login-message" style="margin-top:10px;"></p>
+    </div>
+  </section>
+
+</main>
+
+<div id="global-footer"></div>
+
+<script src="global.js"></script>
+
+<script type="module">
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyApLiiJsKTw1Fp8J3aQatMqiSZoP_6EycE",
+  authDomain: "bandfanwall.firebaseapp.com",
+  databaseURL: "https://bandfanwall-default-rtdb.firebaseio.com",
+  projectId: "bandfanwall",
+  storageBucket: "bandfanwall.firebasestorage.app",
+  messagingSenderId: "619241154826",
+  appId: "1:619241154826:web:25ddc58eef094e3c0732f3"
+};
+
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+const emailInput = document.getElementById("login-email");
+const passwordInput = document.getElementById("login-password");
+const loginBtn = document.getElementById("login-btn");
+const message = document.getElementById("login-message");
+
+loginBtn.addEventListener("click", async () => {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+
+  if (!email || !password) {
+    message.textContent = "Please enter your email and password.";
+    return;
+  }
+
+  message.textContent = "Logging in...";
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    message.textContent = "Login successful. Redirecting...";
+    window.location.href = "dashboard.html";
+  } catch (error) {
+    console.error(error);
+    message.textContent = "Login failed. Check your email and password.";
+  }
+});
+</script>
+
+</body>
+</html>
