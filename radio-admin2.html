@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>BANDtroductions Radio Admin</title>
+
+<link rel="stylesheet" href="style.css?v=10">
+
+<style>
+  body.radio-admin-page {
+    background: #050505;
+    color: #fff;
+    min-height: 100vh;
+  }
+
+  .radio-admin-wrap {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+
+  .radio-admin-card {
+    background: #111;
+    border: 1px solid rgba(0,200,180,0.28);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.35);
+    margin-bottom: 22px;
+  }
+
+  .radio-admin-card h1,
+  .radio-admin-card h2 {
+    color: #00c8b4;
+    margin-top: 0;
+  }
+
+  .radio-admin-note {
+    color: #bbb;
+    line-height: 1.6;
+  }
+
+  .radio-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .radio-admin-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .radio-admin-field.full {
+    grid-column: 1 / -1;
+  }
+
+  .radio-admin-field label {
+    color: #ddd;
+    font-size: 0.9rem;
+    font-weight: 800;
+  }
+
+  .radio-admin-field input,
+  .radio-admin-field select,
+  .radio-admin-field textarea {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    background: #050505;
+    color: #fff;
+  }
+
+  .radio-admin-field input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+  }
+
+  .radio-admin-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 18px;
+  }
+
+  .radio-admin-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 12px 18px;
+    background: #00c8b4;
+    color: #000;
+    font-weight: 900;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .radio-admin-btn.secondary {
+    background: #222;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.16);
+  }
+
+  .radio-admin-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .radio-admin-status {
+    color: #bbb;
+    margin-top: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  .radio-admin-small {
+    color: #888;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 700px) {
+    .radio-admin-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+
+<body class="radio-admin-page hamburger-active">
+
+<div id="global-header"></div>
+
+<main class="radio-admin-wrap">
+
+  <section class="radio-admin-card" id="loginCard">
+    <h1>BANDtroductions Radio Admin</h1>
+
+    <p class="radio-admin-note">
+      Log in to upload approved songs, DJ drops, sponsor drops, and station IDs for BANDtroductions Radio.
+    </p>
+
+    <div class="radio-admin-grid">
+      <div class="radio-admin-field">
+        <label for="loginEmail">Email</label>
+        <input id="loginEmail" type="email" autocomplete="email" placeholder="admin@email.com">
+      </div>
+
+      <div class="radio-admin-field">
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
+      </div>
+    </div>
+
+    <div class="radio-admin-actions">
+      <button class="radio-admin-btn" id="loginBtn" type="button">Log In</button>
+      <a class="radio-admin-btn secondary" href="radio.html">Back to Radio</a>
+    </div>
+
+    <p class="radio-admin-status" id="loginStatus"></p>
+  </section>
+
+  <section class="radio-admin-card hidden" id="adminCard">
+    <h1>Radio Upload Admin</h1>
+
+    <p class="radio-admin-note">
+      This first version saves approved uploads directly to <strong>RadioTracks</strong>,
+      which your current <strong>radio.js</strong> already reads.
+    </p>
+
+    <div class="radio-admin-grid">
+
+      <div class="radio-admin-field">
+        <label for="itemType">Item Type</label>
+        <select id="itemType">
+          <option value="song">Song</option>
+          <option value="dj_drop">DJ Drop</option>
+          <option value="sponsor_drop">Sponsor Drop</option>
+          <option value="station_id">Station ID</option>
+        </select>
+      </div>
+
+      <div class="radio-admin-field">
+        <label for="genre">Genre</label>
+        <input id="genre" type="text" placeholder="rock, metal, country, acoustic">
+      </div>
+
+      <div class="radio-admin-field">
+        <label for="title">Title</label>
+        <input id="title" type="text" placeholder="Song title or drop name">
+      </div>
+
+      <div class="radio-admin-field">
+        <label for="artist">Artist / Name</label>
+        <input id="artist" type="text" placeholder="Band name, sponsor, or BANDtroductions">
+      </div>
+
+      <div class="radio-admin-field">
+        <label for="album">Album / Collection</label>
+        <input id="album" type="text" placeholder="Single, DJ Drop, Sponsor Drop">
+      </div>
+
+      <div class="radio-admin-field">
+        <label for="bandId">Band ID / Slug</label>
+        <input id="bandId" type="text" placeholder="burning-time">
+      </div>
+
+      <div class="radio-admin-field full">
+        <label for="profileUrl">Profile URL</label>
+        <input id="profileUrl" type="text" placeholder="bands.html#burning-time or band profile link">
+      </div>
+
+      <div class="radio-admin-field full">
+        <label for="coverUrl">Cover Image URL, optional</label>
+        <input id="coverUrl" type="text" placeholder="Leave blank to use default radio image">
+      </div>
+
+      <div class="radio-admin-field full">
+        <label for="notes">Notes</label>
+        <textarea id="notes" rows="3" placeholder="Optional internal notes"></textarea>
+      </div>
+
+      <div class="radio-admin-field full">
+        <label for="audioFile">MP3 / Audio File</label>
+        <input id="audioFile" type="file" accept="audio/*">
+        <p class="radio-admin-small">
+          Use MP3 when possible. This uploads to Firebase Storage, then saves the track info to RadioTracks.
+        </p>
+      </div>
+
+      <div class="radio-admin-field full">
+        <label>
+          <input id="permissionConfirmed" type="checkbox">
+          Permission confirmed / approved for BANDtroductions Radio
+        </label>
+      </div>
+
+    </div>
+
+    <div class="radio-admin-actions">
+      <button class="radio-admin-btn" id="saveTrackBtn" type="button">Upload & Save Track</button>
+      <button class="radio-admin-btn secondary" id="clearFormBtn" type="button">Clear Form</button>
+      <button class="radio-admin-btn secondary" id="logoutBtn" type="button">Log Out</button>
+      <a class="radio-admin-btn secondary" href="radio.html">Open Radio Page</a>
+    </div>
+
+    <p class="radio-admin-status" id="saveStatus"></p>
+  </section>
+
+</main>
+
+<div id="global-footer"></div>
+
+<script src="global.js?v=4"></script>
+
+<script type="module">
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
+import {
+  getDatabase,
+  ref,
+  push,
+  set
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
+
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyApLiiJsKTw1Fp8J3aQatMqiSZoP_6EycE",
+  authDomain: "bandfanwall.firebaseapp.com",
+  databaseURL: "https://bandfanwall-default-rtdb.firebaseio.com",
+  projectId: "bandfanwall",
+  storageBucket: "bandfanwall.firebasestorage.app",
+  messagingSenderId: "619241154826",
+  appId: "1:619241154826:web:25ddc58eef094e3c0732f3"
+};
+
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+const storage = getStorage(app);
+
+const loginCard = document.getElementById("loginCard");
+const adminCard = document.getElementById("adminCard");
+
+const loginEmail = document.getElementById("loginEmail");
+const loginPassword = document.getElementById("loginPassword");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+
+const loginStatus = document.getElementById("loginStatus");
+const saveStatus = document.getElementById("saveStatus");
+
+const saveTrackBtn = document.getElementById("saveTrackBtn");
+const clearFormBtn = document.getElementById("clearFormBtn");
+
+const itemType = document.getElementById("itemType");
+const title = document.getElementById("title");
+const artist = document.getElementById("artist");
+const album = document.getElementById("album");
+const genre = document.getElementById("genre");
+const bandId = document.getElementById("bandId");
+const profileUrl = document.getElementById("profileUrl");
+const coverUrl = document.getElementById("coverUrl");
+const notes = document.getElementById("notes");
+const audioFile = document.getElementById("audioFile");
+const permissionConfirmed = document.getElementById("permissionConfirmed");
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    loginCard.classList.add("hidden");
+    adminCard.classList.remove("hidden");
+    loginStatus.textContent = "";
+    saveStatus.textContent = `Logged in as ${user.email}`;
+  } else {
+    loginCard.classList.remove("hidden");
+    adminCard.classList.add("hidden");
+    saveStatus.textContent = "";
+  }
+});
+
+loginBtn.addEventListener("click", async () => {
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value.trim();
+
+  if (!email || !password) {
+    loginStatus.textContent = "Please enter your email and password.";
+    return;
+  }
+
+  loginStatus.textContent = "Logging in...";
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    loginPassword.value = "";
+  } catch (error) {
+    console.error(error);
+    loginStatus.textContent = `Login failed: ${friendlyFirebaseError(error)}`;
+  }
+});
+
+logoutBtn.addEventListener("click", async () => {
+  await signOut(auth);
+});
+
+clearFormBtn.addEventListener("click", clearForm);
+
+saveTrackBtn.addEventListener("click", async () => {
+  const user = auth.currentUser;
+  const file = audioFile.files[0];
+
+  if (!user) {
+    saveStatus.textContent = "You must be logged in.";
+    return;
+  }
+
+  if (!file) {
+    saveStatus.textContent = "Please choose an audio file.";
+    return;
+  }
+
+  if (!title.value.trim() || !artist.value.trim()) {
+    saveStatus.textContent = "Please enter a title and artist/name.";
+    return;
+  }
+
+  if (!permissionConfirmed.checked) {
+    saveStatus.textContent = "Please confirm permission/approval before saving.";
+    return;
+  }
+
+  saveTrackBtn.disabled = true;
+  saveStatus.textContent = "Uploading audio...";
+
+  try {
+    const timestamp = Date.now();
+    const safeName = sanitizeFileName(file.name);
+    const storagePath = `bandtroductions/radio/uploads/${timestamp}-${safeName}`;
+    const fileRef = storageRef(storage, storagePath);
+
+    await uploadBytes(fileRef, file, {
+      contentType: file.type || "audio/mpeg"
+    });
+
+    const downloadUrl = await getDownloadURL(fileRef);
+
+    saveStatus.textContent = "Audio uploaded. Saving track data...";
+
+    const trackRef = push(ref(db, "RadioTracks"));
+
+    const trackData = {
+      type: itemType.value,
+      title: title.value.trim(),
+      artist: artist.value.trim(),
+      album: album.value.trim() || defaultAlbumForType(itemType.value),
+      genre: normalizeGenre(genre.value.trim() || "other"),
+      bandId: bandId.value.trim(),
+      profileUrl: profileUrl.value.trim(),
+      coverUrl: coverUrl.value.trim(),
+      notes: notes.value.trim(),
+
+      audioUrl: downloadUrl,
+      audioPath: storagePath,
+
+      approved: true,
+      permissionConfirmed: true,
+
+      submittedBy: user.email || "admin",
+      dateAdded: timestamp,
+      playCount: 0
+    };
+
+    await set(trackRef, trackData);
+
+    saveStatus.textContent =
+      `Saved successfully.\n\nTrack ID: ${trackRef.key}\n\nOpen radio.html and refresh. The track should appear in the player if Firebase rules allow reading it.`;
+
+    clearForm();
+
+  } catch (error) {
+    console.error(error);
+
+    saveStatus.textContent =
+      `Save failed: ${friendlyFirebaseError(error)}\n\nIf this says permission denied, your Firebase Database or Storage rules need to allow this logged-in admin account to write to RadioTracks and bandtroductions/radio/uploads.`;
+
+  } finally {
+    saveTrackBtn.disabled = false;
+  }
+});
+
+function clearForm() {
+  itemType.value = "song";
+  title.value = "";
+  artist.value = "";
+  album.value = "";
+  genre.value = "";
+  bandId.value = "";
+  profileUrl.value = "";
+  coverUrl.value = "";
+  notes.value = "";
+  audioFile.value = "";
+  permissionConfirmed.checked = false;
+}
+
+function sanitizeFileName(name) {
+  return String(name || "audio.mp3")
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function normalizeGenre(value) {
+  return String(value || "other")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+}
+
+function defaultAlbumForType(type) {
+  switch (type) {
+    case "dj_drop":
+      return "DJ Drop";
+    case "sponsor_drop":
+      return "Sponsor Drop";
+    case "station_id":
+      return "Station ID";
+    default:
+      return "Single";
+  }
+}
+
+function friendlyFirebaseError(error) {
+  if (!error || !error.code) {
+    return "Something went wrong.";
+  }
+
+  switch (error.code) {
+    case "auth/invalid-email":
+      return "Invalid email address.";
+    case "auth/invalid-credential":
+      return "Wrong email or password.";
+    case "auth/user-not-found":
+      return "No user found for that email.";
+    case "auth/wrong-password":
+      return "Wrong password.";
+    case "storage/unauthorized":
+      return "Storage permission denied.";
+    case "PERMISSION_DENIED":
+    case "permission-denied":
+      return "Database permission denied.";
+    default:
+      return `${error.code}: ${error.message || "Unknown error"}`;
+  }
+}
+</script>
+
+</body>
+</html>
