@@ -31,8 +31,7 @@ function toggleWatchNav() {
 
 /* 🔥 UPDATED SHARE FUNCTION (mobile + desktop friendly) */
 function shareCurrentPage() {
-  const path = window.location.pathname;
-  const fullUrl = 'https://curiositydrop.com' + path;
+  const fullUrl = window.location.origin + window.location.pathname;
 
   if (navigator.share) {
     navigator.share({
