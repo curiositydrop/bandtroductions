@@ -327,129 +327,239 @@ function showHomeSponsorSlide() {
 showHomeSponsorSlide();
 setInterval(showHomeSponsorSlide, 4000);
 </script>
-<!-- FEATURED BAND POPUP -->
-<div id="featured-popup" class="featured-popup">
+
+<!-- FEATURED BAND POPUP - I, THE CONQUEROR -->
+<div id="featured-popup" class="featured-popup is-hidden" role="dialog" aria-modal="true" aria-label="I, the Conqueror featured release popup">
   <div class="featured-popup-card">
-    <button class="featured-popup-close" onclick="closeFeaturedPopup()">×</button>
+    <button class="featured-popup-close" type="button" onclick="closeFeaturedPopup()" aria-label="Close popup">&times;</button>
 
-    <p class="featured-popup-label">🚨 Featured Band Alert</p>
+    <p class="featured-popup-label" id="featured-popup-label">🔥 New Single Coming Soon</p>
 
-    <h2>Burning Time</h2>
+    <img
+      id="featured-popup-image"
+      class="featured-popup-image"
+      src="f0593ab9bc6625b5d9674595f8c1d55c.jpeg"
+      alt="I, the Conqueror - Doppelganger new single out July 17"
+    >
 
-    <p>
-      Burning Time’s new single <strong>“Hard to Follow”</strong>
-      is out now.
-    </p>
+    <div class="featured-popup-actions" id="featured-popup-actions"></div>
 
-    <div class="featured-popup-actions">
-
-      <a href="burning-time.html" class="featured-popup-btn primary">
-        🔥 Listen Now
-      </a>
-
-      <a href="burning-time.html" class="featured-popup-btn secondary">
-        🎸 View Band
-      </a>
-
-    </div>
+    <div class="featured-popup-note" id="featured-popup-note"></div>
   </div>
 </div>
 
 <style>
 .featured-popup {
-  display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.82);
   z-index: 99999;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(6px);
+}
+
+.featured-popup.is-hidden {
+  display: none;
 }
 
 .featured-popup-card {
-  background: #151515;
-  border: 1px solid rgba(0, 200, 180, 0.45);
-  border-radius: 18px;
-  max-width: 430px;
-  width: 100%;
-  padding: 28px 22px;
-  text-align: center;
-  box-shadow: 0 0 30px rgba(0, 200, 180, 0.18);
+  width: min(94vw, 520px);
+  max-height: 92vh;
   position: relative;
+  overflow-y: auto;
+  padding: 16px 16px 18px;
+  border: 1px solid rgba(0, 255, 255, 0.38);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(0, 255, 255, 0.16), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.08), transparent 32%),
+    #080808;
+  box-shadow: 0 0 35px rgba(0, 255, 255, 0.24);
+  color: #f5f5f5;
+  text-align: center;
 }
 
 .featured-popup-close {
   position: absolute;
   top: 10px;
-  right: 14px;
-  background: none;
-  border: none;
-  color: #aaa;
-  font-size: 28px;
+  right: 10px;
+  z-index: 2;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
   cursor: pointer;
 }
 
 .featured-popup-label {
-  color: #00c8b4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 42px 12px;
+  padding: 6px 12px;
+  border: 1px solid rgba(0, 255, 255, 0.38);
+  border-radius: 999px;
+  color: #8ff;
+  font-size: 12px;
   font-weight: 800;
-  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.featured-popup-card h2 {
-  color: white;
-  font-size: 2rem;
-  margin: 5px 0 12px;
-}
-
-.featured-popup-card p {
-  color: #ddd;
-  line-height: 1.5;
+.featured-popup-image {
+  display: block;
+  width: 100%;
+  max-height: 62vh;
+  object-fit: contain;
+  margin: 0 auto 14px;
+  border-radius: 14px;
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.55);
 }
 
 .featured-popup-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 22px;
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .featured-popup-btn {
-  display: inline-block;
-  padding: 13px 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
   border-radius: 999px;
-  font-weight: 800;
+  font-weight: 900;
   text-decoration: none;
 }
 
 .featured-popup-btn.primary {
-  background: #00c8b4;
-  color: #000;
-  box-shadow: 0 0 18px rgba(0, 200, 180, 0.45);
+  border: 0;
+  background: teal;
+  color: #fff;
 }
 
-.featured-popup-btn.secondary {
-  border: 1px solid #00c8b4;
-  color: #00c8b4;
+.featured-popup-note {
+  margin-top: 12px;
+  color: #999;
+  font-size: 13px;
 }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const popupSeen = localStorage.getItem('bt_featured_popup_seen');
+const popupParams = new URLSearchParams(window.location.search);
+const FEATURED_POPUP_TEST_MODE = popupParams.get('popupTest');
+const FEATURED_POPUP_TEST_DATE = popupParams.get('popupDate');
 
-  if (!popupSeen) {
-    setTimeout(function () {
-      document.getElementById('featured-popup').style.display = 'flex';
-    }, 900);
+const featuredPopup = document.getElementById('featured-popup');
+const popupLabel = document.getElementById('featured-popup-label');
+const popupImage = document.getElementById('featured-popup-image');
+const popupActions = document.getElementById('featured-popup-actions');
+const popupNote = document.getElementById('featured-popup-note');
+
+const bandPageUrl = 'i-the-conqueror.html';
+const comingSoonImage = 'f0593ab9bc6625b5d9674595f8c1d55c.jpeg';
+const outNowImage = '1ba698e976146be7f55f3be2c78f0921.jpeg';
+const comingSoonStart = '2026-07-03';
+const comingSoonEnd = '2026-07-16';
+const outNowStart = '2026-07-17';
+const outNowEnd = '2026-08-15';
+
+function getLocalDateString(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getPopupStatus() {
+  if (FEATURED_POPUP_TEST_MODE === 'off') return null;
+  if (FEATURED_POPUP_TEST_MODE === 'coming') return 'coming';
+  if (FEATURED_POPUP_TEST_MODE === 'out') return 'out';
+
+  const today = FEATURED_POPUP_TEST_DATE || getLocalDateString(new Date());
+
+  if (today >= comingSoonStart && today <= comingSoonEnd) {
+    return 'coming';
+  }
+
+  if (today >= outNowStart && today <= outNowEnd) {
+    return 'out';
+  }
+
+  return null;
+}
+
+function buildFeaturedPopup() {
+  const status = getPopupStatus();
+
+  if (!status) {
+    featuredPopup.classList.add('is-hidden');
+    return;
+  }
+
+  if (status === 'coming') {
+    popupLabel.textContent = '🔥 New Single Coming Soon';
+    popupImage.src = comingSoonImage;
+    popupImage.alt = 'I, the Conqueror - Doppelganger new single out July 17';
+    popupActions.innerHTML = `
+      <a href="${bandPageUrl}" class="featured-popup-btn primary">🎸 View I, the Conqueror</a>
+    `;
+    popupNote.textContent = 'Featured on BANDtroductions 🤘';
+  }
+
+  if (status === 'out') {
+    popupLabel.textContent = '🔥 New Single Out Now';
+    popupImage.src = outNowImage;
+    popupImage.alt = 'I, the Conqueror - Doppelganger out now';
+    popupActions.innerHTML = `
+      <a href="${bandPageUrl}" class="featured-popup-btn primary">🎧 Listen Now</a>
+    `;
+    popupNote.textContent = 'Featured on BANDtroductions 🤘';
+  }
+
+  const storageKey = `bt_i_the_conqueror_popup_seen_${status}`;
+  const isTesting = FEATURED_POPUP_TEST_MODE === 'coming' || FEATURED_POPUP_TEST_MODE === 'out' || FEATURED_POPUP_TEST_MODE === 'date';
+
+  if (!isTesting && localStorage.getItem(storageKey) === 'true') {
+    featuredPopup.classList.add('is-hidden');
+    return;
+  }
+
+  setTimeout(function () {
+    featuredPopup.classList.remove('is-hidden');
+  }, 700);
+}
+
+function closeFeaturedPopup() {
+  const status = getPopupStatus();
+  if (status) {
+    localStorage.setItem(`bt_i_the_conqueror_popup_seen_${status}`, 'true');
+  }
+  featuredPopup.classList.add('is-hidden');
+}
+
+featuredPopup.addEventListener('click', function(event) {
+  if (event.target === featuredPopup) {
+    closeFeaturedPopup();
   }
 });
 
-function closeFeaturedPopup() {
-  localStorage.setItem('bt_featured_popup_seen', 'true');
-  document.getElementById('featured-popup').style.display = 'none';
-}
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    closeFeaturedPopup();
+  }
+});
+
+buildFeaturedPopup();
 </script>
-  
+
 </body>
 </html>
