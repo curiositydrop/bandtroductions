@@ -136,7 +136,8 @@ button{
 }
 
 #rewardBox,
-#skipBox{
+#skipBox,
+#profileBox{
   display:none;
   margin-top:30px;
   padding:25px;
@@ -178,7 +179,7 @@ button{
 <h1>Puzzle Drop</h1>
 
 <p class="tagline">
-Think you can solve it? The real reward is hidden behind the puzzle.
+Think you can solve it? Reveal the artist behind the puzzle.
 </p>
 
 <div class="sponsor">
@@ -201,6 +202,8 @@ Drag one piece onto another to swap them.
 <!-- <button class="start-btn" onclick="checkSolved(true)">
   Check Puzzle
 </button> -->
+
+<!-- REWARD SECTION TEMPORARILY DISABLED
 
 <div id="rewardBox">
 
@@ -230,6 +233,28 @@ Enter Giveaway
 </a>
 </div>
 
+-->
+
+<div id="profileBox">
+
+<div class="win">
+🤘 Artist Unlocked!
+</div>
+
+<p>
+You revealed the featured BANDtroductions artist. Click below to check out their profile.
+</p>
+
+<a class="reward-btn"
+href="https://bandtroductions.com/i-the-conqueror.html"
+target="_top">
+
+View Profile
+
+</a>
+
+</div>
+
 <div class="footer">
 Powered by BANDtroductions
 </div>
@@ -252,16 +277,28 @@ let puzzleLocked = false;
 function startPuzzle(){
   puzzleLocked = false;
 
-  document.getElementById("rewardBox").style.display = "none";
-  document.getElementById("skipBox").style.display = "none";
+  document.getElementById("profileBox").style.display = "none";
+
+  const rewardBox = document.getElementById("rewardBox");
+  const skipBox = document.getElementById("skipBox");
+
+  if(rewardBox) rewardBox.style.display = "none";
+  if(skipBox) skipBox.style.display = "none";
+
   document.getElementById("statusText").innerHTML = "Drag one piece onto another to swap them.";
   createPuzzle();
 }
 
 function skipPuzzle(){
-  document.getElementById("skipBox").style.display = "block";
-  document.getElementById("rewardBox").style.display = "none";
-  document.getElementById("statusText").innerHTML = "You chose the standard path.";
+  document.getElementById("profileBox").style.display = "block";
+
+  const rewardBox = document.getElementById("rewardBox");
+  const skipBox = document.getElementById("skipBox");
+
+  if(rewardBox) rewardBox.style.display = "none";
+  if(skipBox) skipBox.style.display = "none";
+
+  document.getElementById("statusText").innerHTML = "Puzzle skipped. Artist profile unlocked.";
 }
 
 function createPuzzle(){
@@ -383,10 +420,16 @@ function checkSolved(showMessage = false){
   if(solved){
     puzzleLocked = true;
 
-    document.getElementById("rewardBox").style.display = "block";
-    document.getElementById("skipBox").style.display = "none";
+    document.getElementById("profileBox").style.display = "block";
+
+    const rewardBox = document.getElementById("rewardBox");
+    const skipBox = document.getElementById("skipBox");
+
+    if(rewardBox) rewardBox.style.display = "none";
+    if(skipBox) skipBox.style.display = "none";
+
     document.getElementById("statusText").innerHTML =
-      "🎉 Puzzle Complete! Hidden reward unlocked.";
+      "🎉 Puzzle Complete! Artist profile unlocked.";
   }
   else if(showMessage){
     document.getElementById("statusText").innerHTML =
