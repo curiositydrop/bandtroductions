@@ -176,7 +176,7 @@ button{
 <div class="container">
 <div class="hero">
 
-<h1>Puzzle Drop Updated</h1>
+<h1>Puzzle Drop</h1>
 
 <p class="tagline">
 Think you can solve it? Reveal the artist behind the puzzle.
@@ -290,6 +290,8 @@ function startPuzzle(){
 }
 
 function skipPuzzle(){
+  completePuzzle();
+
   document.getElementById("profileBox").style.display = "block";
 
   const rewardBox = document.getElementById("rewardBox");
@@ -298,7 +300,8 @@ function skipPuzzle(){
   if(rewardBox) rewardBox.style.display = "none";
   if(skipBox) skipBox.style.display = "none";
 
-  document.getElementById("statusText").innerHTML = "Puzzle skipped. Artist profile unlocked.";
+  document.getElementById("statusText").innerHTML =
+    "Puzzle revealed. Artist profile unlocked.";
 }
 
 function createPuzzle(){
@@ -327,6 +330,21 @@ function createPuzzle(){
     board.appendChild(piece);
     piece.addEventListener("pointerdown", startDrag);
   });
+}
+
+function completePuzzle(){
+  const pieces = Array.from(document.querySelectorAll(".piece"));
+
+  pieces.forEach((piece, index) => {
+    const x = index % gridSize;
+    const y = Math.floor(index / gridSize);
+
+    piece.dataset.correct = index;
+    piece.style.backgroundPosition =
+      `${(x / (gridSize - 1)) * 100}% ${(y / (gridSize - 1)) * 100}%`;
+  });
+
+  puzzleLocked = true;
 }
 
 function startDrag(e){
