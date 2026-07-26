@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { collection, doc, getDocs, query, serverTimestamp, setDoc, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { doc, getDoc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const params = new URLSearchParams(location.search);
 const legacyPage = params.get('page') || '';
@@ -65,11 +65,13 @@ function legacyProfileId(value) {
   return `legacy-${accountType}-${(hash >>> 0).toString(36)}`;
 }
 
+function getProfileRef() {
+  return doc(db, 'profiles', legacyProfileId(legacyPage));
+}
+
 async function findLegacyProfileDoc() {
-  const snapshot = await getDocs(
-    query(collection(db, 'profiles'), where('legacyPage', '==', legacyPage))
-  );
-  return snapshot.empty ? null : snapshot.docs[0];
+  const snapshot = await getDoc(getProfileRef());
+  return snapshot.exists() ? snapshot : null;
 }
 
 function getRequiredEmail(profileData = {}) {
@@ -131,8 +133,7 @@ onAuthStateChanged(auth, async user => {
       return;
     }
 
-    const signedInEmail = normalizeEmail(user.email);
-    if (signedInEmail !== requiredEmail) {
+    if (normalizeEmail(user.email) !== requiredEmail) {
       status.innerHTML = `You are logged in as <strong>${user.email || 'an account without an email'}</strong>, but that email does not match the one associated with <strong>${profileName}</strong>. Log out, then create or use the account with the profile's existing email address.`;
       return;
     }
@@ -141,7 +142,7 @@ onAuthStateChanged(auth, async user => {
     controls.hidden = false;
   } catch (error) {
     console.error('Could not check profile ownership:', error);
-    status.textContent = 'This profile could not be checked right now. Please try again.';
+    status.textContent = `This profile could not be checked right now (${error.code || 'unknown error'}). Please try again.`;
   }
 });
 
@@ -161,13 +162,10 @@ claimButton.addEventListener('click', async () => {
     }
 
     if (!requiredEmail || normalizeEmail(currentUser.email) !== requiredEmail) {
-      throw new Error('Your account email no longer matches the email associated with this profile.');
+      throw new Error('Your account email does not match the email associated with this profile.');
     }
 
-    const profileRef = matchedProfileDoc
-      ? matchedProfileDoc.ref
-      : doc(db, 'profiles', legacyProfileId(legacyPage));
-
+    const profileRef = getProfileRef();
     const ownershipData = {
       ownerId: currentUser.uid,
       legacyPage,
@@ -207,7 +205,7 @@ claimButton.addEventListener('click', async () => {
     setTimeout(() => openProfile(profileRef.id), 900);
   } catch (error) {
     console.error('Profile claim failed:', error);
-    status.textContent = error.message || 'The profile could not be connected to your account.';
+    status.textContent = `${error.message || 'The profile could not be connected to your account.'}${error.code ? ` (${error.code})` : ''}`;
     claimButton.disabled = false;
   }
 });
