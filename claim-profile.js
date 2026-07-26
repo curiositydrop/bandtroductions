@@ -13,6 +13,10 @@ const instruments = params.get('instruments') || '';
 const venueType = params.get('venueType') || '';
 const linkEmail = normalizeEmail(params.get('email') || '');
 
+const legacyClaimEmailOverrides = {
+  'burning-time.html': 'bandtroductions@gmail.com'
+};
+
 const status = document.getElementById('claim-status');
 const summary = document.getElementById('claim-summary');
 const controls = document.getElementById('claim-controls');
@@ -69,7 +73,9 @@ async function findLegacyProfileDoc() {
 }
 
 function getRequiredEmail(profileData = {}) {
+  const pageKey = legacyPage.split('/').pop().toLowerCase();
   return normalizeEmail(
+    legacyClaimEmailOverrides[pageKey] ||
     profileData.claimEmail ||
     profileData.legacyEmail ||
     profileData.contactEmail ||
