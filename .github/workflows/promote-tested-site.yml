@@ -32,7 +32,11 @@ jobs:
         run: |
           set -euo pipefail
           cp live/CNAME /tmp/BANDTRODUCTIONS_CNAME
-          rsync -a --delete --exclude='.git/' --exclude='CNAME' tested/ live/
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='CNAME' \
+            --exclude='.github/workflows/' \
+            tested/ live/
           cp /tmp/BANDTRODUCTIONS_CNAME live/CNAME
 
       - name: Commit production launch
