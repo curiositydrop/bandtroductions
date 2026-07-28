@@ -1,0 +1,51 @@
+name: Promote tested BANDtroductions site
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/promote-tested-site.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out live repository
+        uses: actions/checkout@v4
+        with:
+          path: live
+          fetch-depth: 0
+
+      - name: Check out tested repository
+        uses: actions/checkout@v4
+        with:
+          repository: curiositydrop/curiositydrop.github.io
+          ref: main
+          path: tested
+
+      - name: Preserve live domain and copy tested site
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp live/CNAME /tmp/BANDTRODUCTIONS_CNAME
+          rsync -a --delete --exclude='.git/' --exclude='CNAME' tested/ live/
+          cp /tmp/BANDTRODUCTIONS_CNAME live/CNAME
+
+      - name: Commit production launch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd live
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'Live repository already matches the tested repository.'
+            exit 0
+          fi
+          git commit -m 'Launch tested BANDtroductions social build'
+          git push origin main
