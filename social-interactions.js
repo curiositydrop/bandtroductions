@@ -35,6 +35,7 @@ addStyles();
 if(location.pathname.endsWith('/community.html')){
   import('./community-follow.js?v=1').catch(error=>console.error('Follow controls could not load:',error));
   import('./community-composer-profile-sync.js?v=1').catch(error=>console.error('Composer profile sync could not load:',error));
+  import('./admin-comment-moderation.js?v=1').catch(error=>console.error('Admin comment moderation could not load:',error));
 }
 if(location.pathname.endsWith('/profile.html'))import('./profile-social.js?v=1').catch(error=>console.error('Profile social tools could not load:',error));
 onAuthStateChanged(auth,async user=>{currentUser=user;if(!user)return;try{const snap=await getDocs(query(collection(db,'profiles'),where('published','==',true)));profiles=snap.docs.map(d=>({id:d.id,...d.data()}));currentProfile=profiles.find(p=>p.id===user.uid)||null}catch(e){console.warn(e)}installNotificationLink(user);installTagging();installActivityNotifications();installLikerButtons()});
