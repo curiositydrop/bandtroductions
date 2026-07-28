@@ -53,3 +53,5 @@ jobs:
           fi
           git commit -m 'Launch tested BANDtroductions social build'
           git push origin main
+
+# Promotion trigger: admin comment moderation
