@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications | BANDtroductions</title>
+  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="auth.css?v=13">
+  <style>
+    .notifications-shell{width:min(calc(100vw - 16px),760px);margin:0 auto;padding:18px 0 36px}.notifications-head,.notification-card{border:1px solid #333;border-radius:15px;background:linear-gradient(145deg,#191919,#111);padding:16px}.notifications-head{margin-bottom:12px}.notifications-head-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.notifications-list{display:grid;gap:10px}.notification-card{display:block;color:#fff;text-decoration:none}.notification-card.is-unread{border-color:#0ccfbd;box-shadow:inset 4px 0 0 #0ccfbd}.notification-card strong{color:#0ccfbd}.notification-card p{margin:6px 0 0;color:#ddd;line-height:1.45}.notification-card small{display:block;margin-top:8px;color:#888}.notification-actions{display:flex;gap:8px;flex-wrap:wrap}.notification-actions button{width:auto!important}.notification-empty{padding:22px;border:1px dashed #444;border-radius:14px;text-align:center;color:#aaa}
+  </style>
+</head>
+<body class="hamburger-active auth-page">
+  <div id="global-header"></div>
+  <main class="notifications-shell">
+    <section class="notifications-head">
+      <div class="notifications-head-row"><div><p class="profile-meta">YOUR ACTIVITY</p><h1>Notifications</h1><p class="auth-subtitle">Tags, comments, reactions, and profile shares will appear here.</p></div><div class="notification-actions"><button id="mark-all-read" class="auth-button" type="button">Mark All Read</button><a class="auth-button auth-button-secondary" href="community.html">Community</a></div></div>
+    </section>
+    <section id="notifications-list" class="notifications-list"></section>
+    <p id="notifications-status" class="auth-message">Loading notifications…</p>
+  </main>
+  <div id="global-footer"></div>
+  <script src="global.js?v=15"></script>
+  <script type="module">
+    import { auth, db } from './firebase-dev.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+    import { collection, doc, getDocs, onSnapshot, query, serverTimestamp, updateDoc, where, writeBatch } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+    const list=document.getElementById('notifications-list'),status=document.getElementById('notifications-status'),markAll=document.getElementById('mark-all-read');
+    let currentUser=null,items=[];
+    const secondsFor=t=>t?.seconds||t?.toDate?.().getTime()/1000||0;
+    const formatDate=t=>!t?.toDate?'Just now':new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(t.toDate());
+    const isAdminEmail=email=>['mbergeron79@gmail.com','mbegeron79@gmail.com'].includes(String(email||'').trim().toLowerCase());
+    function render(){list.replaceChildren();status.hidden=items.length>0;if(!items.length){status.hidden=false;status.textContent='No notifications yet.';return}items.forEach(item=>{const a=document.createElement('a');a.className=`notification-card${item.read?'':' is-unread'}`;a.href=item.linkUrl||'community.html';const title=document.createElement('strong');title.textContent=item.actorName||'BANDtroductions Member';const body=document.createElement('p');body.textContent=item.message||'New activity on BANDtroductions.';const meta=document.createElement('small');meta.textContent=formatDate(item.createdAt);a.append(title,body,meta);a.addEventListener('click',async event=>{if(item.read)return;event.preventDefault();const destination=a.href;try{await updateDoc(doc(db,'notifications',item.id),{read:true,readAt:serverTimestamp()});item.read=true;a.classList.remove('is-unread')}catch(error){console.error('Could not mark notification read:',error)}location.href=destination});list.appendChild(a)})}
+    markAll.addEventListener('click',async()=>{if(!currentUser)return;markAll.disabled=true;try{const batch=writeBatch(db);items.filter(x=>!x.read).forEach(x=>batch.update(doc(db,'notifications',x.id),{read:true,readAt:serverTimestamp()}));await batch.commit()}catch(e){console.error(e);status.hidden=false;status.textContent='Notifications could not be updated.'}finally{markAll.disabled=false}});
+    onAuthStateChanged(auth,async user=>{
+      currentUser=user;
+      if(!user){location.href='login.html';return}
+      try{
+        const recipientSet=new Set([user.uid]);
+        const ownedProfiles=await getDocs(query(collection(db,'profiles'),where('ownerId','==',user.uid)));
+        ownedProfiles.docs.forEach(d=>recipientSet.add(d.id));
+        if(isAdminEmail(user.email)){
+          const adminProfiles=await getDocs(query(collection(db,'profiles'),where('isAdmin','==',true)));
+          adminProfiles.docs.forEach(d=>recipientSet.add(d.id));
+          const adminPosts=await getDocs(query(collection(db,'posts'),where('authorName','==','BANDtroductions Admin')));
+          adminPosts.docs.forEach(d=>{const authorId=d.data().authorId;if(authorId)recipientSet.add(authorId)});
+        }
+        const recipientIds=[...recipientSet].slice(0,30);
+        const chunks=[];
+        for(let i=0;i<recipientIds.length;i+=10)chunks.push(recipientIds.slice(i,i+10));
+        const snapshots=new Array(chunks.length);
+        const unsubs=chunks.map((ids,index)=>{
+          const q=ids.length===1?query(collection(db,'notifications'),where('recipientId','==',ids[0])):query(collection(db,'notifications'),where('recipientId','in',ids));
+          return onSnapshot(q,snap=>{
+            snapshots[index]=snap;
+            const merged=new Map();
+            snapshots.filter(Boolean).forEach(s=>s.docs.forEach(d=>merged.set(d.id,{id:d.id,...d.data()})));
+            items=[...merged.values()].sort((a,b)=>secondsFor(b.createdAt)-secondsFor(a.createdAt));
+            render();
+          },e=>{console.error(e);status.hidden=false;status.textContent=e.code==='permission-denied'?'Notification permissions are not enabled yet.':'Notifications could not be loaded.'});
+        });
+        window.addEventListener('pagehide',()=>unsubs.forEach(fn=>fn()),{once:true});
+      }catch(e){console.error(e);status.hidden=false;status.textContent=e.code==='permission-denied'?'Notification permissions are not enabled yet.':'Notifications could not be loaded.'}
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Band Profile | BANDtroductions</title>
+  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="auth.css?v=13">
+  <style>
+    .band-editor-shell{width:min(calc(100vw - 20px),820px);margin:0 auto;padding:20px 0 36px}
+    .band-editor-shell h1{margin-bottom:6px}
+    .band-editor-note{color:#aaa;margin:0 0 18px}
+    .band-editor-section{margin:14px 0;padding:16px;border:1px solid #353535;border-radius:14px;background:linear-gradient(145deg,#191919,#111)}
+    .band-editor-section h2{margin:0 0 12px;font-size:1.18rem}
+    .band-editor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .band-editor-shell textarea{min-height:100px}
+    .band-editor-shell .members-field{min-height:150px}
+    .band-editor-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+    .band-editor-actions .auth-button{width:auto;min-width:150px;text-decoration:none}
+    @media(max-width:620px){.band-editor-grid{grid-template-columns:1fr}.band-editor-actions .auth-button{width:100%}}
+  </style>
+</head>
+<body class="hamburger-active auth-page">
+  <div id="global-header"></div>
+
+  <main class="band-editor-shell">
+    <h1>Edit Burning Time</h1>
+    <p class="band-editor-note">Changes saved here update the existing Burning Time profile page.</p>
+
+    <p id="editor-message" class="auth-message">Checking profile access…</p>
+
+    <form id="band-editor-form" class="auth-form" hidden>
+      <section class="band-editor-section">
+        <h2>Band identity</h2>
+        <div class="band-editor-grid">
+          <label>Band name<input id="display-name" type="text" maxlength="100" required></label>
+          <label>Genre<input id="genre" type="text" maxlength="150"></label>
+          <label>Location<input id="location" type="text" maxlength="120"></label>
+          <label>Band status<input id="status" type="text" maxlength="150" placeholder="🎤 Available for gigs"></label>
+        </div>
+        <label>Band bio<textarea id="bio" maxlength="2500" required></textarea></label>
+        <label>Band members<textarea id="members" class="members-field" maxlength="1500" placeholder="One member per line"></textarea></label>
+      </section>
+
+      <section class="band-editor-section">
+        <h2>Images</h2>
+        <div class="band-editor-grid">
+          <label>Banner image URL<input id="banner-image-url" type="url"></label>
+          <label>Profile image URL<input id="image-url" type="url"></label>
+        </div>
+      </section>
+
+      <section class="band-editor-section">
+        <h2>Featured release</h2>
+        <label>Featured heading<input id="featured-title" type="text" maxlength="180"></label>
+        <label>Featured description<input id="featured-copy" type="text" maxlength="300"></label>
+        <label>YouTube link<input id="featured-video-url" type="url"></label>
+      </section>
+
+      <section class="band-editor-section">
+        <h2>Links and booking</h2>
+        <div class="band-editor-grid">
+          <label>Spotify<input id="spotify" type="url"></label>
+          <label>YouTube<input id="youtube" type="url"></label>
+          <label>Instagram<input id="instagram" type="url"></label>
+          <label>Facebook<input id="facebook" type="url"></label>
+          <label>Website<input id="website" type="url"></label>
+          <label>Booking email<input id="booking-email" type="email"></label>
+        </div>
+        <label>Booking message<textarea id="booking-copy" maxlength="500"></textarea></label>
+      </section>
+
+      <div class="band-editor-actions">
+        <button id="save-band-button" class="auth-button" type="submit">Save Band Profile</button>
+        <a class="auth-button auth-button-secondary" href="burning-time.html">Cancel</a>
+      </div>
+      <p id="save-status" class="auth-message" role="status"></p>
+    </form>
+  </main>
+
+  <div id="global-footer"></div>
+  <script src="global.js?v=9"></script>
+  <script type="module">
+    import { auth, db } from './firebase-dev.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+    import { doc, getDoc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+
+    const BAND_ID='burning-time';
+    const AUTHORIZED_EMAIL='newleafpaintingcompany@gmail.com';
+    const form=document.getElementById('band-editor-form');
+    const message=document.getElementById('editor-message');
+    const status=document.getElementById('save-status');
+    const saveButton=document.getElementById('save-band-button');
+    let currentUser=null;
+
+    const defaults={
+      displayName:'Burning Time',
+      genre:'Rock / Metal',
+      location:'Maine',
+      status:'🎤 Available for gigs',
+      bio:"Burning Time has been playing together since 2014 with a sound that has been described as heavy meets melodic rock. They have played in numerous venues with a wide variety of artists and have developed a loyal fan base. Whether performing for hundreds at local clubs or thousands at festivals, BT delivers an unforgettable performance and an experience that won't soon be forgotten! Their mission? Bring a unique sound to the world and to keep the spirit of rock alive!",
+      members:'Kris Hype – Vocals/Guitar\nDan Aldrich – Drums\nDoug Waycott – Bass\nCarl Watson – Guitar\nJarred Desrochers – Guitar',
+      bannerImageUrl:'IMG_0389.jpeg',
+      imageUrl:'IMG_5121.jpeg',
+      featuredTitle:'Featured Release: “Hard to Follow”',
+      featuredCopy:'New single from Burning Time — available NOW!.',
+      featuredVideoUrl:'https://www.youtube.com/watch?v=RyAK3AAX49g',
+      spotify:'https://open.spotify.com/artist/4C2RKw1TtA1lgLTlI3tF0C?si=0gflAgIaSDiBs3sJthgSkw',
+      youtube:'https://youtube.com/@burningtime?si=otLMdQiGU3VoS_Dr',
+      instagram:'https://www.instagram.com/burningtimeband?igsh=MTJlajNkNzJ0YXlxOQ==',
+      facebook:'https://www.facebook.com/share/1LnXNiU1Zt/?mibextid=wwXIfr',
+      website:'https://www.burningtimemusic.com',
+      bookingEmail:'kris@krishype.com',
+      bookingCopy:"For booking or inquiries, visit the band's official website or email directly."
+    };
+
+    const fieldMap={
+      displayName:'display-name',genre:'genre',location:'location',status:'status',bio:'bio',members:'members',bannerImageUrl:'banner-image-url',imageUrl:'image-url',featuredTitle:'featured-title',featuredCopy:'featured-copy',featuredVideoUrl:'featured-video-url',spotify:'spotify',youtube:'youtube',instagram:'instagram',facebook:'facebook',website:'website',bookingEmail:'booking-email',bookingCopy:'booking-copy'
+    };
+    const value=(id)=>document.getElementById(id).value.trim();
+    function fill(data){Object.entries(fieldMap).forEach(([key,id])=>{document.getElementById(id).value=data[key]??'';});}
+
+    onAuthStateChanged(auth,async(user)=>{
+      if(!user){location.href='login.html';return;}
+      currentUser=user;
+      const signedInEmail=String(user.email||'').toLowerCase();
+      if(signedInEmail!==AUTHORIZED_EMAIL){message.textContent='This account is not authorized to edit Burning Time.';return;}
+
+      fill(defaults);
+      form.hidden=false;
+      message.textContent=`Signed in as ${user.email}.`;
+
+      try{
+        const snapshot=await getDoc(doc(db,'bandProfiles',BAND_ID));
+        if(snapshot.exists()) fill({...defaults,...snapshot.data()});
+      }catch(error){
+        console.error(error);
+        message.textContent=`Signed in as ${user.email}. Existing profile data could not be loaded yet, so the original page details are shown.`;
+      }
+    });
+
+    form.addEventListener('submit',async(event)=>{
+      event.preventDefault();
+      if(!currentUser)return;
+      saveButton.disabled=true;
+      status.textContent='Saving Burning Time…';
+      const data={ownerId:currentUser.uid,authorizedEmail:AUTHORIZED_EMAIL,displayName:value('display-name'),genre:value('genre'),location:value('location'),status:value('status'),bio:value('bio'),members:value('members'),bannerImageUrl:value('banner-image-url'),imageUrl:value('image-url'),featuredTitle:value('featured-title'),featuredCopy:value('featured-copy'),featuredVideoUrl:value('featured-video-url'),spotify:value('spotify'),youtube:value('youtube'),instagram:value('instagram'),facebook:value('facebook'),website:value('website'),bookingEmail:value('booking-email'),bookingCopy:value('booking-copy'),published:true,updatedAt:serverTimestamp()};
+      try{
+        await setDoc(doc(db,'bandProfiles',BAND_ID),data,{merge:true});
+        location.href='burning-time.html?updated=1';
+      }catch(error){
+        console.error(error);
+        status.textContent=error.code==='permission-denied'?'The editor works, but Firestore permission for band profiles still needs to be enabled before changes can save.':'The band profile could not be saved. Please try again.';
+        saveButton.disabled=false;
+      }
+    });
+  </script>
+</body>
+</html>

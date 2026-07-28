@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome | BANDtroductions</title>
+  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="auth.css?v=1">
+</head>
+<body class="hamburger-active auth-page">
+  <div id="global-header"></div>
+
+  <main class="auth-shell">
+    <section id="welcome-card" class="auth-form" style="text-align:center;" hidden>
+      <p style="font-size:2.5rem; margin:0;">🤘</p>
+      <h1 id="welcome-title">Welcome to BANDtroductions</h1>
+      <p id="welcome-message" class="auth-subtitle">Your account is ready. Next, let’s build your profile.</p>
+
+      <a id="setup-profile-link" class="auth-button" href="profile-setup.html" style="display:inline-flex; text-decoration:none; justify-content:center; margin-top:18px;">
+        Set Up My Profile
+      </a>
+
+      <a href="index.html" style="display:block; margin-top:18px;">Browse as a guest for now</a>
+      <button id="logout-button" type="button" style="margin-top:18px; background:none; border:0; color:#aaa; text-decoration:underline; cursor:pointer;">Log out</button>
+      <p id="welcome-status" class="auth-message" role="status"></p>
+    </section>
+  </main>
+
+  <div id="global-footer"></div>
+  <script src="global.js?v=5"></script>
+  <script type="module">
+    import { auth, db } from './firebase-dev.js';
+    import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+    import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+
+    const card = document.getElementById('welcome-card');
+    const title = document.getElementById('welcome-title');
+    const message = document.getElementById('welcome-message');
+    const status = document.getElementById('welcome-status');
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.replace('login.html');
+        return;
+      }
+
+      try {
+        const [profileSnapshot, userSnapshot] = await Promise.all([
+          getDoc(doc(db, 'profiles', user.uid)),
+          getDoc(doc(db, 'users', user.uid))
+        ]);
+
+        if (profileSnapshot.exists()) {
+          window.location.replace('community.html');
+          return;
+        }
+
+        const data = userSnapshot.exists() ? userSnapshot.data() : {};
+        const name = data.displayName || user.displayName || 'there';
+        const type = data.accountType || 'member';
+
+        title.textContent = `Welcome, ${name}!`;
+        message.textContent = `Your ${type} account is ready. Next, let’s build your public profile.`;
+        card.hidden = false;
+      } catch (error) {
+        console.error(error);
+        status.textContent = 'We could not confirm your profile status. Please try again.';
+        card.hidden = false;
+      }
+    });
+
+    document.getElementById('logout-button').addEventListener('click', async () => {
+      await signOut(auth);
+      window.location.replace('login.html');
+    });
+  </script>
+</body>
+</html>

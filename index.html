@@ -8,9 +8,7 @@
 <title>BANDtroductions | Maine’s Musician Hub for Bands, Musicians, Venues & Fans</title>
 
 <meta name="description" content="BANDtroductions is Maine’s local music hub for bands, musicians, venues, and fans. Watch local band videos, find musicians, discover venues, list gear, and support the Maine music scene.">
-
 <meta name="keywords" content="Maine bands, Maine musicians, Maine music scene, local bands Maine, Maine live music, Maine venues, New England bands, find musicians Maine, band profiles Maine, BANDtroductions">
-
 <meta name="author" content="BANDtroductions">
 
 <link rel="canonical" href="https://www.bandtroductions.com/">
@@ -40,7 +38,7 @@
 }
 </script>
 
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=9">
 
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
@@ -49,95 +47,56 @@
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-60112G8RH3');
 </script>
 
-  <style>
-/* HOME PAGE SPONSOR ROTATING CARD */
-
-.home-sponsor-card {
-  min-height: 155px;
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  cursor: default;
-}
-
-.home-sponsor-slide {
-  width: 100%;
-  min-height: 155px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transition: opacity .45s ease, transform .45s ease;
-}
-
-.home-sponsor-slide.fade-out {
-  opacity: 0;
-  transform: scale(.96);
-}
-
-.home-sponsor-slide h3 {
-  color: #00c8b4;
-  margin: 0 0 8px;
-  font-size: 1rem;
-}
-
-.home-sponsor-slide p {
-  color: #ccc;
-  margin: 0;
-  font-size: 0.85rem;
-  line-height: 1.35;
-}
-
-.home-sponsor-slide img {
-  width: 100%;
-  max-height: 130px;
-  object-fit: contain;
-  border-radius: 12px;
-}
+<style>
+.hero.home-social-hero{padding:21px 16px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.hero.home-social-hero h1{margin:0;font-size:clamp(1.62rem,7vw,2rem);line-height:1.05;white-space:nowrap}
+.hero.home-social-hero h1 span{color:#0ccfbd}
+.hero.home-social-hero .hero-lead{margin:2px 0 0;font-size:clamp(1.02rem,3.5vw,1.25rem);line-height:1.3}
+.hero.home-social-hero .hero-copy{margin:0;max-width:610px;font-size:clamp(.9rem,3vw,1.02rem);line-height:1.4}
+.hero.home-social-hero .hero-social-button{display:inline-flex;align-items:center;justify-content:center;margin-top:2px;padding:6px 12px;border-radius:999px;background:#0ccfbd;color:#07110f;font-size:.82rem;font-weight:900;text-decoration:none}
+.bt-card.bt-sponsor-card{display:flex;align-items:center;justify-content:center;text-align:center;background:radial-gradient(circle at center,rgba(12,207,189,.16),transparent 68%),linear-gradient(145deg,#171717,#111);border-color:rgba(12,207,189,.45);overflow:hidden}
+.bt-sponsor-card .sponsor-card-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:100%;height:100%}
+.bt-sponsor-card .sponsor-label{font-size:.7rem;letter-spacing:.12em;color:#8d8d8d;font-weight:800}
+.bt-sponsor-card .sponsor-name{font-size:1.24rem;line-height:1.05;color:#fff;font-weight:900}
+.bt-sponsor-card .sponsor-name span{color:#0ccfbd}
+.bt-sponsor-card .sponsor-note{font-size:.78rem;color:#aaa;margin:0}
+.bt-sponsor-card .sponsor-link{color:#0ccfbd;font-weight:900;font-size:.82rem}
 </style>
+
 </head>
 
 <body class="hamburger-active home-page">
 
 <div id="global-header"></div>
 
-<section class="hero">
-
-  <h1>Connecting Bands, Musicians, Venues & Fans in One Place.</h1>
-
-  <p>
-    Discover bands, connect with musicians, find venues, and support the independent music community.
-  </p>
-
-  <p style="color:#888;font-size:18px;margin-top:8px;">
-    Built for the independent music community.
-  </p>
-
+<section class="hero home-social-hero">
+  <p style="margin:0;color:#b8b8b8;font-size:.9rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;">Now Featuring</p>
+  <h1>BANDtroductions <span>Social</span></h1>
+  <p class="hero-lead">Connecting you to local music scenes everywhere.</p>
+  <p class="hero-copy">Discover bands, connect with musicians, find venues, and join a community built entirely around music.</p>
+  <a class="hero-social-button" href="community.html">Join Our Community →</a>
 </section>
 
 <section class="bt-home-cards-section">
 
   <div class="bt-home-intro">
     <h2>Choose Your Path</h2>
-    <!--<p>
-      Discover  bands, find musicians, discover venues, list gear, and help spotlight your local music scene.
-    </p>-->
   </div>
 
   <div class="bt-card-grid">
-<div class="bt-card home-sponsor-card">
-  <div id="homeSponsorSlide" class="home-sponsor-slide">
-    <h3>Thank you to our sponsors</h3>
-    <p>Helping keep BANDtroductions free for bands, fans, and independent music supporters.</p>
-  </div>
-</div>
+
+    <a class="bt-card bt-sponsor-card" href="sponsors.html">
+      <div class="sponsor-card-inner">
+        <div class="sponsor-label">SPONSORED PARTNER</div>
+        <div class="sponsor-name">Gone Rogue <span>Records</span></div>
+        <p class="sponsor-note">Supporting independent music.</p>
+        <div class="sponsor-link">View Sponsor →</div>
+      </div>
+    </a>
+
     <a class="bt-card" href="bandfeed1.html">
       <h3>🎥 Watch Bands</h3>
       <p>Jump into BANDfeed and discover local performances.</p>
@@ -168,7 +127,7 @@
       <span>Browse →</span>
     </a>
 
-  <a class="bt-card" href="band-of-the-week.html">
+    <a class="bt-card" href="band-of-the-week.html">
       <h3>🏆 Band of the Week</h3>
       <p>Vote and support bands.</p>
       <span>Vote →</span>
@@ -210,24 +169,6 @@
   </div>
 </section>
 
-<!-- <section class="local-scene">
-  <h2>Find What You Need</h2>
-  <div class="scene-grid">
-    <div class="scene-card">
-      <h3>Find Bands</h3>
-      <a href="bands.html">Find Bands</a>
-    </div>
-    <div class="scene-card">
-      <h3>Find Musicians</h3>
-      <a href="musicians.html">Find Musicians</a>
-    </div>
-    <div class="scene-card">
-      <h3>Find Members</h3>
-      <a href="bandmatch.html">Find Members</a>
-    </div>
-  </div>
-</section> -->
-
 <section class="how-it-works">
   <h2>How BANDtroductions Works</h2>
 
@@ -266,300 +207,131 @@
 </section>
 
 <div id="global-footer"></div>
-<script src="global.js?v=2"></script>
-<script>
-const homeSponsorSlides = [
-  {
-    type: "message",
-    title: "Thank you to our sponsors",
-    text: "Helping keep BANDtroductions free for bands, fans, and independent music supporters."
-  },
-  {
-    type: "logo",
-    name: "Rock Rage Radio",
-    logo: "ff796046372b48681a359daff6375626.jpeg"
-  },
-  {
-    type: "logo",
-    name: "The Plowzone Radio Show",
-    logo: "IMG_0908.jpeg"
-  },
-  {
-    type: "logo",
-    name: "Gone Rogue Records",
-    logo: "IMG_0699.jpeg"
-  },
-  {
-    type: "logo",
-    name: "New Leaf Painting Company",
-    logo: "9A3AD6D7-8C0C-4C27-BE09-A19C2F0834AE.png"
-  }
-];
+<script src="global.js?v=8"></script>
 
-let homeSponsorSlideIndex = 0;
-
-function showHomeSponsorSlide() {
-  const sponsorSlide = document.getElementById("homeSponsorSlide");
-  if (!sponsorSlide) return;
-
-  sponsorSlide.classList.add("fade-out");
-
-  setTimeout(() => {
-    const slide = homeSponsorSlides[homeSponsorSlideIndex];
-
-    if (slide.type === "message") {
-      sponsorSlide.innerHTML = `
-        <h3>${slide.title}</h3>
-        <p>${slide.text}</p>
-      `;
-    } else {
-      sponsorSlide.innerHTML = `
-        <img src="${slide.logo}" alt="${slide.name}">
-      `;
-    }
-
-    sponsorSlide.classList.remove("fade-out");
-
-    homeSponsorSlideIndex = (homeSponsorSlideIndex + 1) % homeSponsorSlides.length;
-  }, 450);
-}
-
-showHomeSponsorSlide();
-setInterval(showHomeSponsorSlide, 4000);
-</script>
-
-<!-- FEATURED BAND POPUP - I, THE CONQUEROR -->
-<div id="featured-popup" class="featured-popup is-hidden" role="dialog" aria-modal="true" aria-label="I, the Conqueror featured release popup">
+<!-- FEATURED BAND POPUP -->
+<div id="featured-popup" class="featured-popup">
   <div class="featured-popup-card">
-    <button class="featured-popup-close" type="button" onclick="closeFeaturedPopup()" aria-label="Close popup">&times;</button>
+    <button class="featured-popup-close" onclick="closeFeaturedPopup()">×</button>
 
-    <p class="featured-popup-label" id="featured-popup-label">🔥 New Single Coming Soon</p>
+    <p class="featured-popup-label">🚨 Featured Band Alert</p>
 
-    <img
-      id="featured-popup-image"
-      class="featured-popup-image"
-      src="https://curiositydrop.com/bandtroductions/f0593ab9bc6625b5d9674595f8c1d55c.jpeg"
-      alt="I, the Conqueror - Doppelganger new single out July 17"
-    >
+    <h2>Burning Time</h2>
 
-    <div class="featured-popup-actions" id="featured-popup-actions"></div>
+    <p>
+      Burning Time’s new single <strong>“Hard to Follow”</strong>
+      is out now.
+    </p>
 
-    <div class="featured-popup-note" id="featured-popup-note"></div>
+    <div class="featured-popup-actions">
+
+      <a href="burning-time.html" class="featured-popup-btn primary">
+        🔥 Listen Now
+      </a>
+
+      <a href="burning-time.html" class="featured-popup-btn secondary">
+        🎸 View Band
+      </a>
+
+    </div>
   </div>
 </div>
 
 <style>
 .featured-popup {
+  display: none;
   position: fixed;
   inset: 0;
+  background: rgba(0,0,0,0.82);
   z-index: 99999;
-  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14px;
-  background: rgba(0, 0, 0, 0.82);
-  backdrop-filter: blur(6px);
-}
-
-.featured-popup.is-hidden {
-  display: none;
+  padding: 20px;
 }
 
 .featured-popup-card {
-  width: min(94vw, 520px);
-  max-height: 92vh;
-  position: relative;
-  overflow-y: auto;
-  padding: 16px 16px 18px;
-  border: 1px solid rgba(0, 255, 255, 0.38);
-  border-radius: 22px;
-  background:
-    radial-gradient(circle at top left, rgba(0, 255, 255, 0.16), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.08), transparent 32%),
-    #080808;
-  box-shadow: 0 0 35px rgba(0, 255, 255, 0.24);
-  color: #f5f5f5;
+  background: #151515;
+  border: 1px solid rgba(0, 200, 180, 0.45);
+  border-radius: 18px;
+  max-width: 430px;
+  width: 100%;
+  padding: 28px 22px;
   text-align: center;
+  box-shadow: 0 0 30px rgba(0, 200, 180, 0.18);
+  position: relative;
 }
 
 .featured-popup-close {
   position: absolute;
   top: 10px;
-  right: 10px;
-  z-index: 2;
-  width: 38px;
-  height: 38px;
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.72);
-  color: #fff;
-  font-size: 24px;
-  line-height: 1;
+  right: 14px;
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 28px;
   cursor: pointer;
 }
 
 .featured-popup-label {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 42px 12px;
-  padding: 6px 12px;
-  border: 1px solid rgba(0, 255, 255, 0.38);
-  border-radius: 999px;
-  color: #8ff;
-  font-size: 12px;
+  color: #00c8b4;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  margin-bottom: 8px;
 }
 
-.featured-popup-image {
-  display: block;
-  width: 100%;
-  max-height: 62vh;
-  object-fit: contain;
-  margin: 0 auto 14px;
-  border-radius: 14px;
-  box-shadow: 0 0 18px rgba(0, 0, 0, 0.55);
+.featured-popup-card h2 {
+  color: white;
+  font-size: 2rem;
+  margin: 5px 0 12px;
+}
+
+.featured-popup-card p {
+  color: #ddd;
+  line-height: 1.5;
 }
 
 .featured-popup-actions {
-  display: grid;
-  gap: 10px;
-  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 22px;
 }
 
 .featured-popup-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 48px;
+  display: inline-block;
+  padding: 13px 18px;
   border-radius: 999px;
-  font-weight: 900;
+  font-weight: 800;
   text-decoration: none;
 }
 
 .featured-popup-btn.primary {
-  border: 0;
-  background: teal;
-  color: #fff;
+  background: #00c8b4;
+  color: #000;
+  box-shadow: 0 0 18px rgba(0, 200, 180, 0.45);
 }
 
-.featured-popup-note {
-  margin-top: 12px;
-  color: #999;
-  font-size: 13px;
+.featured-popup-btn.secondary {
+  border: 1px solid #00c8b4;
+  color: #00c8b4;
 }
 </style>
 
 <script>
-const popupParams = new URLSearchParams(window.location.search);
-const FEATURED_POPUP_TEST_MODE = popupParams.get('popupTest');
-const FEATURED_POPUP_TEST_DATE = popupParams.get('popupDate');
+document.addEventListener('DOMContentLoaded', function () {
+  const popupSeen = localStorage.getItem('bt_featured_popup_seen');
 
-const featuredPopup = document.getElementById('featured-popup');
-const popupLabel = document.getElementById('featured-popup-label');
-const popupImage = document.getElementById('featured-popup-image');
-const popupActions = document.getElementById('featured-popup-actions');
-const popupNote = document.getElementById('featured-popup-note');
-
-const bandPageUrl = 'i-the-conqueror.html';
-const comingSoonImage = 'https://curiositydrop.com/bandtroductions/f0593ab9bc6625b5d9674595f8c1d55c.jpeg';
-const outNowImage = 'https://curiositydrop.com/bandtroductions/1ba698e976146be7f55f3be2c78f0921.jpeg';
-const comingSoonStart = '2026-07-03';
-const comingSoonEnd = '2026-07-16';
-const outNowStart = '2026-07-17';
-const outNowEnd = '2026-08-15';
-
-function getLocalDateString(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function getPopupStatus() {
-  if (FEATURED_POPUP_TEST_MODE === 'off') return null;
-  if (FEATURED_POPUP_TEST_MODE === 'coming') return 'coming';
-  if (FEATURED_POPUP_TEST_MODE === 'out') return 'out';
-
-  const today = FEATURED_POPUP_TEST_DATE || getLocalDateString(new Date());
-
-  if (today >= comingSoonStart && today <= comingSoonEnd) {
-    return 'coming';
+  if (!popupSeen) {
+    setTimeout(function () {
+      document.getElementById('featured-popup').style.display = 'flex';
+    }, 900);
   }
-
-  if (today >= outNowStart && today <= outNowEnd) {
-    return 'out';
-  }
-
-  return null;
-}
-
-function buildFeaturedPopup() {
-  const status = getPopupStatus();
-
-  if (!status) {
-    featuredPopup.classList.add('is-hidden');
-    return;
-  }
-
-  if (status === 'coming') {
-    popupLabel.textContent = '🔥 New Single Coming Soon';
-    popupImage.src = comingSoonImage;
-    popupImage.alt = 'I, the Conqueror - Doppelganger new single out July 17';
-    popupActions.innerHTML = `
-      <a href="${bandPageUrl}" class="featured-popup-btn primary">🎸 View I, the Conqueror</a>
-    `;
-    popupNote.textContent = 'Featured on BANDtroductions 🤘';
-  }
-
-  if (status === 'out') {
-    popupLabel.textContent = '🔥 New Single Out Now';
-    popupImage.src = outNowImage;
-    popupImage.alt = 'I, the Conqueror - Doppelganger out now';
-    popupActions.innerHTML = `
-      <a href="${bandPageUrl}" class="featured-popup-btn primary">🎧 Listen Now</a>
-    `;
-    popupNote.textContent = 'Featured on BANDtroductions 🤘';
-  }
-
-  const storageKey = `bt_i_the_conqueror_popup_seen_${status}`;
-  const isTesting = FEATURED_POPUP_TEST_MODE === 'coming' || FEATURED_POPUP_TEST_MODE === 'out' || FEATURED_POPUP_TEST_MODE === 'date';
-
-  if (!isTesting && localStorage.getItem(storageKey) === 'true') {
-    featuredPopup.classList.add('is-hidden');
-    return;
-  }
-
-  setTimeout(function () {
-    featuredPopup.classList.remove('is-hidden');
-  }, 700);
-}
+});
 
 function closeFeaturedPopup() {
-  const status = getPopupStatus();
-  if (status) {
-    localStorage.setItem(`bt_i_the_conqueror_popup_seen_${status}`, 'true');
-  }
-  featuredPopup.classList.add('is-hidden');
+  localStorage.setItem('bt_featured_popup_seen', 'true');
+  document.getElementById('featured-popup').style.display = 'none';
 }
-
-featuredPopup.addEventListener('click', function(event) {
-  if (event.target === featuredPopup) {
-    closeFeaturedPopup();
-  }
-});
-
-document.addEventListener('keydown', function(event) {
-  if (event.key === 'Escape') {
-    closeFeaturedPopup();
-  }
-});
-
-buildFeaturedPopup();
 </script>
-
+  
 </body>
 </html>

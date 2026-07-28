@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account | BANDtroductions</title>
+  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="auth.css?v=1">
+</head>
+<body class="hamburger-active auth-page">
+  <div id="global-header"></div>
+
+  <main class="auth-shell">
+    <h1>Create Your BANDtroductions Account</h1>
+    <p class="auth-subtitle">Join as a band, musician, venue, or fan. Browsing stays free for guests, and core site access will never be paywalled.</p>
+
+    <form id="signup-form" class="auth-form">
+      <label>
+        Account type
+        <select id="account-type" required>
+          <option value="">Choose one</option>
+          <option value="band">Band</option>
+          <option value="musician">Musician</option>
+          <option value="venue">Venue</option>
+          <option value="fan">Fan</option>
+        </select>
+      </label>
+
+      <label>
+        Display name
+        <input id="display-name" type="text" maxlength="80" required autocomplete="name">
+      </label>
+
+      <label>
+        Email
+        <input id="email" type="email" required autocomplete="email">
+      </label>
+
+      <label>
+        Password
+        <input id="password" type="password" minlength="8" required autocomplete="new-password">
+      </label>
+
+      <label class="auth-check">
+        <input id="community-rules" type="checkbox" required>
+        <span>I agree to keep BANDtroductions music-focused. Political arguments, religious debates, harassment, drama, and generally being a douche are not allowed.</span>
+      </label>
+
+      <label class="auth-check">
+        <input id="rights-acknowledgment" type="checkbox" required>
+        <span>I understand that any music, artwork, photos, or videos I later upload must be mine to use or properly authorized. Additional music-rights permission will be required when uploading promotional content.</span>
+      </label>
+
+      <button id="signup-button" class="auth-button" type="submit">Create Account</button>
+      <p id="signup-message" class="auth-message" role="status"></p>
+    </form>
+
+    <p class="auth-links">Already joined? <a id="login-link" href="login.html">Log in</a></p>
+  </main>
+
+  <div id="global-footer"></div>
+  <script src="global.js?v=2"></script>
+  <script type="module">
+    import { auth, db } from './firebase-dev.js';
+    import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+    import { doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+
+    const params = new URLSearchParams(location.search);
+    const requestedReturn = params.get('returnTo') || '';
+    const safeReturn = requestedReturn && !requestedReturn.startsWith('//') && !requestedReturn.includes('://')
+      ? requestedReturn
+      : 'welcome.html';
+
+    const loginLink = document.getElementById('login-link');
+    if (requestedReturn) loginLink.href = `login.html?returnTo=${encodeURIComponent(safeReturn)}`;
+
+    try {
+      const returnUrl = new URL(safeReturn, location.href);
+      const claimType = returnUrl.searchParams.get('type');
+      const claimName = returnUrl.searchParams.get('name');
+      if (['band', 'musician', 'venue'].includes(claimType)) {
+        document.getElementById('account-type').value = claimType;
+      }
+      if (claimName) document.getElementById('display-name').value = claimName;
+    } catch {}
+
+    const form = document.getElementById('signup-form');
+    const button = document.getElementById('signup-button');
+    const message = document.getElementById('signup-message');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      button.disabled = true;
+      message.textContent = 'Creating your account...';
+      message.classList.remove('auth-success');
+
+      const accountType = document.getElementById('account-type').value;
+      const displayName = document.getElementById('display-name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const credential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(credential.user, { displayName });
+        await setDoc(doc(db, 'users', credential.user.uid), {
+          uid: credential.user.uid,
+          email,
+          displayName,
+          accountType,
+          profileComplete: false,
+          communityRulesAccepted: true,
+          rightsAcknowledgmentAccepted: true,
+          createdAt: serverTimestamp()
+        });
+        await sendEmailVerification(credential.user);
+        window.location.href = safeReturn;
+      } catch (error) {
+        console.error(error);
+        const friendly = {
+          'auth/email-already-in-use': 'That email already has an account. Log in instead.',
+          'auth/invalid-email': 'Please enter a valid email address.',
+          'auth/weak-password': 'Use a password with at least 8 characters.'
+        };
+        message.textContent = friendly[error.code] || 'Account creation failed. Please try again.';
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

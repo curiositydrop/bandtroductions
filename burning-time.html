@@ -23,10 +23,10 @@
 <main class="new-band-profile">
 
   <section class="profile-banner-wrap">
-    <img class="profile-banner-img" src="IMG_0389.jpeg" alt="Burning Time banner image">
+    <img id="band-banner-image" class="profile-banner-img" src="IMG_0389.jpeg" alt="Burning Time banner image">
 
     <div class="profile-avatar-card">
-      <img src="IMG_5121.jpeg" alt="Burning Time profile image">
+      <img id="band-avatar-image" src="IMG_5121.jpeg" alt="Burning Time profile image">
     </div>
   </section>
 
@@ -48,12 +48,12 @@
 
   <section class="profile-featured-video">
     <div class="section-title-row">
-      <h2>Featured Release: “Hard to Follow”</h2>
-      <p>New single from Burning Time — available NOW!.</p>
+      <h2 id="featured-release-title">Featured Release: “Hard to Follow”</h2>
+      <p id="featured-release-copy">New single from Burning Time — available NOW!.</p>
     </div>
 
     <div class="video-embed">
-      <iframe src="https://www.youtube.com/embed/RyAK3AAX49g"
+      <iframe id="featured-release-frame" src="https://www.youtube.com/embed/RyAK3AAX49g"
       title="Burning Time video"
       frameborder="0"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -115,8 +115,8 @@
 </details>
 
   <section class="profile-action-card">
-    <h1>Burning Time</h1>
-    <p class="profile-meta">Rock / Metal • Maine</p>
+    <h1 id="band-name">Burning Time</h1>
+    <p id="band-meta" class="profile-meta">Rock / Metal • Maine</p>
     <p class="featured-badge">⭐ Early Adopter Band on BANDtroductions</p>
 
     <div class="profile-action-row">
@@ -179,12 +179,12 @@ style="opacity:0.55; cursor:not-allowed; pointer-events:none;">
   <details class="profile-details-card">
     <summary>Learn more about Burning Time</summary>
 
-    <p>
+    <p id="band-bio">
       Burning Time has been playing together since 2014 with a sound that has been described as heavy meets melodic rock. They have played in numerous venues with a wide variety of artists and have developed a loyal fan base. Whether performing for hundreds at local clubs or thousands at festivals, BT delivers an unforgettable performance and an experience that won't soon be forgotten! Their mission? Bring a unique sound to the world and to keep the spirit of rock alive!
     </p>
 
     <h3>Band Members</h3>
-    <ul class="band-members">
+    <ul id="band-members-list" class="band-members">
       <li>Kris Hype – Vocals/Guitar</li>
       <li>Dan Aldrich – Drums</li>
       <li>Doug Waycott – Bass</li>
@@ -195,11 +195,11 @@ style="opacity:0.55; cursor:not-allowed; pointer-events:none;">
 
   <section class="profile-side-card">
     <h3>Band Status</h3>
-    <p>🎤 Available for gigs</p>
-    <p>📍 Based in Maine</p>
+    <p id="band-status">🎤 Available for gigs</p>
+    <p id="band-location-status">📍 Based in Maine</p>
 
     <h3>Links</h3>
-    <div class="profile-link-list">
+    <div id="band-profile-links" class="profile-link-list">
       <a href="https://open.spotify.com/artist/4C2RKw1TtA1lgLTlI3tF0C?si=0gflAgIaSDiBs3sJthgSkw" target="_blank">Spotify</a>
       <a href="https://youtube.com/@burningtime?si=otLMdQiGU3VoS_Dr" target="_blank">YouTube</a>
       <a href="https://www.instagram.com/burningtimeband?igsh=MTJlajNkNzJ0YXlxOQ==" target="_blank">Instagram</a>
@@ -208,13 +208,10 @@ style="opacity:0.55; cursor:not-allowed; pointer-events:none;">
     </div>
 
     <h3>Booking</h3>
-    <p>For booking or inquiries, visit the band's official website or email directly.</p>
+    <p id="booking-copy">For booking or inquiries, visit the band's official website or email directly.</p>
 
     <div class="profile-link-list">
-      <!--
-<a href="https://www.burningtimemusic.com" target="_blank">Official Website</a>
--->
-      <a href="mailto:kris@krishype.com">Email Burning Time</a>
+      <a id="band-booking-email" href="mailto:kris@krishype.com">Email Burning Time</a>
     </div>
   </section>
 
@@ -239,8 +236,9 @@ style="opacity:0.55; cursor:not-allowed; pointer-events:none;">
   </div>
 </div>
 
-<script src="global.js"></script>
+<script src="global.js?v=9"></script>
 <script type="module" src="band-interactions.js?v=5"></script>
+<script type="module" src="burning-time-profile.js?v=3"></script>
 
 <!-- SUPPORT MODAL SCRIPT -->
 <script>

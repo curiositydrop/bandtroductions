@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Set Up Profile | BANDtroductions</title>
+  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="auth.css?v=5">
+  <style>
+    .name-emoji-row{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;align-items:end}
+    .emoji-select-wrap{display:grid;grid-template-columns:54px minmax(0,1fr);gap:8px;align-items:end}
+    .emoji-preview{height:54px;border:1px solid #3a3a3a;border-radius:12px;background:#101010;display:grid;place-items:center;font-size:1.9rem}
+    .auto-grow{min-height:48px;max-height:320px;resize:none;overflow-y:hidden}
+    .account-tools{margin-top:18px;padding-top:18px;border-top:1px solid #333}
+    .account-tools h2{margin:0 0 8px;font-size:1.1rem}
+    .account-tools p{margin:0 0 12px;color:#aaa}
+    .profile-image-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .profile-image-field{display:grid;gap:8px}
+    .profile-image-preview{width:100%;height:150px;border:1px solid #3a3a3a;border-radius:14px;background:#0c0c0c;display:grid;place-items:center;overflow:hidden;color:#777;font-weight:800;text-align:center;padding:12px}
+    .profile-image-preview.avatar{width:150px;max-width:100%;border-radius:50%;justify-self:start}
+    .profile-image-preview img{width:100%;height:100%;object-fit:cover}
+    .profile-image-field input[type=file]{padding:12px;background:#0d0d0d;border:1px solid #3a3a3a;border-radius:12px;color:#ddd}
+    .upload-note{color:#999;font-size:.82rem;line-height:1.4}
+    @media(max-width:620px){.name-emoji-row,.profile-image-grid{grid-template-columns:1fr}.emoji-select-wrap{grid-template-columns:54px minmax(0,1fr)}}
+  </style>
+</head>
+<body class="hamburger-active auth-page">
+  <div id="global-header"></div>
+  <main class="auth-shell auth-shell-wide">
+    <h1 id="page-title">Set Up Your Profile</h1>
+    <p id="setup-message" class="auth-subtitle">Loading your account…</p>
+    <form id="profile-form" class="auth-form" hidden>
+      <div class="name-emoji-row">
+        <label>Public display name<input id="display-name" type="text" maxlength="80" required></label>
+        <div id="fan-emoji-editor" class="emoji-select-wrap" hidden>
+          <div id="emoji-preview" class="emoji-preview" aria-hidden="true">🎵</div>
+          <label>Profile emoji
+            <select id="profile-emoji">
+              <option value="">None</option>
+              <option value="🎵">🎵</option><option value="🎸">🎸</option><option value="🤘">🤘</option><option value="🔥">🔥</option><option value="💀">💀</option><option value="🖤">🖤</option><option value="🎧">🎧</option><option value="🎤">🎤</option><option value="🥁">🥁</option><option value="⚡">⚡</option><option value="🦇">🦇</option><option value="👽">👽</option><option value="😈">😈</option><option value="🌙">🌙</option><option value="🕸️">🕸️</option><option value="🧨">🧨</option><option value="🚀">🚀</option><option value="☕">☕</option><option value="😎">😎</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <label>Location<input id="location" type="text" maxlength="100" placeholder="Portland, Maine"></label>
+      <div class="profile-image-grid">
+        <div class="profile-image-field">
+          <strong>Banner image</strong>
+          <div id="banner-preview" class="profile-image-preview">No banner selected</div>
+          <input id="banner-image-file" type="file" accept="image/*">
+          <input id="banner-image-url" type="hidden">
+          <small class="upload-note">Wide image shown across the top of your profile. Images are limited to 12 MB.</small>
+        </div>
+        <div class="profile-image-field">
+          <strong>Avatar image</strong>
+          <div id="avatar-preview" class="profile-image-preview avatar">Initials will appear</div>
+          <input id="image-file" type="file" accept="image/*">
+          <input id="image-url" type="hidden">
+          <small class="upload-note">Square images work best. Images are limited to 12 MB.</small>
+        </div>
+      </div>
+      <label>About<textarea id="bio" class="auto-grow" maxlength="1000" rows="1" required placeholder="Tell the music community about yourself..."></textarea><small><span id="bio-count">0</span>/1000 characters</small></label>
+      <div id="band-fields" class="account-fields" hidden>
+        <div class="auth-grid"><label>Genre<input id="genre" type="text" maxlength="120" placeholder="Rock / Metal"></label><label>Year formed<input id="year-formed" type="number" min="1900" max="2100"></label></div>
+        <label>Band members<textarea id="members" rows="4" maxlength="800" placeholder="Names and roles"></textarea></label>
+        <label>Booking/contact email<input id="booking-email" type="email"></label>
+      </div>
+      <div id="musician-fields" class="account-fields" hidden>
+        <label>Instrument(s) / role<input id="instruments" type="text" maxlength="200" placeholder="Guitar, vocals, drums..."></label>
+        <div class="auth-grid"><label>Experience level<input id="experience" type="text" maxlength="120"></label><label>Looking for a band?<select id="looking-for-band"><option value="no">No</option><option value="yes">Yes</option><option value="maybe">Open to opportunities</option></select></label></div>
+      </div>
+      <div id="venue-fields" class="account-fields" hidden>
+        <div class="auth-grid"><label>Venue capacity<input id="capacity" type="number" min="0"></label><label>Venue type<input id="venue-type" type="text" maxlength="120" placeholder="Club, bar, theater..."></label></div>
+        <label>Booking information<textarea id="venue-booking" rows="4" maxlength="1000"></textarea></label>
+      </div>
+      <div id="fan-fields" class="account-fields" hidden>
+        <label>Favorite genres<input id="favorite-genres" type="text" maxlength="250" placeholder="Metal, punk, country..."></label>
+        <label>What brings you to BANDtroductions?<textarea id="fan-interests" rows="4" maxlength="800"></textarea></label>
+      </div>
+      <label>Website or main link<input id="website" type="text" inputmode="url" placeholder="bandtroductions.com"></label>
+      <label>Music/video link<input id="media-link" type="text" inputmode="url" placeholder="YouTube, Spotify, Bandcamp, etc."></label>
+      <button id="save-button" class="auth-button" type="submit">Save & Publish Profile</button>
+      <p id="setup-status" class="auth-message" role="status"></p>
+      <section class="account-tools">
+        <h2>Account security</h2>
+        <p>Need a new password? We’ll email you a secure Firebase reset link.</p>
+        <button id="password-reset-button" class="auth-button auth-button-secondary" type="button">Send Password Reset Email</button>
+        <p id="password-reset-status" class="auth-message" role="status"></p>
+      </section>
+    </form>
+  </main>
+  <div id="global-footer"></div>
+  <script src="global.js?v=2"></script>
+  <script type="module">
+    import { auth, db, storage } from './firebase-dev.js';
+    import { onAuthStateChanged, updateProfile, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+    import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+    import { getDownloadURL, ref, uploadBytes } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
+    const form=document.getElementById('profile-form');
+    const message=document.getElementById('setup-message');
+    const status=document.getElementById('setup-status');
+    const saveButton=document.getElementById('save-button');
+    const emojiSelect=document.getElementById('profile-emoji');
+    const emojiPreview=document.getElementById('emoji-preview');
+    const emojiEditor=document.getElementById('fan-emoji-editor');
+    const bio=document.getElementById('bio');
+    const bioCount=document.getElementById('bio-count');
+    const resetButton=document.getElementById('password-reset-button');
+    const resetStatus=document.getElementById('password-reset-status');
+    const bannerFile=document.getElementById('banner-image-file');
+    const avatarFile=document.getElementById('image-file');
+    const bannerPreview=document.getElementById('banner-preview');
+    const avatarPreview=document.getElementById('avatar-preview');
+    let currentUser;
+    let accountType;
+    let targetProfileId='';
+    let existingOwnerId='';
+    let existingBannerImageUrl='';
+    let existingImageUrl='';
+    const value=(id)=>document.getElementById(id)?.value.trim()||'';
+    const normalizeUrl=(raw)=>{const url=raw.trim();if(!url)return '';return /^https?:\/\//i.test(url)?url:`https://${url}`;};
+    const safeName=(name)=>String(name||'image').replace(/[^a-z0-9._-]+/gi,'-').replace(/-+/g,'-');
+    function profileIdFromReferrer(){try{if(!document.referrer)return '';const referrer=new URL(document.referrer);if(!referrer.pathname.endsWith('/profile.html'))return '';return referrer.searchParams.get('id')||'';}catch(_){return '';}}
+    function showFields(type){document.querySelectorAll('.account-fields').forEach(section=>section.hidden=true);const section=document.getElementById(`${type}-fields`);if(section)section.hidden=false;emojiEditor.hidden=type!=='fan';}
+    function updateEmojiPreview(){emojiPreview.textContent=emojiSelect.value||'🎵';emojiPreview.style.opacity=emojiSelect.value?'1':'.35';}
+    function growBio(){bio.style.height='auto';bio.style.height=`${Math.min(bio.scrollHeight,320)}px`;bio.style.overflowY=bio.scrollHeight>320?'auto':'hidden';bioCount.textContent=bio.value.length;}
+    function setImagePreview(element,url,fallback){element.replaceChildren();if(!url){element.textContent=fallback;return;}const img=document.createElement('img');img.src=url;img.alt='Profile image preview';element.appendChild(img);}
+    function previewFile(input,element,fallback,existingUrl){const file=input.files?.[0];if(!file){setImagePreview(element,existingUrl||'',fallback);return;}setImagePreview(element,URL.createObjectURL(file),fallback);}
+    async function uploadProfileImage(file,kind){if(!file)return '';if(!file.type.startsWith('image/'))throw new Error(`${kind} must be an image file.`);if(file.size>12*1024*1024)throw new Error(`${kind} must be smaller than 12 MB.`);const path=`profile-media/${currentUser.uid}/${kind.toLowerCase()}-${Date.now()}-${safeName(file.name)}`;const snapshot=await uploadBytes(ref(storage,path),file,{contentType:file.type,customMetadata:{ownerId:currentUser.uid,profileImageType:kind.toLowerCase()}});return getDownloadURL(snapshot.ref);}
+    emojiSelect.addEventListener('change',updateEmojiPreview);
+    bio.addEventListener('input',growBio);
+    bannerFile.addEventListener('change',()=>previewFile(bannerFile,bannerPreview,'No banner selected',existingBannerImageUrl));
+    avatarFile.addEventListener('change',()=>previewFile(avatarFile,avatarPreview,'Initials will appear',existingImageUrl));
+    function fillProfile(data={}){const ids=['display-name','location','bio','genre','year-formed','members','booking-email','instruments','experience','looking-for-band','capacity','venue-type','venue-booking','profile-emoji','favorite-genres','fan-interests','website','media-link'];ids.forEach(id=>{const element=document.getElementById(id);if(!element)return;const key=id.replace(/-([a-z])/g,(_,letter)=>letter.toUpperCase());if(data[key]!==undefined&&data[key]!==null)element.value=data[key];});existingOwnerId=data.ownerId||'';existingBannerImageUrl=data.bannerImageUrl||data.coverImageUrl||data.bannerUrl||'';existingImageUrl=data.imageUrl||data.avatarUrl||data.photoURL||'';document.getElementById('banner-image-url').value=existingBannerImageUrl;document.getElementById('image-url').value=existingImageUrl;setImagePreview(bannerPreview,existingBannerImageUrl,'No banner selected');setImagePreview(avatarPreview,existingImageUrl,'Initials will appear');updateEmojiPreview();growBio();}
+    onAuthStateChanged(auth,async(user)=>{if(!user){window.location.href='login.html';return;}currentUser=user;try{const userSnapshot=await getDoc(doc(db,'users',user.uid));const userData=userSnapshot.exists()?userSnapshot.data():{};targetProfileId=new URLSearchParams(location.search).get('id')||profileIdFromReferrer()||user.uid;let existingProfile={displayName:userData.displayName||user.displayName||'',imageUrl:user.photoURL||'',ownerId:user.uid};try{const profileSnapshot=await getDoc(doc(db,'profiles',targetProfileId));if(profileSnapshot.exists())existingProfile=profileSnapshot.data();}catch(profileError){if(profileError.code!=='permission-denied')throw profileError;}if(existingProfile.ownerId&&existingProfile.ownerId!==user.uid){status.textContent='You do not have permission to edit this profile.';return;}accountType=existingProfile.accountType||userData.accountType||'fan';message.textContent=`Build and publish your ${accountType} profile. You can return and edit it anytime.`;showFields(accountType);fillProfile(existingProfile);form.hidden=false;status.textContent='';}catch(error){console.error(error);status.textContent='We could not load your account information.';}});
+    resetButton.addEventListener('click',async()=>{if(!currentUser?.email)return;resetButton.disabled=true;resetStatus.textContent='Sending reset email…';try{await sendPasswordResetEmail(auth,currentUser.email);resetStatus.textContent=`Password reset email sent to ${currentUser.email}.`;}catch(error){console.error(error);resetStatus.textContent='We could not send the reset email. Please try again.';}finally{resetButton.disabled=false;}});
+    form.addEventListener('submit',async(event)=>{event.preventDefault();if(!currentUser||!targetProfileId)return;saveButton.disabled=true;status.textContent='Saving your profile…';try{let bannerImageUrl=existingBannerImageUrl||value('banner-image-url');let imageUrl=existingImageUrl||value('image-url');if(bannerFile.files?.[0]){status.textContent='Uploading banner image…';bannerImageUrl=await uploadProfileImage(bannerFile.files[0],'Banner');}if(avatarFile.files?.[0]){status.textContent='Uploading avatar image…';imageUrl=await uploadProfileImage(avatarFile.files[0],'Avatar');}existingBannerImageUrl=bannerImageUrl;existingImageUrl=imageUrl;document.getElementById('banner-image-url').value=bannerImageUrl;document.getElementById('image-url').value=imageUrl;status.textContent='Saving your profile…';const profileData={ownerId:existingOwnerId||currentUser.uid,accountType,displayName:value('display-name'),location:value('location'),bannerImageUrl,imageUrl,bio:value('bio'),genre:value('genre'),yearFormed:value('year-formed'),members:value('members'),bookingEmail:value('booking-email'),instruments:value('instruments'),experience:value('experience'),lookingForBand:value('looking-for-band'),capacity:value('capacity'),venueType:value('venue-type'),venueBooking:value('venue-booking'),profileEmoji:value('profile-emoji'),favoriteGenres:value('favorite-genres'),fanInterests:value('fan-interests'),website:normalizeUrl(value('website')),mediaLink:normalizeUrl(value('media-link')),published:true,updatedAt:serverTimestamp()};await setDoc(doc(db,'profiles',targetProfileId),profileData,{merge:true});await updateDoc(doc(db,'users',currentUser.uid),{displayName:profileData.displayName,profileComplete:true,updatedAt:serverTimestamp()});await updateProfile(currentUser,{displayName:profileData.displayName,photoURL:imageUrl||currentUser.photoURL||null});window.location.href=`profile.html?id=${encodeURIComponent(targetProfileId)}`;}catch(error){console.error(error);status.textContent=error.message||'Your profile could not be saved. Please try again.';saveButton.disabled=false;}});
+  </script>
+</body>
+</html>

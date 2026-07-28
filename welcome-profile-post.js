@@ -1,0 +1,28 @@
+import { db } from './firebase-dev.js';
+import { doc, serverTimestamp, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+
+export async function createWelcomePost({profileId,displayName,accountType='member',authorId,authorName}){
+  if(!profileId||!displayName||!authorId)return false;
+  const postId=`welcome_${profileId}`;
+  try{
+    await setDoc(doc(db,'posts',postId),{
+      authorId,
+      authorName:authorName||'BANDtroductions Admin',
+      accountType:'fan',
+      category:'general',
+      content:`👋 Welcome ${displayName} — thank you for joining our community! 🤘`,
+      linkUrl:`profile.html?id=${encodeURIComponent(profileId)}`,
+      imageUrl:'',
+      welcomedProfileId:profileId,
+      welcomedAccountType:accountType,
+      published:true,
+      createdAt:serverTimestamp(),
+      updatedAt:serverTimestamp()
+    });
+    await updateDoc(doc(db,'profiles',profileId),{welcomePostCreated:true,welcomePostCreatedAt:serverTimestamp()}).catch(()=>{});
+    return true;
+  }catch(error){
+    console.warn('Welcome post could not be created:',error);
+    return false;
+  }
+}

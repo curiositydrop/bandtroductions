@@ -250,9 +250,9 @@ line-height:1.5;
 .profile-card img{
 width:100%;
 height:310px;
-object-fit:contain;
-object-position:center;
-background:#222;
+object-fit:cover;
+object-position:top;
+background:#333;
 margin-bottom:15px;
 }
 

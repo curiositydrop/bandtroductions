@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claim Existing Profile | BANDtroductions</title>
+  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="auth.css?v=13">
+  <style>
+    .claim-existing-shell{width:min(calc(100vw - 18px),760px);margin:0 auto;padding:22px 0 40px}
+    .claim-existing-card{border:1px solid #2f625e;border-radius:18px;background:linear-gradient(145deg,#191919,#101010);padding:22px;box-shadow:0 10px 28px rgba(0,0,0,.32);text-align:center}
+    .claim-existing-card h1{margin:.2rem 0 .6rem}
+    .claim-existing-card p{color:#ccc;line-height:1.55}
+    .claim-type-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:20px}
+    .claim-type-card{display:block;padding:18px;border:1px solid #3b3b3b;border-radius:15px;background:#111;color:#fff;text-decoration:none;text-align:left}
+    .claim-type-card:hover,.claim-type-card:focus{border-color:#0ccfbd;outline:none;transform:translateY(-1px)}
+    .claim-type-card strong{display:block;color:#0ccfbd;font-size:1.12rem;margin-bottom:5px}
+    .claim-type-card span{display:block;color:#bbb;line-height:1.45}
+    .claim-help{margin-top:18px;padding-top:16px;border-top:1px solid #333;color:#aaa!important;font-size:.9rem}
+    @media(min-width:640px){.claim-type-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  </style>
+</head>
+<body class="hamburger-active auth-page">
+  <div id="global-header"></div>
+
+  <main class="claim-existing-shell">
+    <section class="claim-existing-card">
+      <p class="profile-meta">ALREADY LISTED?</p>
+      <h1>Claim Your Existing Profile</h1>
+      <p>Choose the type of profile you already have. Find your listing in the directory, then tap <strong>“Is this yours? Claim this profile.”</strong></p>
+
+      <div class="claim-type-grid">
+        <a class="claim-type-card" href="bands.html">
+          <strong>Band</strong>
+          <span>Find your existing band listing and start the claim.</span>
+        </a>
+        <a class="claim-type-card" href="musicians.html">
+          <strong>Musician</strong>
+          <span>Find your individual musician profile and claim it.</span>
+        </a>
+        <a class="claim-type-card" href="venues.html">
+          <strong>Venue</strong>
+          <span>Find your venue listing and connect it to your account.</span>
+        </a>
+      </div>
+
+      <p class="claim-help">Don’t see your listing? Create a new profile instead.</p>
+      <a class="auth-button" href="create-profile.html">Create a New Profile</a>
+    </section>
+  </main>
+
+  <div id="global-footer"></div>
+  <script src="global.js?v=18"></script>
+</body>
+</html>

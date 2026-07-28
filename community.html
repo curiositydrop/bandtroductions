@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community | BANDtroductions</title>
+  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="auth.css?v=7">
+  <style>
+    .community-shell{width:min(calc(100vw - 16px),760px);margin:0 auto;padding:16px 0 34px}
+    .community-intro{margin-bottom:10px}
+    .community-intro h1{margin:.15rem 0 .35rem}
+    .compact-card{border:1px solid #2f625e;border-radius:14px;background:linear-gradient(145deg,#171717,#111);box-shadow:0 7px 18px rgba(0,0,0,.24)}
+    .community-guest{padding:12px 14px!important;margin:0 0 10px!important}
+    .community-guest-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .community-guest p{margin:0;color:#c8c8c8;font-size:.9rem}
+    .community-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .community-actions .auth-button{width:auto!important;min-height:38px;padding:8px 14px!important;font-size:.82rem}
+    .panel-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:0;background:transparent;color:#0ccfbd;font:inherit;font-weight:900;padding:12px 2px;cursor:pointer}
+    .panel-toggle span:last-child{font-size:1.1rem;transition:transform .2s ease}
+    .panel-toggle[aria-expanded="true"] span:last-child{transform:rotate(45deg)}
+    .community-tools-wrap{margin-bottom:8px}
+    .community-tools{margin:0!important;padding:14px!important;display:grid;gap:10px}
+    .community-tools[hidden],.composer-fields[hidden],.post-comments[hidden]{display:none!important}
+    .community-sort-note{font-size:.75rem;color:#999}
+    .community-composer{margin:0 0 10px!important;padding:14px!important}
+    .community-composer-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .composer-identity{display:flex;align-items:center;gap:10px;min-width:0}
+    .composer-mini-avatar{width:42px;height:42px;border-radius:11px;border:1px solid #0ccfbd;background:#090909;display:grid;place-items:center;overflow:hidden;font-weight:900;color:#0ccfbd;flex:0 0 auto}
+    .composer-mini-avatar img{width:100%;height:100%;object-fit:cover}
+    .composer-copy{min-width:0}.composer-copy strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.composer-copy p{margin:2px 0 0}
+    .composer-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .composer-actions a{font-size:.78rem}
+    .composer-toggle{width:auto!important;padding:8px 14px!important;min-height:38px;font-size:.82rem}
+    .composer-fields{display:grid;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid #2d2d2d}
+    .community-feed{display:grid;gap:10px}
+    .community-post{padding:14px!important;margin:0!important;border-radius:14px!important}
+    .community-post-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+    .community-author{font-weight:900;color:#0ccfbd;text-decoration:none}
+    .community-post-meta{font-size:.7rem;color:#969696;margin:2px 0 0}
+    .community-post-body{margin:12px 0 0;line-height:1.5}
+    .post-reactions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .post-reactions .rock-on-button{margin:0}
+    .comment-toggle{border:1px solid #0ccfbd;background:#101010;color:#0ccfbd;border-radius:999px;padding:8px 13px;font-weight:800;font-size:.78rem;cursor:pointer}
+    .post-comments{margin-top:12px;padding-top:12px;border-top:1px solid #2d2d2d}
+    .comment-list{display:grid;gap:8px}
+    .comment-form{margin-top:10px;display:grid;gap:8px}
+    .comment-form textarea{min-height:72px}
+    .shared-profile-card{margin-top:12px;padding:10px!important;border-radius:12px!important}
+    .shared-profile-card img{width:44px!important;height:44px!important}
+    .community-post-link{margin-top:12px!important}
+    @media(max-width:560px){
+      .community-shell{width:calc(100vw - 14px)}
+      .community-guest-row{align-items:flex-start}
+      .community-actions{width:100%}.community-actions .auth-button{flex:1}
+      .community-composer-heading{align-items:flex-start}
+      .composer-actions{gap:6px}.composer-toggle{padding:8px 11px!important}
+    }
+  </style>
+</head>
+<body class="hamburger-active auth-page">
+  <div id="global-header"></div>
+
+  <main class="auth-shell auth-shell-wide community-shell">
+    <section class="community-intro">
+      <p class="profile-meta">THE BANDtroductions COMMUNITY</p>
+      <h1>Community Feed</h1>
+      <p class="auth-subtitle">Newest first. No algorithm deciding who deserves to be seen. Every post remains attached to its creator.</p>
+    </section>
+
+    <section id="guest-prompt" class="auth-form community-guest compact-card" hidden>
+      <div class="community-guest-row">
+        <p>Want to join the conversation?</p>
+        <div class="community-actions">
+          <a class="auth-button" href="login.html">Log In</a>
+          <a class="auth-button auth-button-secondary" href="signup.html">Create Account</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="community-tools-wrap">
+      <button id="search-toggle" class="panel-toggle" type="button" aria-expanded="false" aria-controls="community-tools">
+        <span>Search Posts</span><span>＋</span>
+      </button>
+      <section id="community-tools" class="community-tools auth-form compact-card" hidden>
+        <label>Search posts<input id="feed-search" type="search" placeholder="Search names, posts, genres, releases..."></label>
+        <label>Show
+          <select id="feed-filter">
+            <option value="all">All</option><option value="band">Bands</option><option value="musician">Musicians</option><option value="venue">Venues</option><option value="fan">Scene Supporters</option><option value="release">Releases</option><option value="show">Shows</option><option value="video">Videos</option><option value="radio">Radio</option><option value="btv">BTV</option><option value="shared-profile">Shared Profiles</option>
+          </select>
+        </label>
+        <div class="community-sort-note">Sorted: <strong>Newest first</strong></div>
+      </section>
+    </section>
+
+    <section id="post-composer" class="auth-form community-composer compact-card" hidden>
+      <div class="community-composer-heading">
+        <div class="composer-identity">
+          <div id="composer-avatar" class="composer-mini-avatar">BT</div>
+          <div class="composer-copy">
+            <strong id="composer-name">Create a post</strong>
+            <p id="composer-type" class="profile-meta"></p>
+          </div>
+        </div>
+        <div class="composer-actions">
+          <a id="composer-profile-link" href="#">My Profile</a>
+          <button id="composer-toggle" class="auth-button composer-toggle" type="button" aria-expanded="false">Create Post</button>
+        </div>
+      </div>
+      <div id="composer-fields" class="composer-fields" hidden>
+        <label>Post category
+          <select id="post-category"><option value="general">General</option><option value="release">Release</option><option value="show">Show / Event</option><option value="video">Video</option><option value="radio">Radio</option><option value="btv">BTV</option><option value="shared-profile">Shared Profile</option></select>
+        </label>
+        <label>What do you want to share?<textarea id="post-content" rows="5" maxlength="3000" placeholder="Post something music-related..." required></textarea></label>
+        <div class="auth-grid">
+          <label>Optional link<input id="post-link" type="text" maxlength="500" placeholder="bandtroductions.com or https://..."></label>
+          <label>Image upload<input id="post-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled><small>Prepared for Firebase Storage. Uploading becomes available when Storage is activated.</small></label>
+        </div>
+        <button id="publish-post" class="auth-button" type="button">Publish Post</button>
+        <p id="composer-status" class="auth-message" role="status"></p>
+      </div>
+    </section>
+
+    <section id="feed" class="community-feed" aria-live="polite"></section>
+    <p id="feed-status" class="auth-message">Loading the community feed…</p>
+  </main>
+
+  <div id="global-footer"></div>
+  <script src="global.js?v=4"></script>
+  <script type="module">
+    import { auth, db } from './firebase-dev.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+    import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+
+    const composer=document.getElementById('post-composer'),guestPrompt=document.getElementById('guest-prompt'),composerStatus=document.getElementById('composer-status'),feedStatus=document.getElementById('feed-status'),feed=document.getElementById('feed'),searchInput=document.getElementById('feed-search'),filterInput=document.getElementById('feed-filter');
+    const searchToggle=document.getElementById('search-toggle'),tools=document.getElementById('community-tools'),composerToggle=document.getElementById('composer-toggle'),composerFields=document.getElementById('composer-fields');
+    let currentUser=null,currentProfile=null,posts=[],commentUnsubscribers=[],reactionUnsubscribers=[];
+
+    const normalizeUrl=raw=>{const t=(raw||'').trim();return t?(/^https?:\/\//i.test(t)?t:`https://${t}`):''};
+    const formatDate=t=>!t?.toDate?'Just now':new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}).format(t.toDate());
+    const labelType=type=>type==='fan'?'Scene Supporter':(type||'member').replace(/\b\w/g,c=>c.toUpperCase());
+    const initialsFor=name=>(name||'').trim().split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'BT';
+
+    function togglePanel(button,panel){const open=button.getAttribute('aria-expanded')==='true';button.setAttribute('aria-expanded',String(!open));panel.hidden=open}
+    searchToggle.addEventListener('click',()=>togglePanel(searchToggle,tools));
+    composerToggle.addEventListener('click',()=>{togglePanel(composerToggle,composerFields);composerToggle.textContent=composerFields.hidden?'Create Post':'Close'});
+
+    function buildSharedProfileCard(post){if(!post.sharedProfile)return null;const s=post.sharedProfile,card=document.createElement('a');card.className='shared-profile-card';card.href=`profile.html?id=${encodeURIComponent(s.id)}`;if(s.imageUrl){const img=document.createElement('img');img.src=s.imageUrl;img.alt='';img.loading='lazy';card.appendChild(img)}const copy=document.createElement('div'),type=document.createElement('span'),name=document.createElement('strong'),meta=document.createElement('p');type.textContent=labelType(s.accountType).toUpperCase();name.textContent=s.displayName||'BANDtroductions Profile';meta.textContent=[s.genre,s.location].filter(Boolean).join(' • ');copy.append(type,name,meta);card.appendChild(copy);return card}
+
+    function buildReactions(post,article){const row=document.createElement('div');row.className='post-reactions';const button=document.createElement('button');button.type='button';button.className='rock-on-button';button.disabled=!currentUser;button.title=currentUser?'Rock On':'Log in to react';const label=document.createElement('span'),count=document.createElement('span');label.textContent='🤘 Rock On';count.textContent='0';button.append(label,count);const status=document.createElement('p');status.className='auth-message reaction-status';row.append(button,status);article.appendChild(row);const ref=collection(db,'posts',post.id,'reactions');const unsub=onSnapshot(ref,snap=>{count.textContent=String(snap.size);const reacted=currentUser?snap.docs.some(x=>x.id===currentUser.uid):false;button.classList.toggle('is-active',reacted);button.setAttribute('aria-pressed',reacted?'true':'false');button.dataset.reacted=reacted?'true':'false'},e=>{console.error(e);status.textContent='Reactions could not be loaded.'});reactionUnsubscribers.push(unsub);button.addEventListener('click',async()=>{if(!currentUser)return;button.disabled=true;status.textContent='';const r=doc(db,'posts',post.id,'reactions',currentUser.uid);try{button.dataset.reacted==='true'?await deleteDoc(r):await setDoc(r,{userId:currentUser.uid,authorName:currentProfile?.displayName||currentUser.displayName||'BANDtroductions Member',createdAt:serverTimestamp()})}catch(e){console.error(e);status.textContent=e.code==='permission-denied'?'Reaction permissions are not enabled yet.':'Your reaction could not be saved.'}finally{button.disabled=false}});return row}
+
+    function buildComments(post,article,reactionRow){const toggle=document.createElement('button');toggle.type='button';toggle.className='comment-toggle';toggle.textContent=currentUser?'Comment':'View Comments';toggle.setAttribute('aria-expanded','false');reactionRow.appendChild(toggle);const section=document.createElement('section');section.className='post-comments';section.hidden=true;const list=document.createElement('div');list.className='comment-list';list.innerHTML='<p class="community-post-meta">Loading comments…</p>';section.appendChild(list);if(currentUser&&currentProfile){const form=document.createElement('form');form.className='comment-form';const input=document.createElement('textarea');input.rows=2;input.maxLength=1000;input.placeholder='Add a music-related comment...';input.required=true;const button=document.createElement('button');button.className='auth-button';button.type='submit';button.textContent='Comment';const msg=document.createElement('p');msg.className='auth-message';form.append(input,button,msg);form.addEventListener('submit',async e=>{e.preventDefault();const content=input.value.trim();if(!content)return;button.disabled=true;msg.textContent='Posting comment…';try{await addDoc(collection(db,'posts',post.id,'comments'),{postId:post.id,authorId:currentUser.uid,authorName:currentProfile.displayName||currentUser.displayName||'BANDtroductions Member',accountType:currentProfile.accountType||'member',content,published:true,createdAt:serverTimestamp()});input.value='';msg.textContent=''}catch(err){console.error(err);msg.textContent=err.code==='permission-denied'?'Comment permissions are not enabled yet.':'Your comment could not be posted.'}finally{button.disabled=false}});section.appendChild(form)}else{const note=document.createElement('p');note.className='community-post-meta';note.innerHTML='<a href="login.html">Log in</a> to comment.';section.appendChild(note)}article.appendChild(section);toggle.addEventListener('click',()=>{const open=toggle.getAttribute('aria-expanded')==='true';toggle.setAttribute('aria-expanded',String(!open));section.hidden=open;toggle.textContent=open?(toggle.dataset.count==='0'?(currentUser?'Comment':'View Comments'):`View ${toggle.dataset.count} Comment${toggle.dataset.count==='1'?'':'s'}`):'Hide Comments'});const q=query(collection(db,'posts',post.id,'comments'),orderBy('createdAt','asc'));const unsub=onSnapshot(q,snap=>{toggle.dataset.count=String(snap.size);if(toggle.getAttribute('aria-expanded')!=='true')toggle.textContent=snap.size?`View ${snap.size} Comment${snap.size===1?'':'s'}`:(currentUser?'Comment':'View Comments');list.replaceChildren();if(snap.empty){const empty=document.createElement('p');empty.className='community-post-meta';empty.textContent='No comments yet.';list.appendChild(empty);return}snap.forEach(d=>{const c=d.data(),item=document.createElement('div');item.className='comment-item';const top=document.createElement('div');top.className='comment-top';const author=document.createElement('a');author.href=`profile.html?id=${encodeURIComponent(c.authorId)}`;author.textContent=c.authorName||'Member';const meta=document.createElement('span');meta.textContent=`${labelType(c.accountType)} • ${formatDate(c.createdAt)}`;top.append(author,meta);const body=document.createElement('p');body.textContent=c.content||'';item.append(top,body);list.appendChild(item)})},e=>{console.error(e);list.innerHTML='<p class="auth-message">Comments could not be loaded.</p>'});commentUnsubscribers.push(unsub)}
+
+    function renderFeed(){commentUnsubscribers.forEach(x=>x());commentUnsubscribers=[];reactionUnsubscribers.forEach(x=>x());reactionUnsubscribers=[];const term=searchInput.value.trim().toLowerCase(),filter=filterInput.value;const visible=posts.filter(post=>{const categoryMatch=filter==='all'||post.accountType===filter||post.category===filter;const sharedText=post.sharedProfile?Object.values(post.sharedProfile).join(' '):'';const hay=[post.authorName,post.accountType,post.category,post.content,sharedText].join(' ').toLowerCase();return categoryMatch&&(!term||hay.includes(term))});feed.replaceChildren();if(!visible.length){feedStatus.hidden=false;feedStatus.textContent=posts.length?'No posts match those filters.':'No posts yet. Be the first to post.';return}feedStatus.hidden=true;visible.forEach(post=>{const article=document.createElement('article');article.className='community-post auth-form';const header=document.createElement('div');header.className='community-post-header';const left=document.createElement('div'),author=document.createElement('a'),meta=document.createElement('div');author.className='community-author';author.href=`profile.html?id=${encodeURIComponent(post.authorId)}`;author.textContent=post.authorName||'BANDtroductions Member';meta.className='community-post-meta';meta.textContent=`${labelType(post.accountType)} • ${post.category||'general'} • ${formatDate(post.createdAt)}`;left.append(author,meta);header.append(left);const body=document.createElement('p');body.className='community-post-body';body.textContent=post.content||'';article.append(header,body);const shared=buildSharedProfileCard(post);if(shared)article.appendChild(shared);if(post.imageUrl){const img=document.createElement('img');img.className='community-post-image';img.src=post.imageUrl;img.alt='';img.loading='lazy';article.appendChild(img)}if(post.linkUrl&&!shared){const link=document.createElement('a');link.className='auth-button community-post-link';link.href=post.linkUrl;link.target='_blank';link.rel='noopener';link.textContent='Open Link';article.appendChild(link)}const reactions=buildReactions(post,article);buildComments(post,article,reactions);feed.appendChild(article)})}
+
+    onAuthStateChanged(auth,async user=>{currentUser=user;if(!user){currentProfile=null;composer.hidden=true;guestPrompt.hidden=false;renderFeed();return}try{const ps=await getDoc(doc(db,'profiles',user.uid)),us=await getDoc(doc(db,'users',user.uid));currentProfile=ps.exists()?ps.data():(us.exists()?us.data():{});document.getElementById('composer-name').textContent=currentProfile.displayName||user.displayName||'Create a post';document.getElementById('composer-type').textContent=labelType(currentProfile.accountType);document.getElementById('composer-profile-link').href=`profile.html?id=${encodeURIComponent(user.uid)}`;const avatar=document.getElementById('composer-avatar');avatar.textContent=initialsFor(currentProfile.displayName||user.displayName);if(currentProfile.imageUrl){const img=document.createElement('img');img.src=currentProfile.imageUrl;img.alt='';avatar.replaceChildren(img)}composer.hidden=false;guestPrompt.hidden=true;renderFeed()}catch(e){console.error(e);composerStatus.textContent='Your profile could not be loaded for posting.'}});
+
+    document.getElementById('publish-post').addEventListener('click',async()=>{if(!currentUser||!currentProfile)return;const content=document.getElementById('post-content').value.trim();if(!content){composerStatus.textContent='Write something before publishing.';return}const button=document.getElementById('publish-post');button.disabled=true;composerStatus.textContent='Publishing…';try{await addDoc(collection(db,'posts'),{authorId:currentUser.uid,authorName:currentProfile.displayName||currentUser.displayName||'BANDtroductions Member',accountType:currentProfile.accountType||'member',category:document.getElementById('post-category').value,content,linkUrl:normalizeUrl(document.getElementById('post-link').value),imageUrl:'',published:true,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});document.getElementById('post-content').value='';document.getElementById('post-link').value='';composerStatus.textContent='Posted.';composerFields.hidden=true;composerToggle.setAttribute('aria-expanded','false');composerToggle.textContent='Create Post'}catch(e){console.error(e);composerStatus.textContent=e.code==='permission-denied'?'Post permissions are not enabled yet.':'Your post could not be published.'}finally{button.disabled=false}});
+
+    const postsQuery=query(collection(db,'posts'),orderBy('createdAt','desc'));onSnapshot(postsQuery,snap=>{posts=snap.docs.map(x=>({id:x.id,...x.data()}));renderFeed()},e=>{console.error(e);feedStatus.hidden=false;feedStatus.textContent=e.code==='permission-denied'?'Community-feed permissions are not enabled yet.':'The community feed could not be loaded.'});searchInput.addEventListener('input',renderFeed);filterInput.addEventListener('change',renderFeed);
+  </script>
+</body>
+</html>
