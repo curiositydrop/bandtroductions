@@ -213,7 +213,7 @@
 <div id="global-footer"></div>
 <script src="global.js?v=8"></script>
 
-<!-- FEATURED BAND POPUP -->
+<!-- FEATURED BAND POPUP: TEMPORARILY DISABLED. Keep this block for future reuse. -->
 <div id="featured-popup" class="featured-popup">
   <div class="featured-popup-card">
     <button class="featured-popup-close" onclick="closeFeaturedPopup()">×</button>
@@ -321,6 +321,12 @@
 </style>
 
 <script>
+/*
+ * FEATURED POPUP TEMPORARILY DISABLED.
+ * Keep the popup HTML/CSS above for future reuse.
+ * Remove this comment wrapper and restore the original show script when needed.
+ */
+/*
 document.addEventListener('DOMContentLoaded', function () {
   const popupSeen = localStorage.getItem('bt_featured_popup_seen');
 
@@ -330,6 +336,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 900);
   }
 });
+*/
 
 function closeFeaturedPopup() {
   localStorage.setItem('bt_featured_popup_seen', 'true');
