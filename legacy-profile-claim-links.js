@@ -4,6 +4,7 @@ import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/12.16.0/
 const path=location.pathname.toLowerCase();
 const directoryType=path.endsWith('/bands.html')?'band':path.endsWith('/musicians.html')?'musician':path.endsWith('/venues.html')?'venue':'';
 let statusByPage=new Map();
+let installQueued=false;
 
 function fieldText(card,label){
   const paragraphs=[...card.querySelectorAll('p')];
@@ -26,8 +27,9 @@ function pageKeys(raw){
     keys.add(url.href);
     keys.add(`${url.pathname.replace(/^\//,'')}${url.search}`);
     keys.add(url.pathname.replace(/^\//,''));
+    keys.add(url.pathname.split('/').pop()||'');
   }catch{}
-  return [...keys];
+  return [...keys].filter(Boolean);
 }
 
 function statusFor(href){
@@ -65,68 +67,91 @@ function applyStatus(link,status){
   }
 }
 
+function claimHref(card,view,name){
+  const href=view.getAttribute('href')||'';
+  const image=card.querySelector('img')?.getAttribute('src')||'';
+  const params=new URLSearchParams({
+    page:href,
+    name,
+    type:directoryType,
+    image:absoluteAsset(image),
+    location:fieldText(card,directoryType==='venue'?'Town:':'Location:'),
+    genre:fieldText(card,'Genre:')||fieldText(card,'Style:'),
+    instruments:fieldText(card,'Instrument:'),
+    venueType:fieldText(card,'Type:')
+  });
+  return `claim-profile.html?${params.toString()}`;
+}
+
 function addClaimLink(card){
   if(!directoryType||card.classList.contains('firebase-profile-card'))return;
-  const view=card.querySelector('a.button[href]');
+  const view=card.querySelector('a.button[href],a[href$=".html"]');
   const name=card.querySelector('h3')?.textContent?.trim();
   if(!view||!name)return;
   const href=view.getAttribute('href')||'';
-  if(!href||href.startsWith('profile.html'))return;
+  if(!href||href.startsWith('profile.html')||href.startsWith('claim-profile.html'))return;
 
   let claim=card.querySelector('.claim-profile-link');
   if(!claim){
-    const image=card.querySelector('img')?.getAttribute('src')||'';
-    const params=new URLSearchParams({
-      page:href,
-      name,
-      type:directoryType,
-      image:absoluteAsset(image),
-      location:fieldText(card,directoryType==='venue'?'Town:':'Location:'),
-      genre:fieldText(card,'Genre:')||fieldText(card,'Style:'),
-      instruments:fieldText(card,'Instrument:'),
-      venueType:fieldText(card,'Type:')
-    });
     claim=document.createElement('a');
     claim.className='claim-profile-link';
-    claim.href=`claim-profile.html?${params.toString()}`;
     card.appendChild(claim);
   }
+
   const status=statusFor(href);
-  if(status==='unclaimed'&&!claim.getAttribute('href')){
-    const params=new URLSearchParams({page:href,name,type:directoryType});
-    claim.href=`claim-profile.html?${params.toString()}`;
-  }
+  if(status==='unclaimed')claim.href=claimHref(card,view,name);
   applyStatus(claim,status);
 }
 
 function install(){
-  document.querySelectorAll('.profile-grid .profile-card').forEach(addClaimLink);
+  installQueued=false;
+  document.querySelectorAll('.profile-card').forEach(addClaimLink);
+}
+
+function queueInstall(){
+  if(installQueued)return;
+  installQueued=true;
+  requestAnimationFrame(install);
+}
+
+function withTimeout(promise,ms){
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Claim status lookup timed out')),ms))
+  ]);
 }
 
 async function loadStatuses(){
-  try{
-    const [profilesSnap,claimsSnap]=await Promise.all([
-      getDocs(collection(db,'profiles')),
-      getDocs(collection(db,'profileClaims'))
-    ]);
-    const next=new Map();
-    claimsSnap.forEach(docSnap=>{
-      const claim=docSnap.data();
-      if(claim.status!=='pending'||!claim.legacyPage)return;
-      pageKeys(claim.legacyPage).forEach(key=>next.set(key,'pending'));
-    });
-    profilesSnap.forEach(docSnap=>{
-      const profile=docSnap.data();
-      if(!profile.claimedLegacyProfile||!profile.legacyPage)return;
-      pageKeys(profile.legacyPage).forEach(key=>next.set(key,'claimed'));
-    });
-    statusByPage=next;
-  }catch(error){
-    console.warn('Could not load legacy profile claim statuses:',error);
-  }
-  install();
+  const next=new Map();
+  const results=await Promise.allSettled([
+    withTimeout(getDocs(collection(db,'profiles')),8000),
+    withTimeout(getDocs(collection(db,'profileClaims')),8000)
+  ]);
+
+  const profilesSnap=results[0].status==='fulfilled'?results[0].value:null;
+  const claimsSnap=results[1].status==='fulfilled'?results[1].value:null;
+
+  claimsSnap?.forEach(docSnap=>{
+    const claim=docSnap.data();
+    if(claim.status!=='pending'||!claim.legacyPage)return;
+    pageKeys(claim.legacyPage).forEach(key=>next.set(key,'pending'));
+  });
+
+  profilesSnap?.forEach(docSnap=>{
+    const profile=docSnap.data();
+    if(!profile.claimedLegacyProfile||!profile.legacyPage)return;
+    pageKeys(profile.legacyPage).forEach(key=>next.set(key,'claimed'));
+  });
+
+  statusByPage=next;
+  results.forEach(result=>{
+    if(result.status==='rejected')console.warn('Could not load part of the legacy claim status data:',result.reason);
+  });
+  queueInstall();
 }
 
+// Build every legacy claim link immediately. Status checks happen afterward and
+// can no longer block the directory or leave the user staring at a spinner.
 install();
-loadStatuses();
-new MutationObserver(install).observe(document.documentElement,{childList:true,subtree:true});
+loadStatuses().catch(error=>console.warn('Could not load legacy profile claim statuses:',error));
+new MutationObserver(queueInstall).observe(document.documentElement,{childList:true,subtree:true});
