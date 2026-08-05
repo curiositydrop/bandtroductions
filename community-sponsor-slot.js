@@ -17,6 +17,7 @@ if (intro && !document.getElementById('community-sponsor-hero')) {
       gap:8px;
       align-items:stretch;
       margin-bottom:7px;
+      min-height:104px;
     }
     .community-hero-row .community-intro{
       min-width:0;
@@ -110,6 +111,7 @@ if (intro && !document.getElementById('community-sponsor-hero')) {
       .community-hero-row{
         grid-template-columns:minmax(0,3fr) minmax(0,2fr);
         gap:7px;
+        min-height:102px;
       }
       .community-hero-row .community-intro{padding:7px 6px 7px 2px}
       .community-hero-row .community-intro h1{
@@ -135,15 +137,10 @@ if (intro && !document.getElementById('community-sponsor-hero')) {
   `;
   document.head.appendChild(style);
 
+  // Build the hero row in one detached fragment and insert it once. This keeps
+  // the same layout/behavior while reducing intermediate DOM states on startup.
   const row = document.createElement('section');
   row.className = 'community-hero-row';
-  intro.parentNode.insertBefore(row, intro);
-  row.appendChild(intro);
-
-  const heading = intro.querySelector('h1');
-  if (heading) heading.textContent = 'BANDtroductions Social';
-  const subtitle = intro.querySelector('.auth-subtitle');
-  if (subtitle) subtitle.innerHTML = 'No algorithms. No politics. No bullshit.<br>Just people connecting through music.';
 
   const slot = document.createElement('a');
   slot.id = 'community-sponsor-hero';
@@ -174,7 +171,14 @@ if (intro && !document.getElementById('community-sponsor-hero')) {
     return slide;
   });
 
-  row.appendChild(slot);
+  const parent = intro.parentNode;
+  parent.insertBefore(row, intro);
+  row.append(intro, slot);
+
+  const heading = intro.querySelector('h1');
+  if (heading) heading.textContent = 'BANDtroductions Social';
+  const subtitle = intro.querySelector('.auth-subtitle');
+  if (subtitle) subtitle.innerHTML = 'No algorithms. No politics. No bullshit.<br>Just people connecting through music.';
 
   let activeIndex = 0;
   window.setInterval(() => {
