@@ -4,6 +4,13 @@ import { collection, doc, getDoc, getDocs, limit, query, where } from 'https://w
 
 const avatarUrlFor = (profile = {}) => profile.imageUrl || profile.avatarUrl || profile.profileImageUrl || profile.photoURL || '';
 
+const composerAvatar = document.getElementById('composer-avatar');
+if (composerAvatar) {
+  // Do not expose BT/BA while the real composer identity is still resolving.
+  composerAvatar.textContent = '';
+  composerAvatar.style.visibility = 'hidden';
+}
+
 async function resolveComposerProfile(user) {
   let directMatch = null;
   try {
@@ -41,13 +48,19 @@ function initialsFor(name) {
 function setAvatarElement(avatar, profile, imageUrl) {
   if (!avatar) return;
   const wantedName = profile.displayName || 'Member';
+  avatar.style.visibility = 'hidden';
+
   if (imageUrl) {
     const current = avatar.matches('img') ? avatar : avatar.querySelector('img');
-    if (current?.src === imageUrl) return;
+    if (current?.src === imageUrl) {
+      avatar.style.visibility = '';
+      return;
+    }
 
     if (avatar.matches('img')) {
       avatar.src = imageUrl;
       avatar.alt = `${wantedName} profile image`;
+      avatar.style.visibility = '';
       return;
     }
 
@@ -55,12 +68,16 @@ function setAvatarElement(avatar, profile, imageUrl) {
     image.src = imageUrl;
     image.alt = `${wantedName} profile image`;
     image.className = avatar.classList.contains('community-author-avatar') ? 'community-author-avatar' : '';
+    image.addEventListener('load', () => { avatar.style.visibility = ''; }, { once: true });
     image.addEventListener('error', () => {
       avatar.textContent = initialsFor(wantedName);
-    });
+      avatar.style.visibility = '';
+    }, { once: true });
     avatar.replaceChildren(image);
+    if (image.complete) avatar.style.visibility = '';
   } else if (!avatar.matches('img')) {
     avatar.textContent = initialsFor(wantedName);
+    avatar.style.visibility = '';
   }
 }
 
@@ -80,8 +97,6 @@ function applyComposerProfile(match, user) {
 
   setAvatarElement(avatar, profile, imageUrl);
 
-  // post-owner-controls.js can create a second composer avatar wrapper. Keep
-  // that copy on the same resolved artwork too so it cannot settle on BA/BT.
   document.querySelectorAll('.community-composer-person .community-author-avatar').forEach((secondary) => {
     setAvatarElement(secondary, profile, imageUrl);
   });
@@ -90,7 +105,10 @@ function applyComposerProfile(match, user) {
 onAuthStateChanged(auth, async (user) => {
   if (!user) return;
   const match = await resolveComposerProfile(user);
-  if (!match) return;
+  if (!match) {
+    if (composerAvatar) composerAvatar.style.visibility = '';
+    return;
+  }
 
   applyComposerProfile(match, user);
 
@@ -105,7 +123,5 @@ onAuthStateChanged(auth, async (user) => {
     queueMicrotask(() => { repairing = false; });
   });
 
-  // Watch the whole composer heading because multiple legacy enhancers can
-  // replace either avatar node after auth resolves.
   observer.observe(heading, { childList: true, subtree: true, characterData: true });
 });
