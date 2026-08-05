@@ -37,7 +37,6 @@
     const observer=new MutationObserver(()=>{if(releaseWhenReady())observer.disconnect()});
     observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,characterData:true});
     document.addEventListener('DOMContentLoaded',releaseWhenReady,{once:true});
-    // Safety fallback: never leave the usable page hidden if an optional enhancer fails.
     setTimeout(()=>{document.documentElement.classList.remove('bt-community-booting');observer.disconnect()},6000);
   }
 
@@ -47,44 +46,19 @@
       const status=document.getElementById('profile-status');
       if(!content)return;
       let intercepted=false;
-
-      const preload=url=>new Promise(resolve=>{
-        if(!url){resolve();return}
-        const image=new Image();
-        image.onload=()=>resolve();
-        image.onerror=()=>resolve();
-        image.src=url;
-        if(image.complete)resolve();
-      });
-
+      const preload=url=>new Promise(resolve=>{if(!url){resolve();return}const image=new Image();image.onload=()=>resolve();image.onerror=()=>resolve();image.src=url;if(image.complete)resolve();});
       const observer=new MutationObserver(async()=>{
-        // profile-page.js now preloads its banner/avatar before first reveal.
-        // If it marks the content ready, do not hide/reveal it a second time.
-        if(content.dataset.assetsReady==='true'){
-          observer.disconnect();
-          return;
-        }
+        if(content.dataset.assetsReady==='true'){observer.disconnect();return;}
         if(intercepted||content.hidden)return;
-        intercepted=true;
-        content.hidden=true;
-        if(status){status.hidden=false;status.textContent='Loading profile…'}
-
+        intercepted=true;content.hidden=true;if(status){status.hidden=false;status.textContent='Loading profile…'}
         const avatarUrl=content.querySelector('#profile-avatar img')?.src||'';
         const cover=document.getElementById('profile-cover');
         const background=cover?.style.backgroundImage||'';
         const matches=[...background.matchAll(/url\(["']?([^"')]+)["']?\)/g)];
         const bannerUrl=matches.length?matches[matches.length-1][1]:'';
-
-        await Promise.race([
-          Promise.all([preload(avatarUrl),preload(bannerUrl)]),
-          new Promise(resolve=>setTimeout(resolve,2500))
-        ]);
-
-        observer.disconnect();
-        content.hidden=false;
-        if(status)status.hidden=true;
+        await Promise.race([Promise.all([preload(avatarUrl),preload(bannerUrl)]),new Promise(resolve=>setTimeout(resolve,2500))]);
+        observer.disconnect();content.hidden=false;if(status)status.hidden=true;
       });
-
       observer.observe(content,{attributes:true,attributeFilter:['hidden']});
     },{once:true});
   }
@@ -93,12 +67,8 @@
 fetch('global.html?v=7')
   .then(response => response.text())
   .then(async data => {
-    const temp = document.createElement('div');
-    temp.innerHTML = data;
-    const header = temp.querySelector('#site-header');
-    const footer = temp.querySelector('#site-footer');
-    const headerTarget = document.getElementById('global-header');
-    const footerTarget = document.getElementById('global-footer');
+    const temp = document.createElement('div');temp.innerHTML = data;
+    const header = temp.querySelector('#site-header'),footer = temp.querySelector('#site-footer'),headerTarget = document.getElementById('global-header'),footerTarget = document.getElementById('global-footer');
     if (header && headerTarget) { headerTarget.innerHTML = header.innerHTML; await initializeAuthNavigation(); }
     if (footer && footerTarget) footerTarget.innerHTML = footer.innerHTML;
   })
@@ -145,3 +115,4 @@ import('./admin-access.js?v=3').catch(error=>console.error('Error loading accoun
 import('./account-role-ui-fix.js?v=1').catch(error=>console.error('Error loading resilient account controls:',error));
 import('./admin-navigation.js?v=3').catch(error=>console.error('Error loading admin navigation:',error));
 import('./social-interactions.js?v=3').catch(error=>console.error('Error loading social interactions:',error));
+import('./presence.js?v=1').catch(error=>console.error('Error loading online presence:',error));
