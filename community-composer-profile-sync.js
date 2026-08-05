@@ -43,6 +43,8 @@ function applyComposerProfile(match, user) {
   if (profileLink) profileLink.href = `profile.html?id=${encodeURIComponent(match.id)}`;
 
   if (imageUrl) {
+    const currentImage = avatar.querySelector('img');
+    if (currentImage?.src === imageUrl) return;
     const image = document.createElement('img');
     image.src = imageUrl;
     image.alt = `${profile.displayName || 'Member'} profile image`;
@@ -58,8 +60,7 @@ onAuthStateChanged(auth, async (user) => {
   const match = await resolveComposerProfile(user);
   if (!match) return;
 
-  // The Community page's inline module fills the composer first. These
-  // delayed one-time passes run afterward without observing or looping.
-  setTimeout(() => applyComposerProfile(match, user), 500);
-  setTimeout(() => applyComposerProfile(match, user), 1800);
+  // Apply the resolved profile once. The previous delayed 500ms/1800ms passes
+  // caused visible late-stage composer changes after the page had settled.
+  applyComposerProfile(match, user);
 });
