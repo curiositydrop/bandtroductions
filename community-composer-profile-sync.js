@@ -5,27 +5,36 @@ import { collection, doc, getDoc, getDocs, limit, query, where } from 'https://w
 const avatarUrlFor = (profile = {}) => profile.imageUrl || profile.avatarUrl || profile.profileImageUrl || profile.photoURL || '';
 
 async function resolveComposerProfile(user) {
+  const choices = [];
+
   try {
     const direct = await getDoc(doc(db, 'profiles', user.uid));
-    if (direct.exists()) {
-      const data = direct.data();
-      if (avatarUrlFor(data)) return { id: direct.id, data };
-    }
+    if (direct.exists()) choices.push({ id: direct.id, data: direct.data(), direct: true });
   } catch (error) {
     console.error('Could not load direct composer profile:', error);
   }
 
   try {
     const owned = await getDocs(query(collection(db, 'profiles'), where('ownerId', '==', user.uid), limit(20)));
-    if (owned.empty) return null;
-    const choices = owned.docs.map((snapshot) => ({ id: snapshot.id, data: snapshot.data() }));
-    return choices.find(({ data }) => /bandtroductions\s+admin/i.test(data.displayName || ''))
-      || choices.find(({ data }) => Boolean(avatarUrlFor(data)))
-      || choices[0];
+    owned.docs.forEach((snapshot) => {
+      if (!choices.some((choice) => choice.id === snapshot.id)) {
+        choices.push({ id: snapshot.id, data: snapshot.data(), direct: false });
+      }
+    });
   } catch (error) {
-    console.error('Could not load owned composer profile:', error);
-    return null;
+    console.error('Could not load owned composer profiles:', error);
   }
+
+  if (!choices.length) return null;
+
+  // Prefer the BANDtroductions Admin profile only when it has an actual avatar.
+  // Previously an avatar-less admin record could win before another owned
+  // profile containing the real image, leaving the composer stuck on initials.
+  return choices.find(({ data }) => /bandtroductions\s+admin/i.test(data.displayName || '') && Boolean(avatarUrlFor(data)))
+    || choices.find(({ data }) => Boolean(avatarUrlFor(data)))
+    || choices.find(({ data }) => /bandtroductions\s+admin/i.test(data.displayName || ''))
+    || choices.find(({ direct }) => direct)
+    || choices[0];
 }
 
 function applyComposerProfile(match, user) {
@@ -52,6 +61,8 @@ function applyComposerProfile(match, user) {
       avatar.textContent = (profile.displayName || 'BT').split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'BT';
     });
     avatar.replaceChildren(image);
+  } else {
+    avatar.textContent = (profile.displayName || 'BT').split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'BT';
   }
 }
 
@@ -59,8 +70,5 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) return;
   const match = await resolveComposerProfile(user);
   if (!match) return;
-
-  // Apply the resolved profile once. The previous delayed 500ms/1800ms passes
-  // caused visible late-stage composer changes after the page had settled.
   applyComposerProfile(match, user);
 });
