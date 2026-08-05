@@ -4,10 +4,13 @@ import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16
 const intro=document.querySelector('.community-intro');
 
 async function countLegacyDirectoryProfiles(){
+  const cached=Number(sessionStorage.getItem('bandtroductionsLegacyProfileCount'));
+  if(Number.isFinite(cached)&&cached>0)return cached;
+
   const pages=['bands.html','musicians.html','venues.html'];
   const counts=await Promise.all(pages.map(async page=>{
     try{
-      const response=await fetch(`${page}?profileCount=2`,{cache:'no-store'});
+      const response=await fetch(`${page}?profileCount=3`,{cache:'no-store'});
       if(!response.ok)throw new Error(`${page} returned ${response.status}`);
       const html=await response.text();
       const documentCopy=new DOMParser().parseFromString(html,'text/html');
@@ -17,7 +20,9 @@ async function countLegacyDirectoryProfiles(){
       return 0;
     }
   }));
-  return counts.reduce((total,count)=>total+count,0);
+  const total=counts.reduce((sum,count)=>sum+count,0);
+  if(total>0)sessionStorage.setItem('bandtroductionsLegacyProfileCount',String(total));
+  return total;
 }
 
 if(intro&&!document.getElementById('community-profile-count')){
@@ -28,10 +33,14 @@ if(intro&&!document.getElementById('community-profile-count')){
   intro.appendChild(badge);
 
   const number=badge.querySelector('strong');
-  let legacyCount=0;
-  let firestoreProfiles=[];
+  let legacyCount=null;
+  let firestoreProfiles=null;
 
   const render=()=>{
+    // Do not expose partial totals while the two independent data sources race.
+    // The badge remains an ellipsis until both values are known, then paints once.
+    if(legacyCount===null||firestoreProfiles===null)return;
+
     // Claimed legacy profiles already exist among the static directory cards,
     // so only genuinely new Firestore profiles are added to the legacy total.
     const newProfileCount=firestoreProfiles.filter(profile=>{
@@ -48,6 +57,7 @@ if(intro&&!document.getElementById('community-profile-count')){
     render();
   },error=>{
     console.warn('New profile count unavailable:',error);
+    firestoreProfiles=[];
     render();
   });
 }
