@@ -5,36 +5,35 @@ import { collection, doc, getDoc, getDocs, limit, query, where } from 'https://w
 const avatarUrlFor = (profile = {}) => profile.imageUrl || profile.avatarUrl || profile.profileImageUrl || profile.photoURL || '';
 
 async function resolveComposerProfile(user) {
-  const choices = [];
-
+  let directMatch = null;
   try {
     const direct = await getDoc(doc(db, 'profiles', user.uid));
-    if (direct.exists()) choices.push({ id: direct.id, data: direct.data(), direct: true });
+    if (direct.exists()) directMatch = { id: direct.id, data: direct.data() };
   } catch (error) {
     console.error('Could not load direct composer profile:', error);
   }
 
   try {
     const owned = await getDocs(query(collection(db, 'profiles'), where('ownerId', '==', user.uid), limit(20)));
-    owned.docs.forEach((snapshot) => {
-      if (!choices.some((choice) => choice.id === snapshot.id)) {
-        choices.push({ id: snapshot.id, data: snapshot.data(), direct: false });
-      }
-    });
+    const choices = owned.docs.map((snapshot) => ({ id: snapshot.id, data: snapshot.data() }));
+
+    // Prefer the admin identity when it actually has artwork. Otherwise prefer
+    // any owned profile with artwork before falling back to a text-only record.
+    const adminWithImage = choices.find(({ data }) =>
+      /bandtroductions\s+admin/i.test(data.displayName || '') && Boolean(avatarUrlFor(data))
+    );
+    const anyWithImage = choices.find(({ data }) => Boolean(avatarUrlFor(data)));
+    return adminWithImage
+      || anyWithImage
+      || (directMatch && avatarUrlFor(directMatch.data) ? directMatch : null)
+      || choices.find(({ data }) => /bandtroductions\s+admin/i.test(data.displayName || ''))
+      || directMatch
+      || choices[0]
+      || null;
   } catch (error) {
     console.error('Could not load owned composer profiles:', error);
+    return directMatch;
   }
-
-  if (!choices.length) return null;
-
-  // Prefer the BANDtroductions Admin profile only when it has an actual avatar.
-  // Previously an avatar-less admin record could win before another owned
-  // profile containing the real image, leaving the composer stuck on initials.
-  return choices.find(({ data }) => /bandtroductions\s+admin/i.test(data.displayName || '') && Boolean(avatarUrlFor(data)))
-    || choices.find(({ data }) => Boolean(avatarUrlFor(data)))
-    || choices.find(({ data }) => /bandtroductions\s+admin/i.test(data.displayName || ''))
-    || choices.find(({ direct }) => direct)
-    || choices[0];
 }
 
 function applyComposerProfile(match, user) {
@@ -62,7 +61,7 @@ function applyComposerProfile(match, user) {
     });
     avatar.replaceChildren(image);
   } else {
-    avatar.textContent = (profile.displayName || 'BT').split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'BT';
+    avatar.textContent = (profile.displayName || user.displayName || 'BT').split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'BT';
   }
 }
 
@@ -70,5 +69,28 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) return;
   const match = await resolveComposerProfile(user);
   if (!match) return;
+
   applyComposerProfile(match, user);
+
+  // community.html also fills this card during its own auth pass. If that later
+  // pass replaces the resolved artwork with initials, restore the same profile
+  // identity immediately. This observes only the tiny composer card, not the feed.
+  const avatar = document.getElementById('composer-avatar');
+  const name = document.getElementById('composer-name');
+  if (!avatar || !name) return;
+
+  let repairing = false;
+  const observer = new MutationObserver(() => {
+    if (repairing) return;
+    const wantedUrl = avatarUrlFor(match.data || {});
+    const currentUrl = avatar.querySelector('img')?.src || '';
+    const wantedName = match.data?.displayName || user.displayName || 'Create a post';
+    if ((wantedUrl && currentUrl !== wantedUrl) || name.textContent.trim() !== wantedName) {
+      repairing = true;
+      applyComposerProfile(match, user);
+      queueMicrotask(() => { repairing = false; });
+    }
+  });
+  observer.observe(avatar, { childList: true, subtree: true, characterData: true });
+  observer.observe(name, { childList: true, subtree: true, characterData: true });
 });
