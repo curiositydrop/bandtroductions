@@ -1,5 +1,5 @@
 import { auth, db } from './firebase-dev.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { collection, doc, getDoc, onSnapshot, orderBy, query } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const feed = document.querySelector('.feed');
@@ -8,6 +8,10 @@ const profilePanel = document.querySelector('.left .menu');
 const profileLink = profilePanel?.querySelector('a[href="profile.html"]');
 const sponsorGrid = document.querySelector('.left .sponsors');
 const onlineGrid = document.querySelector('.left .online');
+const menuLinks = profilePanel ? [...profilePanel.querySelectorAll('a')] : [];
+const linkByText = text => menuLinks.find(a => a.textContent.trim().toLowerCase() === text.toLowerCase());
+const messagesLink = document.getElementById('messages-link') || linkByText('Messages');
+const logoutLink = linkByText('Log Out');
 
 function syncHeaderLogo(){
   const logo=document.querySelector('.header-logo'),brand=document.querySelector('.brand');
@@ -21,7 +25,7 @@ window.addEventListener('resize',syncHeaderLogo);
 
 const initialsFor = name => (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase() || 'BT';
 const formatDate = stamp => !stamp?.toDate ? 'Just now' : new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(stamp.toDate());
-function safeText(value=''){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));}
+function safeText(value=''){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[ch]));}
 function normalizeDate(value){if(!value)return null;const d=new Date(`${value}T12:00:00`);return Number.isNaN(d.getTime())?null:d;}
 function profileHref(post){
   const direct=post.profileUrl||post.authorProfileUrl||post.authorUrl;
@@ -40,6 +44,46 @@ function renderPostContent(post){
     }
   }
   return `<p>${safeText(text)}</p>`;
+}
+
+function ensureProfileSummary(){
+  if(!profilePanel)return null;
+  let summary=profilePanel.querySelector('.dashboard-profile-summary');
+  if(summary)return summary;
+  summary=document.createElement('a');
+  summary.className='dashboard-profile-summary';
+  summary.hidden=true;
+  const heading=profilePanel.querySelector('h3');
+  heading?.insertAdjacentElement('afterend',summary);
+  const style=document.createElement('style');
+  style.textContent=`
+    .dashboard-profile-summary{display:grid;grid-template-columns:54px minmax(0,1fr);gap:9px;align-items:center;padding:10px 12px;border-bottom:1px solid #333;color:#eee;text-decoration:none;background:#0c0e0e}
+    .dashboard-profile-summary[hidden]{display:none}
+    .dashboard-profile-avatar{width:54px;height:54px;border:1px solid #466;border-radius:4px;overflow:hidden;background:#171a1a;display:grid;place-items:center;color:var(--teal);font-weight:900}
+    .dashboard-profile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+    .dashboard-profile-name{font-weight:900;color:var(--teal);font-size:13px;line-height:1.2;overflow-wrap:anywhere}
+    .dashboard-profile-type{margin-top:3px;color:#8f9999;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+    .dashboard-profile-view{margin-top:5px;color:#ddd;font-size:9px}
+    @media(max-width:650px){.dashboard-profile-summary{grid-template-columns:24px minmax(0,1fr);gap:3px;padding:5px 4px}.dashboard-profile-avatar{width:24px;height:24px}.dashboard-profile-name{font-size:7px}.dashboard-profile-type{font-size:5px;margin-top:1px}.dashboard-profile-view{font-size:5px;margin-top:2px}}
+  `;
+  document.head.appendChild(style);
+  return summary;
+}
+
+function renderProfileSummary(user, profile={}){
+  const summary=ensureProfileSummary();
+  if(!summary)return;
+  const name=profile.displayName||profile.name||profile.bandName||profile.venueName||user?.displayName||'My Profile';
+  const type=profile.profileType||profile.type||profile.role||profile.category||'Member';
+  const image=profile.avatarUrl||profile.photoURL||profile.imageUrl||profile.profileImage||profile.avatar||user?.photoURL||'';
+  summary.href=`profile.html?id=${encodeURIComponent(user.uid)}`;
+  summary.innerHTML=`<span class="dashboard-profile-avatar">${image?`<img src="${safeText(image)}" alt="${safeText(name)}">`:safeText(initialsFor(name))}</span><span><span class="dashboard-profile-name">${safeText(name)}</span><span class="dashboard-profile-type">${safeText(type)}</span><span class="dashboard-profile-view">View profile →</span></span>`;
+  summary.hidden=false;
+}
+
+function clearProfileSummary(){
+  const summary=profilePanel?.querySelector('.dashboard-profile-summary');
+  if(summary)summary.hidden=true;
 }
 
 function renderSponsors(){
@@ -111,7 +155,43 @@ function renderShows(posts){
 }
 
 renderSponsors();
-onAuthStateChanged(auth,async user=>{if(!profilePanel)return;const title=profilePanel.querySelector('h3');if(!user){if(title)title.textContent='My Profile';if(profileLink){profileLink.textContent='Log In / Create Account';profileLink.href='login.html';}return;}try{const profileSnap=await getDoc(doc(db,'profiles',user.uid)),userSnap=await getDoc(doc(db,'users',user.uid));const profile=profileSnap.exists()?profileSnap.data():(userSnap.exists()?userSnap.data():{});const name=profile.displayName||user.displayName||'My Profile';if(title)title.textContent=name;if(profileLink){profileLink.textContent='View / Edit Profile';profileLink.href=`profile.html?id=${encodeURIComponent(user.uid)}`;}}catch(error){console.warn('Could not load profile for preview dashboard.',error);}});
+
+if(messagesLink){
+  messagesLink.title='Direct messaging is on the build list';
+  messagesLink.addEventListener('click',event=>{
+    if(messagesLink.getAttribute('href')==='#')event.preventDefault();
+  });
+}
+
+if(logoutLink){
+  logoutLink.addEventListener('click',async event=>{
+    event.preventDefault();
+    try{await signOut(auth);location.reload();}catch(error){console.warn('Could not log out.',error);}
+  });
+}
+
+onAuthStateChanged(auth,async user=>{
+  if(!profilePanel)return;
+  const title=profilePanel.querySelector('h3');
+  if(!user){
+    clearProfileSummary();
+    if(title)title.textContent='My Profile';
+    if(profileLink){profileLink.textContent='Log In / Create Account';profileLink.href='login.html';}
+    if(logoutLink)logoutLink.style.display='none';
+    return;
+  }
+  if(logoutLink)logoutLink.style.display='block';
+  try{
+    const [profileSnap,userSnap]=await Promise.all([getDoc(doc(db,'profiles',user.uid)),getDoc(doc(db,'users',user.uid))]);
+    const profile=profileSnap.exists()?profileSnap.data():(userSnap.exists()?userSnap.data():{});
+    if(title)title.textContent='My Profile';
+    renderProfileSummary(user,profile);
+    if(profileLink){profileLink.textContent='View / Edit Profile';profileLink.href=`profile.html?id=${encodeURIComponent(user.uid)}`;}
+  }catch(error){
+    console.warn('Could not load profile for preview dashboard.',error);
+    renderProfileSummary(user,{});
+  }
+});
 
 const postsQuery=query(collection(db,'posts'),orderBy('createdAt','desc'));
 onSnapshot(postsQuery,snapshot=>{const posts=snapshot.docs.map(docSnap=>({id:docSnap.id,...docSnap.data()}));renderFeed(posts);renderShows(posts);},error=>console.error('Could not load live posts into dashboard preview.',error));
