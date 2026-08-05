@@ -11,11 +11,13 @@
     html,body{width:100%;max-width:100%;overflow-x:hidden}
     .profile-page{width:100%;max-width:none;margin:0;padding:14px 0 30px;background:transparent!important;border:0!important;box-shadow:none!important;overflow-x:hidden}
     #profile-content{display:grid;gap:10px;width:calc(100% - 12px);max-width:760px;min-width:0;margin:0 auto;padding:0}
+    #profile-content[hidden]{display:none!important}
     .profile-card{width:100%;max-width:100%;min-width:0;margin:0;border:1px solid #3b3b3b;border-radius:15px;background:linear-gradient(145deg,#1a1a1a,#121212);padding:16px;box-shadow:0 8px 20px rgba(0,0,0,.28);overflow:hidden}
     .profile-card>*{max-width:100%}
     .profile-cover{position:relative;min-height:220px;overflow:hidden;padding:0;background-position:center;background-size:cover;background-color:#111}
     .profile-cover::before{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.04),rgba(0,0,0,.24))}
     .profile-avatar{position:absolute;right:12px;bottom:12px;z-index:1;width:92px;height:92px;display:grid;place-items:center;overflow:hidden;border-radius:15px;border:2px solid #0ccfbd;background:#080808;color:#0ccfbd;font-size:1.75rem;font-weight:900;box-shadow:0 10px 24px rgba(0,0,0,.6)}
+    .profile-avatar:empty{visibility:hidden}
     .profile-avatar img{width:100%;height:100%;object-fit:cover}
     .profile-support{text-align:center}.profile-support p{margin:0 0 8px;color:#bbb}
     .profile-support-line,.profile-badges,.profile-actions,.profile-links{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;min-width:0}
@@ -40,7 +42,7 @@
   <div id="global-header"></div>
   <main class="auth-shell auth-shell-wide profile-page">
     <section id="profile-content" hidden>
-      <section id="profile-cover" class="profile-card profile-cover"><div id="profile-avatar" class="profile-avatar" aria-hidden="true">BT</div></section>
+      <section id="profile-cover" class="profile-card profile-cover"><div id="profile-avatar" class="profile-avatar" aria-hidden="true"></div></section>
       <section id="profile-support" class="profile-card profile-support"><p>This profile is supported by the BANDtroductions community.</p><div class="profile-support-line"><span class="profile-support-pill">Your business here</span><span class="profile-support-pill">Support local music</span><span class="profile-support-pill">Support this profile</span></div></section>
       <section id="featured-section" class="profile-card" hidden><h2 id="featured-heading">Featured Video</h2><div id="featured-video"></div></section>
       <details id="more-videos-section" class="profile-card more-videos" hidden><summary>🎬 More Videos</summary><div id="more-video-grid" class="more-video-grid"></div></details>
@@ -52,9 +54,9 @@
     <p id="profile-status" class="auth-message">Loading profile…</p>
   </main>
   <div id="global-footer"></div>
-  <script src="global.js?v=22"></script>
+  <script src="global.js?v=23"></script>
   <script>const selectedProfileId=new URLSearchParams(location.search).get('id');if(selectedProfileId)document.getElementById('edit-profile').href=`profile-setup.html?id=${encodeURIComponent(selectedProfileId)}`;</script>
-  <script type="module" src="profile-page.js?v=4"></script>
+  <script type="module" src="profile-page.js?v=5"></script>
   <script type="module" src="admin-profile-controls.js?v=3"></script>
   <script type="module" src="profile-social.js?v=3"></script>
 </body>
