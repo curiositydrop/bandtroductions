@@ -18,6 +18,18 @@ function profileHref(post){
   const id=post.authorId||post.authorUid||post.uid||post.userId;
   return id?`profile.html?id=${encodeURIComponent(id)}`:'community.html';
 }
+function renderPostContent(post){
+  const text=String(post.content||'');
+  if(!text)return '';
+  const targetUrl=post.linkUrl||post.sharedProfile?.url||(post.sharedProfile?.id?`profile.html?id=${encodeURIComponent(post.sharedProfile.id)}`:'');
+  if(targetUrl){
+    const match=text.match(/^(.*?\bWelcome\s+)(.+?)(\s+[—–-]\s+.*)$/i);
+    if(match){
+      return `<p>${safeText(match[1])}<a class="inline-profile-link" href="${safeText(targetUrl)}">${safeText(match[2])}</a>${safeText(match[3])}</p>`;
+    }
+  }
+  return `<p>${safeText(text)}</p>`;
+}
 
 function renderSponsors(){
   if(!sponsorGrid)return;
@@ -38,8 +50,8 @@ function renderFeed(posts){
   const visible=posts.filter(p=>p.published!==false).slice(0,6);
   if(!visible.length){const empty=document.createElement('div');empty.className='post';empty.innerHTML='<p>No community posts yet.</p>';feed.appendChild(empty);return;}
   visible.forEach(post=>{
-    const article=document.createElement('article');article.className='post';const href=profileHref(post);const name=safeText(post.authorName||'BANDtroductions Member');
-    article.innerHTML=`<div class="post-head"><div class="post-avatar">${safeText(initialsFor(post.authorName))}</div><div><a class="post-name" href="${safeText(href)}">${name}</a><div class="post-meta">${safeText(formatDate(post.createdAt))}${post.category?` · ${safeText(post.category)}`:''}</div></div></div>${post.content?`<p>${safeText(post.content)}</p>`:''}${post.imageUrl?`<img src="${safeText(post.imageUrl)}" alt="" style="display:block;width:100%;margin-top:12px;border:1px solid #333;max-height:420px;object-fit:cover">`:''}<div class="post-actions"><span>ROCK ON</span><span>COMMENT</span><span>SHARE</span></div>`;
+    const article=document.createElement('article');article.className='post';const name=safeText(post.authorName||'BANDtroductions Member');
+    article.innerHTML=`<div class="post-head"><div class="post-avatar">${safeText(initialsFor(post.authorName))}</div><div><div class="post-name">${name}</div><div class="post-meta">${safeText(formatDate(post.createdAt))}${post.category?` · ${safeText(post.category)}`:''}</div></div></div>${renderPostContent(post)}${post.imageUrl?`<img src="${safeText(post.imageUrl)}" alt="" style="display:block;width:100%;margin-top:12px;border:1px solid #333;max-height:420px;object-fit:cover">`:''}<div class="post-actions"><span>ROCK ON</span><span>COMMENT</span><span>SHARE</span></div>`;
     feed.appendChild(article);
   });
 }
