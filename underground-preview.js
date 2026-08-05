@@ -25,7 +25,7 @@ function renderPostContent(post){
   if(targetUrl){
     const match=text.match(/^(.*?\bWelcome\s+)(.+?)(\s+[—–-]\s+.*)$/i);
     if(match){
-      return `<p>${safeText(match[1])}<a class="inline-profile-link" href="${safeText(targetUrl)}">${safeText(match[2])}</a>${safeText(match[3])}</p>`;
+      return `<p>${safeText(match[1])}<a class="inline-profile-link" style="color:#25c7c1;font-weight:900;text-decoration:underline;text-underline-offset:2px" href="${safeText(targetUrl)}">${safeText(match[2])}</a>${safeText(match[3])}</p>`;
     }
   }
   return `<p>${safeText(text)}</p>`;
