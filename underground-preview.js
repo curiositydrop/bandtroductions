@@ -7,6 +7,7 @@ const showsPanel = [...document.querySelectorAll('.right .panel')].find(panel =>
 const profilePanel = document.querySelector('.left .menu');
 const profileLink = profilePanel?.querySelector('a[href="profile.html"]');
 const sponsorGrid = document.querySelector('.left .sponsors');
+const onlineGrid = document.querySelector('.left .online');
 
 function syncHeaderLogo(){
   const logo=document.querySelector('.header-logo'),brand=document.querySelector('.brand');
@@ -55,6 +56,32 @@ function renderSponsors(){
   const more=document.createElement('a');more.className='sponsor';more.href='sponsors.html';more.textContent='VIEW ALL / BECOME A SPONSOR';more.style.textDecoration='none';sponsorGrid.appendChild(more);
 }
 
+async function renderOnline(users){
+  if(!onlineGrid)return;
+  const cutoff=Date.now()-150000;
+  const active=users.filter(u=>u.lastActiveAt?.toDate&&u.lastActiveAt.toDate().getTime()>=cutoff).sort((a,b)=>b.lastActiveAt.toDate()-a.lastActiveAt.toDate()).slice(0,8);
+  if(!active.length){onlineGrid.innerHTML='<div class="online-empty">No one is active right now.</div>';return;}
+  const enriched=await Promise.all(active.map(async user=>{
+    try{
+      const snap=await getDoc(doc(db,'profiles',user.id));
+      return {id:user.id,...user,...(snap.exists()?snap.data():{})};
+    }catch{return user;}
+  }));
+  onlineGrid.replaceChildren();
+  enriched.forEach(person=>{
+    const name=person.displayName||person.name||person.bandName||person.venueName||'Member';
+    const image=person.avatarUrl||person.photoURL||person.imageUrl||person.profileImage||person.avatar||'';
+    const a=document.createElement('a');
+    a.className='online-card';
+    a.href=`profile.html?id=${encodeURIComponent(person.id)}`;
+    a.title=`${name} is online`;
+    if(image){const img=document.createElement('img');img.src=image;img.alt=name;img.loading='lazy';a.appendChild(img);}else{const f=document.createElement('span');f.className='online-fallback';f.textContent=initialsFor(name);a.appendChild(f);}
+    const label=document.createElement('span');label.className='online-label';label.textContent=name;a.appendChild(label);
+    const dot=document.createElement('span');dot.className='online-dot';dot.setAttribute('aria-label','Online');a.appendChild(dot);
+    onlineGrid.appendChild(a);
+  });
+}
+
 function renderFeed(posts){
   if(!feed)return;const heading=feed.querySelector('h3');feed.replaceChildren();if(heading)feed.appendChild(heading);
   const visible=posts.filter(p=>p.published!==false).slice(0,6);
@@ -85,5 +112,8 @@ function renderShows(posts){
 
 renderSponsors();
 onAuthStateChanged(auth,async user=>{if(!profilePanel)return;const title=profilePanel.querySelector('h3');if(!user){if(title)title.textContent='My Profile';if(profileLink){profileLink.textContent='Log In / Create Account';profileLink.href='login.html';}return;}try{const profileSnap=await getDoc(doc(db,'profiles',user.uid)),userSnap=await getDoc(doc(db,'users',user.uid));const profile=profileSnap.exists()?profileSnap.data():(userSnap.exists()?userSnap.data():{});const name=profile.displayName||user.displayName||'My Profile';if(title)title.textContent=name;if(profileLink){profileLink.textContent='View / Edit Profile';profileLink.href=`profile.html?id=${encodeURIComponent(user.uid)}`;}}catch(error){console.warn('Could not load profile for preview dashboard.',error);}});
+
 const postsQuery=query(collection(db,'posts'),orderBy('createdAt','desc'));
 onSnapshot(postsQuery,snapshot=>{const posts=snapshot.docs.map(docSnap=>({id:docSnap.id,...docSnap.data()}));renderFeed(posts);renderShows(posts);},error=>console.error('Could not load live posts into dashboard preview.',error));
+
+onSnapshot(collection(db,'users'),snapshot=>{renderOnline(snapshot.docs.map(d=>({id:d.id,...d.data()})));},error=>{console.warn('Could not load Online Now.',error);if(onlineGrid)onlineGrid.innerHTML='<div class="online-empty">Online status unavailable.</div>';});
