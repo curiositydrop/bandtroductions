@@ -6,6 +6,7 @@ const feed = document.querySelector('.feed');
 const showsPanel = [...document.querySelectorAll('.right .panel')].find(panel => panel.querySelector('h3')?.textContent.trim() === 'Upcoming Shows');
 const profilePanel = document.querySelector('.left .menu');
 const profileLink = profilePanel?.querySelector('a[href="profile.html"]');
+const sponsorGrid = document.querySelector('.left .sponsors');
 
 const initialsFor = name => (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase() || 'BT';
 const formatDate = stamp => {
@@ -14,6 +15,31 @@ const formatDate = stamp => {
 };
 function safeText(value='') { return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch])); }
 function normalizeDate(value){ if(!value) return null; const d=new Date(`${value}T12:00:00`); return Number.isNaN(d.getTime())?null:d; }
+
+function renderSponsors(){
+  if(!sponsorGrid) return;
+  const sponsors=[
+    {name:'Rock Rage Radio',image:'ff796046372b48681a359daff6375626.jpeg',url:'http://www.rockrageradio.com'},
+    {name:'The Plowzone Radio Show',image:'IMG_0908.jpeg',url:'sponsors.html'},
+    {name:'Gone Rogue Records',image:'IMG_0699.jpeg',url:'sponsors.html'},
+    {name:'New Leaf Painting Company',image:'9A3AD6D7-8C0C-4C27-BE09-A19C2F0834AE.png',url:'https://www.newleafpaintingco.com'},
+    {name:'Woodies Drumsticks',image:'Logo.jpeg',url:'https://woodiesdrumsticks.com/bandtroductions'}
+  ];
+  sponsorGrid.replaceChildren();
+  sponsors.forEach(s=>{
+    const a=document.createElement('a');
+    a.className='sponsor';
+    a.href=s.url;
+    if(/^https?:/i.test(s.url)){a.target='_blank';a.rel='noopener';}
+    a.title=s.name;
+    a.style.cssText='padding:4px;overflow:hidden;text-decoration:none';
+    const img=document.createElement('img');
+    img.src=s.image; img.alt=s.name; img.loading='lazy';
+    img.style.cssText='display:block;width:100%;height:100%;max-height:82px;object-fit:contain';
+    a.appendChild(img); sponsorGrid.appendChild(a);
+  });
+  const more=document.createElement('a'); more.className='sponsor'; more.href='sponsors.html'; more.textContent='VIEW ALL / BECOME A SPONSOR'; more.style.textDecoration='none'; sponsorGrid.appendChild(more);
+}
 
 function renderFeed(posts) {
   if (!feed) return;
@@ -61,6 +87,8 @@ function renderShows(posts) {
     row.onclick=()=>post.event?openShow(post):(window.location.href='community.html'); showsPanel.appendChild(row);
   });
 }
+
+renderSponsors();
 
 onAuthStateChanged(auth, async user => {
   if (!profilePanel) return;
