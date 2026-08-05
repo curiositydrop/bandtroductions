@@ -5,6 +5,8 @@ import { collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, where } f
 const cache=new Map();
 const authorId=p=>p.authorId||p.authorUid||p.uid||p.userId||'';
 const imageFor=p=>p?.imageUrl||p?.profileImageUrl||p?.avatarUrl||p?.photoURL||p?.profileImage||p?.avatar||p?.logoUrl||p?.logo||'';
+const followersLink=[...document.querySelectorAll('.left .menu a')].find(a=>a.textContent.trim()==='Followers');
+if(followersLink)followersLink.href='followers.html';
 
 async function profile(uid,name=''){
   const key=uid||`name:${String(name).toLowerCase()}`;
@@ -43,8 +45,7 @@ async function apply(posts){
     if(!img){img=document.createElement('img');avatar.appendChild(img);}
     img.src=src;img.alt=post.authorName||'Profile avatar';img.loading='lazy';
     img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;border-radius:50%';
-    const profileId=data?.id||uid;
-    if(profileId){avatar.style.cursor='pointer';avatar.onclick=()=>location.href=`profile.html?id=${encodeURIComponent(profileId)}`;}
+    if(uid){avatar.style.cursor='pointer';avatar.onclick=()=>location.href=`profile.html?id=${encodeURIComponent(uid)}`;}
   }));
 }
 
