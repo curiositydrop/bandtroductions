@@ -58,10 +58,14 @@
       });
 
       const observer=new MutationObserver(async()=>{
+        // profile-page.js now preloads its banner/avatar before first reveal.
+        // If it marks the content ready, do not hide/reveal it a second time.
+        if(content.dataset.assetsReady==='true'){
+          observer.disconnect();
+          return;
+        }
         if(intercepted||content.hidden)return;
         intercepted=true;
-        // profile-page.js has completed its data render. Hold that finished DOM
-        // offscreen for one final moment while avatar/banner assets are warmed.
         content.hidden=true;
         if(status){status.hidden=false;status.textContent='Loading profile…'}
 
