@@ -8,6 +8,16 @@ const profilePanel = document.querySelector('.left .menu');
 const profileLink = profilePanel?.querySelector('a[href="profile.html"]');
 const sponsorGrid = document.querySelector('.left .sponsors');
 
+function syncHeaderLogo(){
+  const logo=document.querySelector('.header-logo'),brand=document.querySelector('.brand');
+  if(!logo||!brand)return;
+  const size=parseFloat(getComputedStyle(brand).fontSize)||34;
+  logo.style.width=`${size}px`;
+  logo.style.height=`${size}px`;
+}
+syncHeaderLogo();
+window.addEventListener('resize',syncHeaderLogo);
+
 const initialsFor = name => (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase() || 'BT';
 const formatDate = stamp => !stamp?.toDate ? 'Just now' : new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(stamp.toDate());
 function safeText(value=''){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));}
