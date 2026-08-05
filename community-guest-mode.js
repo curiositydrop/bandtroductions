@@ -7,7 +7,6 @@ style.textContent = `
     margin-bottom: 8px !important;
   }
   #guest-prompt.community-guest {
-    display: block;
     margin: 0 0 10px !important;
     padding: 11px 13px !important;
     border-radius: 13px !important;
@@ -53,7 +52,8 @@ document.head.appendChild(style);
 
 function configureGuestPrompt() {
   const prompt = document.getElementById('guest-prompt');
-  if (!prompt) return;
+  if (!prompt || prompt.dataset.guestCopyReady === 'true') return;
+  prompt.dataset.guestCopyReady = 'true';
 
   const row = prompt.querySelector('.community-guest-row') || prompt;
   let message = row.querySelector('p');
@@ -97,9 +97,8 @@ function applyCommunityState(user) {
 
   configureGuestPrompt();
 
-  if (prompt) prompt.hidden = Boolean(user);
-  if (composer) composer.hidden = !user;
-
+  // community.html already owns the actual hidden/visible auth state for the
+  // prompt and composer. Avoid toggling those same elements a second time here.
   if (feed) {
     feed.hidden = false;
     feed.style.display = '';
