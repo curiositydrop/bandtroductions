@@ -1,3 +1,91 @@
+// Keep data-driven Social/Profile areas from flashing their raw placeholder state
+// while Firebase auth, profile data, posts, and remote images finish resolving.
+(function stabilizeInitialRendering(){
+  const isCommunity=location.pathname.endsWith('/community.html');
+  const isProfile=location.pathname.endsWith('/profile.html');
+
+  if(isCommunity){
+    const style=document.createElement('style');
+    style.id='community-boot-stability';
+    style.textContent=`
+      html.bt-community-booting .community-tools-wrap,
+      html.bt-community-booting #post-composer,
+      html.bt-community-booting #feed,
+      html.bt-community-booting #feed-status{visibility:hidden!important}
+    `;
+    document.head.appendChild(style);
+    document.documentElement.classList.add('bt-community-booting');
+
+    const releaseWhenReady=()=>{
+      const feed=document.getElementById('feed');
+      const feedStatus=document.getElementById('feed-status');
+      const composer=document.getElementById('post-composer');
+      const guest=document.getElementById('guest-prompt');
+      const composerName=document.getElementById('composer-name');
+      if(!feed||!feedStatus||!composer||!guest)return false;
+
+      const feedResolved=feedStatus.hidden || !/loading the community feed/i.test(feedStatus.textContent||'');
+      const signedInReady=!composer.hidden && (composerName?.textContent||'').trim() && (composerName?.textContent||'').trim()!=='Create a post';
+      const guestReady=!guest.hidden;
+      if(feedResolved && (signedInReady||guestReady)){
+        document.documentElement.classList.remove('bt-community-booting');
+        return true;
+      }
+      return false;
+    };
+
+    const observer=new MutationObserver(()=>{if(releaseWhenReady())observer.disconnect()});
+    observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,characterData:true});
+    document.addEventListener('DOMContentLoaded',releaseWhenReady,{once:true});
+    // Safety fallback: never leave the usable page hidden if an optional enhancer fails.
+    setTimeout(()=>{document.documentElement.classList.remove('bt-community-booting');observer.disconnect()},6000);
+  }
+
+  if(isProfile){
+    document.addEventListener('DOMContentLoaded',()=>{
+      const content=document.getElementById('profile-content');
+      const status=document.getElementById('profile-status');
+      if(!content)return;
+      let intercepted=false;
+
+      const preload=url=>new Promise(resolve=>{
+        if(!url){resolve();return}
+        const image=new Image();
+        image.onload=()=>resolve();
+        image.onerror=()=>resolve();
+        image.src=url;
+        if(image.complete)resolve();
+      });
+
+      const observer=new MutationObserver(async()=>{
+        if(intercepted||content.hidden)return;
+        intercepted=true;
+        // profile-page.js has completed its data render. Hold that finished DOM
+        // offscreen for one final moment while avatar/banner assets are warmed.
+        content.hidden=true;
+        if(status){status.hidden=false;status.textContent='Loading profile…'}
+
+        const avatarUrl=content.querySelector('#profile-avatar img')?.src||'';
+        const cover=document.getElementById('profile-cover');
+        const background=cover?.style.backgroundImage||'';
+        const matches=[...background.matchAll(/url\(["']?([^"')]+)["']?\)/g)];
+        const bannerUrl=matches.length?matches[matches.length-1][1]:'';
+
+        await Promise.race([
+          Promise.all([preload(avatarUrl),preload(bannerUrl)]),
+          new Promise(resolve=>setTimeout(resolve,2500))
+        ]);
+
+        observer.disconnect();
+        content.hidden=false;
+        if(status)status.hidden=true;
+      });
+
+      observer.observe(content,{attributes:true,attributeFilter:['hidden']});
+    },{once:true});
+  }
+})();
+
 fetch('global.html?v=7')
   .then(response => response.text())
   .then(async data => {
