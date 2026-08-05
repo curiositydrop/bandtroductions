@@ -35,6 +35,20 @@ function initialsFor(name) {
   return (name || '').trim().split(/\s+/).filter(Boolean).slice(0,2).map(part => part[0]).join('').toUpperCase() || 'BT';
 }
 
+function preloadImage(url) {
+  return new Promise(resolve => {
+    if (!url) { resolve(); return; }
+    const image = new Image();
+    let settled = false;
+    const done = () => { if (!settled) { settled = true; resolve(); } };
+    image.onload = done;
+    image.onerror = done;
+    image.src = url;
+    if (image.complete) done();
+    setTimeout(done, 2200);
+  });
+}
+
 function youtubeEmbedUrl(url) {
   if (!url) return '';
   try {
@@ -131,6 +145,10 @@ async function loadProfile(user) {
       };
     }
 
+    const banner = loadedProfile.bannerImageUrl || loadedProfile.coverImageUrl || '';
+    const avatarUrl = loadedProfile.imageUrl || loadedProfile.avatarUrl || loadedProfile.photoURL || '';
+    await Promise.all([preloadImage(banner), preloadImage(avatarUrl)]);
+
     const type = loadedProfile.accountType || 'fan';
     const layout = layouts[type] || layouts.fan;
     document.body.classList.toggle('fan-profile', type === 'fan');
@@ -145,18 +163,20 @@ async function loadProfile(user) {
     document.getElementById('profile-support').hidden = type === 'fan';
 
     const cover = document.getElementById('profile-cover');
-    const banner = loadedProfile.bannerImageUrl || loadedProfile.coverImageUrl || '';
-    if (banner) cover.style.backgroundImage = `linear-gradient(to bottom,rgba(0,0,0,.05),rgba(0,0,0,.26)),url("${banner.replace(/"/g,'\\"')}")`;
+    cover.style.backgroundImage = banner
+      ? `linear-gradient(to bottom,rgba(0,0,0,.05),rgba(0,0,0,.26)),url("${banner.replace(/"/g,'\\"')}")`
+      : '';
 
     const avatar = document.getElementById('profile-avatar');
-    avatar.textContent = initialsFor(loadedProfile.displayName);
-    const avatarUrl = loadedProfile.imageUrl || loadedProfile.avatarUrl || loadedProfile.photoURL || '';
+    avatar.replaceChildren();
     if (avatarUrl) {
       const img = document.createElement('img');
       img.src = avatarUrl;
       img.alt = `${loadedProfile.displayName || 'Member'} profile image`;
       img.addEventListener('error', () => { avatar.textContent = initialsFor(loadedProfile.displayName); });
-      avatar.replaceChildren(img);
+      avatar.appendChild(img);
+    } else {
+      avatar.textContent = initialsFor(loadedProfile.displayName);
     }
 
     layout.badges.forEach(key => addBadge(loadedProfile[key]));
@@ -194,6 +214,7 @@ async function loadProfile(user) {
       editButton.hidden = loadedProfile.ownerId !== user.uid;
     }
 
+    content.dataset.assetsReady = 'true';
     status.hidden = true;
     content.hidden = false;
   } catch (error) {
