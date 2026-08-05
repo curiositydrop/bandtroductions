@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { addDoc, collection, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { addDoc, collection, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const list=document.getElementById('conversation-list');
 const messagesEl=document.getElementById('messages');
@@ -17,17 +17,25 @@ async function profile(uid){if(!uid)return null;const [a,b]=await Promise.all([g
 function displayName(data,uid){return data?.displayName||data?.name||data?.bandName||data?.venueName||uid?.slice(0,8)||'Member';}
 function conversationId(a,b){return [a,b].sort().join('__');}
 
+async function markRead(id){
+  if(!currentUser||!id)return;
+  try{await updateDoc(doc(db,'conversations',id),{[`readAt.${currentUser.uid}`]:serverTimestamp()});}
+  catch(error){console.warn('Could not mark conversation read.',error);}
+}
+
 async function openConversation(id,otherUid){
   currentConversationId=id;
   const other=await profile(otherUid).catch(()=>null);
   head.textContent=displayName(other,otherUid);
   composer.hidden=false;
+  markRead(id);
   if(unsubscribeMessages)unsubscribeMessages();
   unsubscribeMessages=onSnapshot(collection(db,'conversations',id,'messages'),snap=>{
     const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
     messagesEl.innerHTML=rows.length?'':'<div class="empty">No messages yet. Say hello.</div>';
     rows.forEach(m=>{const div=document.createElement('div');div.className='bubble'+(m.senderId===currentUser.uid?' mine':'');div.innerHTML=`${safe(m.text||'')}<small>${safe(when(m.createdAt))}</small>`;messagesEl.appendChild(div);});
     messagesEl.scrollTop=messagesEl.scrollHeight;
+    markRead(id);
   },error=>{console.warn(error);messagesEl.innerHTML='<div class="empty">Messages could not be loaded.</div>';});
 }
 
@@ -61,6 +69,7 @@ composer.addEventListener('submit',async event=>{
   input.value='';
   try{
     await addDoc(collection(db,'conversations',currentConversationId,'messages'),{senderId:currentUser.uid,text,createdAt:serverTimestamp()});
-    await setDoc(doc(db,'conversations',currentConversationId),{lastMessage:text,updatedAt:serverTimestamp()}, {merge:true});
+    await setDoc(doc(db,'conversations',currentConversationId),{lastMessage:text,lastSenderId:currentUser.uid,updatedAt:serverTimestamp()}, {merge:true});
+    await markRead(currentConversationId);
   }catch(error){console.error(error);alert('Message could not be sent yet. Messaging permissions may still need to be enabled.');input.value=text;}
 });
