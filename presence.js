@@ -2,6 +2,9 @@ import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { doc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
+// Homepage visual polish. Loaded here because presence.js is already imported by the dashboard.
+import('./dashboard-logo-polish.js').catch(()=>{});
+
 let timer=null;
 let currentUser=null;
 
