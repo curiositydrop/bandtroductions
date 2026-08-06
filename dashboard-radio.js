@@ -19,14 +19,27 @@ function setupDashboardChrome(){
       background:#090a0a!important;
       box-shadow:0 8px 18px rgba(0,0,0,.72)!important;
     }
+    .brand-block{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:flex-start!important;
+      min-width:0!important;
+    }
+    .brand-copy{
+      display:flex!important;
+      flex-direction:column!important;
+      justify-content:center!important;
+      min-width:0!important;
+    }
     .header-logo-frame{
-      width:94px!important;
-      height:76px!important;
+      width:108px!important;
+      height:86px!important;
       display:flex!important;
       align-items:center!important;
       justify-content:center!important;
       overflow:visible!important;
       flex:none!important;
+      align-self:center!important;
     }
     .header-logo{
       width:100%!important;
@@ -66,7 +79,7 @@ function setupDashboardChrome(){
     }
     @media(max-width:1000px){
       .sticky-header{width:calc(100% - 12px)!important}
-      .header-logo-frame{width:78px!important;height:64px!important}
+      .header-logo-frame{width:88px!important;height:72px!important}
       .news-scroller-card{height:31px!important;grid-template-columns:56px minmax(0,1fr)!important}
       .news-label{font-size:9px!important;line-height:.9!important}
       .news-group{font-size:10px!important;gap:20px!important;padding:0 10px!important}
@@ -77,8 +90,9 @@ function setupDashboardChrome(){
     }
     @media(max-width:650px){
       .sticky-header{width:calc(100% - 8px)!important}
-      .header-logo-frame{width:66px!important;height:56px!important}
-      .brand-block{gap:5px!important}
+      .header-logo-frame{width:74px!important;height:62px!important}
+      .brand-block{gap:5px!important;align-items:center!important}
+      .brand-copy{justify-content:center!important}
       .news-scroller-card{height:26px!important;grid-template-columns:48px minmax(0,1fr)!important}
       .news-label{font-size:7px!important;line-height:.88!important}
       .news-group{font-size:7.5px!important;gap:15px!important;padding:0 8px!important}
