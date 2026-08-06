@@ -24,21 +24,23 @@ function setupDashboardChrome(){
     .news-group{font-size:10px!important;gap:25px!important;padding:0 12px!important}
     .radio-panel{position:relative!important;overflow:hidden!important;min-width:0!important}
     .right,.center,.left{min-width:0!important}
+    .right{max-width:100%!important}
+    .right .panel{max-width:100%!important}
     .radio-coming-soon{
       position:absolute;
       z-index:20;
-      top:43px;
-      right:-24px;
-      width:126px;
+      top:11px;
+      right:8px;
+      width:116px;
       text-align:center;
       background:#b91c1c;
       color:#fff;
       border:1px solid #ff5a5a;
       padding:5px 6px;
-      font-size:10px;
+      font-size:9px;
       font-weight:950;
-      letter-spacing:.07em;
-      transform:rotate(32deg);
+      letter-spacing:.06em;
+      transform:rotate(12deg);
       transform-origin:center;
       box-shadow:0 3px 10px rgba(0,0,0,.65);
       pointer-events:none;
@@ -50,18 +52,21 @@ function setupDashboardChrome(){
       .news-scroller-card{height:31px!important;grid-template-columns:56px minmax(0,1fr)!important}
       .news-label{font-size:8px!important}
       .news-group{font-size:8px!important;gap:20px!important;padding:0 10px!important}
-      .grid{grid-template-columns:minmax(0,24fr) minmax(0,48fr) minmax(0,28fr)!important;width:100%!important;max-width:100%!important;overflow:visible!important}
-      .radio-coming-soon{top:34px;right:-20px;width:106px;font-size:7px;padding:4px 3px}
+      .grid{grid-template-columns:minmax(0,23fr) minmax(0,50fr) minmax(0,27fr)!important;gap:6px!important;width:100%!important;max-width:100%!important;overflow:hidden!important}
+      .right{width:100%!important;max-width:100%!important;overflow:hidden!important}
+      .right .panel{width:100%!important;max-width:100%!important;overflow:hidden!important}
+      .radio-coming-soon{top:9px;right:5px;width:92px;font-size:7px;padding:4px 3px;transform:rotate(10deg)}
     }
     @media(max-width:650px){
       .sticky-header{width:calc(100% - 8px)!important}
       .news-scroller-card{height:24px!important;grid-template-columns:44px minmax(0,1fr)!important}
       .news-label{font-size:6px!important;line-height:.82!important}
       .news-group{font-size:6px!important;gap:15px!important;padding:0 8px!important}
-      .grid{grid-template-columns:minmax(0,24fr) minmax(0,48fr) minmax(0,28fr)!important;gap:4px!important;width:100%!important;max-width:100%!important}
-      .right{padding-right:0!important;margin-right:0!important;overflow:hidden!important}
-      .right .panel{width:100%!important;max-width:100%!important;overflow:hidden!important}
-      .radio-coming-soon{top:23px;right:-15px;width:78px;font-size:5px;padding:3px 2px;letter-spacing:.04em;transform:rotate(30deg)}
+      .grid{grid-template-columns:minmax(0,23fr) minmax(0,51fr) minmax(0,26fr)!important;gap:3px!important;width:100%!important;max-width:100%!important;overflow:hidden!important}
+      .right{width:100%!important;max-width:100%!important;padding:0!important;margin:0!important;overflow:hidden!important}
+      .right .panel{width:100%!important;max-width:100%!important;margin-left:0!important;margin-right:0!important;overflow:hidden!important}
+      .right .panel h3{padding-right:3px!important;overflow-wrap:anywhere!important}
+      .radio-coming-soon{top:5px;right:3px;width:61px;font-size:4.8px;padding:2px 2px;letter-spacing:.03em;transform:rotate(9deg)}
     }
   `;
   document.head.appendChild(style);
