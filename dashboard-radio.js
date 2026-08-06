@@ -22,17 +22,21 @@ function setupDashboardChrome(){
     .news-scroller-card{height:40px!important;grid-template-columns:66px minmax(0,1fr)!important}
     .news-label{font-size:9px!important;line-height:.88!important}
     .news-group{font-size:10px!important;gap:25px!important;padding:0 12px!important}
+    .radio-panel{position:relative!important;overflow:hidden!important}
+    .radio-coming-soon{position:absolute;z-index:20;top:47px;right:-34px;width:150px;text-align:center;background:#b91c1c;color:#fff;border:1px solid #ff5a5a;padding:5px 8px;font-size:12px;font-weight:950;letter-spacing:.08em;transform:rotate(32deg);box-shadow:0 3px 10px rgba(0,0,0,.65);pointer-events:none;text-transform:uppercase}
     @media(max-width:1000px){
       .sticky-header{width:calc(100% - 12px)!important}
       .news-scroller-card{height:31px!important;grid-template-columns:56px minmax(0,1fr)!important}
       .news-label{font-size:8px!important}
       .news-group{font-size:8px!important;gap:20px!important;padding:0 10px!important}
+      .radio-coming-soon{top:39px;right:-38px;width:135px;font-size:9px;padding:4px}
     }
     @media(max-width:650px){
       .sticky-header{width:calc(100% - 8px)!important}
       .news-scroller-card{height:24px!important;grid-template-columns:44px minmax(0,1fr)!important}
       .news-label{font-size:6px!important;line-height:.82!important}
       .news-group{font-size:6px!important;gap:15px!important;padding:0 8px!important}
+      .radio-coming-soon{top:29px;right:-28px;width:92px;font-size:6px;padding:3px 2px;border-width:1px}
     }
   `;
   document.head.appendChild(style);
@@ -68,6 +72,11 @@ let tracks=[],current=0,audio=null;
 
 const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 
+function applyComingSoon(){
+  if(!panel||panel.querySelector('.radio-coming-soon'))return;
+  const badge=document.createElement('div');badge.className='radio-coming-soon';badge.textContent='COMING SOON';panel.appendChild(badge);
+}
+
 function approvedTracks(data){
   if(!data)return [];
   return Object.entries(data).map(([id,t])=>({id,...t})).filter(t=>t.approved===true&&Boolean(t.audioUrl||t.audio)).sort((a,b)=>(b.dateAdded||0)-(a.dateAdded||0));
@@ -81,6 +90,7 @@ function render(){
   if(heading)panel.appendChild(heading);
   if(!t){
     const div=document.createElement('div');div.className='radio';div.innerHTML='<div class="radio-box"><small>NOW PLAYING</small><h2 style="color:var(--teal);margin:6px 0">Radio Beta</h2><div style="color:#999">Approved tracks will appear here.</div><a class="btn primary" style="display:block;text-align:center;margin-top:10px" href="radio.html">VIEW RADIO</a></div>';panel.appendChild(div);
+    applyComingSoon();
     if(headerPlayer)headerPlayer.innerHTML='<b>● LIVE RADIO</b><div style="margin-top:8px">BANDtroductions Radio Beta</div>';
     return;
   }
@@ -88,6 +98,7 @@ function render(){
   const wrap=document.createElement('div');wrap.className='radio';
   wrap.innerHTML=`<div class="radio-box"><div class="now"><img class="cover" src="${esc(cover)}" alt="${esc(title)} artwork" style="object-fit:cover"><div><small>NOW PLAYING</small><h2 style="margin:5px 0;color:var(--teal)">${esc(title)}</h2><div>${esc(artist)}</div>${album?`<div style="color:#888;margin-top:2px">${esc(album)}</div>`:''}</div></div><div class="wave"></div><button type="button" class="btn primary dashboard-radio-play" style="display:block;width:100%;text-align:center;margin-top:10px;cursor:pointer">▶ PLAY</button><a class="btn" style="display:block;text-align:center;margin-top:6px" href="radio.html">OPEN RADIO</a></div>`;
   panel.appendChild(wrap);
+  applyComingSoon();
   if(headerPlayer)headerPlayer.innerHTML=`<b>● LIVE RADIO</b><div style="margin-top:8px">${esc(artist)} — ${esc(title)}</div>`;
   const play=wrap.querySelector('.dashboard-radio-play');
   play.addEventListener('click',()=>togglePlay(t,play));
