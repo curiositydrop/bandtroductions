@@ -19,6 +19,7 @@ function setupDashboardChrome(){
       background:#090a0a!important;
       box-shadow:0 8px 18px rgba(0,0,0,.72)!important;
     }
+    .top{position:relative!important}
     .brand-block{
       display:flex!important;
       align-items:center!important;
@@ -33,13 +34,13 @@ function setupDashboardChrome(){
       min-width:0!important;
     }
     .header-logo-frame{
-      width:126px!important;
-      height:92px!important;
+      width:112px!important;
+      height:82px!important;
       display:flex!important;
       align-items:center!important;
       justify-content:center!important;
       overflow:visible!important;
-      flex:0 0 126px!important;
+      flex:0 0 112px!important;
       align-self:center!important;
     }
     .header-logo{
@@ -49,8 +50,48 @@ function setupDashboardChrome(){
       object-fit:contain!important;
       object-position:center!important;
       display:block!important;
-      transform:scale(1.22)!important;
+      transform:scale(1.12)!important;
       transform-origin:center!important;
+    }
+    .scene-view-counter{
+      position:absolute;
+      right:16px;
+      top:50%;
+      transform:translateY(-50%);
+      min-width:126px;
+      text-align:center;
+      padding:7px 9px;
+      border:1px solid #394342;
+      background:linear-gradient(#101313,#060707);
+      box-shadow:inset 0 0 0 1px #050606,0 0 10px rgba(37,199,193,.08);
+      z-index:5;
+    }
+    .scene-view-label{
+      color:var(--teal,#25c7c1);
+      font-size:9px;
+      font-weight:950;
+      letter-spacing:.12em;
+      margin-bottom:4px;
+      white-space:nowrap;
+    }
+    .scene-view-digits{
+      display:flex;
+      justify-content:center;
+      gap:2px;
+      font-family:"Courier New",monospace;
+      font-size:15px;
+      font-weight:900;
+      line-height:1;
+    }
+    .scene-view-digit{
+      display:inline-grid;
+      place-items:center;
+      min-width:15px;
+      height:22px;
+      color:#e7f7f6;
+      background:linear-gradient(#171b1b,#090b0b);
+      border:1px solid #313837;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
     }
     .news-scroller-card{height:40px!important;grid-template-columns:66px minmax(0,1fr)!important}
     .news-label{font-size:11px!important;line-height:.92!important}
@@ -82,9 +123,10 @@ function setupDashboardChrome(){
     }
     @media(max-width:1000px){
       .sticky-header{width:calc(100% - 12px)!important}
-      .brand-block{gap:10px!important}
-      .header-logo-frame{width:106px!important;height:78px!important;flex-basis:106px!important}
-      .header-logo{transform:scale(1.24)!important}
+      .brand-block{gap:10px!important;padding-right:108px!important}
+      .header-logo-frame{width:94px!important;height:70px!important;flex-basis:94px!important}
+      .header-logo{transform:scale(1.12)!important}
+      .scene-view-counter{right:10px;min-width:92px;padding:5px 6px}.scene-view-label{font-size:7px}.scene-view-digits{font-size:11px;gap:1px}.scene-view-digit{min-width:11px;height:17px}
       .news-scroller-card{height:31px!important;grid-template-columns:56px minmax(0,1fr)!important}
       .news-label{font-size:9px!important;line-height:.9!important}
       .news-group{font-size:10px!important;gap:20px!important;padding:0 10px!important}
@@ -95,10 +137,11 @@ function setupDashboardChrome(){
     }
     @media(max-width:650px){
       .sticky-header{width:calc(100% - 8px)!important}
-      .brand-block{gap:8px!important;align-items:center!important}
+      .brand-block{gap:7px!important;align-items:center!important;padding-right:78px!important}
       .brand-copy{justify-content:center!important}
-      .header-logo-frame{width:88px!important;height:68px!important;flex-basis:88px!important}
-      .header-logo{transform:scale(1.28)!important}
+      .header-logo-frame{width:76px!important;height:60px!important;flex-basis:76px!important}
+      .header-logo{transform:scale(1.10)!important}
+      .scene-view-counter{right:5px;min-width:70px;padding:4px 3px}.scene-view-label{font-size:5.5px;letter-spacing:.06em;margin-bottom:3px}.scene-view-digits{font-size:8px;gap:1px}.scene-view-digit{min-width:8px;height:13px}
       .news-scroller-card{height:26px!important;grid-template-columns:48px minmax(0,1fr)!important}
       .news-label{font-size:7px!important;line-height:.88!important}
       .news-group{font-size:7.5px!important;gap:15px!important;padding:0 8px!important}
@@ -145,6 +188,35 @@ const DEFAULT_COVER='IMG_9367.png';
 let tracks=[],current=0,audio=null;
 
 const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+
+function renderSceneViewNumber(counter,value){
+  const digits=String(Math.max(0,Number(value)||0)).padStart(7,'0').slice(-7);
+  counter.querySelector('.scene-view-digits').innerHTML=[...digits].map(d=>`<span class="scene-view-digit">${d}</span>`).join('');
+}
+
+function setupSceneViewCounter(){
+  const top=document.querySelector('.top');
+  if(!top||top.querySelector('.scene-view-counter'))return;
+  const counter=document.createElement('div');
+  counter.className='scene-view-counter';
+  counter.setAttribute('aria-label','Homepage page views');
+  counter.innerHTML='<div class="scene-view-label">PAGE VIEWS</div><div class="scene-view-digits"><span class="scene-view-digit">-</span><span class="scene-view-digit">-</span><span class="scene-view-digit">-</span><span class="scene-view-digit">-</span><span class="scene-view-digit">-</span><span class="scene-view-digit">-</span><span class="scene-view-digit">-</span></div>';
+  top.appendChild(counter);
+
+  const viewsRef=ref(db,'SiteStats/homePageViews');
+  onValue(viewsRef,snap=>renderSceneViewNumber(counter,snap.val()),()=>renderSceneViewNumber(counter,0));
+
+  try{
+    if(!sessionStorage.getItem('bandtroductions-home-view-counted')){
+      sessionStorage.setItem('bandtroductions-home-view-counted','1');
+      runTransaction(viewsRef,current=>(Number(current)||0)+1).catch(error=>console.warn('Page view counter increment unavailable.',error));
+    }
+  }catch(error){
+    runTransaction(viewsRef,current=>(Number(current)||0)+1).catch(err=>console.warn('Page view counter increment unavailable.',err));
+  }
+}
+
+setupSceneViewCounter();
 
 function applyComingSoon(){
   if(!panel||panel.querySelector('.radio-coming-soon'))return;
