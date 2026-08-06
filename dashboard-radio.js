@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js';
 import { getDatabase, ref, onValue, runTransaction } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js';
+import { getFirestore, doc, onSnapshot, runTransaction as runFirestoreTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js';
 
 function setupDashboardChrome(){
   const header=document.querySelector('.sticky-header');
@@ -180,17 +181,19 @@ const firebaseConfig={
   appId:'1:619241154826:web:25ddc58eef094e3c0732f3'
 };
 
-const app=getApps().find(a=>a.options?.databaseURL===firebaseConfig.databaseURL)||initializeApp(firebaseConfig,'dashboard-radio');
+const app=getApps().find(a=>a.options?.projectId===firebaseConfig.projectId)||initializeApp(firebaseConfig,'dashboard-radio');
 const db=getDatabase(app);
+const firestoreDb=getFirestore(app);
 const panel=document.querySelector('.radio-panel');
 const headerPlayer=document.querySelector('.mini-player');
 const DEFAULT_COVER='IMG_9367.png';
+const VIEW_COUNTER_SEED=11000;
 let tracks=[],current=0,audio=null;
 
 const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 
 function renderSceneViewNumber(counter,value){
-  const digits=String(Math.max(0,Number(value)||0)).padStart(7,'0').slice(-7);
+  const digits=String(Math.max(VIEW_COUNTER_SEED,Number(value)||VIEW_COUNTER_SEED)).padStart(7,'0').slice(-7);
   counter.querySelector('.scene-view-digits').innerHTML=[...digits].map(d=>`<span class="scene-view-digit">${d}</span>`).join('');
 }
 
@@ -200,19 +203,35 @@ function setupSceneViewCounter(){
   const counter=document.createElement('div');
   counter.className='scene-view-counter';
   counter.setAttribute('aria-label','Homepage page views');
-  counter.innerHTML='<div class="scene-view-label">PAGE VIEWS</div><div class="scene-view-digits"><span class="scene-view-digit">-</span><span class="scene-view-digit">-</span><span class="scene-view-digit">-</span><span class="scene-view-digit">-</span><span class="scene-view-digit">-</span><span class="scene-view-digit">-</span><span class="scene-view-digit">-</span></div>';
+  counter.innerHTML='<div class="scene-view-label">PAGE VIEWS</div><div class="scene-view-digits"></div>';
   top.appendChild(counter);
+  renderSceneViewNumber(counter,VIEW_COUNTER_SEED);
 
-  const viewsRef=ref(db,'SiteStats/homePageViews');
-  onValue(viewsRef,snap=>renderSceneViewNumber(counter,snap.val()),()=>renderSceneViewNumber(counter,0));
+  const viewsDoc=doc(firestoreDb,'siteStats','homepage');
+  onSnapshot(viewsDoc,snap=>{
+    renderSceneViewNumber(counter,snap.exists()?snap.data()?.views:VIEW_COUNTER_SEED);
+  },error=>{
+    console.warn('Page view counter read unavailable.',error);
+    renderSceneViewNumber(counter,VIEW_COUNTER_SEED);
+  });
+
+  const increment=()=>runFirestoreTransaction(firestoreDb,async transaction=>{
+    const snap=await transaction.get(viewsDoc);
+    if(!snap.exists()){
+      transaction.set(viewsDoc,{views:VIEW_COUNTER_SEED+1,updatedAt:serverTimestamp()});
+      return;
+    }
+    const currentViews=Math.max(VIEW_COUNTER_SEED,Number(snap.data()?.views)||VIEW_COUNTER_SEED);
+    transaction.update(viewsDoc,{views:currentViews+1,updatedAt:serverTimestamp()});
+  });
 
   try{
-    if(!sessionStorage.getItem('bandtroductions-home-view-counted')){
-      sessionStorage.setItem('bandtroductions-home-view-counted','1');
-      runTransaction(viewsRef,current=>(Number(current)||0)+1).catch(error=>console.warn('Page view counter increment unavailable.',error));
+    if(!sessionStorage.getItem('bandtroductions-home-view-counted-v2')){
+      sessionStorage.setItem('bandtroductions-home-view-counted-v2','1');
+      increment().catch(error=>console.warn('Page view counter increment unavailable.',error));
     }
   }catch(error){
-    runTransaction(viewsRef,current=>(Number(current)||0)+1).catch(err=>console.warn('Page view counter increment unavailable.',err));
+    increment().catch(err=>console.warn('Page view counter increment unavailable.',err));
   }
 }
 
