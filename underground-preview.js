@@ -2,6 +2,18 @@ import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { collection, doc, getDoc, onSnapshot, orderBy, query } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
+// Keep the dashboard user's Online Now heartbeat active while they remain on the homepage.
+import('./presence.js').catch(error=>console.warn('Presence heartbeat unavailable.',error));
+
+// Slightly increase the ticker height without making the fixed header bulky.
+const tickerPolish=document.createElement('style');
+tickerPolish.textContent=`
+  .news-scroller-card{height:62px}
+  @media(max-width:1000px){.news-scroller-card{height:46px}}
+  @media(max-width:650px){.news-scroller-card{height:36px}}
+`;
+document.head.appendChild(tickerPolish);
+
 const feed = document.querySelector('.feed');
 const showsPanel = [...document.querySelectorAll('.right .panel')].find(panel => panel.querySelector('h3')?.textContent.trim() === 'Upcoming Shows');
 const profilePanel = document.querySelector('.left .menu');
