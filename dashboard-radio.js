@@ -19,6 +19,23 @@ function setupDashboardChrome(){
       background:#090a0a!important;
       box-shadow:0 8px 18px rgba(0,0,0,.72)!important;
     }
+    .header-logo-frame{
+      width:94px!important;
+      height:76px!important;
+      display:flex!important;
+      align-items:center!important;
+      justify-content:center!important;
+      overflow:visible!important;
+      flex:none!important;
+    }
+    .header-logo{
+      width:100%!important;
+      height:100%!important;
+      max-width:100%!important;
+      object-fit:contain!important;
+      object-position:center!important;
+      display:block!important;
+    }
     .news-scroller-card{height:40px!important;grid-template-columns:66px minmax(0,1fr)!important}
     .news-label{font-size:11px!important;line-height:.92!important}
     .news-group{font-size:12px!important;gap:25px!important;padding:0 12px!important}
@@ -49,6 +66,7 @@ function setupDashboardChrome(){
     }
     @media(max-width:1000px){
       .sticky-header{width:calc(100% - 12px)!important}
+      .header-logo-frame{width:78px!important;height:64px!important}
       .news-scroller-card{height:31px!important;grid-template-columns:56px minmax(0,1fr)!important}
       .news-label{font-size:9px!important;line-height:.9!important}
       .news-group{font-size:10px!important;gap:20px!important;padding:0 10px!important}
@@ -59,6 +77,8 @@ function setupDashboardChrome(){
     }
     @media(max-width:650px){
       .sticky-header{width:calc(100% - 8px)!important}
+      .header-logo-frame{width:66px!important;height:56px!important}
+      .brand-block{gap:5px!important}
       .news-scroller-card{height:26px!important;grid-template-columns:48px minmax(0,1fr)!important}
       .news-label{font-size:7px!important;line-height:.88!important}
       .news-group{font-size:7.5px!important;gap:15px!important;padding:0 8px!important}
@@ -70,6 +90,10 @@ function setupDashboardChrome(){
     }
   `;
   document.head.appendChild(style);
+
+  const navLinks=[...document.querySelectorAll('.nav a')];
+  const communityLink=navLinks.find(a=>a.textContent.trim().toUpperCase()==='COMMUNITY');
+  if(communityLink){communityLink.textContent='GEAR EXCHANGE';communityLink.href='gear-exchange.html';}
 
   const sync=()=>{
     const height=Math.ceil(header.getBoundingClientRect().height);
