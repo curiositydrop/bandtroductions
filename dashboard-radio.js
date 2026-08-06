@@ -23,6 +23,7 @@ function setupDashboardChrome(){
       display:flex!important;
       align-items:center!important;
       justify-content:flex-start!important;
+      gap:14px!important;
       min-width:0!important;
     }
     .brand-copy{
@@ -32,22 +33,24 @@ function setupDashboardChrome(){
       min-width:0!important;
     }
     .header-logo-frame{
-      width:108px!important;
-      height:86px!important;
+      width:126px!important;
+      height:92px!important;
       display:flex!important;
       align-items:center!important;
       justify-content:center!important;
       overflow:visible!important;
-      flex:none!important;
+      flex:0 0 126px!important;
       align-self:center!important;
     }
     .header-logo{
       width:100%!important;
       height:100%!important;
-      max-width:100%!important;
+      max-width:none!important;
       object-fit:contain!important;
       object-position:center!important;
       display:block!important;
+      transform:scale(1.22)!important;
+      transform-origin:center!important;
     }
     .news-scroller-card{height:40px!important;grid-template-columns:66px minmax(0,1fr)!important}
     .news-label{font-size:11px!important;line-height:.92!important}
@@ -79,7 +82,9 @@ function setupDashboardChrome(){
     }
     @media(max-width:1000px){
       .sticky-header{width:calc(100% - 12px)!important}
-      .header-logo-frame{width:88px!important;height:72px!important}
+      .brand-block{gap:10px!important}
+      .header-logo-frame{width:106px!important;height:78px!important;flex-basis:106px!important}
+      .header-logo{transform:scale(1.24)!important}
       .news-scroller-card{height:31px!important;grid-template-columns:56px minmax(0,1fr)!important}
       .news-label{font-size:9px!important;line-height:.9!important}
       .news-group{font-size:10px!important;gap:20px!important;padding:0 10px!important}
@@ -90,9 +95,10 @@ function setupDashboardChrome(){
     }
     @media(max-width:650px){
       .sticky-header{width:calc(100% - 8px)!important}
-      .header-logo-frame{width:74px!important;height:62px!important}
-      .brand-block{gap:5px!important;align-items:center!important}
+      .brand-block{gap:8px!important;align-items:center!important}
       .brand-copy{justify-content:center!important}
+      .header-logo-frame{width:88px!important;height:68px!important;flex-basis:88px!important}
+      .header-logo{transform:scale(1.28)!important}
       .news-scroller-card{height:26px!important;grid-template-columns:48px minmax(0,1fr)!important}
       .news-label{font-size:7px!important;line-height:.88!important}
       .news-group{font-size:7.5px!important;gap:15px!important;padding:0 8px!important}
