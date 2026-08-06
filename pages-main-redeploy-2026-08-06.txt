@@ -1,0 +1,1 @@
+Force GitHub Pages deployment from main after restoring publishing source and successful DNS verification.
