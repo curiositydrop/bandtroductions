@@ -24,7 +24,7 @@ function makeButton(label,className){
 }
 
 async function sharePost(post){
-  const url=`${location.origin}${location.pathname.replace(/[^/]+$/,'')}community.html?post=${encodeURIComponent(post.id)}`;
+  const url=`${location.origin}${location.pathname.replace(/[^/]+$/,'')}index.html?post=${encodeURIComponent(post.id)}`;
   const text=[post.authorName,post.content].filter(Boolean).join(': ').slice(0,500);
   try{
     if(navigator.share){await navigator.share({title:'BANDtroductions Social',text,url});return;}
@@ -82,7 +82,7 @@ function enhance(posts,myGeneration){
     });
 
     comment.addEventListener('click',()=>{
-      location.href=`community.html?post=${encodeURIComponent(post.id)}`;
+      location.href=`index.html?post=${encodeURIComponent(post.id)}#community-feed`;
     });
     share.addEventListener('click',()=>sharePost(post));
   });
@@ -105,3 +105,6 @@ onSnapshot(postsQuery,snapshot=>{
   const posts=snapshot.docs.map(d=>({id:d.id,...d.data()}));
   [80,250,600].forEach(delay=>setTimeout(()=>enhance(posts,myGeneration),delay));
 },error=>console.warn('Dashboard feed actions unavailable',error));
+
+// Add direct image/video upload + media compression to the homepage composer.
+import('./dashboard-media-upload.js?v=1').catch(error=>console.error('Dashboard media upload unavailable',error));
