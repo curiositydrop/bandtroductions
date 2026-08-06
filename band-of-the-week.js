@@ -19,7 +19,9 @@ const SOURCE_PAGES = [
   "musicians.html"
 ];
 
-const FALLBACK_IMAGE = "IMG_9383.jpeg";
+// Never use another band's artwork as a fallback. If a leaderboard entry cannot
+// be matched to a real profile image, show the BANDtroductions mark instead.
+const FALLBACK_IMAGE = "IMG_9367.png";
 
 const currentWinnerName = document.getElementById("currentWinnerName");
 const currentWinnerImage = document.getElementById("currentWinnerImage");
@@ -76,15 +78,15 @@ function getBandNameFromFirebase(id, bandData) {
 }
 
 function getImageFromFirebase(bandData) {
-  return cleanImagePath(
+  const raw =
     bandData?.image ||
     bandData?.profileImage ||
     bandData?.photo ||
     bandData?.logo ||
     bandData?.avatar ||
     bandData?.banner ||
-    ""
-  );
+    "";
+  return raw ? cleanImagePath(raw) : "";
 }
 
 function addProfileKey(key, card) {
@@ -245,6 +247,7 @@ function renderBOTW() {
   currentWinnerImage.src = winner.info.image || FALLBACK_IMAGE;
   currentWinnerImage.alt = winner.info.title;
   currentWinnerImage.onerror = () => {
+    currentWinnerImage.onerror = null;
     currentWinnerImage.src = FALLBACK_IMAGE;
   };
 
@@ -258,11 +261,13 @@ function renderBOTW() {
   rankedBands.forEach((band, index) => {
     const row = document.createElement("div");
     row.className = "botw-winner";
+    row.dataset.bandId = band.id;
 
     const img = document.createElement("img");
     img.src = band.info.image || FALLBACK_IMAGE;
     img.alt = band.info.title;
     img.onerror = () => {
+      img.onerror = null;
       img.src = FALLBACK_IMAGE;
     };
 
