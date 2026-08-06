@@ -7,10 +7,18 @@ auth.onAuthStateChanged?.(user=>{currentUser=user||null;});
 
 const MB=1024*1024;
 const cleanName=name=>String(name||'upload').replace(/[^a-z0-9._-]+/gi,'-').slice(-100);
-const safeUrl=value=>{const t=String(value||'').trim();return t?( /^https?:\/\//i.test(t)?t:`https://${t}`):'';};
 
 function setStatus(composer,text){const el=composer?.querySelector('#dash-compose-status');if(el)el.textContent=text||'';}
 function bytesLabel(bytes){return bytes>=MB?`${(bytes/MB).toFixed(1)} MB`:`${Math.max(1,Math.round(bytes/1024))} KB`;}
+function clearSelectedMedia(composer,{clearText=false}={}){
+  if(!composer)return;
+  const img=composer.querySelector('#dash-image-file');if(img)img.value='';
+  const vid=composer.querySelector('#dash-video-file');if(vid)vid.value='';
+  composer.querySelectorAll('.dash-upload-preview').forEach(x=>x.replaceChildren());
+  composer.querySelectorAll('.dash-remove-media').forEach(x=>x.hidden=true);
+  if(clearText){const text=composer.querySelector('#dash-post-text');if(text)text.value='';}
+  setStatus(composer,'');
+}
 
 async function loadImage(file){
   if('createImageBitmap' in window){try{return await createImageBitmap(file,{imageOrientation:'from-image'});}catch{}}
@@ -41,7 +49,6 @@ function supportedRecorderType(){
 }
 
 async function compressVideo(file,composer){
-  // Small phone videos are already hardware-compressed; avoid a second lossy encode.
   if(file.size<=15*MB)return {blob:file,fileName:file.name,contentType:file.type,compressed:false};
   const mime=supportedRecorderType();
   if(!mime||!HTMLCanvasElement.prototype.captureStream)return {blob:file,fileName:file.name,contentType:file.type,compressed:false};
@@ -61,7 +68,7 @@ async function compressVideo(file,composer){
   const done=new Promise((resolve,reject)=>{recorder.onerror=e=>reject(e.error||e);recorder.onstop=resolve;});
   let drawing=true;const draw=()=>{if(!drawing)return;try{ctx.drawImage(video,0,0,width,height);}catch{}requestAnimationFrame(draw)};
   video.onended=()=>{drawing=false;if(recorder.state!=='inactive')recorder.stop();};
-  setStatus(composer,`Compressing video to 720p… this takes about the length of the clip.`);
+  setStatus(composer,'Compressing video to 720p… this takes about the length of the clip.');
   recorder.start(1000);draw();
   try{await video.play();await done;}catch(error){drawing=false;try{recorder.stop();}catch{}URL.revokeObjectURL(video.src);audioContext?.close?.();throw error;}
   URL.revokeObjectURL(video.src);audioContext?.close?.();
@@ -96,12 +103,16 @@ function addUploadUI(composer){
   if(!composer||composer.dataset.uploadEnhanced==='true')return;
   composer.dataset.uploadEnhanced='true';
   const imageField=composer.querySelector('#dash-image-field'),videoField=composer.querySelector('#dash-video-field');
-  if(imageField){imageField.innerHTML=`<label style="display:block;font-size:11px;font-weight:900;color:var(--teal);margin-bottom:5px">UPLOAD IMAGE</label><input id="dash-image-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><div id="dash-image-preview" class="dash-upload-preview"></div><div style="font-size:9px;color:#8f9999;margin-top:5px">Photos are resized/compressed before upload. GIFs stay animated.</div>`;}
-  if(videoField){videoField.innerHTML=`<label style="display:block;font-size:11px;font-weight:900;color:var(--teal);margin-bottom:5px">UPLOAD VIDEO</label><input id="dash-video-file" type="file" accept="video/mp4,video/quicktime,video/webm,video/*"><div id="dash-video-preview" class="dash-upload-preview"></div><div style="font-size:9px;color:#8f9999;margin-top:5px">Larger clips are compressed toward 720p before upload when your browser supports it.</div>`;}
-  const style=document.createElement('style');style.textContent=`.dash-upload-preview{margin-top:7px}.dash-upload-preview img,.dash-upload-preview video{display:block;width:100%;max-height:260px;object-fit:contain;background:#060707;border:1px solid #355;border-radius:6px}@media(max-width:650px){.dash-upload-preview img,.dash-upload-preview video{max-height:150px}#dash-image-field label,#dash-video-field label{font-size:6px!important}#dash-image-field div,#dash-video-field div{font-size:5px!important}}`;document.head.appendChild(style);
-  const bindPreview=(input,box,type)=>input?.addEventListener('change',()=>{box.replaceChildren();const f=input.files?.[0];if(!f)return;const media=document.createElement(type==='video'?'video':'img');media.src=URL.createObjectURL(f);if(type==='video'){media.controls=true;media.preload='metadata'}media.onload=media.onloadedmetadata=()=>URL.revokeObjectURL(media.src);box.appendChild(media);setStatus(composer,`${type==='video'?'Video':'Image'} selected: ${bytesLabel(f.size)}`);});
+  if(imageField){imageField.innerHTML=`<label style="display:block;font-size:11px;font-weight:900;color:var(--teal);margin-bottom:5px">UPLOAD IMAGE</label><input id="dash-image-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button type="button" class="dash-remove-media btn" data-clear="image" hidden>REMOVE IMAGE</button><div id="dash-image-preview" class="dash-upload-preview"></div><div style="font-size:9px;color:#8f9999;margin-top:5px">Photos are resized/compressed before upload. GIFs stay animated.</div>`;}
+  if(videoField){videoField.innerHTML=`<label style="display:block;font-size:11px;font-weight:900;color:var(--teal);margin-bottom:5px">UPLOAD VIDEO</label><input id="dash-video-file" type="file" accept="video/mp4,video/quicktime,video/webm,video/*"><button type="button" class="dash-remove-media btn" data-clear="video" hidden>REMOVE VIDEO</button><div id="dash-video-preview" class="dash-upload-preview"></div><div style="font-size:9px;color:#8f9999;margin-top:5px">Larger clips are compressed toward 720p before upload when your browser supports it.</div>`;}
+  const style=document.createElement('style');style.textContent=`.dash-upload-preview{margin-top:7px}.dash-upload-preview img,.dash-upload-preview video{display:block;width:100%;max-height:260px;object-fit:contain;background:#060707;border:1px solid #355;border-radius:6px}.dash-remove-media{margin:7px 0 0!important;border-color:#b94b4b!important;color:#ffb7b7!important;background:#1a0d0d!important}.dash-remove-media[hidden]{display:none!important}@media(max-width:650px){.dash-upload-preview img,.dash-upload-preview video{max-height:150px}#dash-image-field label,#dash-video-field label{font-size:6px!important}#dash-image-field div,#dash-video-field div{font-size:5px!important}.dash-remove-media{font-size:6px!important;padding:4px!important}}`;document.head.appendChild(style);
+  const bindPreview=(input,box,type)=>input?.addEventListener('change',()=>{box.replaceChildren();const f=input.files?.[0];const remove=composer.querySelector(`.dash-remove-media[data-clear="${type}"]`);if(!f){if(remove)remove.hidden=true;return;}const media=document.createElement(type==='video'?'video':'img');media.src=URL.createObjectURL(f);if(type==='video'){media.controls=true;media.preload='metadata'}media.onload=media.onloadedmetadata=()=>URL.revokeObjectURL(media.src);box.appendChild(media);if(remove)remove.hidden=false;setStatus(composer,`${type==='video'?'Video':'Image'} selected: ${bytesLabel(f.size)}`);});
   bindPreview(composer.querySelector('#dash-image-file'),composer.querySelector('#dash-image-preview'),'image');
   bindPreview(composer.querySelector('#dash-video-file'),composer.querySelector('#dash-video-preview'),'video');
+  composer.querySelectorAll('.dash-remove-media').forEach(button=>button.addEventListener('click',()=>{
+    const type=button.dataset.clear;const input=composer.querySelector(type==='video'?'#dash-video-file':'#dash-image-file');const preview=composer.querySelector(type==='video'?'#dash-video-preview':'#dash-image-preview');if(input)input.value='';preview?.replaceChildren();button.hidden=true;setStatus(composer,`${type==='video'?'Video':'Image'} removed.`);
+  }));
+  composer.querySelector('.dash-compose-close')?.addEventListener('click',()=>clearSelectedMedia(composer,{clearText:true}));
 
   const publish=composer.querySelector('#dash-publish-post');
   publish?.addEventListener('click',async event=>{
@@ -122,9 +133,7 @@ function addUploadUI(composer){
       let profile={};try{const p=await getDoc(doc(db,'profiles',currentUser.uid));if(p.exists())profile=p.data();else{const u=await getDoc(doc(db,'users',currentUser.uid));if(u.exists())profile=u.data();}}catch{}
       setStatus(composer,'Publishing…');
       await addDoc(collection(db,'posts'),{authorId:currentUser.uid,authorName:profile.displayName||profile.name||profile.bandName||profile.venueName||currentUser.displayName||'BANDtroductions Member',accountType:profile.accountType||profile.profileType||'member',category:mode==='text'?'general':mode,content:text,imageUrl,videoUrl,published:true,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
-      composer.querySelector('#dash-post-text').value='';
-      const img=composer.querySelector('#dash-image-file');if(img)img.value='';const vid=composer.querySelector('#dash-video-file');if(vid)vid.value='';
-      composer.querySelectorAll('.dash-upload-preview').forEach(x=>x.replaceChildren());
+      clearSelectedMedia(composer,{clearText:true});
       setStatus(composer,'Posted.');setTimeout(()=>{composer.classList.remove('is-open');setStatus(composer,'');},700);
     }catch(error){console.error(error);const code=error?.code||error?.message||'';if(code==='image-too-large')setStatus(composer,'That image is over 20 MB. Choose a smaller image.');else if(code==='video-too-large')setStatus(composer,'That video is over 250 MB. Choose a shorter clip.');else if(code==='video-needs-compression')setStatus(composer,'This browser could not compress that video enough. Choose a clip under 100 MB.');else if(String(code).startsWith('storage/'))setStatus(composer,'Media upload is blocked by Firebase Storage rules.');else if(code==='permission-denied')setStatus(composer,'Post/media permissions blocked this upload.');else setStatus(composer,'Upload/post failed. Try again.');}
     finally{publish.disabled=false;}
