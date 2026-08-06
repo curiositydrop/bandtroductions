@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Create Show / Event | BANDtroductions</title>
+<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="auth.css?v=7">
+<style>
+body{background:#080909;color:#eee}.event-shell{width:min(760px,calc(100vw - 20px));margin:28px auto}.event-card{background:linear-gradient(160deg,#151717,#0b0c0c);border:1px solid #343838;padding:18px;border-radius:14px}.event-card h1{margin:0 0 8px;color:#25c7c1}.event-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.event-card label{display:grid;gap:6px;font-weight:800;color:#ddd}.event-card input,.event-card textarea,.event-card select{width:100%;padding:11px;border-radius:9px;border:1px solid #333;background:#0d0f0f;color:#eee}.event-card textarea{min-height:120px;resize:vertical}.event-help{color:#999;font-size:.84rem}.event-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.event-actions button,.event-actions a{padding:10px 16px;border:1px solid #25c7c1;background:#25c7c1;color:#06100f;text-decoration:none;font-weight:900;border-radius:999px}.event-actions a{background:transparent;color:#25c7c1}.status{margin-top:12px;color:#25c7c1;font-weight:800}@media(max-width:620px){.event-grid{grid-template-columns:1fr}.event-shell{margin:10px auto}.event-card{padding:13px}}
+</style>
+</head>
+<body>
+<div id="global-header"></div>
+<main class="event-shell">
+<section class="event-card">
+<p class="profile-meta">BANDtroductions Social</p>
+<h1>Create Show / Event</h1>
+<p class="event-help">This creates a normal Social post and automatically feeds the Upcoming Shows panel on the new homepage.</p>
+<div class="event-grid">
+<label>Event title<input id="event-title" maxlength="120" placeholder="Bandtroductions Showcase" required></label>
+<label>Date<input id="event-date" type="date" required></label>
+<label>Start time<input id="event-time" type="time"></label>
+<label>Venue<input id="event-venue" maxlength="120" placeholder="Venue name"></label>
+<label>City / State<input id="event-location" maxlength="120" placeholder="Portland, ME"></label>
+<label>Price<input id="event-price" maxlength="60" placeholder="Free / $15 advance / $20 door"></label>
+<label>Age restriction<input id="event-age" maxlength="60" placeholder="All ages / 21+"></label>
+<label>Ticket URL<input id="event-ticket" maxlength="500" placeholder="https://..."></label>
+<label>Support / donation URL<input id="event-donate" maxlength="500" placeholder="Optional tip or support link"></label>
+<label>Featured band/profile URL<input id="event-profile" maxlength="500" placeholder="Optional BANDtroductions profile link"></label>
+</div>
+<label style="margin-top:12px">Details<textarea id="event-details" maxlength="3000" placeholder="Bands performing, doors, set times, parking, anything people should know..."></textarea></label>
+<label style="margin-top:12px">Flyer / image URL<input id="event-image" maxlength="500" placeholder="Optional image URL"></label>
+<div class="event-actions"><button id="publish-event" type="button">Publish Show</button><a href="index.html">Back to Dashboard</a></div>
+<p id="event-status" class="status"></p>
+</section>
+</main>
+<div id="global-footer"></div>
+<script src="global.js?v=4"></script>
+<script type="module">
+import { auth, db } from './firebase-dev.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+import { addDoc, collection, doc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+
+const $=id=>document.getElementById(id);
+let user=null,profile=null;
+const normalizeUrl=raw=>{const t=(raw||'').trim();return t?(/^https?:\/\//i.test(t)?t:`https://${t}`):''};
+
+onAuthStateChanged(auth,async current=>{
+ user=current;
+ if(!current){$('event-status').innerHTML='Please <a href="login.html">log in</a> to post a show.';$('publish-event').disabled=true;return}
+ try{
+  const ps=await getDoc(doc(db,'profiles',current.uid)),us=await getDoc(doc(db,'users',current.uid));
+  profile=ps.exists()?ps.data():(us.exists()?us.data():{});
+ }catch(e){console.error(e)}
+});
+
+$('publish-event').addEventListener('click',async()=>{
+ if(!user)return;
+ const title=$('event-title').value.trim(),date=$('event-date').value;
+ if(!title||!date){$('event-status').textContent='Event title and date are required.';return}
+ const button=$('publish-event');button.disabled=true;$('event-status').textContent='Publishing show…';
+ const details=$('event-details').value.trim(),venue=$('event-venue').value.trim(),location=$('event-location').value.trim();
+ const summary=[title,venue&&`at ${venue}`,location&&`in ${location}`].filter(Boolean).join(' ');
+ try{
+  await addDoc(collection(db,'posts'),{
+   authorId:user.uid,
+   authorName:profile?.displayName||user.displayName||'BANDtroductions Member',
+   accountType:profile?.accountType||'member',
+   category:'show',
+   content:details?`${summary}\n\n${details}`:summary,
+   linkUrl:normalizeUrl($('event-ticket').value),
+   imageUrl:normalizeUrl($('event-image').value),
+   event:{
+    title,
+    date,
+    time:$('event-time').value||'',
+    venue,
+    location,
+    price:$('event-price').value.trim(),
+    age:$('event-age').value.trim(),
+    ticketUrl:normalizeUrl($('event-ticket').value),
+    donateUrl:normalizeUrl($('event-donate').value),
+    profileUrl:normalizeUrl($('event-profile').value),
+    details,
+    imageUrl:normalizeUrl($('event-image').value)
+   },
+   published:true,
+   createdAt:serverTimestamp(),
+   updatedAt:serverTimestamp()
+  });
+  $('event-status').textContent='Show posted. It will appear in Social and Upcoming Shows.';
+ }catch(e){console.error(e);$('event-status').textContent=e.code==='permission-denied'?'Post permissions blocked the event.':'The show could not be published.'}
+ finally{button.disabled=false}
+});
+</script>
+</body>
+</html>
