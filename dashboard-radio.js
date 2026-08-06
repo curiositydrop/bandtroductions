@@ -20,8 +20,8 @@ function setupDashboardChrome(){
       box-shadow:0 8px 18px rgba(0,0,0,.72)!important;
     }
     .news-scroller-card{height:40px!important;grid-template-columns:66px minmax(0,1fr)!important}
-    .news-label{font-size:9px!important;line-height:.88!important}
-    .news-group{font-size:10px!important;gap:25px!important;padding:0 12px!important}
+    .news-label{font-size:11px!important;line-height:.92!important}
+    .news-group{font-size:12px!important;gap:25px!important;padding:0 12px!important}
     .radio-panel{position:relative!important;overflow:hidden!important;min-width:0!important}
     .right,.center,.left{min-width:0!important}
     .right{max-width:100%!important}
@@ -50,8 +50,8 @@ function setupDashboardChrome(){
     @media(max-width:1000px){
       .sticky-header{width:calc(100% - 12px)!important}
       .news-scroller-card{height:31px!important;grid-template-columns:56px minmax(0,1fr)!important}
-      .news-label{font-size:8px!important}
-      .news-group{font-size:8px!important;gap:20px!important;padding:0 10px!important}
+      .news-label{font-size:9px!important;line-height:.9!important}
+      .news-group{font-size:10px!important;gap:20px!important;padding:0 10px!important}
       .grid{grid-template-columns:minmax(0,23fr) minmax(0,50fr) minmax(0,27fr)!important;gap:6px!important;width:100%!important;max-width:100%!important;overflow:hidden!important}
       .right{width:100%!important;max-width:100%!important;overflow:hidden!important}
       .right .panel{width:100%!important;max-width:100%!important;overflow:hidden!important}
@@ -59,9 +59,9 @@ function setupDashboardChrome(){
     }
     @media(max-width:650px){
       .sticky-header{width:calc(100% - 8px)!important}
-      .news-scroller-card{height:24px!important;grid-template-columns:44px minmax(0,1fr)!important}
-      .news-label{font-size:6px!important;line-height:.82!important}
-      .news-group{font-size:6px!important;gap:15px!important;padding:0 8px!important}
+      .news-scroller-card{height:26px!important;grid-template-columns:48px minmax(0,1fr)!important}
+      .news-label{font-size:7px!important;line-height:.88!important}
+      .news-group{font-size:7.5px!important;gap:15px!important;padding:0 8px!important}
       .grid{grid-template-columns:minmax(0,23fr) minmax(0,51fr) minmax(0,26fr)!important;gap:3px!important;width:100%!important;max-width:100%!important;overflow:hidden!important}
       .right{width:100%!important;max-width:100%!important;padding:0!important;margin:0!important;overflow:hidden!important}
       .right .panel{width:100%!important;max-width:100%!important;margin-left:0!important;margin-right:0!important;overflow:hidden!important}
