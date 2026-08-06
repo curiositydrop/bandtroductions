@@ -14,7 +14,7 @@ let profileDirectory=[];
 const params=new URLSearchParams(location.search);
 const targetProfileId=params.get('to')||'';
 
-function safe(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+function safe(v=''){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 function when(stamp){return stamp?.toDate?stamp.toDate().toLocaleString():'';}
 function initials(name=''){return name.trim().split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'BT';}
 function displayName(data,uid){return data?.displayName||data?.name||data?.bandName||data?.venueName||uid?.slice(0,8)||'Member';}
@@ -27,8 +27,10 @@ async function profile(uid){
   if(!uid)return null;
   const direct=profileDirectory.find(p=>p.id===uid||targetUserId(p)===uid);
   if(direct)return direct;
-  const [a,b]=await Promise.all([getDoc(doc(db,'profiles',uid)),getDoc(doc(db,'users',uid))]);
-  return a.exists()?{id:a.id,...a.data()}:(b.exists()?{id:b.id,...b.data()}:null);
+  try{
+    const snap=await getDoc(doc(db,'profiles',uid));
+    return snap.exists()?{id:snap.id,...snap.data()}:null;
+  }catch{return null;}
 }
 
 async function markRead(id){
@@ -75,7 +77,6 @@ function renderSearch(term=''){
   const matches=profileDirectory.filter(p=>{
     const target=targetUserId(p);
     if(!target||target===currentUser?.uid)return false;
-    if(p.published===false)return false;
     const hay=[displayName(p,p.id),profileType(p),p.city,p.state,p.genre].filter(Boolean).join(' ').toLowerCase();
     return hay.includes(q);
   }).slice(0,10);
@@ -105,7 +106,8 @@ onAuthStateChanged(auth,async user=>{
   if(!user){list.innerHTML='<a class="conversation" href="login.html"><b>Log in</b><small>Sign in to use private messages.</small></a>';searchInput.disabled=true;return;}
   searchInput.disabled=false;
 
-  unsubscribeProfiles=onSnapshot(collection(db,'profiles'),snap=>{
+  const profilesQuery=query(collection(db,'profiles'),where('published','==',true));
+  unsubscribeProfiles=onSnapshot(profilesQuery,snap=>{
     profileDirectory=snap.docs.map(d=>({id:d.id,...d.data()}));
     if(searchInput.value.trim())renderSearch(searchInput.value);
   },error=>console.warn('Profile search unavailable.',error));
