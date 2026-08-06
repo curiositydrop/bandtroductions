@@ -8,7 +8,7 @@ let generation=0;
 
 onAuthStateChanged(auth,user=>{currentUser=user;});
 
-const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]));
 
 function clearListeners(){
   cleanups.forEach(fn=>{try{fn();}catch{}});
@@ -71,7 +71,7 @@ function enhance(posts,myGeneration){
     cleanups.push(stopComments);
 
     rock.addEventListener('click',async()=>{
-      if(!currentUser){location.href=`login.html?returnTo=${encodeURIComponent('underground-preview.html')}`;return;}
+      if(!currentUser){location.href=`login.html?returnTo=${encodeURIComponent('index.html')}`;return;}
       rock.disabled=true;
       try{
         const target=doc(db,'posts',post.id,'reactions',currentUser.uid);
