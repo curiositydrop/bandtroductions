@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { collection, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const link=document.getElementById('messages-link');
 let unsub=null;
@@ -23,13 +23,12 @@ onAuthStateChanged(auth,user=>{
   if(unsub){unsub();unsub=null;}
   const badge=ensureBadge();
   if(!user){if(badge)badge.remove();return;}
-  const q=query(collection(db,'conversations'),where('participants','array-contains',user.uid));
-  unsub=onSnapshot(q,snap=>{
+  unsub=onSnapshot(collection(db,'messageInboxes',user.uid,'items'),snap=>{
     let unread=0;
     snap.docs.forEach(d=>{
       const row=d.data();
       const updated=stampMs(row.updatedAt);
-      const read=stampMs(row.readAt?.[user.uid]);
+      const read=stampMs(row.readAt);
       const sender=row.lastSenderId||'';
       if(updated>read&&sender&&sender!==user.uid)unread++;
     });
