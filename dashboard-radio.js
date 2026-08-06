@@ -1,6 +1,54 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js';
 import { getDatabase, ref, onValue, runTransaction } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js';
 
+function setupDashboardChrome(){
+  const header=document.querySelector('.sticky-header');
+  const grid=document.querySelector('.grid');
+  if(!header||!grid)return;
+
+  const style=document.createElement('style');
+  style.id='dashboard-fixed-header-style';
+  style.textContent=`
+    .sticky-header{
+      position:fixed!important;
+      top:0!important;
+      left:50%!important;
+      transform:translateX(-50%)!important;
+      width:min(calc(100% - 24px),1476px)!important;
+      z-index:5000!important;
+      background:#090a0a!important;
+      box-shadow:0 8px 18px rgba(0,0,0,.72)!important;
+    }
+    .news-scroller-card{height:40px!important;grid-template-columns:66px minmax(0,1fr)!important}
+    .news-label{font-size:9px!important;line-height:.88!important}
+    .news-group{font-size:10px!important;gap:25px!important;padding:0 12px!important}
+    @media(max-width:1000px){
+      .sticky-header{width:calc(100% - 12px)!important}
+      .news-scroller-card{height:31px!important;grid-template-columns:56px minmax(0,1fr)!important}
+      .news-label{font-size:8px!important}
+      .news-group{font-size:8px!important;gap:20px!important;padding:0 10px!important}
+    }
+    @media(max-width:650px){
+      .sticky-header{width:calc(100% - 8px)!important}
+      .news-scroller-card{height:24px!important;grid-template-columns:44px minmax(0,1fr)!important}
+      .news-label{font-size:6px!important;line-height:.82!important}
+      .news-group{font-size:6px!important;gap:15px!important;padding:0 8px!important}
+    }
+  `;
+  document.head.appendChild(style);
+
+  const sync=()=>{
+    const height=Math.ceil(header.getBoundingClientRect().height);
+    grid.style.marginTop=`${height+12}px`;
+  };
+  sync();
+  requestAnimationFrame(sync);
+  window.addEventListener('resize',sync,{passive:true});
+  if('ResizeObserver' in window)new ResizeObserver(sync).observe(header);
+}
+
+setupDashboardChrome();
+
 const firebaseConfig={
   apiKey:'AIzaSyApLiiJsKTw1Fp8J3aQatMqiSZoP_6EycE',
   authDomain:'bandfanwall.firebaseapp.com',
