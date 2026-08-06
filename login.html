@@ -32,7 +32,7 @@
     const requestedReturn = params.get('returnTo') || '';
     const safeReturn = requestedReturn && !requestedReturn.startsWith('//') && !requestedReturn.includes('://')
       ? requestedReturn
-      : 'community.html';
+      : 'index.html';
 
     const signupLink = document.getElementById('signup-link');
     if (requestedReturn) signupLink.href = `signup.html?returnTo=${encodeURIComponent(safeReturn)}`;
