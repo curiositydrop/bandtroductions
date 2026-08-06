@@ -7,15 +7,29 @@ const messagesEl=document.getElementById('messages');
 const head=document.getElementById('thread-head');
 const composer=document.getElementById('composer');
 const input=document.getElementById('message-input');
-let currentUser=null,currentConversationId='',unsubscribeMessages=null;
+const searchInput=document.getElementById('profile-search');
+const searchResults=document.getElementById('search-results');
+let currentUser=null,currentConversationId='',unsubscribeMessages=null,unsubscribeProfiles=null;
+let profileDirectory=[];
 const params=new URLSearchParams(location.search);
-const targetUid=params.get('to')||'';
+const targetProfileId=params.get('to')||'';
 
 function safe(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 function when(stamp){return stamp?.toDate?stamp.toDate().toLocaleString():'';}
-async function profile(uid){if(!uid)return null;const [a,b]=await Promise.all([getDoc(doc(db,'profiles',uid)),getDoc(doc(db,'users',uid))]);return a.exists()?a.data():(b.exists()?b.data():null);}
+function initials(name=''){return name.trim().split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'BT';}
 function displayName(data,uid){return data?.displayName||data?.name||data?.bandName||data?.venueName||uid?.slice(0,8)||'Member';}
+function profileType(data){return data?.profileType||data?.accountType||data?.type||data?.role||'Member';}
+function profileImage(data){return data?.avatarUrl||data?.photoURL||data?.imageUrl||data?.profileImageUrl||data?.profileImage||data?.avatar||'';}
+function targetUserId(profileDoc){return profileDoc?.ownerId||profileDoc?.userId||profileDoc?.uid||profileDoc?.id||'';}
 function conversationId(a,b){return [a,b].sort().join('__');}
+
+async function profile(uid){
+  if(!uid)return null;
+  const direct=profileDirectory.find(p=>p.id===uid||targetUserId(p)===uid);
+  if(direct)return direct;
+  const [a,b]=await Promise.all([getDoc(doc(db,'profiles',uid)),getDoc(doc(db,'users',uid))]);
+  return a.exists()?{id:a.id,...a.data()}:(b.exists()?{id:b.id,...b.data()}:null);
+}
 
 async function markRead(id){
   if(!currentUser||!id)return;
@@ -23,9 +37,9 @@ async function markRead(id){
   catch(error){console.warn('Could not mark conversation read.',error);}
 }
 
-async function openConversation(id,otherUid){
+async function openConversation(id,otherUid,preferredProfile=null){
   currentConversationId=id;
-  const other=await profile(otherUid).catch(()=>null);
+  const other=preferredProfile||await profile(otherUid).catch(()=>null);
   head.textContent=displayName(other,otherUid);
   composer.hidden=false;
   markRead(id);
@@ -39,27 +53,85 @@ async function openConversation(id,otherUid){
   },error=>{console.warn(error);messagesEl.innerHTML='<div class="empty">Messages could not be loaded.</div>';});
 }
 
-async function ensureTargetConversation(uid){
-  if(!currentUser||!uid||uid===currentUser.uid)return;
-  const id=conversationId(currentUser.uid,uid);
-  await setDoc(doc(db,'conversations',id),{participants:[currentUser.uid,uid],updatedAt:serverTimestamp()}, {merge:true});
-  await openConversation(id,uid);
+async function ensureTargetConversation(target,preferredProfile=null){
+  if(!currentUser||!target||target===currentUser.uid)return;
+  const id=conversationId(currentUser.uid,target);
+  const profileId=preferredProfile?.id||'';
+  const profileName=preferredProfile?displayName(preferredProfile,target):'';
+  await setDoc(doc(db,'conversations',id),{
+    participants:[currentUser.uid,target],
+    participantProfiles:{[currentUser.uid]:currentUser.uid,[target]:profileId||target},
+    participantNames:profileName?{[target]:profileName}:{},
+    updatedAt:serverTimestamp()
+  },{merge:true});
+  await openConversation(id,target,preferredProfile);
 }
+
+function closeSearch(){searchResults?.classList.remove('show');}
+function renderSearch(term=''){
+  if(!searchResults)return;
+  const q=term.trim().toLowerCase();
+  if(!q){searchResults.innerHTML='';closeSearch();return;}
+  const matches=profileDirectory.filter(p=>{
+    const target=targetUserId(p);
+    if(!target||target===currentUser?.uid)return false;
+    if(p.published===false)return false;
+    const hay=[displayName(p,p.id),profileType(p),p.city,p.state,p.genre].filter(Boolean).join(' ').toLowerCase();
+    return hay.includes(q);
+  }).slice(0,10);
+  searchResults.replaceChildren();
+  if(!matches.length){searchResults.innerHTML='<div class="search-empty">No matching profiles found.</div>';searchResults.classList.add('show');return;}
+  matches.forEach(p=>{
+    const target=targetUserId(p),name=displayName(p,p.id),image=profileImage(p);
+    const button=document.createElement('button');button.type='button';button.className='search-result';
+    button.innerHTML=`<span class="search-avatar">${image?`<img src="${safe(image)}" alt="${safe(name)}">`:safe(initials(name))}</span><span><span class="search-name">${safe(name)}</span><span class="search-meta">${safe(profileType(p))}</span></span>`;
+    button.addEventListener('click',async()=>{
+      searchInput.value=name;closeSearch();
+      messagesEl.innerHTML='<div class="empty">Opening private conversation…</div>';
+      try{await ensureTargetConversation(target,p);}catch(error){console.warn('Could not start private conversation',error);messagesEl.innerHTML='<div class="empty">Messaging permissions are not enabled yet.</div>';}
+    });
+    searchResults.appendChild(button);
+  });
+  searchResults.classList.add('show');
+}
+
+searchInput?.addEventListener('input',()=>renderSearch(searchInput.value));
+searchInput?.addEventListener('focus',()=>{if(searchInput.value.trim())renderSearch(searchInput.value);});
+document.addEventListener('click',event=>{if(!event.target.closest('.search-box'))closeSearch();});
 
 onAuthStateChanged(auth,async user=>{
   currentUser=user;
-  if(!user){list.innerHTML='<a class="conversation" href="login.html"><b>Log in</b><small>Sign in to use direct messages.</small></a>';return;}
-  if(targetUid)ensureTargetConversation(targetUid).catch(error=>console.warn('Could not start conversation',error));
+  if(unsubscribeProfiles){unsubscribeProfiles();unsubscribeProfiles=null;}
+  if(!user){list.innerHTML='<a class="conversation" href="login.html"><b>Log in</b><small>Sign in to use private messages.</small></a>';searchInput.disabled=true;return;}
+  searchInput.disabled=false;
+
+  unsubscribeProfiles=onSnapshot(collection(db,'profiles'),snap=>{
+    profileDirectory=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(searchInput.value.trim())renderSearch(searchInput.value);
+  },error=>console.warn('Profile search unavailable.',error));
+
+  if(targetProfileId){
+    try{
+      let targetProfile=profileDirectory.find(p=>p.id===targetProfileId)||null;
+      if(!targetProfile){const snap=await getDoc(doc(db,'profiles',targetProfileId));if(snap.exists())targetProfile={id:snap.id,...snap.data()};}
+      const target=targetProfile?targetUserId(targetProfile):targetProfileId;
+      if(target&&target!==user.uid)ensureTargetConversation(target,targetProfile).catch(error=>console.warn('Could not start conversation',error));
+    }catch(error){console.warn('Could not resolve target profile',error);}
+  }
+
   const q=query(collection(db,'conversations'),where('participants','array-contains',user.uid));
   onSnapshot(q,async snap=>{
     const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.updatedAt?.seconds||0)-(a.updatedAt?.seconds||0));
     list.innerHTML='';
-    if(!rows.length){list.innerHTML='<div class="status">No conversations yet. Open a member profile and start a message.</div>';return;}
+    if(!rows.length){list.innerHTML='<div class="status">No conversations yet. Search a profile above to start a private message.</div>';return;}
     for(const row of rows){
       const otherUid=(row.participants||[]).find(id=>id!==user.uid)||'';
-      const other=await profile(otherUid).catch(()=>null);
-      const a=document.createElement('a');a.href='#';a.className='conversation';a.innerHTML=`<b>${safe(displayName(other,otherUid))}</b><small>${safe(row.lastMessage||'Open conversation')}</small>`;
-      a.addEventListener('click',event=>{event.preventDefault();document.querySelectorAll('.conversation').forEach(x=>x.classList.remove('active'));a.classList.add('active');openConversation(row.id,otherUid);});list.appendChild(a);
+      const preferredId=row.participantProfiles?.[otherUid]||'';
+      let other=preferredId?profileDirectory.find(p=>p.id===preferredId):null;
+      if(!other)other=await profile(otherUid).catch(()=>null);
+      const name=row.participantNames?.[otherUid]||displayName(other,otherUid);
+      const a=document.createElement('a');a.href='#';a.className='conversation';a.innerHTML=`<b>${safe(name)}</b><small>${safe(row.lastMessage||'Open private conversation')}</small>`;
+      a.addEventListener('click',event=>{event.preventDefault();document.querySelectorAll('.conversation').forEach(x=>x.classList.remove('active'));a.classList.add('active');openConversation(row.id,otherUid,other);});list.appendChild(a);
     }
   },error=>{console.warn(error);list.innerHTML='<div class="status">Inbox could not be loaded. Firestore messaging permissions may still need to be enabled before launch.</div>';});
 });
