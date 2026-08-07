@@ -1,6 +1,7 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { isAdminAccount } from './admin-access.js';
 
 let currentUser=auth.currentUser||null;
 let currentProfileName='';
@@ -43,16 +44,31 @@ function ensureCommentArea(article,postId){
   return area;
 }
 
-function renderComments(area,snap){
-  const rows=[...snap.docs].sort((a,b)=>(a.data()?.createdAt?.toMillis?.()||0)-(b.data()?.createdAt?.toMillis?.()||0)).map(d=>{
-    const c=d.data()||{};
-    const name=c.authorName||c.displayName||'Member';
-    const text=c.text||c.comment||c.content||'';
-    return `<div class="dashboard-comment-row"><b>${esc(name)}</b><span>${esc(text)}</span></div>`;
-  }).join('');
+function renderComments(area,snap,postId){
   let list=area.querySelector('.dashboard-comments-list');
   if(!list){list=document.createElement('div');list.className='dashboard-comments-list';area.appendChild(list);}
-  list.innerHTML=rows||'<div class="dashboard-comments-empty">No comments yet.</div>';
+  list.replaceChildren();
+  const docs=[...snap.docs].sort((a,b)=>(a.data()?.createdAt?.toMillis?.()||0)-(b.data()?.createdAt?.toMillis?.()||0));
+  if(!docs.length){const empty=document.createElement('div');empty.className='dashboard-comments-empty';empty.textContent='No comments yet.';list.appendChild(empty);return;}
+  docs.forEach(commentDoc=>{
+    const c=commentDoc.data()||{};
+    const row=document.createElement('div');row.className='dashboard-comment-row';
+    const copy=document.createElement('div');copy.className='dashboard-comment-copy';
+    const name=document.createElement('b');name.textContent=c.authorName||c.displayName||'Member';
+    const text=document.createElement('span');text.textContent=c.text||c.comment||c.content||'';
+    copy.append(name,text);row.appendChild(copy);
+    if(isAdminAccount(auth.currentUser||currentUser)){
+      const del=document.createElement('button');del.type='button';del.className='dashboard-comment-admin-delete';del.textContent='DELETE';del.title='Delete comment';
+      del.addEventListener('click',async()=>{
+        if(!confirm('Delete this comment permanently?'))return;
+        del.disabled=true;const old=del.textContent;del.textContent='DELETING…';
+        try{await deleteDoc(doc(db,'posts',postId,'comments',commentDoc.id));}
+        catch(error){console.error('Comment delete failed',error);alert(error?.code==='permission-denied'?'Comment-delete permission was denied.':'The comment could not be deleted.');del.disabled=false;del.textContent=old;}
+      });
+      row.appendChild(del);
+    }
+    list.appendChild(row);
+  });
 }
 
 function openCommentComposer(postId){
@@ -100,18 +116,8 @@ function enhance(posts){
     cleanups.push(onSnapshot(reactions,snap=>{const mine=(auth.currentUser||currentUser)?snap.docs.some(d=>d.id===(auth.currentUser||currentUser).uid):false;rock.dataset.reacted=mine?'true':'false';rock.classList.toggle('is-active',mine);rock.textContent=`🤘 ROCK ON${snap.size?` (${snap.size})`:''}`;},()=>{}));
 
     const comments=collection(db,'posts',post.id,'comments');
-    cleanups.push(onSnapshot(comments,snap=>{
-      comment.textContent=`COMMENT${snap.size?` (${snap.size})`:''}`;
-      // Existing comments should actually be visible, not just counted.
-      // The composer remains a separate toggle above the visible comment list.
-      if(snap.size){
-        const area=ensureCommentArea(article,post.id);
-        renderComments(area,snap);
-      }else{
-        const area=article.querySelector('.dashboard-comment-area');
-        if(area)renderComments(area,snap);
-      }
-    },error=>console.warn('Comments unavailable for post',post.id,error)));
+    const area=ensureCommentArea(article,post.id);
+    cleanups.push(onSnapshot(comments,snap=>{comment.textContent=`COMMENT${snap.size?` (${snap.size})`:''}`;renderComments(area,snap,post.id);},error=>console.warn('Comments unavailable for post',post.id,error)));
   });
 }
 
@@ -132,12 +138,11 @@ document.addEventListener('click',async event=>{
 const style=document.createElement('style');style.textContent=`
 .dashboard-feed-action{appearance:none;border:0;background:transparent;color:#aaa;padding:0;font:inherit;font-size:inherit;font-weight:700;cursor:pointer;text-align:left;position:relative;z-index:3;touch-action:manipulation}
 .dashboard-feed-action:hover,.dashboard-feed-action.is-active{color:var(--teal)}.dashboard-feed-action:disabled{opacity:.55;cursor:wait}
-.dashboard-comment-area{margin-top:8px;border-top:1px dotted #2d3434;padding-top:8px;position:relative;z-index:4}.dashboard-comment-composer{margin:0 0 8px;padding:8px;border:1px solid #2f6662;background:#0b1010}.dashboard-comment-composer textarea{display:block;width:100%;min-height:72px;resize:vertical;background:#080a0a;color:#eee;border:1px solid #466;padding:9px;font:inherit;outline:none}.dashboard-comment-composer textarea:focus{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal)}.dashboard-comment-buttons{display:flex;justify-content:flex-end;gap:7px;margin-top:7px}.dashboard-comment-buttons button{border:1px solid var(--teal);background:#0b0d0d;color:var(--teal);padding:6px 9px;font-weight:900;cursor:pointer}.dashboard-comment-buttons .dashboard-comment-submit{background:var(--teal);color:#06100f}.dashboard-comment-status{font-size:10px;color:#999;text-align:right;margin-top:5px}.dashboard-comments-list{margin-top:2px}.dashboard-comment-row{display:flex;gap:6px;align-items:flex-start;padding:6px 0;border-bottom:1px dotted #242929;font-size:11px;line-height:1.35}.dashboard-comment-row b{color:var(--teal);flex:0 0 auto}.dashboard-comment-row span{color:#ddd;min-width:0;overflow-wrap:anywhere}.dashboard-comments-empty{font-size:10px;color:#777}
-@media(max-width:650px){.dashboard-feed-action{font-size:6px}.dashboard-comment-composer{padding:5px}.dashboard-comment-composer textarea{min-height:48px;padding:5px;font-size:7px}.dashboard-comment-buttons button{font-size:6px;padding:4px 5px}.dashboard-comment-status,.dashboard-comments-empty{font-size:6px}.dashboard-comment-row{font-size:7px;padding:4px 0;gap:4px}}
+.dashboard-comment-area{margin-top:8px;border-top:1px dotted #2d3434;padding-top:8px;position:relative;z-index:4}.dashboard-comment-composer{margin:0 0 8px;padding:8px;border:1px solid #2f6662;background:#0b1010}.dashboard-comment-composer textarea{display:block;width:100%;min-height:72px;resize:vertical;background:#080a0a;color:#eee;border:1px solid #466;padding:9px;font:inherit;outline:none}.dashboard-comment-composer textarea:focus{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal)}.dashboard-comment-buttons{display:flex;justify-content:flex-end;gap:7px;margin-top:7px}.dashboard-comment-buttons button{border:1px solid var(--teal);background:#0b0d0d;color:var(--teal);padding:6px 9px;font-weight:900;cursor:pointer}.dashboard-comment-buttons .dashboard-comment-submit{background:var(--teal);color:#06100f}.dashboard-comment-status{font-size:10px;color:#999;text-align:right;margin-top:5px}.dashboard-comment-row{padding:6px 0;border-bottom:1px dotted #242929;font-size:11px;line-height:1.35;display:flex;align-items:flex-start;gap:8px;justify-content:space-between}.dashboard-comment-copy{min-width:0;flex:1}.dashboard-comment-row b{color:var(--teal);margin-right:6px}.dashboard-comment-row span{color:#ddd}.dashboard-comments-empty{font-size:10px;color:#777}.dashboard-comment-admin-delete{flex:none;border:1px solid #a63b3b;background:#240d0d;color:#ff9f9f;padding:3px 6px;font-size:8px;font-weight:900;cursor:pointer}.dashboard-comment-admin-delete:hover{background:#3a1111;color:#fff}.dashboard-comment-admin-delete:disabled{opacity:.55;cursor:wait}
+@media(max-width:650px){.dashboard-feed-action{font-size:6px}.dashboard-comment-composer{padding:5px}.dashboard-comment-composer textarea{min-height:48px;padding:5px;font-size:7px}.dashboard-comment-buttons button{font-size:6px;padding:4px 5px}.dashboard-comment-status,.dashboard-comments-empty{font-size:6px}.dashboard-comment-row{font-size:7px;padding:4px 0;gap:4px}.dashboard-comment-admin-delete{font-size:5px;padding:2px 3px}}
 `;document.head.appendChild(style);
 
 const postsQuery=query(collection(db,'posts'),orderBy('createdAt','desc'));
 onSnapshot(postsQuery,snapshot=>{clearListeners();const posts=snapshot.docs.map(d=>({id:d.id,...d.data()}));[100,350,800,1500].forEach(delay=>setTimeout(()=>enhance(posts),delay));},error=>console.warn('Dashboard feed actions unavailable',error));
 
-// Keep direct image/video upload + media compression on the homepage composer.
 import('./dashboard-media-upload.js?v=1').catch(error=>console.error('Dashboard media upload unavailable',error));
