@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getDatabase, ref as dbRef, push } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js";
 import { auth, db, storage } from "./firebase-dev.js";
 
@@ -62,6 +62,27 @@ function populateMemberFields() {
   if (locationInput && !locationInput.value) {
     const savedLocation = memberRecord.location || memberRecord.cityState || memberRecord.city || "";
     if (savedLocation) locationInput.value = savedLocation;
+  }
+}
+
+async function notifyAdminsOfRadioSubmission({ artistName, title }) {
+  try {
+    const adminSnapshot = await getDocs(query(collection(db, "profiles"), where("isAdmin", "==", true)));
+    if (adminSnapshot.empty) return;
+
+    const message = `${artistName} submitted “${title}” for BANDtroductions Radio approval.`;
+    await Promise.all(adminSnapshot.docs.map(adminDoc => addDoc(collection(db, "notifications"), {
+      recipientId: adminDoc.id,
+      actorId: currentMember?.uid || "",
+      actorName: memberName.value.trim() || artistName,
+      type: "radio-submission",
+      message,
+      linkUrl: "radio-admin.html",
+      read: false,
+      createdAt: serverTimestamp()
+    })));
+  } catch (error) {
+    console.warn("Radio submission saved, but the admin notification could not be created.", error);
   }
 }
 
@@ -227,6 +248,7 @@ form.addEventListener("submit", async event => {
     };
 
     await push(dbRef(queueDb, "RadioSubmissions"), submission);
+    await notifyAdminsOfRadioSubmission({ artistName, title });
 
     form.reset();
     populateMemberFields();
