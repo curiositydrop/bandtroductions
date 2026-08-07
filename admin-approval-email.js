@@ -6,14 +6,19 @@ export async function sendAdminApprovalEmail({ kind = 'profile', name = 'New pro
     ? `BANDtroductions ownership claim: ${name}`
     : kind === 'signup'
       ? `BANDtroductions new account: ${name}`
-      : `BANDtroductions profile approval needed: ${name}`;
+      : kind === 'radio-sponsor'
+        ? `BANDtroductions Radio sponsor request: ${name}`
+        : `BANDtroductions profile approval needed: ${name}`;
 
   const intro = kind === 'claim'
     ? 'A profile ownership claim was submitted.'
     : kind === 'signup'
       ? 'A new BANDtroductions account was created.'
-      : 'A new profile is waiting for approval.';
+      : kind === 'radio-sponsor'
+        ? 'A new BANDtroductions Radio sponsorship request was submitted.'
+        : 'A new profile is waiting for approval.';
 
+  const reviewPage = kind === 'radio-sponsor' ? 'admin.html' : 'admin.html';
   const lines = [
     intro,
     '',
@@ -22,7 +27,7 @@ export async function sendAdminApprovalEmail({ kind = 'profile', name = 'New pro
     submittedBy ? `Submitted by: ${submittedBy}` : '',
     details ? `Details: ${details}` : '',
     '',
-    `Review BANDtroductions admin: ${location.origin}${location.pathname.replace(/[^/]*$/, '')}admin.html`
+    `Review BANDtroductions admin: ${location.origin}${location.pathname.replace(/[^/]*$/, '')}${reviewPage}`
   ].filter(Boolean);
 
   try {
