@@ -2,36 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard | BANDtroductions</title>
+  <title>The Control Room | BANDtroductions</title>
   <link rel="stylesheet" href="style.css?v=7"><link rel="stylesheet" href="auth.css?v=13">
   <style>
-    .admin-shell{width:min(calc(100vw - 16px),900px);margin:0 auto;padding:18px 0 40px}
-    .admin-head,.approval-card,.welcome-tool{border:1px solid #3b3b3b;border-radius:16px;background:linear-gradient(145deg,#191919,#111);padding:16px}
-    .admin-head,.welcome-tool{margin-bottom:12px}
-    .admin-head h1,.welcome-tool h2{margin:.25rem 0}
-    .approval-list{display:grid;gap:12px}
-    .approval-card{display:grid;gap:12px}
-    .approval-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-    .approval-person{display:flex;gap:12px;align-items:center}
-    .approval-avatar{width:64px;height:64px;border:1px solid #0ccfbd;border-radius:13px;background:#080808;display:grid;place-items:center;overflow:hidden;color:#0ccfbd;font-weight:900}
-    .approval-avatar img{width:100%;height:100%;object-fit:cover}
-    .approval-card h2{margin:0}
-    .approval-meta{margin:4px 0 0;color:#aaa}
-    .approval-bio{margin:0;color:#ddd;line-height:1.5;white-space:pre-wrap}
-    .approval-actions,.welcome-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .approval-actions .auth-button,.welcome-actions .auth-button{width:auto!important}
-    .approve-button{background:#0ccfbd!important;color:#06110f!important}
-    .reject-button{border-color:#823c3c!important;color:#ffc3c3!important;background:#1b0e0e!important}
-    .welcome-select{flex:1 1 320px;min-width:0;padding:11px 12px;border:1px solid #444;border-radius:10px;background:#090909;color:#eee;font:inherit}
-    .welcome-help{margin:.4rem 0 1rem;color:#aaa;line-height:1.45}
-    .welcome-status{margin:.75rem 0 0;color:#aaa;min-height:1.3em}
+    .admin-shell{width:min(calc(100vw - 16px),980px);margin:0 auto;padding:18px 0 40px}
+    .control-hero,.admin-head,.approval-card,.welcome-tool,.control-card{border:1px solid #3b3b3b;border-radius:16px;background:linear-gradient(145deg,#191919,#0d1010);padding:16px}
+    .control-hero{position:relative;overflow:hidden;margin-bottom:12px;border-color:#356b66;box-shadow:0 0 28px rgba(12,207,189,.08)}
+    .control-hero::after{content:"";position:absolute;inset:auto -10% -52px -10%;height:92px;background:repeating-linear-gradient(90deg,transparent 0 18px,rgba(12,207,189,.12) 18px 20px);transform:skewY(-4deg);pointer-events:none}
+    .control-eyebrow{margin:0 0 4px;color:#0ccfbd;font-size:.76rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
+    .control-hero h1{margin:0;font-size:clamp(2rem,8vw,4rem);line-height:.95;letter-spacing:-.045em}.control-hero h1 span{color:#0ccfbd}
+    .control-subtitle{margin:10px 0 0;color:#bbb;font-weight:700}.control-status{display:inline-flex;align-items:center;gap:7px;margin-top:13px;padding:7px 10px;border:1px solid #315c58;border-radius:999px;background:#09100f;color:#baf8f2;font-size:.78rem;font-weight:900}.control-status::before{content:"";width:8px;height:8px;border-radius:50%;background:#0ccfbd;box-shadow:0 0 10px #0ccfbd}
+    .control-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0}.control-stat{border:1px solid #2f504d;border-radius:13px;background:#0e1111;padding:13px;text-align:center}.control-stat strong{display:block;color:#0ccfbd;font-size:1.55rem}.control-stat span{color:#999;font-size:.74rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+    .control-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:0 0 16px}.control-card{text-decoration:none;color:#eee;display:block;min-height:92px;transition:.16s ease}.control-card:hover,.control-card:focus{border-color:#0ccfbd;transform:translateY(-1px)}.control-card strong{display:block;color:#fff;margin-bottom:5px}.control-card span{color:#999;font-size:.8rem;line-height:1.35}.control-icon{font-size:1.25rem;margin-bottom:8px;color:#0ccfbd}
+    .admin-head,.welcome-tool{margin-bottom:12px}.admin-head h1,.welcome-tool h2{margin:.25rem 0}.approval-list{display:grid;gap:12px}.approval-card{display:grid;gap:12px}.approval-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.approval-person{display:flex;gap:12px;align-items:center}.approval-avatar{width:64px;height:64px;border:1px solid #0ccfbd;border-radius:13px;background:#080808;display:grid;place-items:center;overflow:hidden;color:#0ccfbd;font-weight:900}.approval-avatar img{width:100%;height:100%;object-fit:cover}.approval-card h2{margin:0}.approval-meta{margin:4px 0 0;color:#aaa}.approval-bio{margin:0;color:#ddd;line-height:1.5;white-space:pre-wrap}.approval-actions,.welcome-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.approval-actions .auth-button,.welcome-actions .auth-button{width:auto!important}.approve-button{background:#0ccfbd!important;color:#06110f!important}.reject-button{border-color:#823c3c!important;color:#ffc3c3!important;background:#1b0e0e!important}.welcome-select{flex:1 1 320px;min-width:0;padding:11px 12px;border:1px solid #444;border-radius:10px;background:#090909;color:#eee;font:inherit}.welcome-help{margin:.4rem 0 1rem;color:#aaa;line-height:1.45}.welcome-status{margin:.75rem 0 0;color:#aaa;min-height:1.3em}
+    @media(max-width:720px){.control-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.control-nav{grid-template-columns:1fr 1fr}.control-card{min-height:84px}}
+    @media(max-width:430px){.control-nav{grid-template-columns:1fr}.control-hero{padding:15px}.control-grid{gap:7px}.control-stat{padding:10px}}
   </style>
 </head>
 <body class="hamburger-active auth-page">
 <div id="global-header"></div>
-<main class="admin-shell">
-  <section class="admin-head">
-    <p class="profile-meta">BANDtroductions ADMIN</p>
+<main id="control-room" class="admin-shell" hidden>
+  <section class="control-hero">
+    <p class="control-eyebrow">BANDtroductions Command Center</p>
+    <h1>THE <span>CONTROL ROOM</span></h1>
+    <p class="control-subtitle">Profiles, approvals, claims, content and platform controls — all in one place.</p>
+    <div class="control-status">SYSTEM ONLINE · ADMIN ACCESS</div>
+  </section>
+
+  <section class="control-grid" aria-label="Platform overview">
+    <div class="control-stat"><strong id="control-total-profiles">—</strong><span>Profiles</span></div>
+    <div class="control-stat"><strong id="control-pending-profiles">—</strong><span>Pending Profiles</span></div>
+    <div class="control-stat"><strong id="control-pending-claims">—</strong><span>Pending Claims</span></div>
+    <div class="control-stat"><strong id="control-posts">—</strong><span>Community Posts</span></div>
+  </section>
+
+  <nav class="control-nav" aria-label="Control Room tools">
+    <a class="control-card" href="#approval-queue"><div class="control-icon">◉</div><strong>Approvals</strong><span>Review and publish new profiles.</span></a>
+    <a class="control-card" href="#managed-profiles-section"><div class="control-icon">▦</div><strong>All Profiles</strong><span>Search, edit, publish and manage every live profile.</span></a>
+    <a class="control-card" href="#claim-approval-list"><div class="control-icon">⌁</div><strong>Ownership Claims</strong><span>Review legacy-profile claim requests.</span></a>
+    <a class="control-card" href="messages.html"><div class="control-icon">✉</div><strong>Messages</strong><span>Open BANDtroductions messaging.</span></a>
+    <a class="control-card" href="notifications.html"><div class="control-icon">●</div><strong>Notifications</strong><span>Review account and community activity.</span></a>
+    <a class="control-card" href="radio-admin.html"><div class="control-icon">≋</div><strong>Radio Admin</strong><span>Manage radio submissions and approvals.</span></a>
+  </nav>
+
+  <section id="approval-queue" class="admin-head">
+    <p class="profile-meta">PROFILE APPROVALS</p>
     <h1>Approval Queue</h1>
     <p class="auth-subtitle">Review new band, musician, and venue profiles before they go public.</p>
   </section>
@@ -41,17 +56,16 @@
     <h2 id="welcome-tool-title">Send Welcome Post</h2>
     <p class="welcome-help">Choose a published profile to create the same linked-name welcome post used by automatic approvals.</p>
     <div class="welcome-actions">
-      <select id="welcome-profile-select" class="welcome-select" aria-label="Profile to welcome">
-        <option value="">Loading published profiles…</option>
-      </select>
+      <select id="welcome-profile-select" class="welcome-select" aria-label="Profile to welcome"><option value="">Loading published profiles…</option></select>
       <button id="send-welcome-button" type="button" class="auth-button approve-button" disabled>Send Welcome Post</button>
     </div>
     <p id="welcome-status" class="welcome-status" aria-live="polite"></p>
   </section>
 
   <section id="approval-list" class="approval-list"></section>
-  <p id="admin-status" class="auth-message">Loading approval queue…</p>
+  <p id="admin-status" class="auth-message">Checking administrator access…</p>
 </main>
+<p id="control-access-status" class="auth-message" style="width:min(calc(100vw - 20px),700px);margin:24px auto">Checking administrator access…</p>
 <div id="global-footer"></div>
 <script src="global.js?v=16"></script>
 <script type="module">
@@ -61,6 +75,8 @@ import { collection, doc, onSnapshot, serverTimestamp, updateDoc } from 'https:/
 import { isAdminAccount } from './admin-access.js';
 import { createWelcomePost } from './welcome-profile-post.js?v=1';
 
+const room=document.getElementById('control-room');
+const accessStatus=document.getElementById('control-access-status');
 const list=document.getElementById('approval-list');
 const status=document.getElementById('admin-status');
 const welcomeSelect=document.getElementById('welcome-profile-select');
@@ -68,124 +84,42 @@ const welcomeButton=document.getElementById('send-welcome-button');
 const welcomeStatus=document.getElementById('welcome-status');
 let currentUser=null;
 let allProfiles=[];
+let stopProfiles=null,stopClaims=null,stopPosts=null;
 
 const initials=name=>(name||'').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'BT';
 
+function updateOverview(){
+  document.getElementById('control-total-profiles').textContent=allProfiles.length;
+  document.getElementById('control-pending-profiles').textContent=allProfiles.filter(p=>p.approvalStatus==='pending'&&p.published!==true).length;
+}
+function startOverview(){
+  stopClaims=onSnapshot(collection(db,'profileClaims'),snap=>{document.getElementById('control-pending-claims').textContent=snap.docs.filter(d=>d.data().status==='pending').length},()=>{document.getElementById('control-pending-claims').textContent='—'});
+  stopPosts=onSnapshot(collection(db,'posts'),snap=>{document.getElementById('control-posts').textContent=snap.size},()=>{document.getElementById('control-posts').textContent='—'});
+}
 function renderWelcomeProfiles(){
   const selectedId=welcomeSelect.value;
-  const published=allProfiles
-    .filter(profile=>profile.published===true&&profile.approvalStatus!=='rejected')
-    .sort((a,b)=>(a.displayName||'').localeCompare(b.displayName||''));
-
+  const published=allProfiles.filter(profile=>profile.published===true&&profile.approvalStatus!=='rejected').sort((a,b)=>(a.displayName||'').localeCompare(b.displayName||''));
   welcomeSelect.replaceChildren();
-  const placeholder=document.createElement('option');
-  placeholder.value='';
-  placeholder.textContent=published.length?'Select a profile…':'No published profiles available';
-  welcomeSelect.appendChild(placeholder);
-
-  published.forEach(profile=>{
-    const option=document.createElement('option');
-    option.value=profile.id;
-    option.textContent=`${profile.displayName||'Unnamed Profile'}${profile.welcomePostCreated?' — already welcomed':''}`;
-    option.disabled=profile.welcomePostCreated===true;
-    welcomeSelect.appendChild(option);
-  });
-
+  const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent=published.length?'Select a profile…':'No published profiles available';welcomeSelect.appendChild(placeholder);
+  published.forEach(profile=>{const option=document.createElement('option');option.value=profile.id;option.textContent=`${profile.displayName||'Unnamed Profile'}${profile.welcomePostCreated?' — already welcomed':''}`;option.disabled=profile.welcomePostCreated===true;welcomeSelect.appendChild(option)});
   if(selectedId&&published.some(profile=>profile.id===selectedId&&!profile.welcomePostCreated))welcomeSelect.value=selectedId;
   welcomeButton.disabled=!welcomeSelect.value||!currentUser;
 }
-
-welcomeSelect.addEventListener('change',()=>{
-  const profile=allProfiles.find(item=>item.id===welcomeSelect.value);
-  welcomeButton.disabled=!profile||profile.welcomePostCreated===true||!currentUser;
-  welcomeStatus.textContent=profile?`Ready to welcome ${profile.displayName||'this profile'}.`:'';
-});
-
-welcomeButton.addEventListener('click',async()=>{
-  const profile=allProfiles.find(item=>item.id===welcomeSelect.value);
-  if(!profile||!currentUser||profile.welcomePostCreated)return;
-  if(!confirm(`Send the community welcome post for ${profile.displayName||'this profile'}?`))return;
-
-  welcomeButton.disabled=true;
-  welcomeSelect.disabled=true;
-  welcomeStatus.textContent='Creating welcome post…';
-
-  const created=await createWelcomePost({
-    profileId:profile.id,
-    displayName:profile.displayName||'New member',
-    accountType:profile.accountType,
-    authorId:currentUser.uid,
-    authorName:'BANDtroductions Admin'
-  });
-
-  welcomeSelect.disabled=false;
-  if(created){
-    welcomeStatus.textContent=`Welcome post created for ${profile.displayName||'the selected profile'}.`;
-    welcomeSelect.value='';
-  }else{
-    welcomeStatus.textContent='The welcome post could not be created. Please try again.';
-    welcomeButton.disabled=false;
-  }
-});
-
+welcomeSelect.addEventListener('change',()=>{const profile=allProfiles.find(item=>item.id===welcomeSelect.value);welcomeButton.disabled=!profile||profile.welcomePostCreated===true||!currentUser;welcomeStatus.textContent=profile?`Ready to welcome ${profile.displayName||'this profile'}.`:''});
+welcomeButton.addEventListener('click',async()=>{const profile=allProfiles.find(item=>item.id===welcomeSelect.value);if(!profile||!currentUser||profile.welcomePostCreated)return;if(!confirm(`Send the community welcome post for ${profile.displayName||'this profile'}?`))return;welcomeButton.disabled=true;welcomeSelect.disabled=true;welcomeStatus.textContent='Creating welcome post…';const created=await createWelcomePost({profileId:profile.id,displayName:profile.displayName||'New member',accountType:profile.accountType,authorId:currentUser.uid,authorName:'BANDtroductions Admin'});welcomeSelect.disabled=false;if(created){welcomeStatus.textContent=`Welcome post created for ${profile.displayName||'the selected profile'}.`;welcomeSelect.value=''}else{welcomeStatus.textContent='The welcome post could not be created. Please try again.';welcomeButton.disabled=false}});
 function card(profile,id){
-  const article=document.createElement('article');article.className='approval-card';
-  const top=document.createElement('div');top.className='approval-top';
-  const person=document.createElement('div');person.className='approval-person';
-  const avatar=document.createElement('div');avatar.className='approval-avatar';avatar.textContent=initials(profile.displayName);
-  if(profile.imageUrl){const img=document.createElement('img');img.src=profile.imageUrl;img.alt='';avatar.replaceChildren(img)}
-  const copy=document.createElement('div'),title=document.createElement('h2'),meta=document.createElement('p');
-  title.textContent=profile.displayName||'Unnamed Profile';
-  meta.className='approval-meta';meta.textContent=[profile.accountType,profile.genre||profile.instruments||profile.venueType,profile.location].filter(Boolean).join(' • ');
-  copy.append(title,meta);person.append(avatar,copy);top.append(person);
-  const bio=document.createElement('p');bio.className='approval-bio';bio.textContent=profile.bio||'No bio provided.';
-  const actions=document.createElement('div');actions.className='approval-actions';
-  const preview=document.createElement('a');preview.className='auth-button auth-button-secondary';preview.href=`profile-setup.html?adminProfile=${encodeURIComponent(id)}`;preview.textContent='Review / Edit';
-  const approve=document.createElement('button');approve.type='button';approve.className='auth-button approve-button';approve.textContent='Approve & Publish';
-  approve.addEventListener('click',async()=>{
-    if(!confirm(`Approve ${profile.displayName||'this profile'}?`))return;
-    approve.disabled=true;
-    try{
-      await updateDoc(doc(db,'profiles',id),{approvalStatus:'approved',published:true,approvedAt:serverTimestamp(),approvedBy:currentUser.uid,moderatedAt:serverTimestamp(),moderatedBy:currentUser.uid});
-      if(!profile.welcomePostCreated)await createWelcomePost({profileId:id,displayName:profile.displayName||'New member',accountType:profile.accountType,authorId:currentUser.uid,authorName:'BANDtroductions Admin'});
-    }catch(error){console.error(error);alert('The profile could not be approved.');approve.disabled=false}
-  });
-  const reject=document.createElement('button');reject.type='button';reject.className='auth-button reject-button';reject.textContent='Reject';
-  reject.addEventListener('click',async()=>{
-    const reason=prompt('Reason for rejection (optional):','');if(reason===null)return;
-    reject.disabled=true;
-    try{await updateDoc(doc(db,'profiles',id),{approvalStatus:'rejected',published:false,rejectionReason:reason.trim(),moderatedAt:serverTimestamp(),moderatedBy:currentUser.uid})}
-    catch(error){console.error(error);alert('The profile could not be rejected.');reject.disabled=false}
-  });
-  actions.append(preview,approve,reject);article.append(top,bio,actions);return article;
+  const article=document.createElement('article');article.className='approval-card';const top=document.createElement('div');top.className='approval-top';const person=document.createElement('div');person.className='approval-person';const avatar=document.createElement('div');avatar.className='approval-avatar';avatar.textContent=initials(profile.displayName);if(profile.imageUrl){const img=document.createElement('img');img.src=profile.imageUrl;img.alt='';avatar.replaceChildren(img)}const copy=document.createElement('div'),title=document.createElement('h2'),meta=document.createElement('p');title.textContent=profile.displayName||'Unnamed Profile';meta.className='approval-meta';meta.textContent=[profile.accountType,profile.genre||profile.instruments||profile.venueType,profile.location].filter(Boolean).join(' • ');copy.append(title,meta);person.append(avatar,copy);top.append(person);const bio=document.createElement('p');bio.className='approval-bio';bio.textContent=profile.bio||'No bio provided.';const actions=document.createElement('div');actions.className='approval-actions';const preview=document.createElement('a');preview.className='auth-button auth-button-secondary';preview.href=`profile-setup.html?adminProfile=${encodeURIComponent(id)}`;preview.textContent='Review / Edit';const approve=document.createElement('button');approve.type='button';approve.className='auth-button approve-button';approve.textContent='Approve & Publish';approve.addEventListener('click',async()=>{if(!confirm(`Approve ${profile.displayName||'this profile'}?`))return;approve.disabled=true;try{await updateDoc(doc(db,'profiles',id),{approvalStatus:'approved',published:true,approvedAt:serverTimestamp(),approvedBy:currentUser.uid,moderatedAt:serverTimestamp(),moderatedBy:currentUser.uid});if(!profile.welcomePostCreated)await createWelcomePost({profileId:id,displayName:profile.displayName||'New member',accountType:profile.accountType,authorId:currentUser.uid,authorName:'BANDtroductions Admin'})}catch(error){console.error(error);alert('The profile could not be approved.');approve.disabled=false}});const reject=document.createElement('button');reject.type='button';reject.className='auth-button reject-button';reject.textContent='Reject';reject.addEventListener('click',async()=>{const reason=prompt('Reason for rejection (optional):','');if(reason===null)return;reject.disabled=true;try{await updateDoc(doc(db,'profiles',id),{approvalStatus:'rejected',published:false,rejectionReason:reason.trim(),moderatedAt:serverTimestamp(),moderatedBy:currentUser.uid})}catch(error){console.error(error);alert('The profile could not be rejected.');reject.disabled=false}});actions.append(preview,approve,reject);article.append(top,bio,actions);return article;
 }
-
 onAuthStateChanged(auth,user=>{
   currentUser=user;
   if(!isAdminAccount(user)){
-    status.textContent='Administrator access is required.';
-    list.replaceChildren();
-    welcomeSelect.disabled=true;
-    welcomeButton.disabled=true;
-    welcomeStatus.textContent='Administrator access is required.';
-    return;
+    room.hidden=true;accessStatus.hidden=false;accessStatus.textContent=user?'Administrator access is required.':'Log in with the BANDtroductions administrator account to enter The Control Room.';return;
   }
-
-  onSnapshot(collection(db,'profiles'),snap=>{
-    allProfiles=snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderWelcomeProfiles();
-
-    const pending=allProfiles.filter(profile=>profile.approvalStatus==='pending');
-    list.replaceChildren();
-    if(!pending.length){status.hidden=false;status.textContent='No profiles are waiting for approval.';return}
-    status.hidden=true;
-    pending.sort((a,b)=>(a.submittedAt?.seconds||0)-(b.submittedAt?.seconds||0)).forEach(profile=>list.appendChild(card(profile,profile.id)));
-  },error=>{
-    console.error(error);
-    status.textContent='The approval queue could not be loaded.';
-    welcomeStatus.textContent='Published profiles could not be loaded.';
-  });
+  room.hidden=false;accessStatus.hidden=true;status.textContent='Loading approval queue…';startOverview();
+  stopProfiles=onSnapshot(collection(db,'profiles'),snap=>{allProfiles=snap.docs.map(d=>({id:d.id,...d.data()}));updateOverview();renderWelcomeProfiles();const pending=allProfiles.filter(profile=>profile.approvalStatus==='pending');list.replaceChildren();if(!pending.length){status.hidden=false;status.textContent='No profiles are waiting for approval.';return}status.hidden=true;pending.sort((a,b)=>(a.submittedAt?.seconds||0)-(b.submittedAt?.seconds||0)).forEach(profile=>list.appendChild(card(profile,profile.id)))},error=>{console.error(error);status.textContent='The approval queue could not be loaded.';welcomeStatus.textContent='Published profiles could not be loaded.'});
 });
 </script>
+<script type="module" src="admin-claims.js?v=1"></script>
+<script type="module" src="admin-managed-profiles.js?v=1"></script>
 </body>
 </html>
