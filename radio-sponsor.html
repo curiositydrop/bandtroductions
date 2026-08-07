@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sponsor BANDtroductions Radio</title>
+<link rel="stylesheet" href="style.css?v=10">
+<style>
+body{background:#050505;color:#fff}.sponsor-radio-page{max-width:680px;margin:40px auto;padding:20px}.sponsor-radio-card{background:#111;border:1px solid rgba(0,200,180,.35);border-radius:20px;padding:24px}.sponsor-radio-card h1{color:#00c8b4;margin-top:0}.sponsor-radio-card label{display:block;margin-top:16px;font-weight:800}.sponsor-radio-card input,.sponsor-radio-card textarea{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid rgba(0,200,180,.35);background:#050505;color:#fff;box-sizing:border-box}.sponsor-radio-card textarea{min-height:110px;resize:vertical}.sponsor-radio-card button{margin-top:22px;padding:14px 20px;border:0;border-radius:999px;background:#00c8b4;color:#000;font-weight:900;cursor:pointer}.sponsor-radio-card button:disabled{opacity:.5;cursor:not-allowed}.back-link{color:#00c8b4;text-decoration:none;font-weight:800}.upload-note{font-size:.86rem;color:#aaa;line-height:1.45;margin-top:6px}.checkbox-label{display:flex!important;gap:10px;align-items:flex-start;line-height:1.45}.checkbox-label input{width:auto;margin-top:4px}.intro-note{border:1px solid #2d5552;border-radius:12px;background:#0a0d0d;padding:13px;color:#ccc;line-height:1.45}.intro-note strong{color:#00c8b4}
+</style>
+</head>
+<body>
+<main class="sponsor-radio-page">
+  <a class="back-link" href="index.html">← Back to BANDtroductions Social</a>
+  <section class="sponsor-radio-card">
+    <h1>Sponsor BANDtroductions Radio</h1>
+    <p class="intro-note"><strong>Put your business in the rotation.</strong><br>Submit your logo and a 20–30 second audio spot for sponsorship consideration. A BANDtroductions account is not required.</p>
+
+    <form id="radioSponsorForm">
+      <label>Business / Sponsor Name *</label>
+      <input id="businessName" type="text" maxlength="160" required>
+
+      <label>Contact Name *</label>
+      <input id="contactName" type="text" maxlength="120" required>
+
+      <label>Email *</label>
+      <input id="contactEmail" type="email" required>
+
+      <label>Phone</label>
+      <input id="phone" type="tel" maxlength="40">
+
+      <label>Website / Social Link *</label>
+      <input id="website" type="url" placeholder="https://..." required>
+
+      <label>Upload Logo *</label>
+      <input id="logoFile" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" required>
+      <div class="upload-note">JPG, PNG, or WebP. Maximum 10 MB. This logo can be displayed in the Radio player while your sponsor spot plays.</div>
+
+      <label>Upload 20–30 Second Audio Spot *</label>
+      <input id="audioFile" type="file" accept="audio/mpeg,audio/mp4,audio/wav,.mp3,.m4a,.wav" required>
+      <div class="upload-note">MP3 is preferred. Audio must be between 20 and 30 seconds long and no larger than 15 MB.</div>
+
+      <label>What should listeners know about your business?</label>
+      <textarea id="notes" maxlength="1500" placeholder="Offer details, promo code, target audience, preferred wording, or anything else we should know."></textarea>
+
+      <label class="checkbox-label">
+        <input id="assetPermission" type="checkbox" required>
+        <span>I confirm that I own or am authorized to use the submitted logo, audio, music, voiceover, and other materials, and I give BANDtroductions permission to use them in connection with BANDtroductions Radio sponsorship and promotion.</span>
+      </label>
+
+      <label class="checkbox-label">
+        <input id="reviewAcknowledgment" type="checkbox" required>
+        <span>I understand that submission does not guarantee sponsorship placement, timing, frequency, or acceptance. BANDtroductions will review the submission and contact me before any paid sponsorship begins.</span>
+      </label>
+
+      <button id="submitButton" type="submit">Submit Sponsor Request</button>
+      <p id="submitMessage" role="status"></p>
+    </form>
+  </section>
+</main>
+<script type="module" src="radio-sponsor.js?v=1"></script>
+</body>
+</html>
