@@ -252,7 +252,7 @@ form.addEventListener("submit", async event => {
 
     form.reset();
     populateMemberFields();
-    setMessage("Song submitted! We'll review it for BANDtroductions Radio.", true);
+    setMessage("Thank you for your BANDtroductions Radio submission! We’ve received your song and will review it within 24–48 hours. If approved, it may be added to our radio rotation as playlist space and programming allow. Airplay timing and frequency are determined by BANDtroductions Radio.", true);
   } catch (error) {
     console.error("Radio submission failed", error);
     if (String(error?.code || "").includes("storage/unauthorized")) {
