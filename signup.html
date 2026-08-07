@@ -47,6 +47,11 @@
       </label>
 
       <label class="auth-check">
+        <input id="adult-content-rules" type="checkbox" required>
+        <span>I confirm that I am 18 years of age or older. I understand that nudity, sexually explicit content, graphic content, harassment, or other inappropriate material is not permitted on BANDtroductions Social and may result in content removal, suspension, or banning.</span>
+      </label>
+
+      <label class="auth-check">
         <input id="rights-acknowledgment" type="checkbox" required>
         <span>I understand that any music, artwork, photos, or videos I later upload must be mine to use or properly authorized. Additional music-rights permission will be required when uploading promotional content.</span>
       </label>
@@ -110,6 +115,8 @@
           accountType,
           profileComplete: false,
           communityRulesAccepted: true,
+          adultContentRulesAccepted: true,
+          age18Confirmed: true,
           rightsAcknowledgmentAccepted: true,
           createdAt: serverTimestamp()
         });
