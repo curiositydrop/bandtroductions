@@ -62,6 +62,9 @@ function setupDashboardChrome(){
     .right,.center,.left{min-width:0!important}
     .right{max-width:100%!important}
     .right .panel{max-width:100%!important}
+    .dashboard-radio-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+    .dashboard-radio-actions .btn{display:flex!important;align-items:center;justify-content:center;text-align:center;min-width:0;padding-left:5px!important;padding-right:5px!important}
+    .dashboard-radio-play{margin-top:10px!important}
     .radio-coming-soon{
       position:absolute;
       z-index:20;
@@ -109,6 +112,9 @@ function setupDashboardChrome(){
       .right{width:100%!important;max-width:100%!important;padding:0!important;margin:0!important;overflow:hidden!important}
       .right .panel{width:100%!important;max-width:100%!important;margin-left:0!important;margin-right:0!important;overflow:hidden!important}
       .right .panel h3{padding-right:3px!important;overflow-wrap:anywhere!important}
+      .dashboard-radio-actions{gap:3px!important;margin-top:3px!important}
+      .dashboard-radio-actions .btn{font-size:5.5px!important;padding:4px 2px!important;line-height:1.05!important;white-space:normal!important}
+      .dashboard-radio-play{font-size:6.5px!important;padding:5px 3px!important;margin-top:5px!important}
       .radio-coming-soon{top:5px;right:3px;width:61px;font-size:4.8px;padding:2px 2px;letter-spacing:.03em;transform:rotate(9deg)}
     }
   `;
@@ -206,6 +212,10 @@ function approvedTracks(data){
   return Object.entries(data).map(([id,t])=>({id,...t})).filter(t=>t.approved===true&&Boolean(t.audioUrl||t.audio)).sort((a,b)=>(b.dateAdded||0)-(a.dateAdded||0));
 }
 
+function radioActionRow(){
+  return '<div class="dashboard-radio-actions"><a class="btn" href="radio.html">PLAYLIST</a><a class="btn" href="radio-submit.html">PLAY OUR SONGS</a></div>';
+}
+
 function render(){
   if(!panel)return;
   const t=tracks[current];
@@ -213,14 +223,14 @@ function render(){
   panel.replaceChildren();
   if(heading)panel.appendChild(heading);
   if(!t){
-    const div=document.createElement('div');div.className='radio';div.innerHTML='<div class="radio-box"><small>NOW PLAYING</small><h2 style="color:var(--teal);margin:6px 0">Radio Beta</h2><div style="color:#999">Approved tracks will appear here.</div><a class="btn primary" style="display:block;text-align:center;margin-top:10px" href="radio.html">VIEW RADIO</a></div>';panel.appendChild(div);
+    const div=document.createElement('div');div.className='radio';div.innerHTML=`<div class="radio-box"><small>NOW PLAYING</small><h2 style="color:var(--teal);margin:6px 0">Radio Beta</h2><div style="color:#999">Approved tracks will appear here.</div><a class="btn primary dashboard-radio-play" style="display:block;text-align:center" href="radio.html">▶ PLAY RADIO</a>${radioActionRow()}</div>`;panel.appendChild(div);
     applyComingSoon();
     if(headerPlayer)headerPlayer.innerHTML='<b>● LIVE RADIO</b><div style="margin-top:8px">BANDtroductions Radio Beta</div>';
     return;
   }
   const cover=t.coverUrl||t.cover||DEFAULT_COVER,title=t.title||'Untitled Track',artist=t.artist||'Unknown Artist',album=t.album||'';
   const wrap=document.createElement('div');wrap.className='radio';
-  wrap.innerHTML=`<div class="radio-box"><div class="now"><img class="cover" src="${esc(cover)}" alt="${esc(title)} artwork" style="object-fit:cover"><div><small>NOW PLAYING</small><h2 style="margin:5px 0;color:var(--teal)">${esc(title)}</h2><div>${esc(artist)}</div>${album?`<div style="color:#888;margin-top:2px">${esc(album)}</div>`:''}</div></div><div class="wave"></div><button type="button" class="btn primary dashboard-radio-play" style="display:block;width:100%;text-align:center;margin-top:10px;cursor:pointer">▶ PLAY</button><a class="btn" style="display:block;text-align:center;margin-top:6px" href="radio.html">OPEN RADIO</a></div>`;
+  wrap.innerHTML=`<div class="radio-box"><div class="now"><img class="cover" src="${esc(cover)}" alt="${esc(title)} artwork" style="object-fit:cover"><div><small>NOW PLAYING</small><h2 style="margin:5px 0;color:var(--teal)">${esc(title)}</h2><div>${esc(artist)}</div>${album?`<div style="color:#888;margin-top:2px">${esc(album)}</div>`:''}</div></div><div class="wave"></div><button type="button" class="btn primary dashboard-radio-play" style="display:block;width:100%;text-align:center;cursor:pointer">▶ PLAY RADIO</button>${radioActionRow()}</div>`;
   panel.appendChild(wrap);
   applyComingSoon();
   if(headerPlayer)headerPlayer.innerHTML=`<b>● LIVE RADIO</b><div style="margin-top:8px">${esc(artist)} — ${esc(title)}</div>`;
@@ -232,12 +242,12 @@ function togglePlay(track,button){
   const src=track.audioUrl||track.audio||'';
   if(!src)return;
   if(!audio){audio=new Audio();audio.preload='none';audio.addEventListener('ended',()=>{current=(current+1)%tracks.length;render();});}
-  if(audio.src&&audio.src===new URL(src,location.href).href&&!audio.paused){audio.pause();button.textContent='▶ PLAY';return;}
+  if(audio.src&&audio.src===new URL(src,location.href).href&&!audio.paused){audio.pause();button.textContent='▶ PLAY RADIO';return;}
   if(audio.src!==new URL(src,location.href).href){audio.src=src;audio.load();}
   audio.play().then(()=>{
-    button.textContent='❚❚ PAUSE';
+    button.textContent='❚❚ PAUSE RADIO';
     runTransaction(ref(db,`RadioTracks/${track.id}/playCount`),v=>(v||0)+1).catch(()=>{});
-  }).catch(error=>{console.warn('Dashboard radio play failed',error);button.textContent='▶ PLAY';});
+  }).catch(error=>{console.warn('Dashboard radio play failed',error);button.textContent='▶ PLAY RADIO';});
 }
 
 onValue(ref(db,'RadioTracks'),snap=>{tracks=approvedTracks(snap.val());current=0;render();},error=>{console.warn('Dashboard radio unavailable',error);render();});
