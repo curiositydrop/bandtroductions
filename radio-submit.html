@@ -28,10 +28,10 @@ body{background:#050505;color:white}.radio-submit-page{max-width:650px;margin:40
       <input id="contactEmail" type="email" readonly>
 
       <label>Band / Artist Name *</label>
-      <input id="artist" type="text" required maxlength="120">
+      <input id="artist" type="text" required readonly maxlength="120">
 
       <label>Contact Name *</label>
-      <input id="contactName" type="text" required maxlength="120">
+      <input id="contactName" type="text" required readonly maxlength="120">
 
       <label>Song Title *</label>
       <input id="title" type="text" required maxlength="160">
@@ -48,10 +48,11 @@ body{background:#050505;color:white}.radio-submit-page{max-width:650px;margin:40
       <input id="location" type="text" placeholder="City, State" maxlength="120">
 
       <label>BANDtroductions Profile Link</label>
-      <input id="profileUrl" type="text" placeholder="your-profile.html">
+      <input id="profileUrl" type="url" readonly>
 
-      <label>Cover Image URL / File Name</label>
-      <input id="coverUrl" type="text" placeholder="Optional artwork link or file name">
+      <label>Upload Cover Art</label>
+      <input id="coverFile" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
+      <div class="upload-note">Optional. JPG, PNG, or WebP up to 10 MB. This artwork will display with your song in BANDtroductions Radio.</div>
 
       <label>Upload MP3 *</label>
       <input id="audioFile" type="file" accept="audio/mpeg,.mp3" required>
@@ -115,6 +116,6 @@ openAgreementModal.addEventListener('click',e=>{e.preventDefault();agreementModa
 closeAgreementModal.addEventListener('click',()=>agreementModal.style.display='none');
 agreementModal.addEventListener('click',e=>{if(e.target===agreementModal)agreementModal.style.display='none';});
 </script>
-<script type="module" src="radio-submit.js?v=3"></script>
+<script type="module" src="radio-submit.js?v=4"></script>
 </body>
 </html>
