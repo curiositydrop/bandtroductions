@@ -2,7 +2,7 @@ import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { addDoc, collection, doc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
-const profileId = new URLSearchParams(location.search).get('id');
+let profileId = new URLSearchParams(location.search).get('id');
 const content = document.getElementById('profile-content');
 const status = document.getElementById('profile-status');
 const editButton = document.getElementById('edit-profile');
@@ -122,19 +122,37 @@ function renderVideo(container, url, title) {
 async function loadProfile(user) {
   signedInUser = user;
   editButton.hidden = true;
+
+  // A bare profile.html link now means "my profile" for a signed-in user.
+  // This keeps every My Profile button working even if a page forgot to append ?id=UID.
+  if (!profileId && user) profileId = user.uid;
   if (!profileId) {
-    status.textContent = 'No profile was selected.';
+    status.textContent = 'Sign in to view your profile.';
     return;
   }
 
   try {
     const snap = await getDoc(doc(db, 'profiles', profileId));
-    if (!snap.exists() || snap.data().published !== true) {
+    if (!snap.exists()) {
+      if (user && profileId === user.uid) {
+        status.textContent = 'Your account is ready. Finish setting up your profile to continue.';
+        editButton.href = 'profile-setup.html';
+        editButton.textContent = 'Set Up My Profile';
+        editButton.hidden = false;
+      } else {
+        status.textContent = 'This profile is not available.';
+      }
+      return;
+    }
+
+    const rawProfile = snap.data();
+    const isOwner = Boolean(user && (profileId === user.uid || rawProfile.ownerId === user.uid));
+    if (rawProfile.published !== true && !isOwner) {
       status.textContent = 'This profile is not available.';
       return;
     }
 
-    loadedProfile = snap.data();
+    loadedProfile = rawProfile;
     if (loadedProfile.legacyPage === 'burning-time.html') {
       loadedProfile = {
         ...burningTimeMedia,
@@ -211,7 +229,9 @@ async function loadProfile(user) {
       const userSnap = await getDoc(doc(db, 'users', user.uid));
       signedInProfile = profileSnap.exists() ? profileSnap.data() : (userSnap.exists() ? userSnap.data() : {});
       shareButton.hidden = false;
-      editButton.hidden = loadedProfile.ownerId !== user.uid;
+      editButton.href = `profile-setup.html?id=${encodeURIComponent(profileId)}`;
+      editButton.textContent = 'Edit Profile';
+      editButton.hidden = !isOwner;
     }
 
     content.dataset.assetsReady = 'true';
