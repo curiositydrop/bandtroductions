@@ -123,8 +123,6 @@ async function loadProfile(user) {
   signedInUser = user;
   editButton.hidden = true;
 
-  // A bare profile.html link now means "my profile" for a signed-in user.
-  // This keeps every My Profile button working even if a page forgot to append ?id=UID.
   if (!profileId && user) profileId = user.uid;
   if (!profileId) {
     status.textContent = 'Sign in to view your profile.';
@@ -135,10 +133,10 @@ async function loadProfile(user) {
     const snap = await getDoc(doc(db, 'profiles', profileId));
     if (!snap.exists()) {
       if (user && profileId === user.uid) {
-        status.textContent = 'Your account is ready. Finish setting up your profile to continue.';
-        editButton.href = 'profile-setup.html';
-        editButton.textContent = 'Set Up My Profile';
-        editButton.hidden = false;
+        // New/incomplete accounts should never land on a dead-end profile page.
+        // Send every account type (fan, band, musician, venue) to the same setup flow,
+        // which reads the account type from the user's Firestore account record.
+        location.replace('profile-setup.html?first=1');
       } else {
         status.textContent = 'This profile is not available.';
       }
