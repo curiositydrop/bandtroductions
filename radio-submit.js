@@ -24,6 +24,7 @@ const memberName = document.getElementById("memberName");
 const contactEmail = document.getElementById("contactEmail");
 const contactName = document.getElementById("contactName");
 const artist = document.getElementById("artist");
+const profileUrl = document.getElementById("profileUrl");
 const submitMessage = document.getElementById("submitMessage");
 const submitButton = document.getElementById("submitButton");
 
@@ -40,6 +41,28 @@ function slugify(value) {
 function setMessage(text, ok = false) {
   submitMessage.textContent = text;
   submitMessage.style.color = ok ? "#00c8b4" : "#ff7777";
+}
+
+function memberProfileUrl(uid) {
+  return new URL(`profile.html?id=${encodeURIComponent(uid)}`, location.href).href;
+}
+
+function populateMemberFields() {
+  if (!currentMember || !memberRecord) return;
+  const displayName = memberRecord.displayName || currentMember.displayName || "BANDtroductions Member";
+  const email = memberRecord.email || currentMember.email || "";
+
+  memberName.value = displayName;
+  contactEmail.value = email;
+  contactName.value = displayName;
+  artist.value = displayName;
+  profileUrl.value = memberProfileUrl(currentMember.uid);
+
+  const locationInput = document.getElementById("location");
+  if (locationInput && !locationInput.value) {
+    const savedLocation = memberRecord.location || memberRecord.cityState || memberRecord.city || "";
+    if (savedLocation) locationInput.value = savedLocation;
+  }
 }
 
 onAuthStateChanged(auth, async user => {
@@ -69,18 +92,9 @@ onAuthStateChanged(auth, async user => {
     }
 
     memberRecord = userSnapshot.data();
-    const displayName = memberRecord.displayName || user.displayName || "BANDtroductions Member";
-    const email = memberRecord.email || user.email || "";
+    populateMemberFields();
 
-    memberName.value = displayName;
-    contactEmail.value = email;
-    contactName.value = displayName;
-
-    if (["band", "musician"].includes(memberRecord.accountType) && !artist.value) {
-      artist.value = displayName;
-    }
-
-    memberGate.innerHTML = `<strong>Verified BANDtroductions member:</strong> ${displayName}<br><span style="color:#aaa;">Signed in as ${email}</span>`;
+    memberGate.innerHTML = `<strong>Verified BANDtroductions member:</strong> ${memberName.value}<br><span style="color:#aaa;">Signed in as ${contactEmail.value}</span>`;
     form.classList.remove("hidden");
   } catch (error) {
     console.error("Could not verify member account", error);
@@ -98,6 +112,7 @@ form.addEventListener("submit", async event => {
   }
 
   const audioFile = document.getElementById("audioFile").files?.[0];
+  const coverFile = document.getElementById("coverFile").files?.[0] || null;
   const permissionConfirmed = document.getElementById("permissionConfirmed").checked;
   const broadcastPermission = document.getElementById("broadcastPermission").checked;
   const agreementAccepted = document.getElementById("agreementAccepted").checked;
@@ -119,6 +134,18 @@ form.addEventListener("submit", async event => {
     return;
   }
 
+  if (coverFile) {
+    const allowedImage = ["image/jpeg", "image/png", "image/webp"].includes(coverFile.type) || /\.(jpe?g|png|webp)$/i.test(coverFile.name);
+    if (!allowedImage) {
+      setMessage("Cover art must be a JPG, PNG, or WebP image.");
+      return;
+    }
+    if (coverFile.size > 10 * 1024 * 1024) {
+      setMessage("Cover art must be 10 MB or smaller.");
+      return;
+    }
+  }
+
   if (!permissionConfirmed || !broadcastPermission || !agreementAccepted) {
     setMessage("Please accept all music-rights and broadcast permission checkboxes.");
     return;
@@ -130,9 +157,10 @@ form.addEventListener("submit", async event => {
   try {
     const title = document.getElementById("title").value.trim();
     const artistName = artist.value.trim();
-    const safeName = `${Date.now()}-${slugify(artistName)}-${slugify(title)}.mp3`;
-    const uploadPath = `radio-submissions/${currentMember.uid}/${safeName}`;
-    const audioStorageRef = storageRef(storage, uploadPath);
+    const safeBase = `${Date.now()}-${slugify(artistName)}-${slugify(title)}`;
+
+    const audioUploadPath = `radio-submissions/${currentMember.uid}/${safeBase}.mp3`;
+    const audioStorageRef = storageRef(storage, audioUploadPath);
 
     await uploadBytes(audioStorageRef, audioFile, {
       contentType: "audio/mpeg",
@@ -146,6 +174,23 @@ form.addEventListener("submit", async event => {
 
     const audioUrl = await getDownloadURL(audioStorageRef);
 
+    let coverUrl = "";
+    let coverStoragePath = "";
+    if (coverFile) {
+      const extension = (coverFile.name.split(".").pop() || "jpg").toLowerCase();
+      coverStoragePath = `radio-submissions/${currentMember.uid}/${safeBase}-cover.${extension}`;
+      const coverStorageRef = storageRef(storage, coverStoragePath);
+      await uploadBytes(coverStorageRef, coverFile, {
+        contentType: coverFile.type || "image/jpeg",
+        customMetadata: {
+          submittedByUid: currentMember.uid,
+          artist: artistName,
+          title
+        }
+      });
+      coverUrl = await getDownloadURL(coverStorageRef);
+    }
+
     const submission = {
       artist: artistName,
       contactName: contactName.value.trim(),
@@ -158,10 +203,12 @@ form.addEventListener("submit", async event => {
       album: document.getElementById("album").value.trim() || "Single",
       genre: document.getElementById("genre").value,
       location: document.getElementById("location").value.trim(),
-      profileUrl: document.getElementById("profileUrl").value.trim(),
-      coverUrl: document.getElementById("coverUrl").value.trim(),
+      profileUrl: profileUrl.value,
+      coverUrl,
+      coverStoragePath,
+      originalCoverFileName: coverFile?.name || "",
       audioUrl,
-      audioStoragePath: uploadPath,
+      audioStoragePath: audioUploadPath,
       originalAudioFileName: audioFile.name,
       signedToLabel: document.getElementById("signedToLabel").value === "true",
       labelContact: document.getElementById("labelContact").value.trim(),
@@ -182,16 +229,12 @@ form.addEventListener("submit", async event => {
     await push(dbRef(queueDb, "RadioSubmissions"), submission);
 
     form.reset();
-    memberName.value = memberRecord.displayName || currentMember.displayName || "BANDtroductions Member";
-    contactEmail.value = memberRecord.email || currentMember.email || "";
-    contactName.value = memberName.value;
-    if (["band", "musician"].includes(memberRecord.accountType)) artist.value = memberName.value;
-
+    populateMemberFields();
     setMessage("Song submitted! We'll review it for BANDtroductions Radio.", true);
   } catch (error) {
     console.error("Radio submission failed", error);
     if (String(error?.code || "").includes("storage/unauthorized")) {
-      setMessage("Your account is verified, but the audio upload was blocked by storage permissions. Please contact BANDtroductions so we can finish enabling radio uploads.");
+      setMessage("Your account is verified, but the upload was blocked by storage permissions. Please contact BANDtroductions so we can finish enabling radio uploads.");
     } else {
       setMessage("Something went wrong while submitting your song. Please try again.");
     }
