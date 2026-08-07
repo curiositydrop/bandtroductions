@@ -7,9 +7,10 @@ const profileId=new URLSearchParams(location.search).get('id');
 
 const style=document.createElement('style');
 style.textContent=`
-  .admin-profile-panel{border-color:#6d5140!important;background:linear-gradient(145deg,#1d1713,#111)!important}
-  .admin-profile-panel h2{color:#ffcb9e}.admin-profile-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .admin-profile-panel{border-color:#356b66!important;background:linear-gradient(145deg,#111918,#0d1111)!important}
+  .admin-profile-panel h2{color:#0ccfbd}.admin-profile-actions{display:flex;gap:8px;flex-wrap:wrap}
   .admin-profile-actions .auth-button{width:auto!important}.admin-danger{border-color:#8a3d3d!important;color:#ffc0c0!important;background:#180d0d!important}
+  .control-room-button{border-color:#0ccfbd!important;background:#0ccfbd!important;color:#06110f!important;font-weight:1000!important;box-shadow:0 0 18px rgba(12,207,189,.12)}
 `;
 document.head.appendChild(style);
 
@@ -32,8 +33,6 @@ onAuthStateChanged(auth,async user=>{
   const profile=snap.data();
   const dedicatedEditUrl=`profile-setup.html?adminProfile=${encodeURIComponent(profileId)}&editor=3`;
 
-  // The public profile's ordinary Edit Profile button previously opened the
-  // account-UID save flow. Force it onto the exact profile document instead.
   const ordinaryEdit=document.getElementById('edit-profile');
   if(ordinaryEdit){
     ordinaryEdit.href=dedicatedEditUrl;
@@ -47,6 +46,11 @@ onAuthStateChanged(auth,async user=>{
   const heading=document.createElement('h2');heading.textContent='Admin Controls';
   const note=document.createElement('p');note.className='profile-side-note';note.textContent='These controls are visible only to the BANDtroductions administrator.';
   const actions=document.createElement('div');actions.className='admin-profile-actions';
+
+  if(profileId===user.uid){
+    const room=document.createElement('a');room.className='auth-button control-room-button';room.href='admin.html';room.textContent='🎛️ The Control Room';actions.append(room);
+  }
+
   const edit=document.createElement('a');edit.className='auth-button';edit.href=dedicatedEditUrl;edit.textContent='Admin Edit';
   const media=document.createElement('a');media.className='auth-button auth-button-secondary';media.href=`media.html?owner=${encodeURIComponent(profileId)}`;media.textContent='Manage Media';
   const publish=document.createElement('button');publish.type='button';publish.className='auth-button auth-button-secondary';publish.textContent=profile.published===false?'Publish Profile':'Unpublish Profile';
