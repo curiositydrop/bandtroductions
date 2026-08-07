@@ -64,6 +64,7 @@ function setupDashboardChrome(){
     .right .panel{max-width:100%!important}
     .dashboard-radio-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
     .dashboard-radio-actions .btn{display:flex!important;align-items:center;justify-content:center;text-align:center;min-width:0;padding-left:5px!important;padding-right:5px!important}
+    .dashboard-radio-actions .dashboard-radio-sponsor{grid-column:1/-1}
     .dashboard-radio-play{margin-top:10px!important}
     .radio-coming-soon{
       position:absolute;
@@ -213,7 +214,7 @@ function approvedTracks(data){
 }
 
 function radioActionRow(){
-  return '<div class="dashboard-radio-actions"><a class="btn" href="radio.html">PLAYLIST</a><a class="btn" href="radio-submit.html">PLAY OUR SONGS</a></div>';
+  return '<div class="dashboard-radio-actions"><a class="btn" href="radio.html">PLAYLIST</a><a class="btn" href="radio-submit.html">PLAY OUR SONGS</a><a class="btn dashboard-radio-sponsor" href="radio-sponsor.html">SPONSOR RADIO</a></div>';
 }
 
 function render(){
