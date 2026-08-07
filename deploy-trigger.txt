@@ -1,1 +1,2 @@
-GitHub Pages redeploy trigger after custom-domain DNS verification succeeded on 2026-08-06.
+GitHub Pages clean redeploy trigger after Actions/Pages recovery on 2026-08-06.
+Includes Social V2 fixes: comments, hidden counter, readability bump, and claim email notifications.
