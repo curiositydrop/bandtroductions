@@ -62,6 +62,7 @@
   <script src="global.js?v=2"></script>
   <script type="module">
     import { auth, db } from './firebase-dev.js';
+    import { sendAdminApprovalEmail } from './admin-approval-email.js?v=2';
     import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
     import { doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
@@ -113,6 +114,13 @@
           createdAt: serverTimestamp()
         });
         await sendEmailVerification(credential.user);
+        await sendAdminApprovalEmail({
+          kind: 'signup',
+          name: displayName,
+          accountType,
+          submittedBy: email,
+          details: `New ${accountType || 'member'} account created. User ID: ${credential.user.uid}`
+        });
         window.location.href = safeReturn;
       } catch (error) {
         console.error(error);
