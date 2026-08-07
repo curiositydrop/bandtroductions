@@ -4,17 +4,25 @@ const FORM_ENDPOINT = `https://formsubmit.co/ajax/${encodeURIComponent(ADMIN_EMA
 export async function sendAdminApprovalEmail({ kind = 'profile', name = 'New profile', accountType = '', submittedBy = '', details = '' } = {}) {
   const subject = kind === 'claim'
     ? `BANDtroductions ownership claim: ${name}`
-    : `BANDtroductions profile approval needed: ${name}`;
+    : kind === 'signup'
+      ? `BANDtroductions new account: ${name}`
+      : `BANDtroductions profile approval needed: ${name}`;
+
+  const intro = kind === 'claim'
+    ? 'A profile ownership claim was submitted.'
+    : kind === 'signup'
+      ? 'A new BANDtroductions account was created.'
+      : 'A new profile is waiting for approval.';
 
   const lines = [
-    `A new ${kind === 'claim' ? 'profile ownership claim' : 'profile'} is waiting for approval.`,
+    intro,
     '',
     `Name: ${name}`,
     accountType ? `Account type: ${accountType}` : '',
     submittedBy ? `Submitted by: ${submittedBy}` : '',
     details ? `Details: ${details}` : '',
     '',
-    `Review it here: ${location.origin}${location.pathname.replace(/[^/]*$/, '')}admin.html`
+    `Review BANDtroductions admin: ${location.origin}${location.pathname.replace(/[^/]*$/, '')}admin.html`
   ].filter(Boolean);
 
   try {
@@ -38,7 +46,7 @@ export async function sendAdminApprovalEmail({ kind = 'profile', name = 'New pro
     if (!response.ok) throw new Error(`Approval email returned ${response.status}`);
     return true;
   } catch (error) {
-    console.warn('Admin approval email could not be sent:', error);
+    console.warn('Admin notification email could not be sent:', error);
     return false;
   }
 }
