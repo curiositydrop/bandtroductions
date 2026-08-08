@@ -41,7 +41,7 @@
     <section class="bt-welcome-card">
       <div class="bt-welcome-content">
         <div class="bt-welcome-kicker">Built for the scene. Not the algorithm.</div>
-        <h1 class="bt-welcome-title">Welcome to social media <span>for the music scene.</span></h1>
+        <h1 class="bt-welcome-title">Welcome to BANDtroductions Social <span>A social platform for the music scene.</span></h1>
         <p class="bt-welcome-copy">BANDtroductions Social is a music-first community for <strong>bands, musicians, venues, photographers, promoters and fans</strong>. No politics. No algorithm deciding what you see. No unrelated bullshit. Just music, shows, connections, community — and BANDtroductions Radio while you browse.</p>
         <p class="bt-welcome-tag">Built in Maine. Growing far beyond. 🤘</p>
         <div class="bt-welcome-actions">
