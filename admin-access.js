@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { deleteDoc, doc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { collection, deleteDoc, doc, getDocs, serverTimestamp, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 export const ADMIN_EMAIL = 'mbergeron79@gmail.com';
 export const LEGACY_ADMIN_EMAIL = 'mbegeron79@gmail.com';
@@ -11,6 +11,31 @@ const normalized = (value) => String(value || '').trim().toLowerCase();
 export function isAdminAccount(user) {
   const email = normalized(user?.email);
   return Boolean(user && (email === ADMIN_EMAIL || email === LEGACY_ADMIN_EMAIL));
+}
+
+async function normalizeWelcomePostAuthors(user) {
+  if (!isAdminAccount(user) || sessionStorage.getItem('bt-welcome-author-normalized') === '1') return;
+  try {
+    const snapshot = await getDocs(collection(db, 'posts'));
+    const fixes = [];
+    snapshot.docs.forEach((postDoc) => {
+      const post = postDoc.data() || {};
+      const isWelcome = Boolean(post.welcomedProfileId) || postDoc.id.startsWith('welcome_');
+      if (!isWelcome) return;
+      if (post.authorId === user.uid && post.authorName === 'BANDtroductions Admin' && post.systemPost === true) return;
+      fixes.push(updateDoc(doc(db, 'posts', postDoc.id), {
+        authorId: user.uid,
+        authorName: 'BANDtroductions Admin',
+        accountType: 'fan',
+        systemPost: true,
+        updatedAt: serverTimestamp()
+      }));
+    });
+    if (fixes.length) await Promise.all(fixes);
+    sessionStorage.setItem('bt-welcome-author-normalized', '1');
+  } catch (error) {
+    console.warn('Could not normalize existing welcome-post authors:', error);
+  }
 }
 
 async function normalizeAccountRoles(user) {
@@ -49,6 +74,7 @@ async function normalizeAccountRoles(user) {
     try {
       await setDoc(doc(db, 'users', user.uid), userData, { merge: true });
       await setDoc(doc(db, 'profiles', user.uid), profileData, { merge: true });
+      await normalizeWelcomePostAuthors(user);
       window.dispatchEvent(new CustomEvent('bandtroductions-role-ready', { detail: { role: 'admin', userId: user.uid } }));
     } catch (error) {
       console.error('Could not normalize the administrator account:', error);
