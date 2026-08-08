@@ -26,8 +26,9 @@
     .bt-welcome-btn{appearance:none;border:1px solid #25c7c1;background:#0b0d0d;color:#25c7c1;padding:12px 10px;text-decoration:none;font:inherit;font-size:12px;font-weight:950;letter-spacing:.02em;cursor:pointer;text-align:center}
     .bt-welcome-btn.primary{background:#25c7c1;color:#04100f}
     .bt-welcome-btn:hover{filter:brightness(1.12)}
-    .bt-welcome-note{min-height:18px;margin:11px 0 0;color:#9ca3a3;font-size:11px}
-    @media(max-width:600px){.bt-welcome-overlay{padding:9px}.bt-welcome-content{padding:25px 16px 18px}.bt-welcome-title{font-size:32px}.bt-welcome-copy{font-size:13px;line-height:1.48}.bt-welcome-actions{grid-template-columns:1fr 1fr;gap:6px}.bt-welcome-actions .bt-welcome-close{grid-column:1/-1}.bt-welcome-btn{padding:10px 6px;font-size:10px}}
+    .bt-welcome-once{margin:11px 0 0;color:#fff;font-size:11px;font-weight:700;opacity:.9}
+    .bt-welcome-note{min-height:18px;margin:7px 0 0;color:#9ca3a3;font-size:11px}
+    @media(max-width:600px){.bt-welcome-overlay{padding:9px}.bt-welcome-content{padding:25px 16px 18px}.bt-welcome-title{font-size:32px}.bt-welcome-copy{font-size:13px;line-height:1.48}.bt-welcome-actions{grid-template-columns:1fr 1fr;gap:6px}.bt-welcome-actions .bt-welcome-close{grid-column:1/-1}.bt-welcome-btn{padding:10px 6px;font-size:10px}.bt-welcome-once{font-size:10px}}
   `;
   document.head.appendChild(style);
 
@@ -48,6 +49,7 @@
           <a class="bt-welcome-btn primary" data-action="signup" href="signup.html">CREATE ACCOUNT</a>
           <button type="button" class="bt-welcome-btn bt-welcome-close" data-action="close">CLOSE & EXPLORE</button>
         </div>
+        <p class="bt-welcome-once">Don’t worry — this is a one-time welcome. You won’t see it every visit.</p>
         <p class="bt-welcome-note" aria-live="polite"></p>
       </div>
     </section>`;
