@@ -1,6 +1,11 @@
 import { db } from './firebase-dev.js';
 import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
+// Hide the dynamic feed before Firestore paints raw post text. The YouTube enhancer reveals it
+// after embedded links have been converted, preventing the raw-link -> embed flash on load.
+const socialFeed=document.querySelector('.feed');
+if(socialFeed){socialFeed.style.visibility='hidden';socialFeed.dataset.youtubePreparing='true';}
+
 const cache=new Map();
 let adminProfilePromise=null;
 const authorId=p=>p.authorId||p.authorUid||p.uid||p.userId||'';
@@ -87,4 +92,7 @@ onSnapshot(collection(db,'posts'),snap=>{
   scheduleApply(posts);
 },error=>console.warn('Could not enhance dashboard post avatars.',error));
 
-import('./dashboard-youtube-embeds.js?v=1').catch(error=>console.warn('YouTube embed enhancement unavailable.',error));
+import('./dashboard-youtube-embeds.js?v=3').catch(error=>{
+  console.warn('YouTube embed enhancement unavailable.',error);
+  if(socialFeed){socialFeed.style.visibility='';delete socialFeed.dataset.youtubePreparing;}
+});
