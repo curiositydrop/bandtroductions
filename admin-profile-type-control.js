@@ -72,10 +72,11 @@ async function installEditor(card,user){
 function scan(user){document.querySelectorAll('#managed-profile-list .managed-card').forEach(card=>installEditor(card,user));}
 
 onAuthStateChanged(auth,user=>{
-  if(!isAdminAccount(user))return;
+  if(!isAdminAccount(user)||!document.querySelector('.admin-shell'))return;
+  let tries=0;
   const start=()=>{
     const list=document.getElementById('managed-profile-list');
-    if(!list){setTimeout(start,250);return;}
+    if(!list){if(++tries<40)setTimeout(start,250);return;}
     scan(user);
     const observer=new MutationObserver(()=>scan(user));
     observer.observe(list,{childList:true,subtree:false});
