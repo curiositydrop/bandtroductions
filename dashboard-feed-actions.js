@@ -26,6 +26,28 @@ onAuthStateChanged(auth,async user=>{
 function clearListeners(){cleanups.forEach(fn=>{try{fn();}catch{}});cleanups=[];}
 function makeButton(label,className,postId){const b=document.createElement('button');b.type='button';b.className=`dashboard-feed-action ${className}`;b.dataset.postId=postId;b.textContent=label;return b;}
 
+function enhanceWelcomeProfileLink(article,post){
+  if(!article||!post)return;
+  const welcomedId=post.welcomedProfileId||'';
+  const targetUrl=post.linkUrl||(welcomedId?`profile.html?id=${encodeURIComponent(welcomedId)}`:'');
+  if(!targetUrl)return;
+  const body=[...article.children].find(el=>el.tagName==='P')||article.querySelector('p');
+  if(!body)return;
+  const text=(body.textContent||'').trim();
+  const match=text.match(/^👋\s*Welcome\s+(.+?)\s+[—–-]\s+thank you for joining our community!\s*🤘$/i);
+  if(!match)return;
+  const profileName=match[1].trim();
+  const link=document.createElement('a');
+  link.href=targetUrl;
+  link.textContent=profileName;
+  link.className='inline-profile-link';
+  body.replaceChildren(
+    document.createTextNode('👋 Welcome '),
+    link,
+    document.createTextNode(' — thank you for joining our community! 🤘')
+  );
+}
+
 async function sharePost(post){
   const url=`${location.origin}${location.pathname.replace(/[^/]+$/,'')}index.html?post=${encodeURIComponent(post.id)}`;
   const text=[post.authorName,post.content].filter(Boolean).join(': ').slice(0,500);
@@ -105,6 +127,7 @@ function enhance(posts){
   visible.forEach((post,index)=>{
     const article=articles[index];if(!article)return;
     article.dataset.postId=post.id;article.dataset.actionsFor=post.id;
+    enhanceWelcomeProfileLink(article,post);
     const row=article.querySelector('.post-actions');if(!row)return;
     row.replaceChildren();
     const rock=makeButton('🤘 ROCK ON','dashboard-rock',post.id);
