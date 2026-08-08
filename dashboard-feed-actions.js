@@ -13,6 +13,8 @@ const initials=name=>String(name||'BT').trim().split(/\s+/).filter(Boolean).slic
 const stampMs=stamp=>stamp?.toMillis?stamp.toMillis():(stamp?.seconds?stamp.seconds*1000:0);
 const postMs=post=>stampMs(post.createdAt)||stampMs(post.updatedAt)||stampMs(post.publishedAt)||stampMs(post.submittedAt)||0;
 const formatDate=post=>{const ms=postMs(post);return ms?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(ms)):'Earlier post';};
+const isWelcomePost=post=>Boolean(post?.systemPost||post?.welcomedProfileId||String(post?.id||'').startsWith('welcome_'));
+const displayAuthor=post=>isWelcomePost(post)?'BANDtroductions Admin':(post.authorName||'BANDtroductions Member');
 
 onAuthStateChanged(auth,async user=>{
   currentUser=user;
@@ -32,7 +34,8 @@ function makeButton(label,className,postId){const b=document.createElement('butt
 
 function renderLegacyCard(post){
   const article=document.createElement('article');article.className='post';article.dataset.legacyFeedCard='1';
-  const name=post.authorName||'BANDtroductions Member';
+  const name=displayAuthor(post);
+  if(isWelcomePost(post))article.dataset.systemWelcome='1';
   article.innerHTML=`<div class="post-head"><div class="post-avatar">${esc(initials(name))}</div><div><div class="post-name">${esc(name)}</div><div class="post-meta">${esc(formatDate(post))}${post.category?` · ${esc(post.category)}`:''}</div></div></div><p>${esc(post.content||'')}</p>${post.imageUrl?`<img src="${esc(post.imageUrl)}" alt="" style="display:block;width:100%;margin-top:12px;border:1px solid #333;max-height:420px;object-fit:cover">`:''}<div class="post-actions"><span>ROCK ON</span><span>COMMENT</span><span>SHARE</span></div>`;
   return article;
 }
@@ -63,9 +66,16 @@ function enhanceWelcomeProfileLink(article,post){
   body.replaceChildren(document.createTextNode('👋 Welcome '),link,document.createTextNode(' — thank you for joining our community! 🤘'));
 }
 
+function lockWelcomeAuthor(article,post){
+  if(!article||!isWelcomePost(post))return;
+  article.dataset.systemWelcome='1';
+  const name=article.querySelector('.post-name');if(name)name.textContent='BANDtroductions Admin';
+  const avatar=article.querySelector('.post-avatar');if(avatar&&!avatar.querySelector('img'))avatar.textContent='BT';
+}
+
 async function sharePost(post){
   const url=`${location.origin}${location.pathname.replace(/[^/]+$/,'')}index.html?post=${encodeURIComponent(post.id)}`;
-  const text=[post.authorName,post.content].filter(Boolean).join(': ').slice(0,500);
+  const text=[displayAuthor(post),post.content].filter(Boolean).join(': ').slice(0,500);
   try{if(navigator.share){await navigator.share({title:'BANDtroductions Social',text,url});return;}await navigator.clipboard.writeText(url);alert('Post link copied.');}
   catch(error){if(error?.name!=='AbortError')console.warn('Share failed',error);}
 }
@@ -109,7 +119,7 @@ function enhance(posts){
   const visible=posts.filter(p=>p.published!==false);ensureAllFeedCards(posts);
   const articles=[...document.querySelectorAll('.feed .post')];
   visible.forEach((post,index)=>{
-    const article=articles[index];if(!article)return;article.dataset.postId=post.id;article.dataset.actionsFor=post.id;enhanceWelcomeProfileLink(article,post);
+    const article=articles[index];if(!article)return;article.dataset.postId=post.id;article.dataset.actionsFor=post.id;lockWelcomeAuthor(article,post);enhanceWelcomeProfileLink(article,post);
     const row=article.querySelector('.post-actions');if(!row)return;row.replaceChildren();
     const rock=makeButton('🤘 ROCK ON','dashboard-rock',post.id);const comment=makeButton('COMMENT','dashboard-comment',post.id);const share=makeButton('SHARE','dashboard-share',post.id);row.append(rock,comment,share);
     const reactions=collection(db,'posts',post.id,'reactions');cleanups.push(onSnapshot(reactions,snap=>{const mine=(auth.currentUser||currentUser)?snap.docs.some(d=>d.id===(auth.currentUser||currentUser).uid):false;rock.dataset.reacted=mine?'true':'false';rock.classList.toggle('is-active',mine);rock.textContent=`🤘 ROCK ON${snap.size?` (${snap.size})`:''}`;},()=>{}));
