@@ -1,3 +1,4 @@
+import './welcome-popup.js?v=1';
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js';
 import { getDatabase, ref, onValue, runTransaction } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js';
 import { getFirestore, doc, onSnapshot, runTransaction as runFirestoreTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js';
