@@ -1,4 +1,4 @@
-import './account-onboarding-repair.js?v=1';
+import './account-onboarding-repair.js?v=2';
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
