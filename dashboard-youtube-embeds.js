@@ -9,6 +9,7 @@ const youtubeInfo = raw => {
 
 const stampMs = stamp => stamp?.toMillis ? stamp.toMillis() : (stamp?.seconds ? stamp.seconds * 1000 : 0);
 const postMs = post => stampMs(post.createdAt) || stampMs(post.updatedAt) || stampMs(post.publishedAt) || stampMs(post.submittedAt) || 0;
+let pendingTimer = null;
 
 function enhance(posts){
   const cards = [...document.querySelectorAll('.feed .post')];
@@ -16,20 +17,22 @@ function enhance(posts){
 
   visible.forEach((post, index) => {
     const card = cards[index];
-    if (!card) return;
+    if (!card || card.dataset.youtubeEnhanced === '1') return;
     const info = youtubeInfo(post.videoUrl) || youtubeInfo(post.content);
-    if (!info) return;
+    if (!info) {
+      card.dataset.youtubeEnhanced = '1';
+      return;
+    }
 
     const body = [...card.children].find(el => el.tagName === 'P') || card.querySelector('p');
     if (body && post.content && youtubeInfo(post.content)) {
       const cleaned = String(post.content).replace(info.url, '').replace(/\s{2,}/g, ' ').trim();
-      body.textContent = cleaned;
-      if (!cleaned) body.remove();
+      if (cleaned) body.textContent = cleaned;
+      else body.remove();
     }
 
-    let embed = card.querySelector('.dashboard-youtube-embed');
-    if (!embed) {
-      embed = document.createElement('div');
+    if (!card.querySelector('.dashboard-youtube-embed')) {
+      const embed = document.createElement('div');
       embed.className = 'dashboard-youtube-embed';
       embed.style.cssText = 'position:relative;width:100%;aspect-ratio:16/9;margin-top:10px;background:#000;border:1px solid #333;overflow:hidden';
       const iframe = document.createElement('iframe');
@@ -45,12 +48,19 @@ function enhance(posts){
     }
 
     card.querySelectorAll('a').forEach(a => {
-      if (a !== embed && (a.textContent || '').trim() === 'WATCH VIDEO →') a.remove();
+      if ((a.textContent || '').trim() === 'WATCH VIDEO →') a.remove();
     });
+    card.dataset.youtubeEnhanced = '1';
   });
 }
 
-function schedule(posts){[60,180,450,900,1600,2600].forEach(delay => setTimeout(() => enhance(posts), delay));}
+function schedule(posts){
+  if (pendingTimer) clearTimeout(pendingTimer);
+  pendingTimer = setTimeout(() => {
+    pendingTimer = null;
+    requestAnimationFrame(() => enhance(posts));
+  }, 350);
+}
 
 onSnapshot(collection(db,'posts'), snapshot => {
   const posts = snapshot.docs.map(d => ({id:d.id, ...d.data()})).sort((a,b) => {
@@ -59,8 +69,3 @@ onSnapshot(collection(db,'posts'), snapshot => {
   });
   schedule(posts);
 }, error => console.warn('YouTube embed enhancement unavailable.', error));
-
-const observer = new MutationObserver(() => {
-  // Firestore snapshot handler will do the real data-to-card mapping; this just gives late-rendered cards time to be caught.
-});
-observer.observe(document.documentElement,{childList:true,subtree:true});
