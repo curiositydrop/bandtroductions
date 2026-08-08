@@ -1,5 +1,5 @@
 import { db } from './firebase-dev.js';
-import { collection, getDocs, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 let publishedProfilesPromise=null;
 let adminProfilePromise=null;
@@ -37,16 +37,34 @@ async function adminProfile(){
   return adminProfilePromise;
 }
 
+async function directProfile(uid){
+  if(!uid)return null;
+  try{
+    const snap=await getDoc(doc(db,'profiles',uid));
+    if(snap.exists()){
+      const data={id:snap.id,...snap.data()};
+      if(data.published===true)return data;
+    }
+  }catch(error){
+    console.warn('Direct dashboard avatar profile lookup skipped.',error);
+  }
+  return null;
+}
+
 async function profile(uid,name=''){
   const key=uid?`uid:${uid}`:`name:${normalized(name)}`;
   if(cache.has(key))return cache.get(key);
-  const profiles=await publishedProfiles();
-  let data=null;
-  if(uid)data=profiles.find(p=>idsFor(p).includes(String(uid)))||null;
-  if(!data&&name){
-    const wanted=normalized(name);
-    data=profiles.find(p=>namesFor(p).includes(wanted))||null;
+
+  let data=uid?await directProfile(uid):null;
+  if(!data){
+    const profiles=await publishedProfiles();
+    if(uid)data=profiles.find(p=>idsFor(p).includes(String(uid)))||null;
+    if(!data&&name){
+      const wanted=normalized(name);
+      data=profiles.find(p=>namesFor(p).includes(wanted))||null;
+    }
   }
+
   cache.set(key,data);
   return data;
 }
