@@ -1,13 +1,13 @@
 import { db } from './firebase-dev.js';
 import { doc, serverTimestamp, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
-export async function createWelcomePost({profileId,displayName,accountType='member',authorId,authorName}){
-  if(!profileId||!displayName||!authorId)return false;
+export async function createWelcomePost({profileId,displayName,accountType='member'}){
+  if(!profileId||!displayName)return false;
   const postId=`welcome_${profileId}`;
   try{
     await setDoc(doc(db,'posts',postId),{
-      authorId,
-      authorName:authorName||'BANDtroductions Admin',
+      authorId:'',
+      authorName:'BANDtroductions Admin',
       accountType:'fan',
       category:'general',
       content:`👋 Welcome ${displayName} — thank you for joining our community! 🤘`,
@@ -15,6 +15,7 @@ export async function createWelcomePost({profileId,displayName,accountType='memb
       imageUrl:'',
       welcomedProfileId:profileId,
       welcomedAccountType:accountType,
+      systemPost:true,
       published:true,
       createdAt:serverTimestamp(),
       updatedAt:serverTimestamp()
