@@ -52,9 +52,20 @@ function profileHref(post){
   const id=post.authorId||post.authorUid||post.uid||post.userId;
   return id?`profile.html?id=${encodeURIComponent(id)}`:'index.html';
 }
+function youtubeFromPost(post){
+  const candidates=[post.videoUrl,post.mediaUrl,post.linkUrl,String(post.content||'').match(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?[^\s]*v=[A-Za-z0-9_-]{6,}|youtu\.be\/[A-Za-z0-9_-]{6,}|youtube\.com\/(?:embed|shorts)\/[A-Za-z0-9_-]{6,})[^\s]*/i)?.[0]].filter(Boolean);
+  for(const rawValue of candidates){
+    const raw=String(rawValue).trim();
+    const match=raw.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?[^\s#]*?v=|embed\/|shorts\/))([A-Za-z0-9_-]{6,})/i);
+    if(match)return {id:match[1],url:raw};
+  }
+  return null;
+}
 function renderPostContent(post){
-  const text=String(post.content||'');
+  let text=String(post.content||'');
   if(!text)return '';
+  const youtube=youtubeFromPost(post);
+  if(youtube&&youtube.url&&text.includes(youtube.url))text=text.replace(youtube.url,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
   const targetUrl=post.linkUrl||post.sharedProfile?.url||(post.sharedProfile?.id?`profile.html?id=${encodeURIComponent(post.sharedProfile.id)}`:'');
   if(targetUrl){
     const match=text.match(/^(.*?\bWelcome\s+)(.+?)(\s+[—–-]\s+.*)$/i);
@@ -62,14 +73,13 @@ function renderPostContent(post){
       return `<p>${safeText(match[1])}<a class="inline-profile-link" style="color:#25c7c1;font-weight:900;text-decoration:underline;text-underline-offset:2px" href="${safeText(targetUrl)}">${safeText(match[2])}</a>${safeText(match[3])}</p>`;
     }
   }
-  return `<p>${safeText(text)}</p>`;
+  return text?`<p>${safeText(text)}</p>`:'';
 }
 function renderVideo(post){
+  const youtube=youtubeFromPost(post);
+  if(youtube)return `<div class="post-video" style="position:relative;width:100%;aspect-ratio:16/9;margin-top:10px;background:#000;border:1px solid #333"><iframe src="https://www.youtube.com/embed/${safeText(youtube.id)}?playsinline=1" title="Post video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>`;
   const raw=String(post.videoUrl||'').trim();
-  if(!raw)return'';
-  const youtube=raw.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{6,})/i);
-  if(youtube)return `<div style="position:relative;width:100%;aspect-ratio:16/9;margin-top:10px;background:#000;border:1px solid #333"><iframe src="https://www.youtube.com/embed/${safeText(youtube[1])}" title="Post video" loading="lazy" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>`;
-  return `<a href="${safeText(raw)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;color:#25c7c1;font-weight:900">WATCH VIDEO →</a>`;
+  return raw?`<a href="${safeText(raw)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;color:#25c7c1;font-weight:900">WATCH VIDEO →</a>`:'';
 }
 
 function ensureComposer(){
