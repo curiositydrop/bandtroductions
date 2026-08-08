@@ -20,6 +20,8 @@ let latestPosts=[];
 let enhanceTimer=null;
 let revealTimer=null;
 let enhancing=false;
+const startupAt=Date.now();
+const startupHoldMs=1900;
 
 function hide(){
   if(!feed)return;
@@ -83,6 +85,17 @@ function enhance(posts){
   }
 }
 
+function scheduleReveal(){
+  if(revealTimer)clearTimeout(revealTimer);
+  const elapsed=Date.now()-startupAt;
+  const remaining=Math.max(0,startupHoldMs-elapsed);
+  revealTimer=setTimeout(()=>{
+    revealTimer=null;
+    enhance(latestPosts);
+    requestAnimationFrame(()=>requestAnimationFrame(reveal));
+  },Math.max(220,remaining));
+}
+
 function settle(){
   hide();
   if(enhanceTimer)clearTimeout(enhanceTimer);
@@ -90,10 +103,7 @@ function settle(){
   enhanceTimer=setTimeout(()=>{
     enhanceTimer=null;
     enhance(latestPosts);
-    revealTimer=setTimeout(()=>{
-      revealTimer=null;
-      reveal();
-    },180);
+    scheduleReveal();
   },80);
 }
 
@@ -116,5 +126,5 @@ onSnapshot(collection(db,'posts'), snapshot => {
   reveal();
 });
 
-// Safety valve only. Normal reveal happens after the feed has been stable long enough to finish embedding.
-setTimeout(()=>{ if(feed?.style.visibility==='hidden') reveal(); },3000);
+// Safety valve only. Normal reveal waits through the dashboard's startup enhancement passes.
+setTimeout(()=>{ if(feed?.style.visibility==='hidden'){ enhance(latestPosts); reveal(); } },4200);
