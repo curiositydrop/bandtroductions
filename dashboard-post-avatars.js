@@ -2,10 +2,24 @@ import { db } from './firebase-dev.js';
 import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const cache=new Map();
+let adminProfilePromise=null;
 const authorId=p=>p.authorId||p.authorUid||p.uid||p.userId||'';
 const imageFor=p=>p?.imageUrl||p?.profileImageUrl||p?.avatarUrl||p?.photoURL||p?.profileImage||p?.avatar||p?.logoUrl||p?.logo||'';
 const stampMs=stamp=>stamp?.toMillis?stamp.toMillis():(stamp?.seconds?stamp.seconds*1000:0);
 const postMs=post=>stampMs(post.createdAt)||stampMs(post.updatedAt)||stampMs(post.publishedAt)||stampMs(post.submittedAt)||0;
+const isWelcomePost=post=>Boolean(post?.systemPost||post?.welcomedProfileId||String(post?.id||'').startsWith('welcome_'));
+
+async function adminProfile(){
+  if(adminProfilePromise)return adminProfilePromise;
+  adminProfilePromise=(async()=>{
+    try{
+      const snap=await getDocs(query(collection(db,'profiles'),where('isAdmin','==',true)));
+      if(!snap.empty){const picked=snap.docs[0];return {id:picked.id,...picked.data()};}
+    }catch(error){console.warn('Admin profile lookup failed',error);}
+    return null;
+  })();
+  return adminProfilePromise;
+}
 
 async function profile(uid,name=''){
   const key=uid||`name:${String(name).toLowerCase()}`;
@@ -36,7 +50,22 @@ async function apply(posts){
   const visible=posts.filter(p=>p.published!==false);
   await Promise.all(visible.map(async(post,index)=>{
     const card=cards[index];if(!card)return;
-    const avatar=card.querySelector('.post-avatar');if(!avatar||avatar.dataset.avatarDone==='1')return;
+    const avatar=card.querySelector('.post-avatar');
+    const nameEl=card.querySelector('.post-name');
+    if(isWelcomePost(post)){
+      const admin=await adminProfile();
+      if(nameEl)nameEl.textContent='BANDtroductions Admin';
+      if(avatar){
+        const src=imageFor(admin);
+        if(src){
+          const img=new Image();img.alt='BANDtroductions Admin';img.loading='lazy';img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;border-radius:50%';
+          img.onload=()=>{avatar.replaceChildren(img);avatar.style.padding='0';avatar.style.overflow='hidden';avatar.dataset.avatarDone='1';if(admin?.id){avatar.style.cursor='pointer';avatar.onclick=()=>location.href=`profile.html?id=${encodeURIComponent(admin.id)}`;}};
+          img.src=src;
+        }else{avatar.textContent='BT';avatar.dataset.avatarDone='1';}
+      }
+      return;
+    }
+    if(!avatar||avatar.dataset.avatarDone==='1')return;
     const uid=authorId(post);const data=await profile(uid,post.authorName||'');
     const src=imageFor(data)||post.authorAvatarUrl||post.authorImageUrl||post.avatarUrl||post.imageUrlAuthor||'';
     if(!src)return;
@@ -51,9 +80,7 @@ async function apply(posts){
   }));
 }
 
-function scheduleApply(posts){
-  [80,250,700,1500,2400].forEach(delay=>setTimeout(()=>apply(posts),delay));
-}
+function scheduleApply(posts){[80,250,700,1500,2400].forEach(delay=>setTimeout(()=>apply(posts),delay));}
 
 onSnapshot(collection(db,'posts'),snap=>{
   const posts=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{const diff=postMs(b)-postMs(a);return diff||String(a.id).localeCompare(String(b.id));});
