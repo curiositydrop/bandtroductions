@@ -10,8 +10,11 @@ const imageFor=p=>p?.imageUrl||p?.profileImageUrl||p?.profilePhotoUrl||p?.avatar
 const stampMs=stamp=>stamp?.toMillis?stamp.toMillis():(stamp?.seconds?stamp.seconds*1000:0);
 const postMs=post=>stampMs(post.createdAt)||stampMs(post.updatedAt)||stampMs(post.publishedAt)||stampMs(post.submittedAt)||0;
 const isWelcomePost=post=>Boolean(post?.systemPost||post?.welcomedProfileId||String(post?.id||'').startsWith('welcome_'));
-const normalized=value=>String(value||'').trim().toLowerCase().replace(/\s+/g,' ');
-const namesFor=p=>[p?.displayName,p?.name,p?.bandName,p?.musicianName,p?.venueName,p?.artistName,p?.profileName].map(normalized).filter(Boolean);
+const normalized=value=>String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'');
+const namesFor=p=>[
+  p?.displayName,p?.name,p?.bandName,p?.musicianName,p?.venueName,p?.artistName,p?.profileName,
+  p?.username,p?.userName,p?.handle,p?.slug,p?.accountName
+].map(normalized).filter(Boolean);
 const idsFor=p=>[p?.id,p?.ownerId,p?.userId,p?.uid,p?.authorId,p?.createdBy].map(v=>String(v||'').trim()).filter(Boolean);
 
 async function publishedProfiles(){
@@ -32,7 +35,7 @@ async function adminProfile(){
   if(adminProfilePromise)return adminProfilePromise;
   adminProfilePromise=(async()=>{
     const profiles=await publishedProfiles();
-    return profiles.find(p=>p.isAdmin===true||normalized(p.role)==='admin'||normalized(p.displayName)==='bandtroductions admin')||null;
+    return profiles.find(p=>p.isAdmin===true||normalized(p.role)==='admin'||normalized(p.displayName)==='bandtroductionsadmin')||null;
   })();
   return adminProfilePromise;
 }
@@ -51,19 +54,26 @@ async function directProfile(uid){
   return null;
 }
 
+function fuzzyNameMatch(profiles,name){
+  const wanted=normalized(name);
+  if(!wanted)return null;
+  const exact=profiles.find(p=>namesFor(p).includes(wanted));
+  if(exact)return exact;
+  const close=profiles.filter(p=>namesFor(p).some(n=>{
+    if(n.length<4||wanted.length<4)return false;
+    return n.startsWith(wanted)||wanted.startsWith(n);
+  }));
+  return close.length===1?close[0]:null;
+}
+
 async function profile(uid,name=''){
   const key=uid?`uid:${uid}`:`name:${normalized(name)}`;
   if(cache.has(key))return cache.get(key);
 
   let data=uid?await directProfile(uid):null;
-  if(!data){
-    const profiles=await publishedProfiles();
-    if(uid)data=profiles.find(p=>idsFor(p).includes(String(uid)))||null;
-    if(!data&&name){
-      const wanted=normalized(name);
-      data=profiles.find(p=>namesFor(p).includes(wanted))||null;
-    }
-  }
+  const profiles=await publishedProfiles();
+  if(!data&&uid)data=profiles.find(p=>idsFor(p).includes(String(uid)))||null;
+  if(!data&&name)data=fuzzyNameMatch(profiles,name);
 
   cache.set(key,data);
   return data;
