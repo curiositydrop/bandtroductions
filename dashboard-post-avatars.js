@@ -1,9 +1,11 @@
 import { db } from './firebase-dev.js';
-import { collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const cache=new Map();
 const authorId=p=>p.authorId||p.authorUid||p.uid||p.userId||'';
 const imageFor=p=>p?.imageUrl||p?.profileImageUrl||p?.avatarUrl||p?.photoURL||p?.profileImage||p?.avatar||p?.logoUrl||p?.logo||'';
+const stampMs=stamp=>stamp?.toMillis?stamp.toMillis():(stamp?.seconds?stamp.seconds*1000:0);
+const postMs=post=>stampMs(post.createdAt)||stampMs(post.updatedAt)||stampMs(post.publishedAt)||stampMs(post.submittedAt)||0;
 
 async function profile(uid,name=''){
   const key=uid||`name:${String(name).toLowerCase()}`;
@@ -31,7 +33,7 @@ async function profile(uid,name=''){
 
 async function apply(posts){
   const cards=[...document.querySelectorAll('.feed .post')];
-  const visible=posts.filter(p=>p.published!==false).slice(0,6);
+  const visible=posts.filter(p=>p.published!==false);
   await Promise.all(visible.map(async(post,index)=>{
     const card=cards[index];if(!card)return;
     const avatar=card.querySelector('.post-avatar');if(!avatar||avatar.dataset.avatarDone==='1')return;
@@ -50,11 +52,10 @@ async function apply(posts){
 }
 
 function scheduleApply(posts){
-  [80,250,700,1500].forEach(delay=>setTimeout(()=>apply(posts),delay));
+  [80,250,700,1500,2400].forEach(delay=>setTimeout(()=>apply(posts),delay));
 }
 
-const postsQuery=query(collection(db,'posts'),orderBy('createdAt','desc'));
-onSnapshot(postsQuery,snap=>{
-  const posts=snap.docs.map(d=>({id:d.id,...d.data()}));
+onSnapshot(collection(db,'posts'),snap=>{
+  const posts=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{const diff=postMs(b)-postMs(a);return diff||String(a.id).localeCompare(String(b.id));});
   scheduleApply(posts);
 },error=>console.warn('Could not enhance dashboard post avatars.',error));
