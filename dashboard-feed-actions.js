@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { isAdminAccount } from './admin-access.js';
 
 let currentUser=auth.currentUser||null;
@@ -9,6 +9,10 @@ let postsById=new Map();
 let cleanups=[];
 
 const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]));
+const initials=name=>String(name||'BT').trim().split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'BT';
+const stampMs=stamp=>stamp?.toMillis?stamp.toMillis():(stamp?.seconds?stamp.seconds*1000:0);
+const postMs=post=>stampMs(post.createdAt)||stampMs(post.updatedAt)||stampMs(post.publishedAt)||stampMs(post.submittedAt)||0;
+const formatDate=post=>{const ms=postMs(post);return ms?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(ms)):'Earlier post';};
 
 onAuthStateChanged(auth,async user=>{
   currentUser=user;
@@ -26,6 +30,21 @@ onAuthStateChanged(auth,async user=>{
 function clearListeners(){cleanups.forEach(fn=>{try{fn();}catch{}});cleanups=[];}
 function makeButton(label,className,postId){const b=document.createElement('button');b.type='button';b.className=`dashboard-feed-action ${className}`;b.dataset.postId=postId;b.textContent=label;return b;}
 
+function renderLegacyCard(post){
+  const article=document.createElement('article');article.className='post';article.dataset.legacyFeedCard='1';
+  const name=post.authorName||'BANDtroductions Member';
+  article.innerHTML=`<div class="post-head"><div class="post-avatar">${esc(initials(name))}</div><div><div class="post-name">${esc(name)}</div><div class="post-meta">${esc(formatDate(post))}${post.category?` · ${esc(post.category)}`:''}</div></div></div><p>${esc(post.content||'')}</p>${post.imageUrl?`<img src="${esc(post.imageUrl)}" alt="" style="display:block;width:100%;margin-top:12px;border:1px solid #333;max-height:420px;object-fit:cover">`:''}<div class="post-actions"><span>ROCK ON</span><span>COMMENT</span><span>SHARE</span></div>`;
+  return article;
+}
+
+function ensureAllFeedCards(posts){
+  const feed=document.querySelector('.feed');if(!feed)return;
+  const visible=posts.filter(p=>p.published!==false);
+  const existing=[...feed.querySelectorAll('.post')];
+  if(existing.length>=visible.length)return;
+  for(let i=existing.length;i<visible.length;i++)feed.appendChild(renderLegacyCard(visible[i]));
+}
+
 function enhanceWelcomeProfileLink(article,post){
   if(!article||!post)return;
   const welcomedId=post.welcomedProfileId||'';
@@ -41,11 +60,7 @@ function enhanceWelcomeProfileLink(article,post){
   link.href=targetUrl;
   link.textContent=profileName;
   link.className='inline-profile-link';
-  body.replaceChildren(
-    document.createTextNode('👋 Welcome '),
-    link,
-    document.createTextNode(' — thank you for joining our community! 🤘')
-  );
+  body.replaceChildren(document.createTextNode('👋 Welcome '),link,document.createTextNode(' — thank you for joining our community! 🤘'));
 }
 
 async function sharePost(post){
@@ -58,36 +73,22 @@ async function sharePost(post){
 function ensureCommentArea(article,postId){
   let area=article.querySelector(`.dashboard-comment-area[data-post-id="${CSS.escape(postId)}"]`);
   if(area)return area;
-  area=document.createElement('div');
-  area.className='dashboard-comment-area';
-  area.dataset.postId=postId;
-  const actions=article.querySelector('.post-actions');
-  if(actions)actions.insertAdjacentElement('afterend',area);else article.appendChild(area);
+  area=document.createElement('div');area.className='dashboard-comment-area';area.dataset.postId=postId;
+  const actions=article.querySelector('.post-actions');if(actions)actions.insertAdjacentElement('afterend',area);else article.appendChild(area);
   return area;
 }
 
 function renderComments(area,snap,postId){
-  let list=area.querySelector('.dashboard-comments-list');
-  if(!list){list=document.createElement('div');list.className='dashboard-comments-list';area.appendChild(list);}
+  let list=area.querySelector('.dashboard-comments-list');if(!list){list=document.createElement('div');list.className='dashboard-comments-list';area.appendChild(list);}
   list.replaceChildren();
   const docs=[...snap.docs].sort((a,b)=>(a.data()?.createdAt?.toMillis?.()||0)-(b.data()?.createdAt?.toMillis?.()||0));
   if(!docs.length){const empty=document.createElement('div');empty.className='dashboard-comments-empty';empty.textContent='No comments yet.';list.appendChild(empty);return;}
   docs.forEach(commentDoc=>{
-    const c=commentDoc.data()||{};
-    const row=document.createElement('div');row.className='dashboard-comment-row';
-    const copy=document.createElement('div');copy.className='dashboard-comment-copy';
-    const name=document.createElement('b');name.textContent=c.authorName||c.displayName||'Member';
-    const text=document.createElement('span');text.textContent=c.text||c.comment||c.content||'';
-    copy.append(name,text);row.appendChild(copy);
+    const c=commentDoc.data()||{};const row=document.createElement('div');row.className='dashboard-comment-row';const copy=document.createElement('div');copy.className='dashboard-comment-copy';
+    const name=document.createElement('b');name.textContent=c.authorName||c.displayName||'Member';const text=document.createElement('span');text.textContent=c.text||c.comment||c.content||'';copy.append(name,text);row.appendChild(copy);
     if(isAdminAccount(auth.currentUser||currentUser)){
       const del=document.createElement('button');del.type='button';del.className='dashboard-comment-admin-delete';del.textContent='DELETE';del.title='Delete comment';
-      del.addEventListener('click',async()=>{
-        if(!confirm('Delete this comment permanently?'))return;
-        del.disabled=true;const old=del.textContent;del.textContent='DELETING…';
-        try{await deleteDoc(doc(db,'posts',postId,'comments',commentDoc.id));}
-        catch(error){console.error('Comment delete failed',error);alert(error?.code==='permission-denied'?'Comment-delete permission was denied.':'The comment could not be deleted.');del.disabled=false;del.textContent=old;}
-      });
-      row.appendChild(del);
+      del.addEventListener('click',async()=>{if(!confirm('Delete this comment permanently?'))return;del.disabled=true;const old=del.textContent;del.textContent='DELETING…';try{await deleteDoc(doc(db,'posts',postId,'comments',commentDoc.id));}catch(error){console.error('Comment delete failed',error);alert(error?.code==='permission-denied'?'Comment-delete permission was denied.':'The comment could not be deleted.');del.disabled=false;del.textContent=old;}});row.appendChild(del);
     }
     list.appendChild(row);
   });
@@ -95,67 +96,31 @@ function renderComments(area,snap,postId){
 
 function openCommentComposer(postId){
   const post=postsById.get(postId);if(!post)return;
-  const article=[...document.querySelectorAll('.feed .post')].find(el=>el.dataset.postId===postId||el.dataset.actionsFor===postId);
-  if(!article)return;
-  const user=auth.currentUser||currentUser;
-  if(!user){alert('Please log in to comment.');location.href=`login.html?returnTo=${encodeURIComponent('index.html')}`;return;}
-  const area=ensureCommentArea(article,postId);
-  let composer=area.querySelector('.dashboard-comment-composer');
-  if(composer){composer.remove();return;}
-  composer=document.createElement('form');composer.className='dashboard-comment-composer';
-  composer.innerHTML='<textarea maxlength="1000" placeholder="Write a comment..." required></textarea><div class="dashboard-comment-buttons"><button type="button" class="dashboard-comment-cancel">CANCEL</button><button type="submit" class="dashboard-comment-submit">POST COMMENT</button></div><div class="dashboard-comment-status" aria-live="polite"></div>';
-  area.prepend(composer);
-  const textarea=composer.querySelector('textarea');textarea.focus();
-  composer.querySelector('.dashboard-comment-cancel').onclick=()=>composer.remove();
-  composer.onsubmit=async event=>{
-    event.preventDefault();
-    const text=textarea.value.trim();if(!text)return;
-    const submit=composer.querySelector('.dashboard-comment-submit');const status=composer.querySelector('.dashboard-comment-status');submit.disabled=true;status.textContent='Posting…';
-    try{
-      const activeUser=auth.currentUser||currentUser;if(!activeUser)throw new Error('signed-out');
-      const authorName=currentProfileName||activeUser.displayName||activeUser.email?.split('@')[0]||'Member';
-      await addDoc(collection(db,'posts',postId,'comments'),{authorId:activeUser.uid,authorName,postId,text,published:true,createdAt:serverTimestamp()});
-      textarea.value='';status.textContent='Posted.';setTimeout(()=>composer.remove(),250);
-    }catch(error){console.error('Comment could not be saved',error);status.textContent=error?.code==='permission-denied'?'Comment permission was denied.':'Comment could not be posted. Please try again.';submit.disabled=false;}
-  };
+  const article=[...document.querySelectorAll('.feed .post')].find(el=>el.dataset.postId===postId||el.dataset.actionsFor===postId);if(!article)return;
+  const user=auth.currentUser||currentUser;if(!user){alert('Please log in to comment.');location.href=`login.html?returnTo=${encodeURIComponent('index.html')}`;return;}
+  const area=ensureCommentArea(article,postId);let composer=area.querySelector('.dashboard-comment-composer');if(composer){composer.remove();return;}
+  composer=document.createElement('form');composer.className='dashboard-comment-composer';composer.innerHTML='<textarea maxlength="1000" placeholder="Write a comment..." required></textarea><div class="dashboard-comment-buttons"><button type="button" class="dashboard-comment-cancel">CANCEL</button><button type="submit" class="dashboard-comment-submit">POST COMMENT</button></div><div class="dashboard-comment-status" aria-live="polite"></div>';area.prepend(composer);
+  const textarea=composer.querySelector('textarea');textarea.focus();composer.querySelector('.dashboard-comment-cancel').onclick=()=>composer.remove();
+  composer.onsubmit=async event=>{event.preventDefault();const text=textarea.value.trim();if(!text)return;const submit=composer.querySelector('.dashboard-comment-submit');const status=composer.querySelector('.dashboard-comment-status');submit.disabled=true;status.textContent='Posting…';try{const activeUser=auth.currentUser||currentUser;if(!activeUser)throw new Error('signed-out');const authorName=currentProfileName||activeUser.displayName||activeUser.email?.split('@')[0]||'Member';await addDoc(collection(db,'posts',postId,'comments'),{authorId:activeUser.uid,authorName,postId,text,published:true,createdAt:serverTimestamp()});textarea.value='';status.textContent='Posted.';setTimeout(()=>composer.remove(),250);}catch(error){console.error('Comment could not be saved',error);status.textContent=error?.code==='permission-denied'?'Comment permission was denied.':'Comment could not be posted. Please try again.';submit.disabled=false;}};
 }
 
 function enhance(posts){
   postsById=new Map(posts.map(p=>[p.id,p]));
-  const visible=posts.filter(p=>p.published!==false);
+  const visible=posts.filter(p=>p.published!==false);ensureAllFeedCards(posts);
   const articles=[...document.querySelectorAll('.feed .post')];
   visible.forEach((post,index)=>{
-    const article=articles[index];if(!article)return;
-    article.dataset.postId=post.id;article.dataset.actionsFor=post.id;
-    enhanceWelcomeProfileLink(article,post);
-    const row=article.querySelector('.post-actions');if(!row)return;
-    row.replaceChildren();
-    const rock=makeButton('🤘 ROCK ON','dashboard-rock',post.id);
-    const comment=makeButton('COMMENT','dashboard-comment',post.id);
-    const share=makeButton('SHARE','dashboard-share',post.id);
-    row.append(rock,comment,share);
-
-    const reactions=collection(db,'posts',post.id,'reactions');
-    cleanups.push(onSnapshot(reactions,snap=>{const mine=(auth.currentUser||currentUser)?snap.docs.some(d=>d.id===(auth.currentUser||currentUser).uid):false;rock.dataset.reacted=mine?'true':'false';rock.classList.toggle('is-active',mine);rock.textContent=`🤘 ROCK ON${snap.size?` (${snap.size})`:''}`;},()=>{}));
-
-    const comments=collection(db,'posts',post.id,'comments');
-    const area=ensureCommentArea(article,post.id);
-    cleanups.push(onSnapshot(comments,snap=>{comment.textContent=`COMMENT${snap.size?` (${snap.size})`:''}`;renderComments(area,snap,post.id);},error=>console.warn('Comments unavailable for post',post.id,error)));
+    const article=articles[index];if(!article)return;article.dataset.postId=post.id;article.dataset.actionsFor=post.id;enhanceWelcomeProfileLink(article,post);
+    const row=article.querySelector('.post-actions');if(!row)return;row.replaceChildren();
+    const rock=makeButton('🤘 ROCK ON','dashboard-rock',post.id);const comment=makeButton('COMMENT','dashboard-comment',post.id);const share=makeButton('SHARE','dashboard-share',post.id);row.append(rock,comment,share);
+    const reactions=collection(db,'posts',post.id,'reactions');cleanups.push(onSnapshot(reactions,snap=>{const mine=(auth.currentUser||currentUser)?snap.docs.some(d=>d.id===(auth.currentUser||currentUser).uid):false;rock.dataset.reacted=mine?'true':'false';rock.classList.toggle('is-active',mine);rock.textContent=`🤘 ROCK ON${snap.size?` (${snap.size})`:''}`;},()=>{}));
+    const comments=collection(db,'posts',post.id,'comments');const area=ensureCommentArea(article,post.id);cleanups.push(onSnapshot(comments,snap=>{comment.textContent=`COMMENT${snap.size?` (${snap.size})`:''}`;renderComments(area,snap,post.id);},error=>console.warn('Comments unavailable for post',post.id,error)));
   });
 }
 
 document.addEventListener('click',async event=>{
-  const button=event.target.closest('.dashboard-feed-action');if(!button)return;
-  event.preventDefault();event.stopPropagation();
-  const postId=button.dataset.postId;const post=postsById.get(postId);if(!post)return;
-  if(button.classList.contains('dashboard-comment')){openCommentComposer(postId);return;}
-  if(button.classList.contains('dashboard-share')){await sharePost(post);return;}
-  if(button.classList.contains('dashboard-rock')){
-    const user=auth.currentUser||currentUser;if(!user){location.href=`login.html?returnTo=${encodeURIComponent('index.html')}`;return;}
-    button.disabled=true;
-    try{const target=doc(db,'posts',postId,'reactions',user.uid);if(button.dataset.reacted==='true')await deleteDoc(target);else await setDoc(target,{userId:user.uid,createdAt:serverTimestamp()});}
-    catch(error){console.warn('Reaction could not be saved',error);}finally{button.disabled=false;}
-  }
+  const button=event.target.closest('.dashboard-feed-action');if(!button)return;event.preventDefault();event.stopPropagation();const postId=button.dataset.postId;const post=postsById.get(postId);if(!post)return;
+  if(button.classList.contains('dashboard-comment')){openCommentComposer(postId);return;}if(button.classList.contains('dashboard-share')){await sharePost(post);return;}
+  if(button.classList.contains('dashboard-rock')){const user=auth.currentUser||currentUser;if(!user){location.href=`login.html?returnTo=${encodeURIComponent('index.html')}`;return;}button.disabled=true;try{const target=doc(db,'posts',postId,'reactions',user.uid);if(button.dataset.reacted==='true')await deleteDoc(target);else await setDoc(target,{userId:user.uid,createdAt:serverTimestamp()});}catch(error){console.warn('Reaction could not be saved',error);}finally{button.disabled=false;}}
 },true);
 
 const style=document.createElement('style');style.textContent=`
@@ -165,7 +130,10 @@ const style=document.createElement('style');style.textContent=`
 @media(max-width:650px){.dashboard-feed-action{font-size:6px}.dashboard-comment-composer{padding:5px}.dashboard-comment-composer textarea{min-height:48px;padding:5px;font-size:7px}.dashboard-comment-buttons button{font-size:6px;padding:4px 5px}.dashboard-comment-status,.dashboard-comments-empty{font-size:6px}.dashboard-comment-row{font-size:7px;padding:4px 0;gap:4px}.dashboard-comment-admin-delete{font-size:5px;padding:2px 3px}}
 `;document.head.appendChild(style);
 
-const postsQuery=query(collection(db,'posts'),orderBy('createdAt','desc'));
-onSnapshot(postsQuery,snapshot=>{clearListeners();const posts=snapshot.docs.map(d=>({id:d.id,...d.data()}));[100,350,800,1500].forEach(delay=>setTimeout(()=>enhance(posts),delay));},error=>console.warn('Dashboard feed actions unavailable',error));
+onSnapshot(collection(db,'posts'),snapshot=>{
+  clearListeners();
+  const posts=snapshot.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{const diff=postMs(b)-postMs(a);return diff||String(a.id).localeCompare(String(b.id));});
+  [100,350,800,1500].forEach(delay=>setTimeout(()=>enhance(posts),delay));
+},error=>console.warn('Dashboard feed actions unavailable',error));
 
 import('./dashboard-media-upload.js?v=1').catch(error=>console.error('Dashboard media upload unavailable',error));
