@@ -75,6 +75,7 @@ async function normalizeAccountRoles(user) {
       await setDoc(doc(db, 'users', user.uid), userData, { merge: true });
       await setDoc(doc(db, 'profiles', user.uid), profileData, { merge: true });
       await normalizeWelcomePostAuthors(user);
+      if (document.querySelector('.admin-shell')) import('./admin-profile-type-control.js?v=1').catch(error=>console.warn('Profile type control unavailable:',error));
       window.dispatchEvent(new CustomEvent('bandtroductions-role-ready', { detail: { role: 'admin', userId: user.uid } }));
     } catch (error) {
       console.error('Could not normalize the administrator account:', error);
