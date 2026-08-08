@@ -126,7 +126,7 @@ async function apply(posts){
   }));
 }
 
-function scheduleApply(posts){[120,400,900,1700,2800].forEach(delay=>setTimeout(()=>apply(posts),delay));}
+function scheduleApply(posts){[250,1000].forEach(delay=>setTimeout(()=>apply(posts),delay));}
 
 onSnapshot(collection(db,'posts'),snap=>{
   const posts=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{const diff=postMs(b)-postMs(a);return diff||String(a.id).localeCompare(String(b.id));});
