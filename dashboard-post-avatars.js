@@ -86,3 +86,5 @@ onSnapshot(collection(db,'posts'),snap=>{
   const posts=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{const diff=postMs(b)-postMs(a);return diff||String(a.id).localeCompare(String(b.id));});
   scheduleApply(posts);
 },error=>console.warn('Could not enhance dashboard post avatars.',error));
+
+import('./dashboard-youtube-embeds.js?v=1').catch(error=>console.warn('YouTube embed enhancement unavailable.',error));
