@@ -6,6 +6,7 @@ const ADMIN_EMAIL='mbergeron79@gmail.com';
 const showsPanel=[...document.querySelectorAll('.right .panel')].find(panel=>panel.querySelector('h3')?.textContent.trim()==='Upcoming Shows');
 let currentUser=null;
 let latestPosts=[];
+let midnightTimer=null;
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
 const normalizeUrl=value=>{const t=String(value||'').trim();return t?(/^https?:\/\//i.test(t)?t:`https://${t}`):'';};
@@ -34,6 +35,13 @@ function profileHref(post,e){
   return id?`profile.html?id=${encodeURIComponent(id)}`:'index.html';
 }
 function isAdmin(){return !!currentUser&&String(currentUser.email||'').toLowerCase()===ADMIN_EMAIL;}
+function localToday(){const d=new Date();d.setHours(0,0,0,0);return d;}
+function scheduleMidnightRefresh(){
+  if(midnightTimer)clearTimeout(midnightTimer);
+  const now=new Date();
+  const next=new Date(now);next.setHours(24,0,1,0);
+  midnightTimer=setTimeout(()=>{renderShows();scheduleMidnightRefresh();},Math.max(1000,next-now));
+}
 
 const style=document.createElement('style');
 style.textContent=`
@@ -69,7 +77,7 @@ function buildEditor(post,e,row){
     try{
       const summary=[next.title,next.venue&&`at ${next.venue}`,next.location&&`in ${next.location}`].filter(Boolean).join(' ');
       const content=next.details?`${summary}\n\n${next.details}`:summary;
-      await updateDoc(doc(db,'posts',post.id),{event:next,content,linkUrl:next.ticketUrl,updatedAt:serverTimestamp()});
+      await updateDoc(doc(db,'posts',post.id),{event:next,eventDate:next.date,showDate:next.date,content,linkUrl:next.ticketUrl,updatedAt:serverTimestamp()});
       status.textContent='Saved.';
     }catch(error){console.error(error);status.textContent=error.code==='permission-denied'?'Admin permission blocked this edit.':'Could not save changes.';}
     finally{save.disabled=false;}
@@ -81,11 +89,11 @@ function renderShows(){
   if(!showsPanel)return;
   const heading=showsPanel.querySelector('h3');showsPanel.replaceChildren();if(heading)showsPanel.appendChild(heading);
   const create=document.createElement('a');create.href='show-event.html';create.className='btn primary';create.textContent='POST A SHOW';create.style.cssText='display:block;text-align:center;margin:8px';showsPanel.appendChild(create);
-  const now=new Date();now.setHours(0,0,0,0);
-  const shows=latestPosts.filter(p=>p.published!==false&&p.category==='show').map(p=>({post:p,e:eventData(p)})).filter(({e})=>{const d=normalizeDate(e.date);return !d||d>=now;}).sort((a,b)=>{const ad=normalizeDate(a.e.date),bd=normalizeDate(b.e.date);if(ad&&bd)return ad-bd;if(ad)return-1;if(bd)return 1;return 0;}).slice(0,5);
+  const today=localToday();
+  const shows=latestPosts.filter(p=>p.published!==false&&p.category==='show').map(p=>({post:p,e:eventData(p)})).filter(({e})=>{const d=normalizeDate(e.date);return d&&d>=today;}).sort((a,b)=>normalizeDate(a.e.date)-normalizeDate(b.e.date)).slice(0,5);
   if(!shows.length){const empty=document.createElement('div');empty.style.padding='12px';empty.style.color='#9ca3a3';empty.textContent='Show/Event posts will appear here automatically.';showsPanel.appendChild(empty);return;}
   shows.forEach(({post,e})=>{
-    const eventDate=normalizeDate(e.date);const d=eventDate||(post.createdAt?.toDate?post.createdAt.toDate():new Date());
+    const d=normalizeDate(e.date);
     const artist=first(post.authorName,e.title,'Upcoming Show');
     const row=document.createElement('div');row.className='show';row.dataset.postId=post.id;
     const detailBits=[];
@@ -106,6 +114,14 @@ function renderShows(){
   });
 }
 
-onAuthStateChanged(auth,user=>{currentUser=user||null;renderShows();});
+function forceFinalRender(){
+  renderShows();
+  [100,350,800,1600].forEach(delay=>setTimeout(renderShows,delay));
+}
+
+onAuthStateChanged(auth,user=>{currentUser=user||null;forceFinalRender();});
 const postsQuery=query(collection(db,'posts'),orderBy('createdAt','desc'));
-onSnapshot(postsQuery,snapshot=>{latestPosts=snapshot.docs.map(d=>({id:d.id,...d.data()}));renderShows();},error=>console.warn('Upcoming Shows admin/details enhancer unavailable.',error));
+onSnapshot(postsQuery,snapshot=>{latestPosts=snapshot.docs.map(d=>({id:d.id,...d.data()}));forceFinalRender();},error=>console.warn('Upcoming Shows admin/details enhancer unavailable.',error));
+window.addEventListener('focus',renderShows);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')renderShows();});
+scheduleMidnightRefresh();
