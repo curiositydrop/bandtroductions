@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { addDoc, collection, doc, getDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 // Keep the dashboard user's Online Now heartbeat active while they remain on the homepage.
 import('./presence.js').catch(error=>console.warn('Presence heartbeat unavailable.',error));
@@ -40,6 +40,8 @@ syncHeaderLogo();
 window.addEventListener('resize',syncHeaderLogo);
 
 const initialsFor = name => (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase() || 'BT';
+const stampMs = stamp => stamp?.toMillis ? stamp.toMillis() : (stamp?.seconds ? stamp.seconds*1000 : 0);
+const postMs = post => stampMs(post.createdAt)||stampMs(post.updatedAt)||stampMs(post.publishedAt)||stampMs(post.submittedAt)||0;
 const formatDate = stamp => !stamp?.toDate ? 'Just now' : new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(stamp.toDate());
 function safeText(value=''){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));}
 function normalizeDate(value){if(!value)return null;const d=new Date(`${value}T12:00:00`);return Number.isNaN(d.getTime())?null:d;}
@@ -287,7 +289,13 @@ onAuthStateChanged(auth,async user=>{
   }
 });
 
-const postsQuery=query(collection(db,'posts'),orderBy('createdAt','desc'));
-onSnapshot(postsQuery,snapshot=>{const posts=snapshot.docs.map(docSnap=>({id:docSnap.id,...docSnap.data()}));renderFeed(posts);renderShows(posts);},error=>console.error('Could not load live posts into dashboard.',error));
+onSnapshot(collection(db,'posts'),snapshot=>{
+  const posts=snapshot.docs.map(docSnap=>({id:docSnap.id,...docSnap.data()})).sort((a,b)=>{const diff=postMs(b)-postMs(a);return diff||String(a.id).localeCompare(String(b.id));});
+  renderFeed(posts);
+  renderShows(posts);
+},error=>{
+  console.error('Could not load live posts into dashboard.',error);
+  if(feed){const heading=feed.querySelector('h3');feed.replaceChildren();if(heading)feed.appendChild(heading);const failed=document.createElement('div');failed.className='post';failed.innerHTML='<p>Community feed temporarily unavailable. Please refresh.</p>';feed.appendChild(failed);}
+});
 
 onSnapshot(collection(db,'users'),snapshot=>{renderOnline(snapshot.docs.map(d=>({id:d.id,...d.data()})));},error=>{console.warn('Could not load Online Now.',error);if(onlineGrid)onlineGrid.innerHTML='<div class="online-empty">Online status unavailable.</div>';});
