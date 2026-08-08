@@ -25,8 +25,9 @@
   <div id="global-footer"></div>
   <script src="global.js?v=2"></script>
   <script type="module">
-    import { auth } from './firebase-dev.js';
+    import { auth, db } from './firebase-dev.js';
     import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+    import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
     const params = new URLSearchParams(location.search);
     const requestedReturn = params.get('returnTo') || '';
@@ -70,11 +71,29 @@
       button.disabled = true;
       message.textContent = 'Logging in...';
       try {
-        await signInWithEmailAndPassword(
+        const credential = await signInWithEmailAndPassword(
           auth,
           emailInput.value.trim(),
           document.getElementById('password').value
         );
+
+        // If the member created an account but never finished their public profile,
+        // always resume onboarding before sending them into the rest of the site.
+        try {
+          const [userSnapshot, profileSnapshot] = await Promise.all([
+            getDoc(doc(db, 'users', credential.user.uid)),
+            getDoc(doc(db, 'profiles', credential.user.uid))
+          ]);
+          const userData = userSnapshot.exists() ? userSnapshot.data() : {};
+          const profileComplete = userData.profileComplete === true && profileSnapshot.exists();
+          if (!profileComplete) {
+            window.location.href = 'profile-setup.html?resume=1';
+            return;
+          }
+        } catch (profileCheckError) {
+          console.warn('Could not confirm profile completion during login.', profileCheckError);
+        }
+
         window.location.href = safeReturn;
       } catch (error) {
         console.error(error);
