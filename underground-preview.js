@@ -221,7 +221,7 @@ async function renderOnline(users){
 
 function renderFeed(posts){
   if(!feed)return;const heading=feed.querySelector('h3');feed.replaceChildren();if(heading)feed.appendChild(heading);
-  const visible=posts.filter(p=>p.published!==false).slice(0,6);
+  const visible=posts.filter(p=>p.published!==false);
   if(!visible.length){const empty=document.createElement('div');empty.className='post';empty.innerHTML='<p>No community posts yet.</p>';feed.appendChild(empty);return;}
   visible.forEach(post=>{
     const article=document.createElement('article');article.className='post';const name=safeText(post.authorName||'BANDtroductions Member');
