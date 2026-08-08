@@ -9,10 +9,8 @@ let postsById=new Map();
 let cleanups=[];
 
 const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]));
-const initials=name=>String(name||'BT').trim().split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'BT';
 const stampMs=stamp=>stamp?.toMillis?stamp.toMillis():(stamp?.seconds?stamp.seconds*1000:0);
 const postMs=post=>stampMs(post.createdAt)||stampMs(post.updatedAt)||stampMs(post.publishedAt)||stampMs(post.submittedAt)||0;
-const formatDate=post=>{const ms=postMs(post);return ms?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(ms)):'Earlier post';};
 const isWelcomePost=post=>Boolean(post?.systemPost||post?.welcomedProfileId||String(post?.id||'').startsWith('welcome_'));
 const displayAuthor=post=>isWelcomePost(post)?'BANDtroductions Admin':(post.authorName||'BANDtroductions Member');
 
@@ -31,22 +29,6 @@ onAuthStateChanged(auth,async user=>{
 
 function clearListeners(){cleanups.forEach(fn=>{try{fn();}catch{}});cleanups=[];}
 function makeButton(label,className,postId){const b=document.createElement('button');b.type='button';b.className=`dashboard-feed-action ${className}`;b.dataset.postId=postId;b.textContent=label;return b;}
-
-function renderLegacyCard(post){
-  const article=document.createElement('article');article.className='post';article.dataset.legacyFeedCard='1';
-  const name=displayAuthor(post);
-  if(isWelcomePost(post))article.dataset.systemWelcome='1';
-  article.innerHTML=`<div class="post-head"><div class="post-avatar">${esc(initials(name))}</div><div><div class="post-name">${esc(name)}</div><div class="post-meta">${esc(formatDate(post))}${post.category?` · ${esc(post.category)}`:''}</div></div></div><p>${esc(post.content||'')}</p>${post.imageUrl?`<img src="${esc(post.imageUrl)}" alt="" style="display:block;width:100%;margin-top:12px;border:1px solid #333;max-height:420px;object-fit:cover">`:''}<div class="post-actions"><span>ROCK ON</span><span>COMMENT</span><span>SHARE</span></div>`;
-  return article;
-}
-
-function ensureAllFeedCards(posts){
-  const feed=document.querySelector('.feed');if(!feed)return;
-  const visible=posts.filter(p=>p.published!==false);
-  const existing=[...feed.querySelectorAll('.post')];
-  if(existing.length>=visible.length)return;
-  for(let i=existing.length;i<visible.length;i++)feed.appendChild(renderLegacyCard(visible[i]));
-}
 
 function enhanceWelcomeProfileLink(article,post){
   if(!article||!post)return;
@@ -116,8 +98,9 @@ function openCommentComposer(postId){
 
 function enhance(posts){
   postsById=new Map(posts.map(p=>[p.id,p]));
-  const visible=posts.filter(p=>p.published!==false);ensureAllFeedCards(posts);
+  const visible=posts.filter(p=>p.published!==false);
   const articles=[...document.querySelectorAll('.feed .post')];
+  if(articles.length<visible.length)return;
   visible.forEach((post,index)=>{
     const article=articles[index];if(!article)return;article.dataset.postId=post.id;article.dataset.actionsFor=post.id;lockWelcomeAuthor(article,post);enhanceWelcomeProfileLink(article,post);
     const row=article.querySelector('.post-actions');if(!row)return;row.replaceChildren();
@@ -143,7 +126,7 @@ const style=document.createElement('style');style.textContent=`
 onSnapshot(collection(db,'posts'),snapshot=>{
   clearListeners();
   const posts=snapshot.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{const diff=postMs(b)-postMs(a);return diff||String(a.id).localeCompare(String(b.id));});
-  [100,350,800,1500].forEach(delay=>setTimeout(()=>enhance(posts),delay));
+  [150,450,900,1600].forEach(delay=>setTimeout(()=>enhance(posts),delay));
 },error=>console.warn('Dashboard feed actions unavailable',error));
 
 import('./dashboard-media-upload.js?v=1').catch(error=>console.error('Dashboard media upload unavailable',error));
