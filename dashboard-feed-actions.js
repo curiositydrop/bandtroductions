@@ -122,7 +122,7 @@ function openCommentComposer(postId){
 
 function enhance(posts){
   postsById=new Map(posts.map(p=>[p.id,p]));
-  const visible=posts.filter(p=>p.published!==false).slice(0,6);
+  const visible=posts.filter(p=>p.published!==false);
   const articles=[...document.querySelectorAll('.feed .post')];
   visible.forEach((post,index)=>{
     const article=articles[index];if(!article)return;
