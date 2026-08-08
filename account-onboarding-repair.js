@@ -1,7 +1,6 @@
 import { auth, db } from './firebase-dev.js';
-import { createWelcomePost } from './welcome-profile-post.js?v=1';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 let ran=false;
 
@@ -17,6 +16,51 @@ async function currentUserIsAdmin(user){
   }
 }
 
+async function repairOne({uid,displayName,accountType='fan'},adminUser){
+  if(!uid||!displayName)return false;
+  const profileRef=doc(db,'profiles',uid);
+  const existing=await getDoc(profileRef);
+  const existingData=existing.exists()?existing.data():{};
+
+  if(!existing.exists()){
+    await setDoc(profileRef,{
+      ownerId:uid,
+      accountType:String(accountType||'fan').toLowerCase(),
+      displayName:String(displayName).trim(),
+      bio:'Profile setup in progress.',
+      published:true,
+      approvalStatus:'approved',
+      onboardingPlaceholder:true,
+      createdAt:serverTimestamp(),
+      updatedAt:serverTimestamp()
+    },{merge:true});
+  }else if(existingData.published!==true){
+    await setDoc(profileRef,{published:true,approvalStatus:'approved',updatedAt:serverTimestamp()},{merge:true});
+  }
+
+  const refreshed=(await getDoc(profileRef)).data()||{};
+  if(!refreshed.welcomePostCreated){
+    const postId=`welcome_${uid}`;
+    await setDoc(doc(db,'posts',postId),{
+      authorId:adminUser.uid,
+      authorName:'BANDtroductions Admin',
+      accountType:'fan',
+      category:'general',
+      content:`👋 Welcome ${displayName} — thank you for joining our community! 🤘`,
+      linkUrl:`profile.html?id=${encodeURIComponent(uid)}`,
+      imageUrl:'',
+      welcomedProfileId:uid,
+      welcomedAccountType:String(accountType||'fan').toLowerCase(),
+      systemPost:true,
+      published:true,
+      createdAt:serverTimestamp(),
+      updatedAt:serverTimestamp()
+    },{merge:true});
+    await updateDoc(profileRef,{welcomePostCreated:true,welcomePostCreatedAt:serverTimestamp()});
+  }
+  return true;
+}
+
 async function repairIncompleteAccounts(){
   if(ran)return;
   const user=auth.currentUser;
@@ -24,37 +68,30 @@ async function repairIncompleteAccounts(){
   ran=true;
 
   try{
-    const users=await getDocs(collection(db,'users'));
-    for(const userDoc of users.docs){
-      const data=userDoc.data()||{};
-      const uid=userDoc.id;
-      const displayName=String(data.displayName||'').trim();
-      const accountType=String(data.accountType||'fan').toLowerCase();
-      if(!uid||!displayName||data.profileComplete===true)continue;
+    // One-time recovery for the account that registered successfully but never
+    // received a public profile/welcome post because the broad users scan was blocked.
+    await repairOne({
+      uid:'zntkCaePbofPiR6A5fTKYCULe3G3',
+      displayName:'Eye’s Upon',
+      accountType:'band'
+    },user);
 
-      const profileRef=doc(db,'profiles',uid);
-      const profileSnap=await getDoc(profileRef);
-      if(!profileSnap.exists()){
-        await setDoc(profileRef,{
-          ownerId:uid,
-          accountType,
-          displayName,
-          bio:'Profile setup in progress.',
-          published:true,
-          approvalStatus:'approved',
-          onboardingPlaceholder:true,
-          createdAt:data.createdAt||serverTimestamp(),
-          updatedAt:serverTimestamp()
-        },{merge:true});
+    // Keep the general repair for any other incomplete accounts when rules allow it.
+    try{
+      const users=await getDocs(collection(db,'users'));
+      for(const userDoc of users.docs){
+        const data=userDoc.data()||{};
+        const uid=userDoc.id;
+        const displayName=String(data.displayName||'').trim();
+        const accountType=String(data.accountType||'fan').toLowerCase();
+        if(!uid||!displayName||data.profileComplete===true)continue;
+        await repairOne({uid,displayName,accountType},user);
       }
-
-      const currentProfile=(await getDoc(profileRef)).data()||{};
-      if(!currentProfile.welcomePostCreated){
-        await createWelcomePost({profileId:uid,displayName,accountType});
-      }
+    }catch(scanError){
+      console.warn('Broad incomplete-account scan unavailable; targeted repair still ran.',scanError);
     }
   }catch(error){
-    console.warn('Incomplete account backfill could not finish.',error);
+    console.warn('Incomplete account repair could not finish.',error);
   }
 }
 
