@@ -75,7 +75,7 @@
     const requestedReturn = params.get('returnTo') || '';
     const safeReturn = requestedReturn && !requestedReturn.startsWith('//') && !requestedReturn.includes('://')
       ? requestedReturn
-      : 'welcome.html';
+      : 'index.html';
 
     const loginLink = document.getElementById('login-link');
     if (requestedReturn) loginLink.href = `login.html?returnTo=${encodeURIComponent(safeReturn)}`;
@@ -128,7 +128,9 @@
           submittedBy: email,
           details: `New ${accountType || 'member'} account created. User ID: ${credential.user.uid}`
         });
-        window.location.href = safeReturn;
+        // Account creation is only step one. Send every new member straight into
+        // profile setup so they do not mistake an account for a published profile.
+        window.location.href = 'profile-setup.html?new=1';
       } catch (error) {
         console.error(error);
         const friendly = {
