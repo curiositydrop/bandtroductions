@@ -1,0 +1,2 @@
+Force GitHub Pages rebuild after restoring verified community-feed baseline 11da43582039fa40881938fa13e693a66e1dc17a.
+No application logic changed in this commit.
