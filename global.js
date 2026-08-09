@@ -64,7 +64,7 @@
   }
 })();
 
-fetch('global.html?v=7')
+fetch('global.html?v=8')
   .then(response => response.text())
   .then(async data => {
     const temp = document.createElement('div');temp.innerHTML = data;
