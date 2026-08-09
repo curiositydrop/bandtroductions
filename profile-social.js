@@ -89,15 +89,31 @@ async function installActions() {
     try {
       const snap = await getDoc(fRef);
       if (snap.exists()) await deleteDoc(fRef);
-      else await setDoc(fRef,{
-        followerId:currentUser.uid,
-        targetId:profileId,
-        targetName:loadedProfile.displayName||'Profile',
-        targetType:loadedProfile.accountType||'member',
-        targetImage:loadedProfile.imageUrl||loadedProfile.profileImageUrl||'',
-        targetLocation:loadedProfile.location||'',
-        createdAt:serverTimestamp()
-      });
+      else {
+        const actorName = currentUser.displayName || 'BANDtroductions Member';
+        await setDoc(fRef,{
+          followerId:currentUser.uid,
+          targetId:profileId,
+          targetName:loadedProfile.displayName||'Profile',
+          targetType:loadedProfile.accountType||'member',
+          targetImage:loadedProfile.imageUrl||loadedProfile.profileImageUrl||'',
+          targetLocation:loadedProfile.location||'',
+          createdAt:serverTimestamp()
+        });
+        const recipientId = loadedProfile.ownerId || profileId;
+        if (recipientId && recipientId !== currentUser.uid) {
+          await setDoc(doc(db,'notifications',`follow_${currentUser.uid}_${profileId}`),{
+            recipientId,
+            actorId:currentUser.uid,
+            actorName,
+            type:'follow',
+            message:`${actorName} started following you.`,
+            linkUrl:`profile.html?id=${encodeURIComponent(currentUser.uid)}`,
+            read:false,
+            createdAt:serverTimestamp()
+          },{merge:true});
+        }
+      }
       await refresh();
     } catch (error) { console.error(error); alert(error?.code==='permission-denied'?'Follow permissions are not enabled yet.':'Follow could not be updated.'); }
     finally { followButton.disabled = false; }
