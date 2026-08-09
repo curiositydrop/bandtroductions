@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { addDoc, collection, doc, getDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { addDoc, collection, doc, getDoc, getDocs, onSnapshot, query, serverTimestamp, setDoc, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 // Keep the dashboard user's Online Now heartbeat active while they remain on the homepage.
 import('./presence.js').catch(error=>console.warn('Presence heartbeat unavailable.',error));
@@ -82,6 +82,54 @@ function renderVideo(post){
   return raw?`<a href="${safeText(raw)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;color:#25c7c1;font-weight:900">WATCH VIDEO →</a>`:'';
 }
 
+async function notifyFollowersOfNewPost(postId,authorName){
+  if(!signedInUser)return;
+  try{
+    const follows=await getDocs(query(collection(db,'follows'),where('targetId','==',signedInUser.uid)));
+    for(const followDoc of follows.docs){
+      const followerId=followDoc.data()?.followerId;
+      if(!followerId||followerId===signedInUser.uid)continue;
+      await setDoc(doc(db,'notifications',`newpost_${postId}_${followerId}`),{
+        recipientId:followerId,
+        actorId:signedInUser.uid,
+        actorName:authorName,
+        type:'new-post',
+        message:`${authorName} posted something new.`,
+        linkUrl:`index.html?post=${encodeURIComponent(postId)}`,
+        postId,
+        read:false,
+        createdAt:serverTimestamp()
+      },{merge:true});
+    }
+  }catch(error){console.warn('Follower notifications unavailable',error);}
+}
+
+async function notifyTaggedProfiles(postId,content,authorName){
+  if(!signedInUser||!content.includes('@'))return;
+  try{
+    const profiles=await getDocs(query(collection(db,'profiles'),where('published','==',true)));
+    const lower=content.toLowerCase();
+    for(const profileDoc of profiles.docs){
+      const profile=profileDoc.data()||{};
+      const name=String(profile.displayName||'').trim();
+      const recipientId=profile.ownerId||profileDoc.id;
+      if(!name||!recipientId||recipientId===signedInUser.uid)continue;
+      if(!lower.includes(`@${name.toLowerCase()}`))continue;
+      await setDoc(doc(db,'notifications',`tag_${postId}_${recipientId}`),{
+        recipientId,
+        actorId:signedInUser.uid,
+        actorName:authorName,
+        type:'tag',
+        message:`${authorName} tagged you in a post.`,
+        linkUrl:`index.html?post=${encodeURIComponent(postId)}`,
+        postId,
+        read:false,
+        createdAt:serverTimestamp()
+      },{merge:true});
+    }
+  }catch(error){console.warn('Tag notifications unavailable',error);}
+}
+
 function ensureComposer(){
   if(!centerColumn||!heroPanel)return null;
   let composer=document.getElementById('dashboard-composer');
@@ -124,9 +172,10 @@ async function publishDashboardPost(){
   button.disabled=true;status.textContent='Posting…';
   try{
     const profile=signedInProfile||{};
-    await addDoc(collection(db,'posts'),{
+    const authorName=profile.displayName||profile.name||profile.bandName||profile.venueName||signedInUser.displayName||'BANDtroductions Member';
+    const postRef=await addDoc(collection(db,'posts'),{
       authorId:signedInUser.uid,
-      authorName:profile.displayName||profile.name||profile.bandName||profile.venueName||signedInUser.displayName||'BANDtroductions Member',
+      authorName,
       accountType:profile.accountType||profile.profileType||'member',
       category:activeMode==='text'?'general':activeMode,
       content,
@@ -136,6 +185,10 @@ async function publishDashboardPost(){
       createdAt:serverTimestamp(),
       updatedAt:serverTimestamp()
     });
+    await Promise.all([
+      notifyFollowersOfNewPost(postRef.id,authorName),
+      notifyTaggedProfiles(postRef.id,content,authorName)
+    ]);
     composer.querySelector('#dash-post-text').value='';composer.querySelector('#dash-image-url').value='';composer.querySelector('#dash-video-url').value='';
     status.textContent='Posted.';setTimeout(()=>{composer.classList.remove('is-open');status.textContent='';},650);
   }catch(error){console.error(error);status.textContent=error.code==='permission-denied'?'Post permissions blocked this post.':'Post could not be published.';}
@@ -197,115 +250,62 @@ function renderSponsors(){
     {name:'Rock Rage Radio',image:'ff796046372b48681a359daff6375626.jpeg',url:'http://www.rockrageradio.com'},
     {name:'The Plowzone Radio Show',image:'IMG_0908.jpeg',url:'sponsors.html'},
     {name:'Gone Rogue Records',image:'IMG_0699.jpeg',url:'sponsors.html'},
-    {name:'New Leaf Painting Company',image:'9A3AD6D7-8C0C-4C27-BE09-A19C2F0834AE.png',url:'https://www.newleafpaintingco.com'},
-    {name:'Woodies Drumsticks',image:'Logo.jpeg',url:'https://woodiesdrumsticks.com/bandtroductions'}
+    {name:'New Leaf Painting Company',image:'IMG_9468.jpeg',url:'sponsors.html'}
   ];
   sponsorGrid.replaceChildren();
-  sponsors.forEach(s=>{const a=document.createElement('a');a.className='sponsor';a.href=s.url;if(/^https?:/i.test(s.url)){a.target='_blank';a.rel='noopener';}a.title=s.name;a.style.cssText='padding:4px;overflow:hidden;text-decoration:none';const img=document.createElement('img');img.src=s.image;img.alt=s.name;img.loading='lazy';img.style.cssText='display:block;width:100%;height:100%;max-height:82px;object-fit:contain';a.appendChild(img);sponsorGrid.appendChild(a);});
-  const more=document.createElement('a');more.className='sponsor';more.href='sponsors.html';more.textContent='VIEW ALL / BECOME A SPONSOR';more.style.textDecoration='none';sponsorGrid.appendChild(more);
+  sponsors.forEach(item=>{const a=document.createElement('a');a.className='sponsor';a.href=item.url;a.target=item.url.startsWith('http')?'_blank':'_self';a.rel=item.url.startsWith('http')?'noopener':'';a.innerHTML=`<img src="${safeText(item.image)}" alt="${safeText(item.name)}" style="width:100%;height:100%;object-fit:contain;display:block">`;sponsorGrid.appendChild(a);});
 }
-
-async function renderOnline(users){
-  if(!onlineGrid)return;
-  const cutoff=Date.now()-150000;
-  const active=users.filter(u=>u.lastActiveAt?.toDate&&u.lastActiveAt.toDate().getTime()>=cutoff).sort((a,b)=>b.lastActiveAt.toDate()-a.lastActiveAt.toDate()).slice(0,8);
-  if(!active.length){onlineGrid.innerHTML='<div class="online-empty">No one is active right now.</div>';return;}
-  const enriched=await Promise.all(active.map(async user=>{
-    try{
-      const snap=await getDoc(doc(db,'profiles',user.id));
-      return {id:user.id,...user,...(snap.exists()?snap.data():{})};
-    }catch{return user;}
-  }));
-  onlineGrid.replaceChildren();
-  enriched.forEach(person=>{
-    const name=person.displayName||person.name||person.bandName||person.venueName||'Member';
-    const image=person.avatarUrl||person.photoURL||person.imageUrl||person.profileImage||person.avatar||'';
-    const a=document.createElement('a');
-    a.className='online-card';
-    a.href=`profile.html?id=${encodeURIComponent(person.id)}`;
-    a.title=`${name} is online`;
-    if(image){const img=document.createElement('img');img.src=image;img.alt=name;img.loading='lazy';a.appendChild(img);}else{const f=document.createElement('span');f.className='online-fallback';f.textContent=initialsFor(name);a.appendChild(f);}
-    const label=document.createElement('span');label.className='online-label';label.textContent=name;a.appendChild(label);
-    const dot=document.createElement('span');dot.className='online-dot';dot.setAttribute('aria-label','Online');a.appendChild(dot);
-    onlineGrid.appendChild(a);
-  });
-}
-
-function renderFeed(posts){
-  if(!feed)return;const heading=feed.querySelector('h3');feed.replaceChildren();if(heading)feed.appendChild(heading);
-  const visible=posts.filter(p=>p.published!==false);
-  if(!visible.length){const empty=document.createElement('div');empty.className='post';empty.innerHTML='<p>No community posts yet.</p>';feed.appendChild(empty);return;}
-  visible.forEach(post=>{
-    const article=document.createElement('article');article.className='post';const name=safeText(post.authorName||'BANDtroductions Member');
-    article.innerHTML=`<div class="post-head"><div class="post-avatar">${safeText(initialsFor(post.authorName))}</div><div><div class="post-name">${name}</div><div class="post-meta">${safeText(formatDate(post.createdAt))}${post.category?` · ${safeText(post.category)}`:''}</div></div></div>${renderPostContent(post)}${post.imageUrl?`<img src="${safeText(post.imageUrl)}" alt="" style="display:block;width:100%;margin-top:12px;border:1px solid #333;max-height:420px;object-fit:cover">`:''}${renderVideo(post)}<div class="post-actions"><span>ROCK ON</span><span>COMMENT</span><span>SHARE</span></div>`;
-    feed.appendChild(article);
-  });
-}
-
-function renderShows(posts){
-  if(!showsPanel)return;const heading=showsPanel.querySelector('h3');showsPanel.replaceChildren();if(heading)showsPanel.appendChild(heading);
-  const create=document.createElement('a');create.href='show-event.html';create.className='btn primary';create.textContent='POST A SHOW';create.style.cssText='display:block;text-align:center;margin:8px';showsPanel.appendChild(create);
-  const now=new Date();now.setHours(0,0,0,0);
-  const shows=posts.filter(p=>p.published!==false&&p.category==='show').filter(p=>{const d=normalizeDate(p.event?.date);return !d||d>=now;}).sort((a,b)=>{const ad=normalizeDate(a.event?.date),bd=normalizeDate(b.event?.date);if(ad&&bd)return ad-bd;if(ad)return-1;if(bd)return 1;return 0;}).slice(0,5);
-  if(!shows.length){const empty=document.createElement('div');empty.style.padding='12px';empty.style.color='#9ca3a3';empty.textContent='Show/Event posts will appear here automatically.';showsPanel.appendChild(empty);return;}
-  shows.forEach(post=>{
-    const e=post.event||{};const eventDate=normalizeDate(e.date);const d=eventDate||(post.createdAt?.toDate?post.createdAt.toDate():new Date());
-    const artist=post.authorName||e.artist||e.band||e.title||'Upcoming Show';const venue=e.venue||'';const time=e.time||'';
-    const row=document.createElement('div');row.className='show';
-    const detailBits=[];if(e.title&&e.title!==artist)detailBits.push(`<div><b>Event:</b> ${safeText(e.title)}</div>`);if(e.location)detailBits.push(`<div><b>Location:</b> ${safeText(e.location)}</div>`);if(e.price)detailBits.push(`<div><b>Price:</b> ${safeText(e.price)}</div>`);if(e.age)detailBits.push(`<div><b>Age:</b> ${safeText(e.age)}</div>`);if(e.details)detailBits.push(`<div style="margin-top:5px">${safeText(e.details)}</div>`);else if(post.content)detailBits.push(`<div style="margin-top:5px">${safeText(post.content)}</div>`);
-    const links=[];if(e.ticketUrl)links.push(`<a class="btn primary" href="${safeText(e.ticketUrl)}" target="_blank" rel="noopener">TICKETS</a>`);if(e.donateUrl)links.push(`<a class="btn" href="${safeText(e.donateUrl)}" target="_blank" rel="noopener">SUPPORT</a>`);links.push(`<a class="btn" href="${safeText(profileHref(post))}">PROFILE</a>`);
-    row.innerHTML=`<div class="date">${d.toLocaleString('en-US',{month:'short'}).toUpperCase()}<span>${d.getDate()}</span></div><div class="show-summary"><b>${safeText(artist)}</b>${venue?`<div class="show-venue">${safeText(venue)}</div>`:''}${time?`<div class="show-time">${safeText(time)}</div>`:''}<button type="button" class="show-details-btn">DETAILS +</button><div class="show-extra">${detailBits.join('')}${links.join('')}</div></div>`;
-    const toggle=row.querySelector('.show-details-btn');toggle.addEventListener('click',()=>{const open=row.classList.toggle('is-open');toggle.textContent=open?'DETAILS −':'DETAILS +';});showsPanel.appendChild(row);
-  });
-}
-
 renderSponsors();
 
-if(messagesLink){
-  messagesLink.addEventListener('click',event=>{
-    if(messagesLink.getAttribute('href')==='#')event.preventDefault();
-  });
+function renderOnlineProfiles(rows=[]){
+  if(!onlineGrid)return;
+  onlineGrid.replaceChildren();
+  if(!rows.length){onlineGrid.innerHTML='<div class="online-empty">No active profiles yet.</div>';return;}
+  rows.slice(0,8).forEach(row=>{const p=row.profile||{},name=p.displayName||row.name||'Member',image=p.imageUrl||p.avatarUrl||p.photoURL||'';const a=document.createElement('a');a.className='online-card';a.href=`profile.html?id=${encodeURIComponent(row.profileId||row.uid)}`;a.title=name;a.innerHTML=image?`<img src="${safeText(image)}" alt="${safeText(name)}"><span class="online-dot"></span><span class="online-label">${safeText(name)}</span>`:`<span class="online-fallback">${safeText(initialsFor(name))}</span><span class="online-dot"></span><span class="online-label">${safeText(name)}</span>`;onlineGrid.appendChild(a);});
 }
 
-if(logoutLink){
-  logoutLink.addEventListener('click',async event=>{
-    event.preventDefault();
-    try{await signOut(auth);location.reload();}catch(error){console.warn('Could not log out.',error);}
-  });
+function renderShows(rows=[]){
+  if(!showsPanel)return;
+  const heading=showsPanel.querySelector('h3');
+  showsPanel.replaceChildren();
+  if(heading)showsPanel.appendChild(heading);
+  rows.slice(0,6).forEach(show=>{const item=document.createElement('div');item.className='show';const date=normalizeDate(show.eventDate);const month=date?date.toLocaleString('en-US',{month:'short'}).toUpperCase():'TBD';const day=date?date.getDate():'?';const title=show.eventTitle||show.content||'Show';const venue=show.venueName||show.location||'';item.innerHTML=`<div class="date">${safeText(month)}<span>${safeText(day)}</span></div><div class="show-summary"><b>${safeText(title)}</b>${venue?`<div class="show-venue">${safeText(venue)}</div>`:''}${show.eventTime?`<div class="show-time">${safeText(show.eventTime)}</div>`:''}</div>`;showsPanel.appendChild(item);});
+}
+
+function renderFeedPosts(rows=[]){
+  if(!feed)return;
+  const heading=feed.querySelector('h3');
+  feed.replaceChildren();
+  if(heading)feed.appendChild(heading);
+  rows.filter(p=>p.published!==false).slice(0,6).forEach(post=>{const article=document.createElement('article');article.className='post';const name=post.systemPost?'BANDtroductions Admin':(post.authorName||'BANDtroductions Member');const profileUrl=post.systemPost&&post.linkUrl?post.linkUrl:profileHref(post);article.innerHTML=`<div class="post-head"><div class="post-avatar">${safeText(initialsFor(name))}</div><div><a class="post-name" href="${safeText(profileUrl)}">${safeText(name)}</a><div class="post-meta">${safeText(formatDate(post.createdAt))}${post.category?` · ${safeText(post.category)}`:''}</div></div></div>${renderPostContent(post)}${post.imageUrl?`<img src="${safeText(post.imageUrl)}" alt="" style="display:block;width:100%;margin-top:12px;border:1px solid #333;max-height:420px;object-fit:cover">`:''}${renderVideo(post)}<div class="post-actions"><span>ROCK ON</span><span>COMMENT</span><span>SHARE</span></div>`;feed.appendChild(article);});
 }
 
 onAuthStateChanged(auth,async user=>{
-  signedInUser=user||null;signedInProfile=null;
-  if(!profilePanel)return;
-  const title=profilePanel.querySelector('h3');
-  if(!user){
-    clearProfileSummary();
-    if(title)title.textContent='My Profile';
-    if(profileLink){profileLink.textContent='Log In / Create Account';profileLink.href='login.html?returnTo=index.html';}
-    if(logoutLink)logoutLink.style.display='none';
-    return;
-  }
-  if(logoutLink)logoutLink.style.display='block';
-  try{
-    const [profileSnap,userSnap]=await Promise.all([getDoc(doc(db,'profiles',user.uid)),getDoc(doc(db,'users',user.uid))]);
-    const profile=profileSnap.exists()?profileSnap.data():(userSnap.exists()?userSnap.data():{});
-    signedInProfile=profile;
-    if(title)title.textContent='My Profile';
-    renderProfileSummary(user,profile);
-    if(profileLink){profileLink.textContent='View / Edit Profile';profileLink.href=`profile.html?id=${encodeURIComponent(user.uid)}`;}
-  }catch(error){
-    console.warn('Could not load profile for dashboard.',error);
-    renderProfileSummary(user,{});
-  }
+  signedInUser=user;signedInProfile=null;
+  if(!user){clearProfileSummary();return;}
+  try{const snap=await getDoc(doc(db,'profiles',user.uid));if(snap.exists())signedInProfile={id:snap.id,...snap.data()};renderProfileSummary(user,signedInProfile||{});}catch(error){console.warn('Could not load signed-in profile',error);renderProfileSummary(user,{});}
 });
 
-onSnapshot(collection(db,'posts'),snapshot=>{
-  const posts=snapshot.docs.map(docSnap=>({id:docSnap.id,...docSnap.data()})).sort((a,b)=>{const diff=postMs(b)-postMs(a);return diff||String(a.id).localeCompare(String(b.id));});
-  renderFeed(posts);
-  renderShows(posts);
-},error=>{
-  console.error('Could not load live posts into dashboard.',error);
-  if(feed){const heading=feed.querySelector('h3');feed.replaceChildren();if(heading)feed.appendChild(heading);const failed=document.createElement('div');failed.className='post';failed.innerHTML='<p>Community feed temporarily unavailable. Please refresh.</p>';feed.appendChild(failed);}
-});
+logoutLink?.addEventListener('click',async event=>{event.preventDefault();try{await signOut(auth);location.href='index.html';}catch(error){console.warn('Could not sign out',error);}});
 
-onSnapshot(collection(db,'users'),snapshot=>{renderOnline(snapshot.docs.map(d=>({id:d.id,...d.data()})));},error=>{console.warn('Could not load Online Now.',error);if(onlineGrid)onlineGrid.innerHTML='<div class="online-empty">Online status unavailable.</div>';});
+onSnapshot(collection(db,'posts'),snap=>renderFeedPosts(snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>postMs(b)-postMs(a))),error=>console.warn('Feed unavailable',error));
+
+if(showsPanel){
+  onSnapshot(query(collection(db,'posts'),where('category','==','show')),snap=>renderShows(snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.eventDate||'').localeCompare(String(b.eventDate||'')))),error=>console.warn('Shows unavailable',error));
+}
+
+if(onlineGrid){
+  onSnapshot(collection(db,'presence'),async snap=>{
+    const now=Date.now(),active=snap.docs.map(d=>({uid:d.id,...d.data()})).filter(row=>now-(row.lastSeen?.toMillis?.()||0)<180000);
+    const rows=[];
+    for(const row of active){try{const p=await getDoc(doc(db,'profiles',row.uid));rows.push({...row,profileId:p.exists()?p.id:row.uid,profile:p.exists()?p.data():null,name:p.exists()?p.data().displayName:''});}catch{rows.push({...row,profileId:row.uid,profile:null,name:''});}}
+    renderOnlineProfiles(rows);
+  },error=>console.warn('Presence unavailable',error));
+}
+
+if(messagesLink){
+  onAuthStateChanged(auth,user=>{
+    if(!user){messagesLink.textContent='Messages';return;}
+    onSnapshot(collection(db,'messageInboxes',user.uid,'items'),snap=>{const unread=snap.docs.filter(d=>{const x=d.data();const updated=x.updatedAt?.toMillis?.()||0,read=x.readAt?.toMillis?.()||0;return x.lastSenderId&&x.lastSenderId!==user.uid&&updated>read;}).length;messagesLink.textContent=unread?`Messages (${unread})`:'Messages';},()=>{});
+  });
+}
