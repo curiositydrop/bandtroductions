@@ -12,11 +12,9 @@
     .control-eyebrow{margin:0 0 4px;color:#0ccfbd;font-size:.76rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
     .control-hero h1{margin:0;font-size:clamp(2rem,8vw,4rem);line-height:.95;letter-spacing:-.045em}.control-hero h1 span{color:#0ccfbd}
     .control-subtitle{margin:10px 0 0;color:#bbb;font-weight:700}.control-status{display:inline-flex;align-items:center;gap:7px;margin-top:13px;padding:7px 10px;border:1px solid #315c58;border-radius:999px;background:#09100f;color:#baf8f2;font-size:.78rem;font-weight:900}.control-status::before{content:"";width:8px;height:8px;border-radius:50%;background:#0ccfbd;box-shadow:0 0 10px #0ccfbd}
-    .control-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0}.control-stat{border:1px solid #2f504d;border-radius:13px;background:#0e1111;padding:13px;text-align:center}.control-stat strong{display:block;color:#0ccfbd;font-size:1.55rem}.control-stat span{color:#999;font-size:.74rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
-    .control-sections{display:grid;gap:9px;margin:0 0 16px}.control-section{border:1px solid #2f504d;border-radius:14px;background:#0e1111;overflow:hidden}.control-section summary{cursor:pointer;list-style:none;padding:14px 16px;color:#0ccfbd;font-weight:950;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}.control-section summary::-webkit-details-marker{display:none}.control-section summary::after{content:'+';font-size:1.25rem}.control-section[open] summary::after{content:'−'}.control-section[open] summary{border-bottom:1px solid #2f504d}.control-section-body{padding:10px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.control-card{text-decoration:none;color:#eee;display:block;min-height:92px;transition:.16s ease}.control-card:hover,.control-card:focus{border-color:#0ccfbd;transform:translateY(-1px)}.control-card strong{display:block;color:#fff;margin-bottom:5px}.control-card span{color:#999;font-size:.8rem;line-height:1.35}.control-icon{font-size:1.25rem;margin-bottom:8px;color:#0ccfbd}
-    .welcome-tool{margin:0}.welcome-tool h2{margin:.25rem 0}.welcome-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.welcome-actions .auth-button{width:auto!important}.approve-button{background:#0ccfbd!important;color:#06110f!important}.welcome-select{flex:1 1 320px;min-width:0;padding:11px 12px;border:1px solid #444;border-radius:10px;background:#090909;color:#eee;font:inherit}.welcome-help{margin:.4rem 0 1rem;color:#aaa;line-height:1.45}.welcome-status{margin:.75rem 0 0;color:#aaa;min-height:1.3em}
-    @media(max-width:720px){.control-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.control-section-body{grid-template-columns:1fr 1fr}.control-card{min-height:84px}}
-    @media(max-width:430px){.control-section-body{grid-template-columns:1fr}.control-hero{padding:15px}.control-grid{gap:7px}.control-stat{padding:10px}}
+    #cr-pulse-slot{margin-bottom:12px}.control-sections{display:grid;gap:9px;margin:0 0 16px}.control-section{border:1px solid #2f504d;border-radius:14px;background:#0e1111;overflow:hidden}.control-section summary{cursor:pointer;list-style:none;padding:14px 16px;color:#0ccfbd;font-weight:950;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}.control-section summary::-webkit-details-marker{display:none}.control-section summary::after{content:'+';font-size:1.25rem}.control-section[open] summary::after{content:'−'}.control-section[open] summary{border-bottom:1px solid #2f504d}.control-section-body{padding:10px;display:grid;gap:9px}.control-section-body>.cr-section,.control-section-body>.managed-section,.control-section-body>.admin-head,.control-section-body>.approval-list,.control-section-body>.auth-message{margin:0!important}.control-card{text-decoration:none;color:#eee;display:block;min-height:92px;transition:.16s ease}.control-card:hover,.control-card:focus{border-color:#0ccfbd;transform:translateY(-1px)}.control-card strong{display:block;color:#fff;margin-bottom:5px}.control-card span{color:#999;font-size:.8rem;line-height:1.35}.control-icon{font-size:1.25rem;margin-bottom:8px;color:#0ccfbd}
+    .welcome-tool{margin:0}.welcome-tool h2{margin:.25rem 0}.welcome-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.welcome-actions .auth-button{width:auto!important}.approve-button{background:#0ccfbd!important;color:#06110f!important}.welcome-select{flex:1 1 320px;min-width:0;padding:11px 12px;border:1px solid #444;border-radius:10px;background:#090909;color:#eee;font:inherit}.welcome-help{margin:.4rem 0 1rem;color:#aaa;line-height:1.45}.welcome-status{margin:.75rem 0 0;color:#aaa;min-height:1.3em}.control-link-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+    @media(max-width:430px){.control-link-grid{grid-template-columns:1fr}.control-hero{padding:15px}}
   </style>
 </head>
 <body class="hamburger-active auth-page">
@@ -29,49 +27,28 @@
     <div class="control-status">SYSTEM ONLINE · ADMIN ACCESS</div>
   </section>
 
-  <section class="control-grid" aria-label="Platform overview">
-    <div class="control-stat"><strong id="control-total-profiles">—</strong><span>Profiles</span></div>
-    <div class="control-stat"><strong id="control-published-profiles">—</strong><span>Published Profiles</span></div>
-    <div class="control-stat"><strong id="control-pending-claims">—</strong><span>Pending Claims</span></div>
-    <div class="control-stat"><strong id="control-posts">—</strong><span>Community Posts</span></div>
-  </section>
+  <div id="cr-pulse-slot"></div>
 
   <section class="control-sections" aria-label="Control Room tools">
-    <details class="control-section">
-      <summary>👥 Profiles &amp; Members</summary>
-      <div class="control-section-body">
-        <a class="control-card" href="#managed-profiles-section"><div class="control-icon">▦</div><strong>All Profiles</strong><span>Search, edit, publish and manage every live profile.</span></a>
-        <a class="control-card" href="#claim-approval-list"><div class="control-icon">⌁</div><strong>Ownership Claims</strong><span>Review legacy-profile claim requests.</span></a>
-      </div>
-    </details>
-    <details class="control-section">
-      <summary>📣 Community</summary>
-      <div class="control-section-body">
-        <section class="welcome-tool" aria-labelledby="welcome-tool-title">
-          <p class="profile-meta">COMMUNITY TOOL</p>
-          <h2 id="welcome-tool-title">Send Welcome Post</h2>
-          <p class="welcome-help">Choose a published profile to create a linked-name community welcome post.</p>
-          <div class="welcome-actions">
-            <select id="welcome-profile-select" class="welcome-select" aria-label="Profile to welcome"><option value="">Loading published profiles…</option></select>
-            <button id="send-welcome-button" type="button" class="auth-button approve-button" disabled>Send Welcome Post</button>
-          </div>
-          <p id="welcome-status" class="welcome-status" aria-live="polite"></p>
-        </section>
-      </div>
-    </details>
-    <details class="control-section">
-      <summary>💬 Communication</summary>
-      <div class="control-section-body">
-        <a class="control-card" href="messages.html"><div class="control-icon">✉</div><strong>Messages</strong><span>Open BANDtroductions messaging.</span></a>
-        <a class="control-card" href="notifications.html"><div class="control-icon">●</div><strong>Notifications</strong><span>Review account and community activity.</span></a>
-      </div>
-    </details>
-    <details class="control-section">
-      <summary>📻 Radio</summary>
-      <div class="control-section-body">
-        <a class="control-card" href="radio-admin.html"><div class="control-icon">≋</div><strong>Radio Admin</strong><span>Manage radio submissions and approvals.</span></a>
-      </div>
-    </details>
+    <details class="control-section"><summary>💬 Communication</summary><div id="cr-communication-body" class="control-section-body"><div class="control-link-grid"><a class="control-card" href="messages.html"><div class="control-icon">✉</div><strong>Messages</strong><span>Open BANDtroductions messaging.</span></a><a class="control-card" href="notifications.html"><div class="control-icon">●</div><strong>Notifications</strong><span>Review account and community activity.</span></a></div></div></details>
+
+    <details class="control-section"><summary>📣 Community</summary><div id="cr-community-body" class="control-section-body"><section class="welcome-tool" aria-labelledby="welcome-tool-title"><p class="profile-meta">COMMUNITY TOOL</p><h2 id="welcome-tool-title">Send Welcome Post</h2><p class="welcome-help">Choose a published profile to create a linked-name community welcome post.</p><div class="welcome-actions"><select id="welcome-profile-select" class="welcome-select" aria-label="Profile to welcome"><option value="">Loading published profiles…</option></select><button id="send-welcome-button" type="button" class="auth-button approve-button" disabled>Send Welcome Post</button></div><p id="welcome-status" class="welcome-status" aria-live="polite"></p></section></div></details>
+
+    <details class="control-section"><summary>⚙️ Content, Sponsors &amp; Systems</summary><div id="cr-platform-body" class="control-section-body"></div></details>
+
+    <details class="control-section"><summary>🎟️ Event Control</summary><div id="cr-events-body" class="control-section-body"></div></details>
+
+    <details class="control-section"><summary>⚠️ Needs Attention</summary><div id="cr-attention-body" class="control-section-body"></div></details>
+
+    <details class="control-section"><summary>📢 Notify Members</summary><div id="cr-broadcast-body" class="control-section-body"></div></details>
+
+    <details class="control-section"><summary>🔐 Ownership Claims</summary><div id="cr-claims-body" class="control-section-body"></div></details>
+
+    <details class="control-section"><summary>👥 Profiles &amp; Members</summary><div id="cr-profiles-body" class="control-section-body"></div></details>
+
+    <details class="control-section"><summary>📻 Radio</summary><div id="cr-radio-body" class="control-section-body"><a class="control-card" href="radio-admin.html"><div class="control-icon">≋</div><strong>Radio Admin</strong><span>Manage radio submissions and approvals.</span></a></div></details>
+
+    <details class="control-section"><summary>🗂️ Unclaimed Profiles</summary><div id="cr-unclaimed-body" class="control-section-body"></div></details>
   </section>
 </main>
 <p id="control-access-status" class="auth-message" style="width:min(calc(100vw - 20px),700px);margin:24px auto">Checking administrator access…</p>
@@ -91,16 +68,8 @@ const welcomeButton=document.getElementById('send-welcome-button');
 const welcomeStatus=document.getElementById('welcome-status');
 let currentUser=null;
 let allProfiles=[];
-let stopProfiles=null,stopClaims=null,stopPosts=null;
+let stopProfiles=null;
 
-function updateOverview(){
-  document.getElementById('control-total-profiles').textContent=allProfiles.length;
-  document.getElementById('control-published-profiles').textContent=allProfiles.filter(p=>p.published===true).length;
-}
-function startOverview(){
-  stopClaims=onSnapshot(collection(db,'profileClaims'),snap=>{document.getElementById('control-pending-claims').textContent=snap.docs.filter(d=>d.data().status==='pending').length},()=>{document.getElementById('control-pending-claims').textContent='—'});
-  stopPosts=onSnapshot(collection(db,'posts'),snap=>{document.getElementById('control-posts').textContent=snap.size},()=>{document.getElementById('control-posts').textContent='—'});
-}
 function renderWelcomeProfiles(){
   const selectedId=welcomeSelect.value;
   const published=allProfiles.filter(profile=>profile.published===true&&profile.approvalStatus!=='rejected').sort((a,b)=>(a.displayName||'').localeCompare(b.displayName||''));
@@ -118,11 +87,48 @@ onAuthStateChanged(auth,user=>{
   if(!isAdminAccount(user)){
     room.hidden=true;accessStatus.hidden=false;accessStatus.textContent=user?'Administrator access is required.':'Log in with the BANDtroductions administrator account to enter The Control Room.';return;
   }
-  room.hidden=false;accessStatus.hidden=true;startOverview();
-  stopProfiles=onSnapshot(collection(db,'profiles'),snap=>{allProfiles=snap.docs.map(d=>({id:d.id,...d.data()}));updateOverview();renderWelcomeProfiles()},error=>{console.error(error);welcomeStatus.textContent='Published profiles could not be loaded.'});
+  room.hidden=false;accessStatus.hidden=true;
+  stopProfiles=onSnapshot(collection(db,'profiles'),snap=>{allProfiles=snap.docs.map(d=>({id:d.id,...d.data()}));renderWelcomeProfiles()},error=>{console.error(error);welcomeStatus.textContent='Published profiles could not be loaded.'});
 });
 </script>
-<script type="module" src="admin-claims.js?v=1"></script>
-<script type="module" src="admin-managed-profiles.js?v=1"></script>
+<script type="module" src="admin-claims.js?v=2"></script>
+<script type="module" src="admin-managed-profiles.js?v=2"></script>
+<script>
+(function organizeControlRoom(){
+  const room=document.getElementById('control-room');
+  if(!room)return;
+  const move=(selector,targetId)=>{
+    const node=document.querySelector(selector),target=document.getElementById(targetId);
+    if(node&&target&&node.parentElement!==target)target.appendChild(node);
+  };
+  const organize=()=>{
+    move('#cr-pulse','cr-pulse-slot');
+    move('#cr-needs-attention','cr-attention-body');
+    move('#cr-community','cr-community-body');
+    move('#cr-platform','cr-platform-body');
+    move('#cr-shows','cr-events-body');
+    move('#cr-broadcast','cr-broadcast-body');
+    move('#cr-unclaimed','cr-unclaimed-body');
+    move('#managed-profiles-section','cr-profiles-body');
+
+    const claims=document.getElementById('claim-approval-list'),claimsBody=document.getElementById('cr-claims-body');
+    if(claims&&claimsBody&&!claimsBody.contains(claims)){
+      const heading=claims.previousElementSibling?.classList.contains('admin-head')?claims.previousElementSibling:null;
+      const status=claims.nextElementSibling?.id==='claim-admin-status'?claims.nextElementSibling:null;
+      if(heading)claimsBody.appendChild(heading);
+      claimsBody.appendChild(claims);
+      if(status)claimsBody.appendChild(status);
+    }
+    const ops=document.getElementById('cr-operations');
+    if(ops&&!ops.children.length)ops.remove();
+  };
+  organize();
+  const observer=new MutationObserver(organize);
+  observer.observe(room,{childList:true,subtree:true});
+  setTimeout(organize,100);
+  setTimeout(organize,600);
+  setTimeout(organize,1800);
+})();
+</script>
 </body>
 </html>
