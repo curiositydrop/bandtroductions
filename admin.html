@@ -31,23 +31,14 @@
 
   <section class="control-sections" aria-label="Control Room tools">
     <details class="control-section"><summary>💬 Communication</summary><div id="cr-communication-body" class="control-section-body"><div class="control-link-grid"><a class="control-card" href="messages.html"><div class="control-icon">✉</div><strong>Messages</strong><span>Open BANDtroductions messaging.</span></a><a class="control-card" href="notifications.html"><div class="control-icon">●</div><strong>Notifications</strong><span>Review account and community activity.</span></a></div></div></details>
-
     <details class="control-section"><summary>📣 Community</summary><div id="cr-community-body" class="control-section-body"><section class="welcome-tool" aria-labelledby="welcome-tool-title"><p class="profile-meta">COMMUNITY TOOL</p><h2 id="welcome-tool-title">Send Welcome Post</h2><p class="welcome-help">Choose a published profile to create a linked-name community welcome post.</p><div class="welcome-actions"><select id="welcome-profile-select" class="welcome-select" aria-label="Profile to welcome"><option value="">Loading published profiles…</option></select><button id="send-welcome-button" type="button" class="auth-button approve-button" disabled>Send Welcome Post</button></div><p id="welcome-status" class="welcome-status" aria-live="polite"></p></section></div></details>
-
     <details class="control-section"><summary>⚙️ Content, Sponsors &amp; Systems</summary><div id="cr-platform-body" class="control-section-body"></div></details>
-
     <details class="control-section"><summary>🎟️ Event Control</summary><div id="cr-events-body" class="control-section-body"></div></details>
-
     <details class="control-section"><summary>⚠️ Needs Attention</summary><div id="cr-attention-body" class="control-section-body"></div></details>
-
     <details class="control-section"><summary>📢 Notify Members</summary><div id="cr-broadcast-body" class="control-section-body"></div></details>
-
     <details class="control-section"><summary>🔐 Ownership Claims</summary><div id="cr-claims-body" class="control-section-body"></div></details>
-
     <details class="control-section"><summary>👥 Profiles &amp; Members</summary><div id="cr-profiles-body" class="control-section-body"></div></details>
-
     <details class="control-section"><summary>📻 Radio</summary><div id="cr-radio-body" class="control-section-body"><a class="control-card" href="radio-admin.html"><div class="control-icon">≋</div><strong>Radio Admin</strong><span>Manage radio submissions and approvals.</span></a></div></details>
-
     <details class="control-section"><summary>🗂️ Unclaimed Profiles</summary><div id="cr-unclaimed-body" class="control-section-body"></div></details>
   </section>
 </main>
@@ -119,8 +110,6 @@ onAuthStateChanged(auth,user=>{
       claimsBody.appendChild(claims);
       if(status)claimsBody.appendChild(status);
     }
-    const ops=document.getElementById('cr-operations');
-    if(ops&&!ops.children.length)ops.remove();
   };
   organize();
   const observer=new MutationObserver(organize);
