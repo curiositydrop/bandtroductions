@@ -67,7 +67,7 @@
   <script src="global.js?v=2"></script>
   <script type="module">
     import { auth, db } from './firebase-dev.js';
-    import { sendAdminApprovalEmail } from './admin-approval-email.js?v=2';
+    import { sendAdminApprovalEmail } from './admin-approval-email.js?v=3';
     import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
     import { doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
@@ -76,6 +76,7 @@
     const safeReturn = requestedReturn && !requestedReturn.startsWith('//') && !requestedReturn.includes('://')
       ? requestedReturn
       : 'index.html';
+    const isClaimReturn = /^claim-profile\.html(?:\?|$)/i.test(safeReturn);
 
     const loginLink = document.getElementById('login-link');
     if (requestedReturn) loginLink.href = `login.html?returnTo=${encodeURIComponent(safeReturn)}`;
@@ -84,9 +85,7 @@
       const returnUrl = new URL(safeReturn, location.href);
       const claimType = returnUrl.searchParams.get('type');
       const claimName = returnUrl.searchParams.get('name');
-      if (['band', 'musician', 'venue'].includes(claimType)) {
-        document.getElementById('account-type').value = claimType;
-      }
+      if (['band', 'musician', 'venue'].includes(claimType)) document.getElementById('account-type').value = claimType;
       if (claimName) document.getElementById('display-name').value = claimName;
     } catch {}
 
@@ -128,9 +127,10 @@
           submittedBy: email,
           details: `New ${accountType || 'member'} account created. User ID: ${credential.user.uid}`
         });
-        // Account creation is only step one. Send every new member straight into
-        // profile setup so they do not mistake an account for a published profile.
-        window.location.href = 'profile-setup.html?new=1';
+
+        // A legacy-profile claim must return to the exact claim URL after account
+        // creation. Ordinary signups continue into normal profile setup.
+        window.location.href = isClaimReturn ? safeReturn : 'profile-setup.html?new=1';
       } catch (error) {
         console.error(error);
         const friendly = {
