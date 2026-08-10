@@ -1,5 +1,6 @@
 const ADMIN_EMAIL = 'mbergeron79@gmail.com';
 const FORM_ENDPOINT = `https://formsubmit.co/ajax/${encodeURIComponent(ADMIN_EMAIL)}`;
+const ADMIN_REVIEW_URL = 'https://bandtroductions.com/admin.html';
 
 export async function sendAdminApprovalEmail({ kind = 'profile', name = 'New profile', accountType = '', submittedBy = '', details = '' } = {}) {
   const subject = kind === 'claim'
@@ -18,7 +19,6 @@ export async function sendAdminApprovalEmail({ kind = 'profile', name = 'New pro
         ? 'A new BANDtroductions Radio sponsorship request was submitted.'
         : 'A new profile is waiting for approval.';
 
-  const reviewPage = kind === 'radio-sponsor' ? 'admin.html' : 'admin.html';
   const lines = [
     intro,
     '',
@@ -27,7 +27,7 @@ export async function sendAdminApprovalEmail({ kind = 'profile', name = 'New pro
     submittedBy ? `Submitted by: ${submittedBy}` : '',
     details ? `Details: ${details}` : '',
     '',
-    `Review BANDtroductions admin: ${location.origin}${location.pathname.replace(/[^/]*$/, '')}${reviewPage}`
+    `Review BANDtroductions admin: ${ADMIN_REVIEW_URL}`
   ].filter(Boolean);
 
   try {
