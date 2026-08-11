@@ -1,9 +1,10 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
 import { getDatabase, ref, onValue, runTransaction } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js';
-import { activePlaylist, playlistPosition } from './radio-schedule-engine.js?v=1';
+import { activePlaylist, playlistPosition } from './radio-schedule-engine.js?v=2';
 
 const cfg={apiKey:'AIzaSyApLiiJsKTw1Fp8J3aQatMqiSZoP_6EycE',authDomain:'bandfanwall.firebaseapp.com',databaseURL:'https://bandfanwall-default-rtdb.firebaseio.com',projectId:'bandfanwall',storageBucket:'bandfanwall.firebasestorage.app',messagingSenderId:'619241154826',appId:'1:619241154826:web:25ddc58eef094e3c0732f3'};
 const app=getApps().find(a=>a.name==='radio-public')||initializeApp(cfg,'radio-public');const db=getDatabase(app);
+const PLAYLIST_PATH='RadioTracks/__station/playlists';
 const audio=document.getElementById('audioPlayer'),cover=document.getElementById('trackCover'),title=document.getElementById('trackTitle'),artist=document.getElementById('trackArtist'),profile=document.getElementById('profileLink'),recent=document.getElementById('recentList');
 const DEFAULT_COVER='IMG_9367.png';let playlists={},tracks={},currentKey='',userWantsPlay=false,switching=false,lastCounted='';
 
@@ -20,4 +21,4 @@ async function sync(force=false){const state=currentState();if(!state){empty();r
 
 audio?.addEventListener('play',()=>{userWantsPlay=true;sync(true);const s=currentState();if(s)countPlay(s.item);});audio?.addEventListener('pause',()=>{if(!switching)userWantsPlay=false;});audio?.addEventListener('ended',()=>sync(true));
 const genreBar=document.querySelector('.radio-card-genres');if(genreBar){genreBar.innerHTML='<span style="color:#8fa09d;font-size:.75rem;font-weight:800">📡 LIVE SCHEDULE · everyone hears the same rotation</span>';}
-onValue(ref(db,'RadioPlaylists'),s=>{playlists=s.val()||{};sync(true);});onValue(ref(db,'RadioTracks'),s=>{tracks=s.val()||{};sync(true);});setInterval(()=>sync(false),1000);
+onValue(ref(db,PLAYLIST_PATH),s=>{playlists=s.val()||{};sync(true);});onValue(ref(db,'RadioTracks'),s=>{tracks=s.val()||{};sync(true);});setInterval(()=>sync(false),1000);
