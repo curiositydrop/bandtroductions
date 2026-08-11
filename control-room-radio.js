@@ -1,153 +1,64 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
-import { getDatabase, ref, onValue, set, remove } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js';
+import { getDatabase, ref, onValue, set, remove, push, update } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { auth } from './firebase-dev.js';
 import { isAdminAccount } from './admin-access.js';
+import { activePlaylist, playlistPosition, formatMinutes, RADIO_TIMEZONE } from './radio-schedule-engine.js?v=1';
 
-const radioQueueConfig = {
-  apiKey: 'AIzaSyApLiiJsKTw1Fp8J3aQatMqiSZoP_6EycE',
-  authDomain: 'bandfanwall.firebaseapp.com',
-  databaseURL: 'https://bandfanwall-default-rtdb.firebaseio.com',
-  projectId: 'bandfanwall',
-  storageBucket: 'bandfanwall.firebasestorage.app',
-  messagingSenderId: '619241154826',
-  appId: '1:619241154826:web:25ddc58eef094e3c0732f3'
-};
+const cfg={apiKey:'AIzaSyApLiiJsKTw1Fp8J3aQatMqiSZoP_6EycE',authDomain:'bandfanwall.firebaseapp.com',databaseURL:'https://bandfanwall-default-rtdb.firebaseio.com',projectId:'bandfanwall',storageBucket:'bandfanwall.firebasestorage.app',messagingSenderId:'619241154826',appId:'1:619241154826:web:25ddc58eef094e3c0732f3'};
+const app=getApps().find(a=>a.name==='controlRoomRadioQueue')||initializeApp(cfg,'controlRoomRadioQueue');
+const db=getDatabase(app);
 
-const queueApp = getApps().find(app => app.name === 'controlRoomRadioQueue') || initializeApp(radioQueueConfig, 'controlRoomRadioQueue');
-const queueDb = getDatabase(queueApp);
-
-const css = document.createElement('style');
-css.textContent = `
-.cr-radio-wrap{display:grid;gap:10px}.cr-radio-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.cr-radio-count{display:inline-grid;place-items:center;min-width:28px;height:28px;padding:0 8px;border:1px solid #3a6d67;border-radius:999px;background:#07100f;color:#0ccfbd;font-weight:950}.cr-radio-list{display:grid;gap:10px}.cr-radio-card{border:1px solid #343b3a;border-radius:14px;background:linear-gradient(145deg,#171a1a,#0b0d0d);padding:12px}.cr-radio-top{display:grid;grid-template-columns:76px 1fr;gap:12px;align-items:start}.cr-radio-art{width:76px;height:76px;border:1px solid #3a5a57;border-radius:11px;background:#070909;overflow:hidden;display:grid;place-items:center;color:#0ccfbd;font-weight:950}.cr-radio-art img{width:100%;height:100%;object-fit:cover}.cr-radio-title{margin:0;color:#fff;font-size:1rem}.cr-radio-artist{margin:3px 0 0;color:#0ccfbd;font-weight:900}.cr-radio-meta{margin:5px 0 0;color:#949d9c;font-size:.75rem;line-height:1.4}.cr-radio-meta a{color:#65e7da}.cr-radio-player{width:100%;margin-top:10px;height:38px}.cr-radio-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;margin-top:10px;padding-top:9px;border-top:1px solid #292e2e;color:#aeb5b4;font-size:.75rem}.cr-radio-details b{color:#e8eeee}.cr-radio-note{grid-column:1/-1;padding:8px;border:1px solid #333;border-radius:9px;background:#090b0b;color:#c5cbca;white-space:pre-wrap;overflow-wrap:anywhere}.cr-radio-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.cr-radio-actions button,.cr-radio-actions a{border:1px solid #397a74;border-radius:999px;background:#0b1110;color:#0ccfbd;padding:8px 11px;text-decoration:none;font:inherit;font-size:.74rem;font-weight:950;cursor:pointer}.cr-radio-actions .approve{background:#0ccfbd;color:#06110f}.cr-radio-actions .reject{border-color:#825050;color:#ffaaa8;background:#170b0b}.cr-radio-actions .restore{border-color:#75622f;color:#ffd166}.cr-radio-empty{padding:14px;border:1px dashed #3a4241;border-radius:11px;color:#8e9695;text-align:center}.cr-radio-status{min-height:1.2em;margin-top:7px;color:#9ba3a2;font-size:.76rem}.cr-radio-archive summary{cursor:pointer;color:#aeb6b5;font-weight:900;padding:8px 0}.cr-radio-alert{border:1px solid #51462f;border-radius:12px;background:#15120b;padding:11px}.cr-radio-alert strong{display:block;color:#ffd166;font-size:1.25rem}.cr-radio-alert span{color:#c7b98d;font-size:.74rem}@media(max-width:520px){.cr-radio-top{grid-template-columns:58px 1fr}.cr-radio-art{width:58px;height:58px}.cr-radio-details{grid-template-columns:1fr}}
-`;
+const css=document.createElement('style');css.textContent=`
+.crr{display:grid;gap:14px}.crr-panel{border:1px solid #315650;border-radius:14px;background:#0b0e0e;padding:12px}.crr-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.crr-head h2,.crr-head h3{margin:0;color:#fff}.crr-muted{color:#929b9a;font-size:.76rem}.crr-count{display:inline-grid;place-items:center;min-width:28px;height:28px;padding:0 8px;border:1px solid #3a6d67;border-radius:999px;color:#0ccfbd;font-weight:950}.crr-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.crr-tab{border:1px solid #355b57;border-radius:999px;background:#0b1110;color:#0ccfbd;padding:8px 11px;font-weight:900;cursor:pointer}.crr-tab.active{background:#0ccfbd;color:#06110f}.crr-review-list{display:grid;gap:9px}.crr-card{border:1px solid #303737;border-radius:12px;background:#121515;padding:10px}.crr-top{display:grid;grid-template-columns:58px 1fr;gap:10px}.crr-art{width:58px;height:58px;border:1px solid #365d59;border-radius:9px;overflow:hidden;display:grid;place-items:center;color:#0ccfbd;font-weight:900}.crr-art img{width:100%;height:100%;object-fit:cover}.crr-title{font-weight:950;color:#fff}.crr-artist{color:#0ccfbd;font-weight:850;font-size:.84rem}.crr-meta{color:#969f9e;font-size:.72rem;line-height:1.4;margin-top:4px}.crr-audio{width:100%;height:36px;margin-top:8px}.crr-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.crr-btn{border:1px solid #397a74;border-radius:999px;background:#0b1110;color:#0ccfbd;padding:7px 10px;font:inherit;font-size:.72rem;font-weight:950;cursor:pointer;text-decoration:none}.crr-btn.primary{background:#0ccfbd;color:#06110f}.crr-btn.danger{border-color:#7a4646;color:#ffaaaa;background:#170b0b}.crr-btn.gold{border-color:#705f32;color:#ffd166}.crr-empty{padding:13px;border:1px dashed #38403f;border-radius:10px;text-align:center;color:#8e9695}.crr-studio{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr) minmax(0,1fr);gap:10px}.crr-library,.crr-builder{border:1px solid #303b39;border-radius:12px;background:#090b0b;padding:10px;min-width:0}.crr-library-list{display:grid;gap:7px;max-height:620px;overflow:auto;margin-top:8px}.crr-lib-item,.crr-play-item{border:1px solid #313938;border-radius:10px;background:#121515;padding:8px;cursor:grab}.crr-lib-item strong,.crr-play-item strong{display:block;color:#fff;font-size:.78rem}.crr-lib-item span,.crr-play-item span{display:block;color:#97a09f;font-size:.68rem;margin-top:3px}.crr-lib-item .crr-btn{margin-top:6px}.crr-builder-fields{display:grid;grid-template-columns:1fr 1fr;gap:7px}.crr-builder-fields .full{grid-column:1/-1}.crr input,.crr select{width:100%;box-sizing:border-box;border:1px solid #3a4443;border-radius:9px;background:#050707;color:#fff;padding:9px;font:inherit}.crr-days{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0}.crr-days label{border:1px solid #34413f;border-radius:999px;padding:5px 7px;font-size:.68rem;color:#bbb}.crr-days input{width:auto;margin-right:3px}.crr-drop{min-height:180px;border:1px dashed #397a74;border-radius:11px;padding:8px;display:grid;align-content:start;gap:6px;margin-top:8px}.crr-play-item{display:grid;grid-template-columns:22px 1fr auto;gap:7px;align-items:center}.crr-handle{color:#0ccfbd;font-weight:900}.crr-runtime{margin:7px 0;color:#b9c3c1;font-size:.74rem}.crr-schedules{display:grid;gap:8px;margin-top:8px}.crr-schedule{border:1px solid #303938;border-radius:11px;background:#111414;padding:10px}.crr-schedule.onair{border-color:#0ccfbd;box-shadow:0 0 15px rgba(12,207,189,.08)}.crr-onair{display:grid;grid-template-columns:78px 1fr;gap:10px;align-items:center}.crr-onair-art{width:78px;height:78px;border:1px solid #397a74;border-radius:10px;overflow:hidden;display:grid;place-items:center;color:#0ccfbd}.crr-onair-art img{width:100%;height:100%;object-fit:cover}.crr-live{color:#ff6868;font-weight:950;letter-spacing:.08em}.crr-search{margin-top:8px}.crr-status{min-height:1.2em;color:#9ca5a4;font-size:.72rem;margin-top:6px}@media(max-width:780px){.crr-studio{grid-template-columns:1fr}.crr-library-list{max-height:300px}.crr-builder-fields{grid-template-columns:1fr}.crr-builder-fields .full{grid-column:auto}}`;
 document.head.appendChild(css);
 
-let pending = {};
-let rejected = {};
-let stopPending = null;
-let stopRejected = null;
+let pendingSongs={},rejectedSongs={},pendingSponsors={},rejectedSponsors={},tracks={},sponsors={},playlists={};let draft=[],editingId='';let activeTab='songs';const stops=[];
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const slug=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'item';
+const durationText=s=>{s=Math.max(0,Math.round(Number(s)||0));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`};
+const mins=v=>{const [h,m]=String(v||'00:00').split(':').map(Number);return (h||0)*60+(m||0)};
+const timeValue=m=>`${String(Math.floor((Number(m)||0)/60)%24).padStart(2,'0')}:${String((Number(m)||0)%60).padStart(2,'0')}`;
 
-const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
-const yesNo = value => value ? 'Yes' : 'No';
-const dateText = value => value ? new Date(value).toLocaleString() : 'Unknown';
-const slug = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'track';
+function install(){const body=document.getElementById('cr-radio-body');if(!body||document.getElementById('crr'))return;body.innerHTML=`<div id="crr" class="crr">
+<section class="crr-panel"><div class="crr-head"><div><div class="crr-live">● ON AIR</div><h2>BANDtroductions Radio</h2></div><span class="crr-muted">Schedule timezone: ${RADIO_TIMEZONE}</span></div><div id="crr-onair" style="margin-top:10px"><div class="crr-empty">Checking current schedule…</div></div></section>
+<section class="crr-panel"><div class="crr-head"><div><h3>Pending Approval</h3><div class="crr-muted">Songs and sponsor spots land here first.</div></div><span id="crr-pending-total" class="crr-count">0</span></div><div class="crr-tabs"><button class="crr-tab active" data-review-tab="songs">Songs <span id="crr-song-count">0</span></button><button class="crr-tab" data-review-tab="sponsors">Sponsors <span id="crr-sponsor-count">0</span></button></div><div id="crr-review" class="crr-review-list"></div><details style="margin-top:8px"><summary class="crr-muted" style="cursor:pointer;font-weight:900">Rejected Archive</summary><div id="crr-rejected" class="crr-review-list" style="margin-top:8px"></div></details></section>
+<section class="crr-panel"><div class="crr-head"><div><h3>Playlist Studio</h3><div class="crr-muted">Drag approved songs and sponsors into the middle, arrange them, then schedule the playlist.</div></div><button id="crr-new" class="crr-btn">New Playlist</button></div><div class="crr-studio" style="margin-top:10px">
+<div class="crr-library"><strong style="color:#fff">Approved Songs</strong><input id="crr-song-search" class="crr-search" placeholder="Search songs…"><div id="crr-track-library" class="crr-library-list"></div></div>
+<div class="crr-builder"><div class="crr-builder-fields"><input id="crr-name" class="full" placeholder="Playlist name"><div><span class="crr-muted">Start time</span><input id="crr-start" type="time" value="10:00"></div><div><span class="crr-muted">End time</span><input id="crr-end" type="time" value="14:00"></div></div><div class="crr-days"><label><input type="checkbox" value="every" checked>Every day</label><label><input type="checkbox" value="mon">Mon</label><label><input type="checkbox" value="tue">Tue</label><label><input type="checkbox" value="wed">Wed</label><label><input type="checkbox" value="thu">Thu</label><label><input type="checkbox" value="fri">Fri</label><label><input type="checkbox" value="sat">Sat</label><label><input type="checkbox" value="sun">Sun</label></div><div id="crr-drop" class="crr-drop"><div class="crr-empty">Drop songs and sponsor spots here.</div></div><div id="crr-runtime" class="crr-runtime">Runtime: 0:00</div><div class="crr-actions"><button id="crr-save" class="crr-btn primary">Create Playlist</button><button id="crr-clear" class="crr-btn">Clear</button></div><div id="crr-builder-status" class="crr-status"></div></div>
+<div class="crr-library"><strong style="color:#fff">Approved Sponsors</strong><input id="crr-sponsor-search" class="crr-search" placeholder="Search sponsors…"><div id="crr-sponsor-library" class="crr-library-list"></div></div>
+</div></section>
+<section class="crr-panel"><div class="crr-head"><div><h3>Scheduled Playlists</h3><div class="crr-muted">Edit, duplicate, disable, or delete programming.</div></div><span id="crr-playlist-count" class="crr-count">0</span></div><div id="crr-schedules" class="crr-schedules"></div></section>
+</div>`;
+const attention=document.getElementById('cr-attention-body');if(attention&&!document.getElementById('cr-radio-attention')){const a=document.createElement('div');a.id='cr-radio-attention';a.className='crr-panel';a.innerHTML='<strong id="cr-radio-attention-count" style="display:block;color:#ffd166;font-size:1.2rem">0</strong><span class="crr-muted">Radio submissions awaiting review</span>';attention.appendChild(a);}wireUi();}
 
-function installShell(){
-  const body = document.getElementById('cr-radio-body');
-  if(!body || document.getElementById('cr-radio-review')) return;
-  body.innerHTML = `
-    <section id="cr-radio-review" class="cr-radio-wrap">
-      <div class="cr-radio-head"><div><strong style="color:#fff">Song Submissions</strong><div style="color:#8f9897;font-size:.78rem;margin-top:3px">Listen, review, approve or ixnay submitted tracks.</div></div><span id="cr-radio-pending-count" class="cr-radio-count">0</span></div>
-      <div id="cr-radio-pending-list" class="cr-radio-list"><div class="cr-radio-empty">Loading submissions…</div></div>
-      <details class="cr-radio-archive"><summary>Rejected Archive <span id="cr-radio-rejected-count">(0)</span></summary><div id="cr-radio-rejected-list" class="cr-radio-list"></div></details>
-      <div><a href="radio-admin.html" style="color:#0ccfbd;font-size:.78rem;font-weight:900">Open legacy Radio Admin →</a></div>
-    </section>`;
+function songCard(key,s,mode='pending'){return `<article class="crr-card"><div class="crr-top"><div class="crr-art">${s.coverUrl?`<img src="${esc(s.coverUrl)}">`:'♪'}</div><div><div class="crr-title">${esc(s.title||'Untitled')}</div><div class="crr-artist">${esc(s.artist||'Unknown Artist')}</div><div class="crr-meta">${esc(s.genre||'—')} · ${durationText(s.durationSeconds)} · ${esc(s.contactEmail||'')}</div></div></div>${s.audioUrl?`<audio class="crr-audio" controls preload="none" src="${esc(s.audioUrl)}"></audio>`:''}<div class="crr-actions">${mode==='pending'?`<button class="crr-btn primary" data-action="approve-song" data-key="${esc(key)}">Approve</button><button class="crr-btn danger" data-action="reject-song" data-key="${esc(key)}">Reject</button>`:`<button class="crr-btn gold" data-action="restore-song" data-key="${esc(key)}">Restore</button><button class="crr-btn danger" data-action="delete-rejected-song" data-key="${esc(key)}">Delete</button>`}${s.profileUrl?`<a class="crr-btn" target="_blank" href="${esc(s.profileUrl)}">Profile</a>`:''}</div></article>`;}
+function sponsorCard(key,s,mode='pending'){return `<article class="crr-card"><div class="crr-top"><div class="crr-art">${s.logoUrl?`<img src="${esc(s.logoUrl)}">`:'SP'}</div><div><div class="crr-title">${esc(s.businessName||'Sponsor')}</div><div class="crr-artist">${durationText(s.audioDurationSeconds||s.durationSeconds)} sponsor spot</div><div class="crr-meta">${esc(s.contactName||'')} · ${esc(s.contactEmail||'')}<br>${esc(s.website||'')}</div></div></div>${s.audioUrl?`<audio class="crr-audio" controls preload="none" src="${esc(s.audioUrl)}"></audio>`:''}<div class="crr-actions">${mode==='pending'?`<button class="crr-btn primary" data-action="approve-sponsor" data-key="${esc(key)}">Approve</button><button class="crr-btn danger" data-action="reject-sponsor" data-key="${esc(key)}">Reject</button>`:`<button class="crr-btn gold" data-action="restore-sponsor" data-key="${esc(key)}">Restore</button><button class="crr-btn danger" data-action="delete-rejected-sponsor" data-key="${esc(key)}">Delete</button>`}</div></article>`;}
 
-  const attention = document.getElementById('cr-attention-body');
-  if(attention && !document.getElementById('cr-radio-attention')){
-    const alert = document.createElement('div');
-    alert.id='cr-radio-attention';
-    alert.className='cr-radio-alert';
-    alert.innerHTML='<strong id="cr-radio-attention-count">0</strong><span>Song submissions awaiting review</span>';
-    attention.appendChild(alert);
-  }
-}
+function renderReview(){const review=document.getElementById('crr-review'),rejected=document.getElementById('crr-rejected');if(!review)return;const p=activeTab==='songs'?Object.entries(pendingSongs):Object.entries(pendingSponsors);const r=activeTab==='songs'?Object.entries(rejectedSongs):Object.entries(rejectedSponsors);review.innerHTML=p.length?p.map(([k,v])=>activeTab==='songs'?songCard(k,v):sponsorCard(k,v)).join(''):'<div class="crr-empty">Nothing waiting for review. 🤘</div>';rejected.innerHTML=r.length?r.map(([k,v])=>activeTab==='songs'?songCard(k,v,'rejected'):sponsorCard(k,v,'rejected')).join(''):'<div class="crr-empty">Rejected archive is empty.</div>';const sc=Object.keys(pendingSongs).length,sp=Object.keys(pendingSponsors).length,total=sc+sp;document.getElementById('crr-song-count').textContent=sc;document.getElementById('crr-sponsor-count').textContent=sp;document.getElementById('crr-pending-total').textContent=total;const att=document.getElementById('cr-radio-attention-count');if(att)att.textContent=total;}
 
-function cardMarkup(key, song, mode='pending'){
-  const art = song.coverUrl ? `<img src="${esc(song.coverUrl)}" alt="${esc(song.artist || 'Artist')} cover art">` : '♪';
-  const profile = song.profileUrl ? `<a href="${esc(song.profileUrl)}" target="_blank" rel="noopener">View BANDtroductions profile</a>` : 'No profile link';
-  const audio = song.audioUrl ? `<audio class="cr-radio-player" controls preload="none" src="${esc(song.audioUrl)}"></audio>` : '<div class="cr-radio-empty">No playable MP3 attached.</div>';
-  const actions = mode === 'pending'
-    ? `<button class="approve" data-radio-action="approve" data-key="${esc(key)}">✓ APPROVE</button><button class="reject" data-radio-action="reject" data-key="${esc(key)}">✕ IXNAY / REJECT</button>`
-    : `<button class="restore" data-radio-action="restore" data-key="${esc(key)}">↩ Restore to Review</button><button class="reject" data-radio-action="delete-rejected" data-key="${esc(key)}">Delete Permanently</button>`;
-  return `<article class="cr-radio-card" data-radio-card="${esc(key)}">
-    <div class="cr-radio-top"><div class="cr-radio-art">${art}</div><div><h3 class="cr-radio-title">${esc(song.title || 'Untitled Song')}</h3><p class="cr-radio-artist">${esc(song.artist || 'Unknown Artist')}</p><p class="cr-radio-meta">Submitted ${esc(dateText(song.submittedAt))}<br>${profile}</p></div></div>
-    ${audio}
-    <div class="cr-radio-details">
-      <div><b>Genre:</b> ${esc(song.genre || '—')}</div><div><b>Album:</b> ${esc(song.album || 'Single')}</div>
-      <div><b>Location:</b> ${esc(song.location || '—')}</div><div><b>Signed to label:</b> ${yesNo(song.signedToLabel)}</div>
-      <div><b>Contact:</b> ${esc(song.contactName || song.memberDisplayName || '—')}</div><div><b>Email:</b> ${esc(song.contactEmail || '—')}</div>
-      <div><b>Rights confirmed:</b> ${yesNo(song.permissionConfirmed)}</div><div><b>Broadcast permission:</b> ${yesNo(song.broadcastPermission)}</div>
-      <div><b>Agreement accepted:</b> ${yesNo(song.agreementAccepted)}</div><div><b>Label info:</b> ${esc(song.labelContact || '—')}</div>
-      ${song.notes ? `<div class="cr-radio-note"><b>Submission notes:</b><br>${esc(song.notes)}</div>` : ''}
-      ${mode === 'rejected' && song.rejectionReason ? `<div class="cr-radio-note"><b>Rejection note:</b><br>${esc(song.rejectionReason)}</div>` : ''}
-    </div>
-    <div class="cr-radio-actions">${actions}${song.audioUrl ? `<a href="${esc(song.audioUrl)}" target="_blank" rel="noopener">Open MP3</a>` : ''}</div>
-    <div class="cr-radio-status" data-radio-status="${esc(key)}"></div>
-  </article>`;
-}
+function libraryItem(type,id,item){const title=type==='track'?(item.title||'Untitled'):(item.businessName||'Sponsor');const sub=type==='track'?`${item.artist||'Unknown'} · ${durationText(item.durationSeconds)}`:`Sponsor · ${durationText(item.audioDurationSeconds||item.durationSeconds)}`;return `<div class="crr-lib-item" draggable="true" data-lib-type="${type}" data-lib-id="${esc(id)}"><strong>${esc(title)}</strong><span>${esc(sub)}</span><button class="crr-btn" data-action="add-library" data-type="${type}" data-key="${esc(id)}">+ Add</button></div>`;}
+function renderLibraries(){const ts=(document.getElementById('crr-song-search')?.value||'').toLowerCase(),ss=(document.getElementById('crr-sponsor-search')?.value||'').toLowerCase();const t=Object.entries(tracks).filter(([,x])=>x.approved===true).filter(([,x])=>`${x.artist} ${x.title} ${x.genre}`.toLowerCase().includes(ts));const s=Object.entries(sponsors).filter(([,x])=>x.approved===true).filter(([,x])=>`${x.businessName} ${x.contactName}`.toLowerCase().includes(ss));document.getElementById('crr-track-library').innerHTML=t.length?t.map(([id,x])=>libraryItem('track',id,x)).join(''):'<div class="crr-empty">No approved songs yet.</div>';document.getElementById('crr-sponsor-library').innerHTML=s.length?s.map(([id,x])=>libraryItem('sponsor',id,x)).join(''):'<div class="crr-empty">No approved sponsors yet.</div>';}
 
-function render(){
-  installShell();
-  const pendingList=document.getElementById('cr-radio-pending-list');
-  const rejectedList=document.getElementById('cr-radio-rejected-list');
-  if(!pendingList || !rejectedList) return;
-  const pendingEntries=Object.entries(pending).sort((a,b)=>(b[1]?.submittedAt||0)-(a[1]?.submittedAt||0));
-  const rejectedEntries=Object.entries(rejected).sort((a,b)=>(b[1]?.rejectedAt||0)-(a[1]?.rejectedAt||0));
-  pendingList.innerHTML=pendingEntries.length?pendingEntries.map(([key,song])=>cardMarkup(key,song,'pending')).join(''):'<div class="cr-radio-empty">No songs waiting for review. 🤘</div>';
-  rejectedList.innerHTML=rejectedEntries.length?rejectedEntries.map(([key,song])=>cardMarkup(key,song,'rejected')).join(''):'<div class="cr-radio-empty">Rejected archive is empty.</div>';
-  document.getElementById('cr-radio-pending-count').textContent=String(pendingEntries.length);
-  document.getElementById('cr-radio-rejected-count').textContent=`(${rejectedEntries.length})`;
-  const attention=document.getElementById('cr-radio-attention-count'); if(attention) attention.textContent=String(pendingEntries.length);
-}
+async function durationFromUrl(url){return new Promise((resolve,reject)=>{const a=new Audio();a.preload='metadata';a.onloadedmetadata=()=>resolve(a.duration);a.onerror=reject;a.src=url;});}
+async function addToDraft(type,id){const source=type==='track'?tracks[id]:sponsors[id];if(!source)return;let duration=Number(source.durationSeconds||source.audioDurationSeconds)||0;if(!duration&&source.audioUrl){try{duration=await durationFromUrl(source.audioUrl);duration=Math.round(duration*10)/10;await update(ref(db,`${type==='track'?'RadioTracks':'RadioSponsors'}/${id}`),{durationSeconds:duration});}catch(e){console.warn('Could not detect audio duration',e);}}if(!duration){alert('This audio item has no readable duration yet.');return;}draft.push({type,id,durationSeconds:duration,title:type==='track'?source.title:source.businessName,artist:type==='track'?source.artist:'Sponsor',audioUrl:source.audioUrl||'',coverUrl:type==='track'?(source.coverUrl||''):(source.logoUrl||''),profileUrl:source.profileUrl||''});renderDraft();}
+function renderDraft(){const drop=document.getElementById('crr-drop');if(!drop)return;if(!draft.length)drop.innerHTML='<div class="crr-empty">Drop songs and sponsor spots here.</div>';else drop.innerHTML=draft.map((x,i)=>`<div class="crr-play-item" draggable="true" data-draft-index="${i}"><span class="crr-handle">☰</span><div><strong>${x.type==='sponsor'?'📢 ':'🎵 '}${esc(x.title||'Untitled')}</strong><span>${esc(x.artist||'')} · ${durationText(x.durationSeconds)}</span></div><button class="crr-btn danger" data-action="remove-draft" data-index="${i}">×</button></div>`).join('');const total=draft.reduce((n,x)=>n+Number(x.durationSeconds||0),0);document.getElementById('crr-runtime').textContent=`Runtime: ${durationText(total)} · ${draft.length} item${draft.length===1?'':'s'}`;}
+function resetBuilder(){editingId='';draft=[];document.getElementById('crr-name').value='';document.getElementById('crr-start').value='10:00';document.getElementById('crr-end').value='14:00';document.querySelectorAll('.crr-days input').forEach(i=>i.checked=i.value==='every');document.getElementById('crr-save').textContent='Create Playlist';document.getElementById('crr-builder-status').textContent='';renderDraft();}
+function selectedDays(){const vals=[...document.querySelectorAll('.crr-days input:checked')].map(i=>i.value);return vals.includes('every')?['every']:(vals.length?vals:['every']);}
+async function savePlaylist(){const name=document.getElementById('crr-name').value.trim();if(!name){alert('Give the playlist a name.');return;}if(!draft.length){alert('Add at least one song or sponsor spot.');return;}const start=mins(document.getElementById('crr-start').value),end=mins(document.getElementById('crr-end').value);if(start===end){alert('Start and end time cannot be the same.');return;}const payload={name,days:selectedDays(),startMinutes:start,endMinutes:end,timezone:RADIO_TIMEZONE,items:draft,totalDurationSeconds:Math.round(draft.reduce((n,x)=>n+Number(x.durationSeconds||0),0)*10)/10,active:true,updatedAt:Date.now()};if(editingId){payload.createdAt=playlists[editingId]?.createdAt||Date.now();await set(ref(db,`RadioPlaylists/${editingId}`),payload);}else{payload.createdAt=Date.now();await set(push(ref(db,'RadioPlaylists')),payload);}document.getElementById('crr-builder-status').textContent=`${name} saved and scheduled.`;resetBuilder();}
+function editPlaylist(id){const p=playlists[id];if(!p)return;editingId=id;draft=Array.isArray(p.items)?p.items.map(x=>({...x})):[];document.getElementById('crr-name').value=p.name||'';document.getElementById('crr-start').value=timeValue(p.startMinutes);document.getElementById('crr-end').value=timeValue(p.endMinutes);const days=Array.isArray(p.days)?p.days:['every'];document.querySelectorAll('.crr-days input').forEach(i=>i.checked=days.includes(i.value));document.getElementById('crr-save').textContent='Save Playlist';renderDraft();document.getElementById('crr-name').scrollIntoView({behavior:'smooth',block:'center'});}
 
-function setStatus(key,text){ const el=document.querySelector(`[data-radio-status="${CSS.escape(key)}"]`); if(el) el.textContent=text; }
+function renderSchedules(){const el=document.getElementById('crr-schedules');if(!el)return;const current=activePlaylist(playlists);const entries=Object.entries(playlists).sort((a,b)=>(a[1].startMinutes||0)-(b[1].startMinutes||0));document.getElementById('crr-playlist-count').textContent=entries.length;el.innerHTML=entries.length?entries.map(([id,p])=>{const on=current?.id===id;return `<article class="crr-schedule ${on?'onair':''}"><div class="crr-head"><div><strong style="color:#fff">${on?'🔴 ':''}${esc(p.name||'Playlist')}</strong><div class="crr-muted">${(p.days||['every']).join(', ')} · ${formatMinutes(p.startMinutes)}–${formatMinutes(p.endMinutes)} · ${durationText(p.totalDurationSeconds)} · ${(p.items||[]).length} items · ${p.active===false?'INACTIVE':'ACTIVE'}</div></div></div><div class="crr-actions"><button class="crr-btn" data-action="edit-playlist" data-key="${id}">Edit</button><button class="crr-btn" data-action="duplicate-playlist" data-key="${id}">Duplicate</button><button class="crr-btn gold" data-action="toggle-playlist" data-key="${id}">${p.active===false?'Activate':'Disable'}</button><button class="crr-btn danger" data-action="delete-playlist" data-key="${id}">Delete</button></div></article>`}).join(''):'<div class="crr-empty">No scheduled playlists yet.</div>';renderOnAir();}
+function renderOnAir(){const el=document.getElementById('crr-onair');if(!el)return;const p=activePlaylist(playlists);if(!p){el.innerHTML='<div class="crr-empty">Nothing is scheduled for this time slot.</div>';return;}const pos=playlistPosition(p);const item=p.items?.[pos?.index||0];if(!item){el.innerHTML='<div class="crr-empty">Active playlist has no playable items.</div>';return;}el.innerHTML=`<div class="crr-onair"><div class="crr-onair-art">${item.coverUrl?`<img src="${esc(item.coverUrl)}">`:(item.type==='sponsor'?'📢':'♪')}</div><div><strong style="color:#fff;font-size:1rem">${esc(p.name)}</strong><div style="color:#0ccfbd;font-weight:900;margin-top:4px">${item.type==='sponsor'?'SPONSOR: ':''}${esc(item.title||'Untitled')}</div><div class="crr-muted">${esc(item.artist||'')} · ${durationText(pos?.offsetSeconds||0)} into item · ${formatMinutes(p.startMinutes)}–${formatMinutes(p.endMinutes)}</div></div></div>`;}
 
-async function approve(key){
-  const song=pending[key]; if(!song) return;
-  if(!confirm(`Approve “${song.title || 'this song'}” by ${song.artist || 'this artist'} and add it to RadioTracks?`)) return;
-  setStatus(key,'Approving and adding to radio library…');
-  const trackKey=`${slug(song.artist)}-${slug(song.title)}`;
-  await set(ref(queueDb,`RadioTracks/${trackKey}`),{...song,approved:true,reviewStatus:'approved',approvedAt:Date.now()});
-  await remove(ref(queueDb,`RadioSubmissions/${key}`));
-}
+async function approveSong(key){const s=pendingSongs[key];if(!s||!confirm(`Approve “${s.title}” by ${s.artist}?`))return;const id=`${slug(s.artist)}-${slug(s.title)}`;await set(ref(db,`RadioTracks/${id}`),{...s,approved:true,reviewStatus:'approved',approvedAt:Date.now(),dateAdded:Date.now()});await remove(ref(db,`RadioSubmissions/${key}`));}
+async function rejectSong(key){const s=pendingSongs[key];if(!s)return;const note=prompt('Optional rejection note:','');if(note===null)return;await set(ref(db,`RadioRejected/${key}`),{...s,approved:false,reviewStatus:'rejected',rejectionReason:note,rejectedAt:Date.now()});await remove(ref(db,`RadioSubmissions/${key}`));}
+async function approveSponsor(key){const s=pendingSponsors[key];if(!s||!confirm(`Approve sponsor spot for ${s.businessName}?`))return;const id=`${slug(s.businessName)}-${Date.now()}`;await set(ref(db,`RadioSponsors/${id}`),{...s,approved:true,status:'approved',durationSeconds:Number(s.audioDurationSeconds)||0,approvedAt:Date.now()});await remove(ref(db,`RadioSponsorSubmissions/${key}`));}
+async function rejectSponsor(key){const s=pendingSponsors[key];if(!s)return;const note=prompt('Optional rejection note:','');if(note===null)return;await set(ref(db,`RadioSponsorRejected/${key}`),{...s,approved:false,status:'rejected',rejectionReason:note,rejectedAt:Date.now()});await remove(ref(db,`RadioSponsorSubmissions/${key}`));}
 
-async function reject(key){
-  const song=pending[key]; if(!song) return;
-  const reason=prompt(`Optional note for the rejected archive:\n\n“${song.title || 'Untitled'}” by ${song.artist || 'Unknown Artist'}`,'') ;
-  if(reason===null) return;
-  if(!confirm(`Ixnay this submission? It will be archived, not permanently deleted.`)) return;
-  setStatus(key,'Moving submission to rejected archive…');
-  await set(ref(queueDb,`RadioRejected/${key}`),{...song,approved:false,reviewStatus:'rejected',rejectedAt:Date.now(),rejectionReason:String(reason||'').trim()});
-  await remove(ref(queueDb,`RadioSubmissions/${key}`));
-}
+function wireUi(){document.addEventListener('click',async e=>{const tab=e.target.closest('[data-review-tab]');if(tab){activeTab=tab.dataset.reviewTab;document.querySelectorAll('[data-review-tab]').forEach(b=>b.classList.toggle('active',b===tab));renderReview();return;}const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action,k=b.dataset.key;try{if(a==='approve-song')await approveSong(k);if(a==='reject-song')await rejectSong(k);if(a==='restore-song'){await set(ref(db,`RadioSubmissions/${k}`),{...rejectedSongs[k],reviewStatus:'pending',approved:false});await remove(ref(db,`RadioRejected/${k}`));}if(a==='delete-rejected-song'&&confirm('Delete this rejected song record permanently?'))await remove(ref(db,`RadioRejected/${k}`));if(a==='approve-sponsor')await approveSponsor(k);if(a==='reject-sponsor')await rejectSponsor(k);if(a==='restore-sponsor'){await set(ref(db,`RadioSponsorSubmissions/${k}`),{...rejectedSponsors[k],status:'pending',approved:false});await remove(ref(db,`RadioSponsorRejected/${k}`));}if(a==='delete-rejected-sponsor'&&confirm('Delete this rejected sponsor record permanently?'))await remove(ref(db,`RadioSponsorRejected/${k}`));if(a==='add-library')await addToDraft(b.dataset.type,k);if(a==='remove-draft'){draft.splice(Number(b.dataset.index),1);renderDraft();}if(a==='edit-playlist')editPlaylist(k);if(a==='duplicate-playlist'){const p=playlists[k];if(p)await set(push(ref(db,'RadioPlaylists')),{...p,name:`${p.name} Copy`,active:false,createdAt:Date.now(),updatedAt:Date.now()});}if(a==='toggle-playlist'){await update(ref(db,`RadioPlaylists/${k}`),{active:playlists[k]?.active===false,updatedAt:Date.now()});}if(a==='delete-playlist'&&confirm('Delete this scheduled playlist?'))await remove(ref(db,`RadioPlaylists/${k}`));}catch(err){console.error('Radio Control Room action failed',err);alert('Radio action failed. Check Firebase permissions and try again.');}});
+document.getElementById('crr-song-search')?.addEventListener('input',renderLibraries);document.getElementById('crr-sponsor-search')?.addEventListener('input',renderLibraries);document.getElementById('crr-save')?.addEventListener('click',savePlaylist);document.getElementById('crr-clear')?.addEventListener('click',resetBuilder);document.getElementById('crr-new')?.addEventListener('click',resetBuilder);
+const drop=document.getElementById('crr-drop');drop?.addEventListener('dragover',e=>e.preventDefault());drop?.addEventListener('drop',async e=>{e.preventDefault();const lib=e.dataTransfer.getData('application/x-radio-library');const reorder=e.dataTransfer.getData('application/x-radio-draft');if(lib){const [type,id]=lib.split('|');await addToDraft(type,id);}else if(reorder!==''){const from=Number(reorder);const target=e.target.closest('[data-draft-index]');const to=target?Number(target.dataset.draftIndex):draft.length-1;if(Number.isInteger(from)&&Number.isInteger(to)&&draft[from]){const [item]=draft.splice(from,1);draft.splice(to,0,item);renderDraft();}}});document.addEventListener('dragstart',e=>{const lib=e.target.closest('[data-lib-type]');if(lib)e.dataTransfer.setData('application/x-radio-library',`${lib.dataset.libType}|${lib.dataset.libId}`);const di=e.target.closest('[data-draft-index]');if(di)e.dataTransfer.setData('application/x-radio-draft',di.dataset.draftIndex);});}
 
-async function restore(key){
-  const song=rejected[key]; if(!song) return;
-  if(!confirm(`Restore “${song.title || 'this song'}” to the review queue?`)) return;
-  setStatus(key,'Restoring to review queue…');
-  const restored={...song,approved:false,reviewStatus:'pending'};
-  delete restored.rejectedAt; delete restored.rejectionReason;
-  await set(ref(queueDb,`RadioSubmissions/${key}`),restored);
-  await remove(ref(queueDb,`RadioRejected/${key}`));
-}
-
-async function deleteRejected(key){
-  const song=rejected[key]; if(!song) return;
-  if(!confirm(`Permanently delete the rejected record for “${song.title || 'this song'}”? This cannot be undone.`)) return;
-  setStatus(key,'Deleting rejected record…');
-  await remove(ref(queueDb,`RadioRejected/${key}`));
-}
-
-document.addEventListener('click',async event=>{
-  const button=event.target.closest('[data-radio-action]'); if(!button) return;
-  const key=button.dataset.key; const action=button.dataset.radioAction;
-  button.disabled=true;
-  try{
-    if(action==='approve') await approve(key);
-    if(action==='reject') await reject(key);
-    if(action==='restore') await restore(key);
-    if(action==='delete-rejected') await deleteRejected(key);
-  }catch(error){ console.error('Control Room radio action failed',error); setStatus(key,'Action failed. Check Firebase permissions and try again.'); button.disabled=false; }
-});
-
-onAuthStateChanged(auth,user=>{
-  if(!isAdminAccount(user)){
-    if(stopPending){stopPending();stopPending=null;} if(stopRejected){stopRejected();stopRejected=null;}
-    return;
-  }
-  installShell();
-  if(!stopPending) stopPending=onValue(ref(queueDb,'RadioSubmissions'),snap=>{pending=snap.val()||{};render();},error=>console.error('Could not load radio submissions',error));
-  if(!stopRejected) stopRejected=onValue(ref(queueDb,'RadioRejected'),snap=>{rejected=snap.val()||{};render();},error=>console.error('Could not load rejected radio submissions',error));
-});
+function watch(path,assign,render){stops.push(onValue(ref(db,path),s=>{assign(s.val()||{});render();},e=>console.error(`Radio read failed: ${path}`,e)));}
+onAuthStateChanged(auth,user=>{if(!isAdminAccount(user)){stops.splice(0).forEach(stop=>stop());return;}install();watch('RadioSubmissions',v=>pendingSongs=v,renderReview);watch('RadioRejected',v=>rejectedSongs=v,renderReview);watch('RadioSponsorSubmissions',v=>pendingSponsors=v,renderReview);watch('RadioSponsorRejected',v=>rejectedSponsors=v,renderReview);watch('RadioTracks',v=>tracks=v,renderLibraries);watch('RadioSponsors',v=>sponsors=v,renderLibraries);watch('RadioPlaylists',v=>playlists=v,renderSchedules);setInterval(renderOnAir,1000);});
