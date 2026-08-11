@@ -39,7 +39,7 @@ style.textContent=`
 document.head.appendChild(style);
 
 const DEFAULT_COVER='IMG_9367.png';
-const RADIO_LOGO='bandtroductions-radio-badge.png';
+const RADIO_LOGO='5C9409EE-59F6-4151-9624-2998D7DDF2D0.png';
 let playlists={};
 let audio=null;
 let currentKey='';
@@ -67,16 +67,16 @@ function playerMarkup(s){
   const live=Boolean(s);
   const item=s?.item||{};
   const p=s?.p||{};
-  const track=live?(item.type==='sponsor'?`Sponsor: ${item.title||'BANDtroductions Sponsor'}`:(item.title||'Untitled')):'OFF AIR';
-  const band=live?(item.artist||'Independent Music'):'BANDtroductions Radio';
+  const track=live?(item.type==='sponsor'?`Sponsor: ${item.title||'BANDtroductions Sponsor'}`:(item.title||'Untitled')):'Station standing by';
+  const band=live?(item.artist||'Independent Music'):'';
   const playlist=live?(p.name||'Scheduled Programming'):'No playlist is scheduled for this time.';
-  const button=live?(userUnmuted?'🔇 MUTE':'🔊 LISTEN NOW'):'OFF AIR';
+  const button=live?(userUnmuted?'🔇 MUTE':'🔊 LISTEN NOW'):'🔊 LISTEN NOW';
   return `<div class="radio"><div class="radio-box bt-radio-box">
     <div class="bt-radio-status-row"><span class="bt-radio-status ${live?'live':'off'}">${live?'● LIVE':'OFF AIR'}</span></div>
     <div class="bt-radio-art-row"><img class="bt-radio-art" src="${esc(item.coverUrl||DEFAULT_COVER)}" alt="${live?'album artwork':'BANDtroductions artwork'}"><img class="bt-radio-logo" src="${RADIO_LOGO}" alt="BANDtroductions Radio"></div>
     <div class="bt-radio-now">${live?'NOW PLAYING':'RADIO'}</div>
     <div class="bt-radio-track">${esc(track)}</div>
-    <div class="bt-radio-band">${esc(band)}</div>
+    ${band?`<div class="bt-radio-band">${esc(band)}</div>`:''}
     <div class="bt-radio-playlist">${esc(playlist)}</div>
     <div class="bt-radio-eq ${live?'':'off'}" aria-hidden="true">${eqBars()}</div>
     <button type="button" class="btn primary bt-radio-listen" ${live?'':'disabled'}>${button}</button>
