@@ -10,18 +10,31 @@ export function easternClock(date=new Date()){
   return {weekday,hour,minute,second,minutes:hour*60+minute,seconds:hour*3600+minute*60+second};
 }
 
+const DAYS=['sun','mon','tue','wed','thu','fri','sat'];
+function previousDay(day){const i=DAYS.indexOf(day);return i<0?day:DAYS[(i+6)%7];}
+
 export function activePlaylist(playlists,date=new Date()){
   const now=easternClock(date);
   const day=now.weekday.toLowerCase().slice(0,3);
   const list=Object.entries(playlists||{}).map(([id,p])=>({id,...p})).filter(p=>p.active!==false&&Array.isArray(p.items)&&p.items.length);
   const matches=list.filter(p=>{
     const days=Array.isArray(p.days)&&p.days.length?p.days:['every'];
-    const dayMatch=days.includes('every')||days.includes(day);
     const start=Number(p.startMinutes||0);
     const end=Number(p.endMinutes??1440);
-    if(!dayMatch)return false;
-    if(end>start)return now.minutes>=start&&now.minutes<end;
-    return now.minutes>=start||now.minutes<end;
+    const every=days.includes('every');
+    if(end>start){
+      const dayMatch=every||days.includes(day);
+      return dayMatch&&now.minutes>=start&&now.minutes<end;
+    }
+    if(now.minutes>=start){
+      const dayMatch=every||days.includes(day);
+      return dayMatch;
+    }
+    if(now.minutes<end){
+      const dayMatch=every||days.includes(previousDay(day));
+      return dayMatch;
+    }
+    return false;
   });
   return matches.sort((a,b)=>(Number(b.priority||0)-Number(a.priority||0))||(Number(b.startMinutes||0)-Number(a.startMinutes||0))||(Number(b.createdAt||0)-Number(a.createdAt||0)))[0]||null;
 }
