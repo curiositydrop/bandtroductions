@@ -7,27 +7,35 @@ service firebase.storage {
     // their own Firebase Auth UID folder.
     match /users/{userId}/profile-media/{fileName} {
       allow read: if true;
-
       allow create, update: if request.auth != null
                             && request.auth.uid == userId
                             && request.resource.size < 20 * 1024 * 1024
                             && request.resource.contentType.matches('image/.*');
-
-      allow delete: if request.auth != null
-                    && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
     // Existing user image folders remain supported.
     match /users/{userId}/{folder}/{fileName} {
       allow read: if true;
-
       allow create, update: if request.auth != null
                             && request.auth.uid == userId
                             && request.resource.size < 20 * 1024 * 1024
                             && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
 
-      allow delete: if request.auth != null
-                    && request.auth.uid == userId;
+    // BANDtroductions Radio submissions. Members can upload only inside
+    // their own UID folder. Audio is capped at 25 MB and cover art at 10 MB.
+    match /radio-submissions/{userId}/{fileName} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+                            && request.auth.uid == userId
+                            && (
+                              (request.resource.contentType == 'audio/mpeg' && request.resource.size < 25 * 1024 * 1024)
+                              ||
+                              (request.resource.contentType.matches('image/.*') && request.resource.size < 10 * 1024 * 1024)
+                            );
+      allow delete: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
