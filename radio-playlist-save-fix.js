@@ -14,26 +14,32 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const mins=v=>{const [h,m]=String(v||'00:00').split(':').map(Number);return (h||0)*60+(m||0)};
 const durationText=s=>{s=Math.max(0,Math.round(Number(s)||0));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`};
 const timeValue=m=>`${String(Math.floor((Number(m)||0)/60)%24).padStart(2,'0')}:${String((Number(m)||0)%60).padStart(2,'0')}`;
+const norm=v=>String(v||'').replace(/[🎵📢♪♫]/gu,'').trim().toLowerCase();
 
 function selectedDays(){const vals=[...document.querySelectorAll('.crr-days input:checked')].map(i=>i.value);return vals.includes('every')?['every']:(vals.length?vals:['every']);}
+function parseDuration(meta){const m=String(meta).match(/(\d+):(\d{2})\s*$/);return m?Number(m[1])*60+Number(m[2]):0;}
 function currentDraft(){
   const cards=[...document.querySelectorAll('#crr-drop [data-draft-index]')];
   return cards.map(card=>{
-    const strong=card.querySelector('strong')?.textContent?.replace(/^\s*[🎵📢]\s*/,'').trim()||'';
-    const meta=card.querySelector('span:not(.crr-handle)')?.textContent||'';
-    const isSponsor=(card.querySelector('strong')?.textContent||'').includes('📢');
+    const strongText=card.querySelector('strong')?.textContent||'';
+    const titleText=norm(strongText);
+    const spans=[...card.querySelectorAll('span')].filter(s=>!s.classList.contains('crr-handle'));
+    const meta=spans.map(s=>s.textContent||'').find(t=>t.includes('·')||/\d+:\d{2}/.test(t))||'';
+    const isSponsor=strongText.includes('📢');
     if(isSponsor){
-      const hit=Object.entries(sponsors).find(([,x])=>(x.businessName||'').trim()===strong);
+      let hit=Object.entries(sponsors).find(([,x])=>norm(x.businessName)===titleText);
+      if(!hit)hit=Object.entries(sponsors).find(([,x])=>norm(x.businessName).includes(titleText)||titleText.includes(norm(x.businessName)));
       if(!hit)return null;
-      const [id,x]=hit;return {type:'sponsor',id,title:x.businessName||strong,artist:'Sponsor',audioUrl:x.audioUrl||'',coverUrl:x.logoUrl||'',profileUrl:'',durationSeconds:Number(x.durationSeconds||x.audioDurationSeconds)||parseDuration(meta)};
+      const [id,x]=hit;return {type:'sponsor',id,title:x.businessName||strongText,artist:'Sponsor',audioUrl:x.audioUrl||'',coverUrl:x.logoUrl||'',profileUrl:'',durationSeconds:Number(x.durationSeconds||x.audioDurationSeconds)||parseDuration(meta)};
     }
-    const artist=meta.split('·')[0]?.trim()||'';
-    const hit=Object.entries(tracks).find(([id,x])=>id!=='__station'&&(x.title||'').trim()===strong&&(!artist||(x.artist||'').trim()===artist));
+    const artist=norm(meta.split('·')[0]);
+    let hit=Object.entries(tracks).find(([id,x])=>id!=='__station'&&norm(x.title)===titleText&&(!artist||norm(x.artist)===artist));
+    if(!hit)hit=Object.entries(tracks).find(([id,x])=>id!=='__station'&&norm(x.title)===titleText);
+    if(!hit)hit=Object.entries(tracks).find(([id,x])=>id!=='__station'&&(norm(x.title).includes(titleText)||titleText.includes(norm(x.title))));
     if(!hit)return null;
-    const [id,x]=hit;return {type:'track',id,title:x.title||strong,artist:x.artist||artist,audioUrl:x.audioUrl||'',coverUrl:x.coverUrl||'',profileUrl:x.profileUrl||'',durationSeconds:Number(x.durationSeconds)||parseDuration(meta)};
+    const [id,x]=hit;return {type:'track',id,title:x.title||strongText,artist:x.artist||meta.split('·')[0]?.trim()||'',audioUrl:x.audioUrl||'',coverUrl:x.coverUrl||'',profileUrl:x.profileUrl||'',durationSeconds:Number(x.durationSeconds)||parseDuration(meta)};
   }).filter(Boolean);
 }
-function parseDuration(meta){const m=String(meta).match(/(\d+):(\d{2})\s*$/);return m?Number(m[1])*60+Number(m[2]):0;}
 function newId(){return `playlist-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;}
 
 async function savePlaylistFromUi(){
@@ -44,7 +50,7 @@ async function savePlaylistFromUi(){
   const end=mins(document.getElementById('crr-end')?.value);
   const items=currentDraft();
   if(!name){status.textContent='Give the playlist a name.';status.style.color='#ff9d9d';return;}
-  if(!items.length){status.textContent='Add at least one playable song or sponsor spot.';status.style.color='#ff9d9d';return;}
+  if(!items.length){status.textContent='The song is visible, but I could not match it to the approved library. Refresh Admin once and add the song again.';status.style.color='#ff9d9d';return;}
   if(start===end){status.textContent='Start and end time cannot be the same.';status.style.color='#ff9d9d';return;}
   const editingId=button?.dataset.stationEditId||'';
   const id=editingId||newId();
