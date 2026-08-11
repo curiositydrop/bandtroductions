@@ -4,11 +4,11 @@ import { activePlaylist, playlistPosition } from './radio-schedule-engine.js?v=2
 
 const cfg={apiKey:'AIzaSyApLiiJsKTw1Fp8J3aQatMqiSZoP_6EycE',authDomain:'bandfanwall.firebaseapp.com',databaseURL:'https://bandfanwall-default-rtdb.firebaseio.com',projectId:'bandfanwall',storageBucket:'bandfanwall.firebasestorage.app',messagingSenderId:'619241154826',appId:'1:619241154826:web:25ddc58eef094e3c0732f3'};
 const app=getApps().find(a=>a.name==='radio-public')||initializeApp(cfg,'radio-public');const db=getDatabase(app);
-const PLAYLIST_PATH='RadioTracks/__station/playlists';
+const PLAYLIST_PATH='RadioTracks/__station';
 const audio=document.getElementById('audioPlayer'),cover=document.getElementById('trackCover'),title=document.getElementById('trackTitle'),artist=document.getElementById('trackArtist'),profile=document.getElementById('profileLink'),recent=document.getElementById('recentList');
 const DEFAULT_COVER='IMG_9367.png';let playlists={},tracks={},currentKey='',userWantsPlay=false,switching=false,lastCounted='';
 
-const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]));
 function approvedFallback(){return Object.entries(tracks).map(([id,t])=>({id,...t})).filter(t=>t.approved===true&&t.audioUrl&&Number(t.durationSeconds)>0).sort((a,b)=>String(a.artist||'').localeCompare(String(b.artist||'')));}
 function fallbackPlaylist(){const items=approvedFallback().map(t=>({type:'track',id:t.id,title:t.title,artist:t.artist,audioUrl:t.audioUrl,coverUrl:t.coverUrl||'',profileUrl:t.profileUrl||'',durationSeconds:t.durationSeconds}));return items.length?{id:'fallback',name:'BANDtroductions Radio Rotation',days:['every'],startMinutes:0,endMinutes:1440,items,active:true}:null;}
 function station(){return activePlaylist(playlists)||fallbackPlaylist();}
