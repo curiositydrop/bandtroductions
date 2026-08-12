@@ -83,6 +83,20 @@ function setImage(avatar,src,alt,profileId){
   img.src=src;
 }
 
+function setProfileLink(nameEl,profileId){
+  if(!nameEl||!profileId)return;
+  const href=`profile.html?id=${encodeURIComponent(profileId)}`;
+  if(nameEl.tagName==='A'){
+    nameEl.href=href;
+    return;
+  }
+  const link=document.createElement('a');
+  link.className=nameEl.className;
+  link.textContent=nameEl.textContent;
+  link.href=href;
+  nameEl.replaceWith(link);
+}
+
 function youtubeFromPost(post){
   const text=String(post?.content||'');
   const textUrl=text.match(/https?:\/\/(?:www\.)?(?:youtu\.be\/[A-Za-z0-9_-]{6,}|youtube\.com\/(?:watch\?[^\s]*v=|embed\/|shorts\/)[A-Za-z0-9_-]{6,})[^\s]*/i)?.[0]||'';
@@ -118,11 +132,14 @@ async function apply(posts){
       const src=imageFor(admin)||post.adminAvatarUrl||'';
       if(src)setImage(avatar,src,'BANDtroductions Admin',admin?.id||'');
       else if(!avatar.querySelector('img'))avatar.textContent='BT';
+      setProfileLink(nameEl,admin?.id||'');
       return;
     }
     const uid=authorId(post);const data=await profile(uid,post.authorName||'');
+    const profileId=data?.id||uid;
     const src=imageFor(data)||post.authorAvatarUrl||post.authorImageUrl||post.authorPhotoUrl||post.authorPhotoURL||post.avatarUrl||post.imageUrlAuthor||'';
-    if(src)setImage(avatar,src,post.authorName||'Profile avatar',data?.id||uid);
+    if(src)setImage(avatar,src,post.authorName||'Profile avatar',profileId);
+    setProfileLink(nameEl,profileId);
   }));
 }
 
