@@ -40,7 +40,9 @@ document.head.appendChild(style);
 
 const DEFAULT_COVER='IMG_9367.png';
 const RADIO_LOGO='5C9409EE-59F6-4151-9624-2998D7DDF2D0.png';
+const STATION_CONTROL_ID='__stationControl';
 let playlists={};
+let stationEnabled=true;
 let audio=null;
 let currentKey='';
 let userUnmuted=false;
@@ -50,6 +52,7 @@ const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const eqBars=()=>Array.from({length:13},()=>'<span></span>').join('');
 
 function state(){
+  if(!stationEnabled)return null;
   const p=activePlaylist(playlists);
   if(!p)return null;
   const pos=playlistPosition(p);
@@ -69,10 +72,10 @@ function playerMarkup(s){
   const p=s?.p||{};
   const track=live?(item.type==='sponsor'?`Sponsor: ${item.title||'BANDtroductions Sponsor'}`:(item.title||'Untitled')):'Station standing by';
   const band=live?(item.artist||'Independent Music'):'';
-  const playlist=live?(p.name||'Scheduled Programming'):'No playlist is scheduled for this time.';
+  const playlist=live?(p.name||'Scheduled Programming'):(stationEnabled?'No playlist is scheduled for this time.':'Station has been taken off air.');
   const button=live?(userUnmuted?'🔇 MUTE':'🔊 LISTEN NOW'):'🔊 LISTEN NOW';
   return `<div class="radio"><div class="radio-box bt-radio-box">
-    <div class="bt-radio-status-row"><span class="bt-radio-status ${live?'live':'off'}">${live?'● LIVE':'OFF AIR'}</span></div>
+    <div class="bt-radio-status-row"><span class="bt-radio-status ${live?'live':'off'}">${live?'● ON AIR':'OFF AIR'}</span></div>
     <div class="bt-radio-art-row"><img class="bt-radio-art" src="${esc(item.coverUrl||DEFAULT_COVER)}" alt="${live?'album artwork':'BANDtroductions artwork'}"><img class="bt-radio-logo" src="${RADIO_LOGO}" alt="BANDtroductions Radio"></div>
     <div class="bt-radio-now">${live?'NOW PLAYING':'RADIO'}</div>
     <div class="bt-radio-track">${esc(track)}</div>
@@ -171,7 +174,14 @@ async function synchronize(forcePlay=false){
 
 onSnapshot(collection(devDb,'radioPlaylists'),snap=>{
   playlists={};
-  snap.forEach(d=>{playlists[d.id]={id:d.id,...d.data()};});
+  stationEnabled=true;
+  snap.forEach(d=>{
+    if(d.id===STATION_CONTROL_ID){
+      stationEnabled=d.data()?.stationOnAir!==false;
+      return;
+    }
+    playlists[d.id]={id:d.id,...d.data()};
+  });
   render();
   synchronize(false);
 },error=>{
