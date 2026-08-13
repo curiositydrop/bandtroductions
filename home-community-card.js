@@ -13,3 +13,14 @@ if (homeGrid && sponsorCard && !homeGrid.querySelector('.bt-community-card')) {
 
   sponsorCard.insertAdjacentElement('afterend', communityCard);
 }
+
+// Keep the no-app app layer isolated from the working homepage and global runtime.
+// If this helper ever fails to load, the existing site continues normally.
+if (!document.querySelector('script[data-bt-pwa]')) {
+  const pwaScript = document.createElement('script');
+  pwaScript.src = 'pwa-install.js?v=1';
+  pwaScript.defer = true;
+  pwaScript.dataset.btPwa = 'true';
+  pwaScript.onerror = () => console.warn('BANDtroductions no-app app helper did not load.');
+  document.head.appendChild(pwaScript);
+}
