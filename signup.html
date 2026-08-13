@@ -6,61 +6,130 @@
   <title>Create Account | BANDtroductions</title>
   <link rel="stylesheet" href="style.css?v=7">
   <link rel="stylesheet" href="auth.css?v=1">
+  <style>
+    .signup-step[hidden]{display:none!important}
+    .signup-step-note{border:1px solid #333;border-radius:12px;background:#101010;padding:12px;color:#aaa;line-height:1.5}
+    .signup-login-summary{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid #333;border-radius:12px;background:#0c0c0c;padding:12px;flex-wrap:wrap}
+    .signup-login-summary strong{color:#fff}.signup-login-summary span{color:#0ccfbd;word-break:break-word}
+    .signup-claim-box{margin-top:18px;padding-top:18px;border-top:1px solid #333}
+    .signup-claim-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .signup-claim-links .auth-button{width:auto!important}
+    .signup-fields{display:grid;gap:12px}
+    .signup-fields[hidden]{display:none!important}
+    .signup-final-note{font-size:.84rem;color:#999;line-height:1.5}
+  </style>
 </head>
 <body class="hamburger-active auth-page">
   <div id="global-header"></div>
 
-  <main class="auth-shell">
-    <h1>Create Your BANDtroductions Account</h1>
-    <p class="auth-subtitle">Join as a band, musician, venue, or fan. Browsing stays free for guests, and core site access will never be paywalled.</p>
+  <main class="auth-shell auth-shell-wide">
+    <h1 id="signup-title">Create Your BANDtroductions Account</h1>
+    <p id="signup-subtitle" class="auth-subtitle">Join as a band, musician, venue, or fan. Browsing stays free for guests, and core site access will never be paywalled.</p>
 
-    <form id="signup-form" class="auth-form">
-      <label>
-        Account type
-        <select id="account-type" required>
-          <option value="">Choose one</option>
-          <option value="band">Band</option>
-          <option value="musician">Musician</option>
-          <option value="venue">Venue</option>
-          <option value="fan">Fan</option>
-        </select>
-      </label>
+    <section id="credentials-step" class="signup-step">
+      <form id="credentials-form" class="auth-form">
+        <label>
+          Email
+          <input id="email" type="email" required autocomplete="email">
+        </label>
 
-      <label>
-        Display name
-        <input id="display-name" type="text" maxlength="80" required autocomplete="name">
-      </label>
+        <label>
+          Password
+          <input id="password" type="password" minlength="8" required autocomplete="new-password">
+        </label>
 
-      <label>
-        Email
-        <input id="email" type="email" required autocomplete="email">
-      </label>
+        <button id="continue-button" class="auth-button" type="submit" disabled>Continue</button>
+        <p id="credentials-message" class="auth-message" role="status"></p>
+      </form>
 
-      <label>
-        Password
-        <input id="password" type="password" minlength="8" required autocomplete="new-password">
-      </label>
+      <div id="claim-directory-box" class="signup-claim-box">
+        <strong>Already have a BANDtroductions profile from before Social launched?</strong>
+        <p class="auth-subtitle">Find your existing profile below and tap <strong>Claim This Profile</strong>. That keeps the original profile and connects it to your new account instead of creating a duplicate.</p>
+        <div class="signup-claim-links">
+          <a class="auth-button auth-button-secondary" href="bands.html">Find My Band</a>
+          <a class="auth-button auth-button-secondary" href="musicians.html">Find My Musician Profile</a>
+          <a class="auth-button auth-button-secondary" href="venues.html">Find My Venue</a>
+        </div>
+      </div>
 
-      <label class="auth-check">
-        <input id="community-rules" type="checkbox" required>
-        <span>I agree to keep BANDtroductions music-focused. Political arguments, religious debates, harassment, drama, and generally being a douche are not allowed.</span>
-      </label>
+      <p class="auth-links">Already joined? <a id="login-link" href="login.html">Log in</a></p>
+    </section>
 
-      <label class="auth-check">
-        <input id="adult-content-rules" type="checkbox" required>
-        <span>I confirm that I am 18 years of age or older. I understand that nudity, sexually explicit content, graphic content, harassment, or other inappropriate material is not permitted on BANDtroductions Social and may result in content removal, suspension, or banning.</span>
-      </label>
+    <section id="profile-step" class="signup-step" hidden>
+      <div class="signup-login-summary">
+        <div><strong>Account email</strong><br><span id="account-email-summary"></span></div>
+        <button id="change-login-button" class="auth-button auth-button-secondary" type="button">Change Email / Password</button>
+      </div>
 
-      <label class="auth-check">
-        <input id="rights-acknowledgment" type="checkbox" required>
-        <span>I understand that any music, artwork, photos, or videos I later upload must be mine to use or properly authorized. Additional music-rights permission will be required when uploading promotional content.</span>
-      </label>
+      <form id="profile-form" class="auth-form" style="margin-top:14px">
+        <label>
+          Account type
+          <select id="account-type" required>
+            <option value="">Choose one</option>
+            <option value="band">Band</option>
+            <option value="musician">Musician</option>
+            <option value="venue">Venue</option>
+            <option value="fan">Fan</option>
+          </select>
+        </label>
 
-      <button id="signup-button" class="auth-button" type="submit">Create Account</button>
-      <p id="signup-message" class="auth-message" role="status"></p>
-    </form>
+        <label>
+          Public display name
+          <input id="display-name" type="text" maxlength="80" required autocomplete="name">
+        </label>
 
-    <p class="auth-links">Already joined? <a id="login-link" href="login.html">Log in</a></p>
+        <label>Location<input id="location" type="text" maxlength="100" placeholder="Portland, Maine"></label>
+        <label>About<textarea id="bio" maxlength="1000" rows="5" required placeholder="Tell the music community about yourself..."></textarea></label>
+
+        <div id="band-fields" class="signup-fields" hidden>
+          <div class="auth-grid"><label>Genre<input id="genre" type="text" maxlength="120" placeholder="Rock / Metal"></label><label>Year formed<input id="year-formed" type="number" min="1900" max="2100"></label></div>
+          <label>Band members<textarea id="members" rows="4" maxlength="800" placeholder="Names and roles"></textarea></label>
+          <label>Booking/contact email<input id="booking-email" type="email"></label>
+        </div>
+
+        <div id="musician-fields" class="signup-fields" hidden>
+          <label>Instrument(s) / role<input id="instruments" type="text" maxlength="200" placeholder="Guitar, vocals, drums..."></label>
+          <div class="auth-grid"><label>Experience level<input id="experience" type="text" maxlength="120"></label><label>Looking for a band?<select id="looking-for-band"><option value="no">No</option><option value="yes">Yes</option><option value="maybe">Open to opportunities</option></select></label></div>
+        </div>
+
+        <div id="venue-fields" class="signup-fields" hidden>
+          <div class="auth-grid"><label>Venue capacity<input id="capacity" type="number" min="0"></label><label>Venue type<input id="venue-type" type="text" maxlength="120" placeholder="Club, bar, theater..."></label></div>
+          <label>Booking information<textarea id="venue-booking" rows="4" maxlength="1000"></textarea></label>
+        </div>
+
+        <div id="fan-fields" class="signup-fields" hidden>
+          <label>Favorite genres<input id="favorite-genres" type="text" maxlength="250" placeholder="Metal, punk, country..."></label>
+          <label>What brings you to BANDtroductions?<textarea id="fan-interests" rows="4" maxlength="800"></textarea></label>
+        </div>
+
+        <label>Website or main link<input id="website" type="text" inputmode="url" placeholder="bandtroductions.com"></label>
+        <label>Music/video link<input id="media-link" type="text" inputmode="url" placeholder="YouTube, Spotify, Bandcamp, etc."></label>
+
+        <div class="signup-step-note">
+          <strong>Profile images are optional and come next.</strong><br>
+          Once your account is created, use <strong>Edit Profile</strong> to add or change your avatar and banner whenever you want.
+        </div>
+
+        <label class="auth-check">
+          <input id="community-rules" type="checkbox" required>
+          <span>I agree to keep BANDtroductions music-focused. Political arguments, religious debates, harassment, drama, and generally being a douche are not allowed.</span>
+        </label>
+
+        <label class="auth-check">
+          <input id="adult-content-rules" type="checkbox" required>
+          <span>I confirm that I am 18 years of age or older. I understand that nudity, sexually explicit content, graphic content, harassment, or other inappropriate material is not permitted on BANDtroductions Social and may result in content removal, suspension, or banning.</span>
+        </label>
+
+        <label class="auth-check">
+          <input id="rights-acknowledgment" type="checkbox" required>
+          <span>I understand that any music, artwork, photos, or videos I later upload must be mine to use or properly authorized. Additional music-rights permission will be required when uploading promotional content.</span>
+        </label>
+
+        <p class="signup-final-note">Your account is not created until you finish this form and tap Create Account below.</p>
+        <button id="signup-button" class="auth-button" type="submit" disabled>Create Account</button>
+        <p id="signup-message" class="auth-message" role="status"></p>
+      </form>
+    </section>
   </main>
 
   <div id="global-footer"></div>
@@ -68,8 +137,9 @@
   <script type="module">
     import { auth, db } from './firebase-dev.js';
     import { sendAdminApprovalEmail } from './admin-approval-email.js?v=3';
+    import { createWelcomePost } from './welcome-profile-post.js?v=1';
     import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-    import { doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+    import { doc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
     const params = new URLSearchParams(location.search);
     const requestedReturn = params.get('returnTo') || '';
@@ -78,38 +148,95 @@
       : 'index.html';
     const isClaimReturn = /^claim-profile\.html(?:\?|$)/i.test(safeReturn);
 
-    const loginLink = document.getElementById('login-link');
-    if (requestedReturn) loginLink.href = `login.html?returnTo=${encodeURIComponent(safeReturn)}`;
-
+    let claimType = '';
+    let claimName = '';
     try {
       const returnUrl = new URL(safeReturn, location.href);
-      const claimType = returnUrl.searchParams.get('type');
-      const claimName = returnUrl.searchParams.get('name');
-      if (['band', 'musician', 'venue'].includes(claimType)) document.getElementById('account-type').value = claimType;
-      if (claimName) document.getElementById('display-name').value = claimName;
+      claimType = returnUrl.searchParams.get('type') || '';
+      claimName = returnUrl.searchParams.get('name') || '';
     } catch {}
 
-    const form = document.getElementById('signup-form');
-    const button = document.getElementById('signup-button');
-    const message = document.getElementById('signup-message');
+    const credentialsStep = document.getElementById('credentials-step');
+    const profileStep = document.getElementById('profile-step');
+    const credentialsForm = document.getElementById('credentials-form');
+    const profileForm = document.getElementById('profile-form');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const continueButton = document.getElementById('continue-button');
+    const credentialsMessage = document.getElementById('credentials-message');
+    const signupButton = document.getElementById('signup-button');
+    const signupMessage = document.getElementById('signup-message');
+    const accountTypeInput = document.getElementById('account-type');
+    const displayNameInput = document.getElementById('display-name');
+    const loginLink = document.getElementById('login-link');
+    let createdUser = null;
 
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      button.disabled = true;
-      message.textContent = 'Creating your account...';
-      message.classList.remove('auth-success');
+    if (requestedReturn) loginLink.href = `login.html?returnTo=${encodeURIComponent(safeReturn)}`;
 
-      const accountType = document.getElementById('account-type').value;
-      const displayName = document.getElementById('display-name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
+    const value = id => document.getElementById(id)?.value.trim() || '';
+    const normalizeUrl = raw => {
+      const url = String(raw || '').trim();
+      if (!url) return '';
+      return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    };
 
+    function friendlyAuthError(error) {
+      return ({
+        'auth/email-already-in-use': 'That email already has an account. Log in instead, or change the email above.',
+        'auth/invalid-email': 'Please enter a valid email address.',
+        'auth/weak-password': 'Use a password with at least 8 characters.'
+      })[error?.code] || error?.message || 'Account creation failed. Please try again.';
+    }
+
+    function validCredentials() {
+      return emailInput.validity.valid && passwordInput.value.length >= 8;
+    }
+
+    function updateContinueState() {
+      continueButton.disabled = !validCredentials();
+    }
+
+    function showAccountFields(type) {
+      document.querySelectorAll('.signup-fields').forEach(section => section.hidden = true);
+      const section = document.getElementById(`${type}-fields`);
+      if (section) section.hidden = false;
+      updateFinalState();
+    }
+
+    function updateFinalState() {
+      if (isClaimReturn) return;
+      const requiredOkay = accountTypeInput.value && displayNameInput.value.trim() && value('bio');
+      const checksOkay = document.getElementById('community-rules').checked
+        && document.getElementById('adult-content-rules').checked
+        && document.getElementById('rights-acknowledgment').checked;
+      signupButton.disabled = !(validCredentials() && requiredOkay && checksOkay && profileForm.checkValidity());
+    }
+
+    emailInput.addEventListener('input', updateContinueState);
+    passwordInput.addEventListener('input', updateContinueState);
+    accountTypeInput.addEventListener('change', () => showAccountFields(accountTypeInput.value));
+    profileForm.addEventListener('input', updateFinalState);
+    profileForm.addEventListener('change', updateFinalState);
+
+    document.getElementById('change-login-button').addEventListener('click', () => {
+      profileStep.hidden = true;
+      credentialsStep.hidden = false;
+      credentialsMessage.textContent = '';
+      signupMessage.textContent = '';
+      emailInput.focus();
+    });
+
+    async function createClaimAccount() {
+      continueButton.disabled = true;
+      credentialsMessage.textContent = 'Creating your account and returning to your profile claim...';
       try {
-        const credential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(credential.user, { displayName });
+        const credential = await createUserWithEmailAndPassword(auth, emailInput.value.trim(), passwordInput.value);
+        const accountType = ['band', 'musician', 'venue'].includes(claimType) ? claimType : 'fan';
+        const displayName = claimName || emailInput.value.trim().split('@')[0] || 'BANDtroductions Member';
+        await updateProfile(credential.user, { displayName }).catch(() => {});
         await setDoc(doc(db, 'users', credential.user.uid), {
           uid: credential.user.uid,
-          email,
+          email: emailInput.value.trim(),
           displayName,
           accountType,
           profileComplete: false,
@@ -119,29 +246,150 @@
           rightsAcknowledgmentAccepted: true,
           createdAt: serverTimestamp()
         });
-        await sendEmailVerification(credential.user);
+        await sendEmailVerification(credential.user).catch(error => console.warn('Verification email could not be sent:', error));
+        await sendAdminApprovalEmail({
+          kind: 'signup',
+          name: displayName,
+          accountType,
+          submittedBy: emailInput.value.trim(),
+          details: `New ${accountType} account created from an existing-profile claim. User ID: ${credential.user.uid}`
+        });
+        window.location.href = safeReturn;
+      } catch (error) {
+        console.error(error);
+        credentialsMessage.textContent = friendlyAuthError(error);
+        updateContinueState();
+      }
+    }
+
+    credentialsForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!validCredentials()) return;
+      if (isClaimReturn) {
+        await createClaimAccount();
+        return;
+      }
+      credentialsStep.hidden = true;
+      profileStep.hidden = false;
+      document.getElementById('account-email-summary').textContent = emailInput.value.trim();
+      credentialsMessage.textContent = '';
+      accountTypeInput.focus();
+      updateFinalState();
+    });
+
+    if (isClaimReturn) {
+      document.getElementById('signup-title').textContent = 'Create Your Account to Claim This Profile';
+      document.getElementById('signup-subtitle').textContent = claimName
+        ? `Create your login, then we’ll return you to the ${claimName} ownership claim.`
+        : 'Create your login, then we’ll return you to the profile ownership claim.';
+      continueButton.textContent = 'Create Account & Continue Claim';
+      document.getElementById('claim-directory-box').hidden = true;
+    }
+
+    profileForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (signupButton.disabled) return;
+      signupButton.disabled = true;
+      signupMessage.textContent = createdUser ? 'Finishing your account and profile...' : 'Creating your account and profile...';
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      const accountType = accountTypeInput.value;
+      const displayName = displayNameInput.value.trim();
+      const needsApproval = accountType !== 'fan';
+
+      try {
+        if (!createdUser) {
+          const credential = await createUserWithEmailAndPassword(auth, email, password);
+          createdUser = credential.user;
+          await setDoc(doc(db, 'users', createdUser.uid), {
+            uid: createdUser.uid,
+            email,
+            displayName,
+            accountType,
+            profileComplete: false,
+            communityRulesAccepted: true,
+            adultContentRulesAccepted: true,
+            age18Confirmed: true,
+            rightsAcknowledgmentAccepted: true,
+            createdAt: serverTimestamp()
+          });
+        }
+
+        const profileData = {
+          ownerId: createdUser.uid,
+          accountType,
+          displayName,
+          location: value('location'),
+          bannerImageUrl: '',
+          imageUrl: '',
+          bio: value('bio'),
+          genre: value('genre'),
+          yearFormed: value('year-formed'),
+          members: value('members'),
+          bookingEmail: value('booking-email'),
+          instruments: value('instruments'),
+          experience: value('experience'),
+          lookingForBand: value('looking-for-band'),
+          capacity: value('capacity'),
+          venueType: value('venue-type'),
+          venueBooking: value('venue-booking'),
+          profileEmoji: '',
+          favoriteGenres: value('favorite-genres'),
+          fanInterests: value('fan-interests'),
+          website: normalizeUrl(value('website')),
+          mediaLink: normalizeUrl(value('media-link')),
+          approvalStatus: needsApproval ? 'pending' : 'approved',
+          published: !needsApproval,
+          submittedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+
+        await setDoc(doc(db, 'profiles', createdUser.uid), profileData, { merge: true });
+        await updateDoc(doc(db, 'users', createdUser.uid), {
+          displayName,
+          accountType,
+          activeProfileId: createdUser.uid,
+          profileComplete: true,
+          updatedAt: serverTimestamp()
+        });
+        await updateProfile(createdUser, { displayName }).catch(error => console.warn('Firebase display name update failed:', error));
+        await sendEmailVerification(createdUser).catch(error => console.warn('Verification email could not be sent:', error));
+
         await sendAdminApprovalEmail({
           kind: 'signup',
           name: displayName,
           accountType,
           submittedBy: email,
-          details: `New ${accountType || 'member'} account created. User ID: ${credential.user.uid}`
+          details: `New ${accountType || 'member'} account and profile created. User ID: ${createdUser.uid}`
         });
 
-        // A legacy-profile claim must return to the exact claim URL after account
-        // creation. Ordinary signups continue into normal profile setup.
-        window.location.href = isClaimReturn ? safeReturn : 'profile-setup.html?new=1';
+        if (needsApproval) {
+          await sendAdminApprovalEmail({
+            kind: 'profile',
+            name: displayName || 'New profile',
+            accountType,
+            submittedBy: email,
+            details: 'Profile was completed during account creation and is waiting in the Control Room approval queue.'
+          });
+          window.location.href = 'profile-pending.html';
+          return;
+        }
+
+        await createWelcomePost({ profileId: createdUser.uid, displayName, accountType });
+        window.location.href = `profile.html?id=${encodeURIComponent(createdUser.uid)}&fresh=${Date.now()}`;
       } catch (error) {
         console.error(error);
-        const friendly = {
-          'auth/email-already-in-use': 'That email already has an account. Log in instead.',
-          'auth/invalid-email': 'Please enter a valid email address.',
-          'auth/weak-password': 'Use a password with at least 8 characters.'
-        };
-        message.textContent = friendly[error.code] || 'Account creation failed. Please try again.';
-        button.disabled = false;
+        signupMessage.textContent = createdUser
+          ? `Your login was created, but profile setup did not finish. Tap Retry Finish Account. ${error?.message || ''}`
+          : friendlyAuthError(error);
+        signupButton.textContent = createdUser ? 'Retry Finish Account' : 'Create Account';
+        signupButton.disabled = false;
       }
     });
+
+    updateContinueState();
+    updateFinalState();
   </script>
 </body>
 </html>
