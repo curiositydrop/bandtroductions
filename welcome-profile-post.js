@@ -11,7 +11,7 @@ export async function createWelcomePost({profileId,displayName,accountType='memb
       authorName:'BANDtroductions Admin',
       accountType:'fan',
       category:'general',
-      content:`👋 Welcome ${displayName} — thank you for joining our community! 🤘`,
+      content:`I'd like to welcome and introduce ${displayName} to the BANDtroductions family. Great to have you. Thank you! 🤘`,
       linkUrl:`profile.html?id=${encodeURIComponent(profileId)}`,
       imageUrl:'',
       welcomedProfileId:profileId,
