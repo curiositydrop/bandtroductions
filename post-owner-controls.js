@@ -21,8 +21,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Hide the raw BT/BA composer placeholder as soon as this early community
-// enhancer loads. The real profile artwork is revealed after it is resolved.
 const bootComposerAvatar = document.getElementById('composer-avatar');
 if (bootComposerAvatar && !bootComposerAvatar.querySelector('img')) {
   bootComposerAvatar.textContent = '';
@@ -54,6 +52,7 @@ const initialsFor = (name) => {
 };
 
 const avatarUrlFor = (profile = {}) => profile.imageUrl || profile.avatarUrl || profile.profileImageUrl || profile.photoURL || '';
+const isWelcomePost = (post = {}) => Boolean(post.systemPost || post.welcomedProfileId || String(post.id || '').startsWith('welcome_'));
 
 async function getProfile(userId) {
   if (!userId) return {};
@@ -70,10 +69,6 @@ async function getProfile(userId) {
           limit(20)
         ));
         const choices = ownedProfiles.docs.map((snapshot) => ({ id: snapshot.id, ...snapshot.data() }));
-
-        // A user's direct profile record can be an account shell without the
-        // artwork stored on their claimed/managed profile. Prefer an owned
-        // profile with artwork so community avatars match the visible profile.
         const adminWithImage = choices.find((profile) =>
           /bandtroductions\s+admin/i.test(profile.displayName || '') && Boolean(avatarUrlFor(profile))
         );
@@ -221,8 +216,9 @@ function addOwnerControls() {
     if (article.dataset.ownerControlsReady === 'true') return;
     const post = findPostForArticle(article);
     if (!post || !currentUser) return;
-    const isOwner = post.authorId === currentUser.uid;
-    const canDelete = isOwner || currentUserIsAdmin;
+    const welcome = isWelcomePost(post);
+    const isOwner = !welcome && post.authorId === currentUser.uid;
+    const canDelete = currentUserIsAdmin || isOwner;
     if (!isOwner && !canDelete) return;
     article.dataset.ownerControlsReady = 'true';
     const header = article.querySelector('.community-post-header');
