@@ -38,6 +38,21 @@
           <input id="password" type="password" minlength="8" required autocomplete="new-password">
         </label>
 
+        <div id="claim-agreements" hidden>
+          <label class="auth-check">
+            <input id="claim-community-rules" type="checkbox">
+            <span>I agree to keep BANDtroductions music-focused. Political arguments, religious debates, harassment, drama, and generally being a douche are not allowed.</span>
+          </label>
+          <label class="auth-check">
+            <input id="claim-adult-content-rules" type="checkbox">
+            <span>I confirm that I am 18 years of age or older. I understand that nudity, sexually explicit content, graphic content, harassment, or other inappropriate material is not permitted on BANDtroductions Social and may result in content removal, suspension, or banning.</span>
+          </label>
+          <label class="auth-check">
+            <input id="claim-rights-acknowledgment" type="checkbox">
+            <span>I understand that any music, artwork, photos, or videos I later upload must be mine to use or properly authorized. Additional music-rights permission will be required when uploading promotional content.</span>
+          </label>
+        </div>
+
         <button id="continue-button" class="auth-button" type="submit" disabled>Continue</button>
         <p id="credentials-message" class="auth-message" role="status"></p>
       </form>
@@ -169,6 +184,7 @@
     const accountTypeInput = document.getElementById('account-type');
     const displayNameInput = document.getElementById('display-name');
     const loginLink = document.getElementById('login-link');
+    const changeLoginButton = document.getElementById('change-login-button');
     let createdUser = null;
 
     if (requestedReturn) loginLink.href = `login.html?returnTo=${encodeURIComponent(safeReturn)}`;
@@ -192,8 +208,14 @@
       return emailInput.validity.valid && passwordInput.value.length >= 8;
     }
 
+    function claimAgreementsAccepted() {
+      return document.getElementById('claim-community-rules').checked
+        && document.getElementById('claim-adult-content-rules').checked
+        && document.getElementById('claim-rights-acknowledgment').checked;
+    }
+
     function updateContinueState() {
-      continueButton.disabled = !validCredentials();
+      continueButton.disabled = !(validCredentials() && (!isClaimReturn || claimAgreementsAccepted()));
     }
 
     function showAccountFields(type) {
@@ -214,11 +236,13 @@
 
     emailInput.addEventListener('input', updateContinueState);
     passwordInput.addEventListener('input', updateContinueState);
+    document.getElementById('claim-agreements').addEventListener('change', updateContinueState);
     accountTypeInput.addEventListener('change', () => showAccountFields(accountTypeInput.value));
     profileForm.addEventListener('input', updateFinalState);
     profileForm.addEventListener('change', updateFinalState);
 
-    document.getElementById('change-login-button').addEventListener('click', () => {
+    changeLoginButton.addEventListener('click', () => {
+      if (createdUser) return;
       profileStep.hidden = true;
       credentialsStep.hidden = false;
       credentialsMessage.textContent = '';
@@ -266,6 +290,7 @@
       event.preventDefault();
       if (!validCredentials()) return;
       if (isClaimReturn) {
+        if (!claimAgreementsAccepted()) return;
         await createClaimAccount();
         return;
       }
@@ -280,10 +305,11 @@
     if (isClaimReturn) {
       document.getElementById('signup-title').textContent = 'Create Your Account to Claim This Profile';
       document.getElementById('signup-subtitle').textContent = claimName
-        ? `Create your login, then we’ll return you to the ${claimName} ownership claim.`
-        : 'Create your login, then we’ll return you to the profile ownership claim.';
+        ? `Create your login, agree to the community rules, then we’ll return you to the ${claimName} ownership claim.`
+        : 'Create your login, agree to the community rules, then we’ll return you to the profile ownership claim.';
       continueButton.textContent = 'Create Account & Continue Claim';
       document.getElementById('claim-directory-box').hidden = true;
+      document.getElementById('claim-agreements').hidden = false;
     }
 
     profileForm.addEventListener('submit', async event => {
@@ -302,6 +328,7 @@
         if (!createdUser) {
           const credential = await createUserWithEmailAndPassword(auth, email, password);
           createdUser = credential.user;
+          changeLoginButton.disabled = true;
           await setDoc(doc(db, 'users', createdUser.uid), {
             uid: createdUser.uid,
             email,
