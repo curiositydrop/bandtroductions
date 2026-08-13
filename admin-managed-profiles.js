@@ -2,6 +2,7 @@ import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { collection, doc, onSnapshot, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { isAdminAccount } from './admin-access.js';
+import { createWelcomePost } from './welcome-profile-post.js?v=2';
 
 const style=document.createElement('style');
 style.textContent=`
@@ -69,7 +70,7 @@ function makeCard(profile){
     actions.append(view,edit);
     if(state!=='published'){
       const approve=document.createElement('button');approve.type='button';approve.className='auth-button managed-approve';approve.textContent='Approve & Publish';
-      approve.addEventListener('click',async()=>{if(!confirm(`Approve and publish ${profile.displayName||'this profile'}?`))return;approve.disabled=true;try{await updateDoc(doc(db,'profiles',profile.id),{approvalStatus:'approved',published:true,approvedAt:serverTimestamp(),approvedBy:auth.currentUser?.uid||'',updatedAt:serverTimestamp()})}catch(error){console.error(error);alert('The profile could not be approved.');approve.disabled=false}});
+      approve.addEventListener('click',async()=>{if(!confirm(`Approve and publish ${profile.displayName||'this profile'}?`))return;approve.disabled=true;try{await updateDoc(doc(db,'profiles',profile.id),{approvalStatus:'approved',published:true,approvedAt:serverTimestamp(),approvedBy:auth.currentUser?.uid||'',updatedAt:serverTimestamp()});if(!profile.welcomePostCreated)await createWelcomePost({profileId:profile.id,displayName:profile.displayName||'New member',accountType:profile.accountType||'member'})}catch(error){console.error(error);alert('The profile could not be approved.');approve.disabled=false}});
       actions.append(approve);
     }
     const publish=document.createElement('button');publish.type='button';publish.className='auth-button';publish.textContent=profile.published===false?'Publish':'Unpublish';publish.addEventListener('click',async()=>{const next=profile.published===false;if(!confirm(`${next?'Publish':'Unpublish'} ${profile.displayName||'this profile'}?`))return;publish.disabled=true;try{await updateDoc(doc(db,'profiles',profile.id),{published:next,approvalStatus:next?'approved':profile.approvalStatus||'approved',updatedAt:serverTimestamp()})}catch(error){console.error(error);alert('The profile status could not be changed.');publish.disabled=false}});actions.append(publish)
