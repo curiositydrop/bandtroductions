@@ -6,7 +6,10 @@ function enhanceWelcomePosts() {
     const pillLink = post.querySelector('.community-post-link');
     if (!body || !pillLink) return;
 
-    const match = (body.textContent || '').trim().match(/^I'd like to welcome and introduce\s+(.+?)\s+to the BANDtroductions family\. Great to have you\. Thank you!\s*🤘$/i);
+    const text = (body.textContent || '').trim();
+    const newMatch = text.match(/^I'd like to welcome and introduce\s+(.+?)\s+to the BANDtroductions family\. Great to have you\. Thank you!\s*🤘$/i);
+    const oldMatch = text.match(/^👋\s*Welcome\s+(.+?)\s+—\s+thank you for joining our community!\s*🤘$/i);
+    const match = newMatch || oldMatch;
     if (!match) return;
 
     const profileName = match[1].trim();
@@ -15,11 +18,19 @@ function enhanceWelcomePosts() {
     profileLink.textContent = profileName;
     profileLink.className = 'community-welcome-profile-link';
 
-    body.replaceChildren(
-      document.createTextNode("I'd like to welcome and introduce "),
-      profileLink,
-      document.createTextNode(' to the BANDtroductions family. Great to have you. Thank you! 🤘')
-    );
+    if (newMatch) {
+      body.replaceChildren(
+        document.createTextNode("I'd like to welcome and introduce "),
+        profileLink,
+        document.createTextNode(' to the BANDtroductions family. Great to have you. Thank you! 🤘')
+      );
+    } else {
+      body.replaceChildren(
+        document.createTextNode('👋 Welcome '),
+        profileLink,
+        document.createTextNode(' — thank you for joining our community! 🤘')
+      );
+    }
 
     pillLink.remove();
   });
