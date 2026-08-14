@@ -48,7 +48,7 @@
   ensureHeadTag('link[rel="apple-touch-icon"]', () => {
     const link = document.createElement('link');
     link.rel = 'apple-touch-icon';
-    link.href = '/pwa-icon-192.png?v=1';
+    link.href = '/IMG_2292.png?v=2';
     return link;
   });
 
