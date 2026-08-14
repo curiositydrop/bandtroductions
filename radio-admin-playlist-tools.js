@@ -4,6 +4,7 @@ import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16
 const CONTROL_DOC='__stationControl';
 const playlists=new Map();
 const discoveredGenres=new Map();
+const discoveredArtists=new Map();
 let scheduleObserver=null;
 let libraryObserver=null;
 
@@ -12,24 +13,20 @@ const minutesToTime=value=>{
   return `${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;
 };
 
-function genreForCard(card){
-  if(!card)return '';
+function libraryMetaParts(card){
+  if(!card)return [];
   const meta=card.querySelector('span')?.textContent||'';
-  const parts=meta.split('·').map(part=>part.trim()).filter(Boolean);
-  return parts.length>1?parts[1]:'';
+  return meta.split('·').map(part=>part.trim()).filter(Boolean);
 }
 
-function applyGenreFilter(){
-  const select=document.getElementById('crr-genre-filter');
-  const library=document.getElementById('crr-track-library');
-  if(!select||!library)return;
-  const selected=select.value;
-  library.querySelectorAll('.crr-lib-item').forEach(card=>{
-    const genre=genreForCard(card);
-    if(genre&&!discoveredGenres.has(genre.toLowerCase()))discoveredGenres.set(genre.toLowerCase(),genre);
-    card.hidden=Boolean(selected&&genre.toLowerCase()!==selected);
-  });
-  refreshGenreOptions();
+function artistForCard(card){
+  const parts=libraryMetaParts(card);
+  return parts.length?parts[0]:'';
+}
+
+function genreForCard(card){
+  const parts=libraryMetaParts(card);
+  return parts.length>1?parts[1]:'';
 }
 
 function refreshGenreOptions(){
@@ -43,24 +40,65 @@ function refreshGenreOptions(){
   if([...select.options].some(option=>option.value===selected))select.value=selected;
 }
 
-function installGenreFilter(){
+function refreshArtistOptions(){
+  const select=document.getElementById('crr-artist-filter');
+  if(!select)return;
+  const selected=select.value;
+  const sorted=[...discoveredArtists.entries()].sort((a,b)=>a[1].localeCompare(b[1]));
+  select.replaceChildren();
+  const all=document.createElement('option');all.value='';all.textContent='All bands';select.appendChild(all);
+  sorted.forEach(([key,label])=>{const option=document.createElement('option');option.value=key;option.textContent=label;select.appendChild(option);});
+  if([...select.options].some(option=>option.value===selected))select.value=selected;
+}
+
+function applyLibraryFilters(){
+  const genreSelect=document.getElementById('crr-genre-filter');
+  const artistSelect=document.getElementById('crr-artist-filter');
+  const library=document.getElementById('crr-track-library');
+  if(!genreSelect||!artistSelect||!library)return;
+  const selectedGenre=genreSelect.value;
+  const selectedArtist=artistSelect.value;
+  library.querySelectorAll('.crr-lib-item').forEach(card=>{
+    const artist=artistForCard(card);
+    const genre=genreForCard(card);
+    if(genre&&!discoveredGenres.has(genre.toLowerCase()))discoveredGenres.set(genre.toLowerCase(),genre);
+    if(artist&&!discoveredArtists.has(artist.toLowerCase()))discoveredArtists.set(artist.toLowerCase(),artist);
+    const genreMatches=!selectedGenre||genre.toLowerCase()===selectedGenre;
+    const artistMatches=!selectedArtist||artist.toLowerCase()===selectedArtist;
+    card.hidden=!(genreMatches&&artistMatches);
+  });
+  refreshGenreOptions();
+  refreshArtistOptions();
+}
+
+function installLibraryFilters(){
   const search=document.getElementById('crr-song-search');
   const library=document.getElementById('crr-track-library');
   if(!search||!library)return false;
-  if(!document.getElementById('crr-genre-filter')){
-    const select=document.createElement('select');
-    select.id='crr-genre-filter';
-    select.className='crr-search';
-    select.setAttribute('aria-label','Filter approved songs by genre');
-    select.innerHTML='<option value="">All genres</option>';
-    search.insertAdjacentElement('afterend',select);
-    select.addEventListener('change',applyGenreFilter);
+  let genreSelect=document.getElementById('crr-genre-filter');
+  if(!genreSelect){
+    genreSelect=document.createElement('select');
+    genreSelect.id='crr-genre-filter';
+    genreSelect.className='crr-search';
+    genreSelect.setAttribute('aria-label','Filter approved songs by genre');
+    genreSelect.innerHTML='<option value="">All genres</option>';
+    search.insertAdjacentElement('afterend',genreSelect);
+    genreSelect.addEventListener('change',applyLibraryFilters);
+  }
+  if(!document.getElementById('crr-artist-filter')){
+    const artistSelect=document.createElement('select');
+    artistSelect.id='crr-artist-filter';
+    artistSelect.className='crr-search';
+    artistSelect.setAttribute('aria-label','Filter approved songs by band');
+    artistSelect.innerHTML='<option value="">All bands</option>';
+    genreSelect.insertAdjacentElement('afterend',artistSelect);
+    artistSelect.addEventListener('change',applyLibraryFilters);
   }
   if(!libraryObserver){
-    libraryObserver=new MutationObserver(()=>applyGenreFilter());
+    libraryObserver=new MutationObserver(()=>applyLibraryFilters());
     libraryObserver.observe(library,{childList:true,subtree:true});
   }
-  applyGenreFilter();
+  applyLibraryFilters();
   return true;
 }
 
@@ -75,7 +113,10 @@ function clearLibraryFilters(){
   const sponsorSearch=document.getElementById('crr-sponsor-search');
   if(sponsorSearch&&sponsorSearch.value){sponsorSearch.value='';sponsorSearch.dispatchEvent(new Event('input',{bubbles:true}));}
   const genre=document.getElementById('crr-genre-filter');
-  if(genre){genre.value='';applyGenreFilter();}
+  if(genre)genre.value='';
+  const artist=document.getElementById('crr-artist-filter');
+  if(artist)artist.value='';
+  applyLibraryFilters();
 }
 
 function findAddButton(item){
@@ -165,9 +206,9 @@ function installScheduleObserver(){
 }
 
 function install(){
-  const readyGenre=installGenreFilter();
+  const readyFilters=installLibraryFilters();
   const readySchedules=installScheduleObserver();
-  if(!readyGenre||!readySchedules)return false;
+  if(!readyFilters||!readySchedules)return false;
   const newButton=document.getElementById('crr-new');
   if(newButton&&!newButton.dataset.playlistToolsReset){
     newButton.dataset.playlistToolsReset='1';
