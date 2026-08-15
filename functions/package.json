@@ -5,6 +5,9 @@
     "node": "22"
   },
   "main": "index.js",
+  "scripts": {
+    "generate-vapid": "node generate-vapid.js"
+  },
   "dependencies": {
     "firebase-admin": "latest",
     "firebase-functions": "latest",
