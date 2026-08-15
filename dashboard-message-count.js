@@ -66,3 +66,6 @@ onAuthStateChanged(auth,user=>{
     link.title=unread?`${unread} unread conversation${unread===1?'':'s'}`:'Messages';
   },error=>{console.warn('Unread message count unavailable.',error);if(badge)badge.style.display='none';});
 });
+
+// Load the No-App App help UI independently so it cannot interfere with message counts.
+import('./no-app-app-help.js?v=1').catch(error=>console.warn('No-App App help unavailable.',error));
