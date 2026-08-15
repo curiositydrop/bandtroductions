@@ -1,4 +1,4 @@
-const SW_VERSION = 'bt-pwa-v3-notifications-test';
+const SW_VERSION = 'bt-pwa-v4-badge-fix-test';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -20,10 +20,10 @@ self.addEventListener('message', event => {
 async function applyBadge(count) {
   const value = Math.max(0, Number(count) || 0);
   try {
-    if (value > 0 && typeof self.registration.setAppBadge === 'function') {
-      await self.registration.setAppBadge(value);
-    } else if (value === 0 && typeof self.registration.clearAppBadge === 'function') {
-      await self.registration.clearAppBadge();
+    if (value > 0 && typeof self.navigator?.setAppBadge === 'function') {
+      await self.navigator.setAppBadge(value);
+    } else if (value === 0 && typeof self.navigator?.clearAppBadge === 'function') {
+      await self.navigator.clearAppBadge();
     }
   } catch (error) {
     console.warn('BANDtroductions service-worker badge update failed:', error);
