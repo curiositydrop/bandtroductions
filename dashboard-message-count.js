@@ -68,4 +68,4 @@ onAuthStateChanged(auth,user=>{
 });
 
 // Load the No-App App help UI independently so it cannot interfere with message counts.
-import('./no-app-app-help.js?v=1').catch(error=>console.warn('No-App App help unavailable.',error));
+import('./no-app-app-help.js?v=2').catch(error=>console.warn('No-App App help unavailable.',error));
