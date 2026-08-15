@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css?v=9">
   <link rel="stylesheet" href="auth.css?v=13">
   <style>
-    .notifications-shell{width:min(calc(100vw - 16px),760px);margin:0 auto;padding:18px 0 36px}.notifications-head,.notification-card{border:1px solid #333;border-radius:15px;background:linear-gradient(145deg,#191919,#111);padding:16px}.notifications-head{margin-bottom:12px}.notifications-head-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.notifications-list{display:grid;gap:10px}.notification-card{display:block;color:#fff;text-decoration:none}.notification-card.is-unread{border-color:#0ccfbd;box-shadow:inset 4px 0 0 #0ccfbd}.notification-card strong{color:#0ccfbd}.notification-card p{margin:6px 0 0;color:#ddd;line-height:1.45}.notification-card small{display:block;margin-top:8px;color:#888}.notification-actions{display:flex;gap:8px;flex-wrap:wrap}.notification-actions button{width:auto!important}.notification-empty{padding:22px;border:1px dashed #444;border-radius:14px;text-align:center;color:#aaa}
+    .notifications-shell{width:min(calc(100vw - 16px),760px);margin:0 auto;padding:18px 0 36px}.notifications-head,.notification-card,.push-card{border:1px solid #333;border-radius:15px;background:linear-gradient(145deg,#191919,#111);padding:16px}.notifications-head,.push-card{margin-bottom:12px}.notifications-head-row,.push-card-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.notifications-list{display:grid;gap:10px}.notification-card{display:block;color:#fff;text-decoration:none}.notification-card.is-unread{border-color:#0ccfbd;box-shadow:inset 4px 0 0 #0ccfbd}.notification-card strong{color:#0ccfbd}.notification-card p{margin:6px 0 0;color:#ddd;line-height:1.45}.notification-card small{display:block;margin-top:8px;color:#888}.notification-actions{display:flex;gap:8px;flex-wrap:wrap}.notification-actions button,.push-card button{width:auto!important}.notification-empty{padding:22px;border:1px dashed #444;border-radius:14px;text-align:center;color:#aaa}.push-card h2{margin:0 0 6px;color:#0ccfbd;font-size:1.05rem}.push-card p{margin:0;color:#aaa;line-height:1.4}
   </style>
 </head>
 <body class="hamburger-active auth-page">
@@ -16,11 +16,15 @@
     <section class="notifications-head">
       <div class="notifications-head-row"><div><p class="profile-meta">YOUR ACTIVITY</p><h1>Notifications</h1><p class="auth-subtitle">Tags, comments, reactions, and profile shares will appear here.</p></div><div class="notification-actions"><button id="mark-all-read" class="auth-button" type="button">Mark All Read</button><a class="auth-button auth-button-secondary" href="index.html">Community</a></div></div>
     </section>
+    <section class="push-card" aria-labelledby="push-card-title">
+      <div class="push-card-row"><div><h2 id="push-card-title">Phone Notifications</h2><p id="push-status">Checking notification support…</p></div><button id="enable-push" class="auth-button" type="button">Enable Phone Notifications</button></div>
+    </section>
     <section id="notifications-list" class="notifications-list"></section>
     <p id="notifications-status" class="auth-message">Loading notifications…</p>
   </main>
   <div id="global-footer"></div>
   <script src="global.js?v=15"></script>
+  <script type="module" src="notifications-push-ui.js?v=1"></script>
   <script type="module">
     import { auth, db } from './firebase-dev.js';
     import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
