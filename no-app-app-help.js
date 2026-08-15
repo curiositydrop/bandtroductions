@@ -39,7 +39,12 @@
   overlay.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.78);display:none;place-items:center;padding:16px';
   document.body.appendChild(overlay);
 
-  const open=event=>{event.preventDefault();overlay.style.display='grid';document.getElementById('no-app-app-help-close')?.focus();};
+  const open=event=>{
+    event.preventDefault();
+    if(typeof window.gtag==='function')window.gtag('event','no_app_app_help_open',{event_category:'No-App App'});
+    overlay.style.display='grid';
+    document.getElementById('no-app-app-help-close')?.focus();
+  };
   const close=()=>{overlay.style.display='none';link.focus();};
   link.addEventListener('click',open);
   overlay.querySelector('#no-app-app-help-close')?.addEventListener('click',close);
