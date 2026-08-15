@@ -45,6 +45,7 @@ button?.addEventListener('click',async()=>{
   const result=await api.requestPermission();
   pushStatus.textContent=labelFor(result?.status);
   if(result?.status==='subscribed'||result?.status==='granted'){
+    if(typeof window.gtag==='function')window.gtag('event','push_notifications_enabled',{event_category:'No-App App'});
     button.textContent='Notifications Enabled';
     button.disabled=true;
   }else{
