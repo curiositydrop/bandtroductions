@@ -1,4 +1,5 @@
 import './account-onboarding-repair.js?v=2';
+import './pwa-notifications.js?v=1';
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
@@ -6,6 +7,10 @@ import { isAdminAccount } from './admin-access.js';
 
 const link=document.getElementById('messages-link');
 let unsub=null;
+
+function publishUnreadCount(count){
+  window.dispatchEvent(new CustomEvent('bt:pwa-unread-count',{detail:{count:Math.max(0,Number(count)||0)}}));
+}
 
 function ensureBadge(){
   if(!link)return null;
@@ -44,7 +49,7 @@ onAuthStateChanged(auth,user=>{
   syncAdminLink(user);
   if(unsub){unsub();unsub=null;}
   const badge=ensureBadge();
-  if(!user){if(badge)badge.remove();return;}
+  if(!user){if(badge)badge.remove();publishUnreadCount(0);return;}
   unsub=onSnapshot(collection(db,'messageInboxes',user.uid,'items'),snap=>{
     let unread=0;
     snap.docs.forEach(d=>{
@@ -54,6 +59,7 @@ onAuthStateChanged(auth,user=>{
       const sender=row.lastSenderId||'';
       if(updated>read&&sender&&sender!==user.uid)unread++;
     });
+    publishUnreadCount(unread);
     if(!badge)return;
     badge.textContent=String(unread);
     badge.style.display=unread?'inline-block':'none';
