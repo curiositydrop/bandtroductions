@@ -1,4 +1,4 @@
-const SW_VERSION = 'bt-pwa-v2-notifications-test';
+const SW_VERSION = 'bt-pwa-v3-notifications-test';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -42,16 +42,18 @@ self.addEventListener('push', event => {
     const title = payload.title || 'BANDtroductions';
     const body = payload.body || 'You have new activity on BANDtroductions.';
     const url = payload.url || '/notifications.html';
-    const badgeCount = Math.max(0, Number(payload.badgeCount) || 0);
 
-    await applyBadge(badgeCount);
+    if (Object.prototype.hasOwnProperty.call(payload, 'badgeCount')) {
+      await applyBadge(payload.badgeCount);
+    }
+
     await self.registration.showNotification(title, {
       body,
       icon: '/IMG_2293.png',
       badge: '/IMG_2292.png',
       tag: payload.tag || 'bandtroductions-activity',
       renotify: Boolean(payload.renotify),
-      data: { url, badgeCount }
+      data: { url }
     });
   })());
 });
