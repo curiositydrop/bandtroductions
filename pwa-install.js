@@ -60,6 +60,26 @@
     } catch (_) {}
   }
 
+  function trackStandaloneOpen() {
+    if (!state.installed) return;
+
+    const sessionKey = 'bt_pwa_app_open_tracked';
+    try {
+      if (window.sessionStorage.getItem(sessionKey) === '1') return;
+      window.sessionStorage.setItem(sessionKey, '1');
+    } catch (_) {
+      if (window.__btPwaAppOpenTracked) return;
+      window.__btPwaAppOpenTracked = true;
+    }
+
+    analytics('pwa_app_open', {
+      app_mode: 'standalone',
+      device_platform: /iphone|ipad|ipod/i.test(navigator.userAgent) ? 'ios' : 'other'
+    });
+  }
+
+  trackStandaloneOpen();
+
   function dispatch(name, detail = {}) {
     window.dispatchEvent(new CustomEvent(name, { detail }));
   }
