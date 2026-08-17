@@ -1,115 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Submit Gear | BANDtroductions</title>
-
-<link rel="stylesheet" href="style.css?v=6">
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-60112G8RH3');
-</script>
-</head>
-
-<body>
-
-<div id="global-header"></div>
-
-<section class="form-page">
-  <h2>List Your Gear</h2>
-  <p>
-    Fill out the form below, then continue to the $5 payment page.
-  </p>
-  <p class="gear-form-note">
-    Your listing will not be posted until payment is completed.
-  </p>
-
-  <form
-    action="https://formsubmit.co/mbergeron79@gmail.com"
-    method="POST"
-    enctype="multipart/form-data"
-    class="submission-form"
-  >
-    <input type="hidden" name="_subject" value="New Gear Exchange Submission">
-    <input type="hidden" name="_template" value="table">
-    <input type="hidden" name="_captcha" value="false">
-    <input type="hidden" name="_next" value="https://curiositydrop.com/bandtroductions/gear-payment.html">
-    <input type="hidden" name="_url" value="https://curiositydrop.com/bandtroductions/submit-gear.html">
-    <input type="text" name="_honey" style="display:none">
-
-    <label for="seller-name">Name</label>
-    <input type="text" id="seller-name" name="Seller Name" required>
-
-    <label for="seller-email">Email</label>
-    <input type="email" id="seller-email" name="Seller Email" required>
-
-    <label for="seller-phone">Phone (optional)</label>
-    <input type="text" id="seller-phone" name="Seller Phone">
-
-    <label for="item-name">Item Name</label>
-    <input type="text" id="item-name" name="Item Name" required>
-
-    <label for="category">Category</label>
-    <select id="category" name="Category" required>
-      <option value="">Select one</option>
-      <option>Guitar</option>
-      <option>Bass</option>
-      <option>Drums / Percussion</option>
-      <option>Amp / Cabinet</option>
-      <option>Pedals / Effects</option>
-      <option>PA / Live Sound</option>
-      <option>Recording Gear</option>
-      <option>Keys / Synth</option>
-      <option>Microphones</option>
-      <option>Accessories</option>
-      <option>Other</option>
-    </select>
-
-    <label for="price">Price</label>
-    <input type="text" id="price" name="Price" placeholder="$250" required>
-
-    <label for="condition">Condition</label>
-    <select id="condition" name="Condition" required>
-      <option value="">Select one</option>
-      <option>Excellent</option>
-      <option>Very Good</option>
-      <option>Good</option>
-      <option>Fair</option>
-      <option>Needs Work</option>
-    </select>
-
-    <label for="town">City / Town</label>
-    <input type="text" id="town" name="City / Town" required>
-
-    <label for="state">State</label>
-    <input type="text" id="state" name="State" value="ME" required>
-
-    <label for="description">Description</label>
-    <textarea id="description" name="Description" rows="6" required></textarea>
-
-    <label for="attachment">Photo</label>
-    <input type="file" id="attachment" name="attachment" accept="image/png, image/jpeg, image/webp" required>
-
-    <label for="video-link">Demo Video Link (optional)</label>
-    <input type="url" id="video-link" name="Demo Video Link" placeholder="https://...">
-
-    <label for="pickup-notes">Pickup / Meeting Notes (optional)</label>
-    <textarea id="pickup-notes" name="Pickup / Meeting Notes" rows="3" placeholder="Pickup only, willing to meet, etc."></textarea>
-
-    <button type="submit">Continue to Payment</button>
-  </form>
-</section>
-
-<div id="global-footer"></div>
-
-<script src="/bandtroductions/global.js?v=1"></script>
-
-</body>
-</html>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="List music gear free on the BANDtroductions Gear Exchange."><title>List Your Gear | BANDtroductions</title><link rel="stylesheet" href="style.css?v=10"><link rel="stylesheet" href="gear-exchange.css?v=1"></head>
+<body class="gear-market-page"><div id="global-header"></div><main class="gear-submit-shell"><header class="gear-submit-head"><p class="gear-kicker">SELL TO THE SCENE</p><h1>List Your Gear</h1><p>Create a standard listing free, or put it in the featured row for $5.</p></header><div id="gear-auth-note" class="gear-auth-note">Checking your member account…</div>
+<form id="gear-form" class="gear-form" hidden>
+<section class="gear-form-card"><div class="gear-step"><span>01</span><div><h2>Choose Your Placement</h2><p>The listing itself is always free.</p></div></div><div class="gear-tier-grid"><label class="gear-tier"><input type="radio" name="tier" value="standard" checked><span><strong>STANDARD — FREE</strong><small>Live for 30 days and automatically shared to Community.</small></span></label><label class="gear-tier gear-tier-featured"><input type="radio" name="tier" value="featured"><span><strong>FEATURED — $5</strong><small>Premium badge and placement above standard listings for 7 days after activation.</small></span></label></div></section>
+<section class="gear-form-card"><div class="gear-step"><span>02</span><div><h2>Tell Us About the Gear</h2><p>Clear details make better sales.</p></div></div><div class="gear-form-grid">
+<label class="gear-wide">Item name<input id="gear-title" maxlength="140" placeholder="Fender Player Stratocaster" required></label>
+<label>Category<select id="gear-category-input" required><option value="">Choose one</option><option>Guitar</option><option>Bass</option><option>Drums / Percussion</option><option>Amp / Cabinet</option><option>Pedals / Effects</option><option>PA / Live Sound</option><option>Recording Gear</option><option>Keys / Synth</option><option>Microphones</option><option>Accessories</option><option>Other</option></select></label>
+<label>Condition<select id="gear-condition-input" required><option value="">Choose one</option><option>Excellent</option><option>Very Good</option><option>Good</option><option>Fair</option><option>Needs Work</option></select></label>
+<label>Price (USD)<input id="gear-price" type="number" min="0" max="1000000" step="1" placeholder="450" required></label><label>Sale type<select id="gear-sale-type"><option>For Sale</option><option>For Trade</option><option>Sale or Trade</option></select></label><label>City / Town<input id="gear-city" maxlength="100" placeholder="Portland" required></label><label>State<input id="gear-state" maxlength="50" value="ME" required></label>
+<label class="gear-wide">Description<textarea id="gear-description" maxlength="2500" rows="7" placeholder="Condition, upgrades, included accessories and anything a buyer should know…" required></textarea></label><label class="gear-wide">Pickup / meeting notes <small>(optional)</small><textarea id="gear-pickup" maxlength="500" rows="3" placeholder="Pickup only, willing to meet within 20 miles, etc."></textarea></label><label class="gear-wide">Demo video link <small>(optional)</small><input id="gear-video" type="url" maxlength="500" placeholder="https://youtube.com/…"></label></div></section>
+<section class="gear-form-card"><div class="gear-step"><span>03</span><div><h2>Add a Photo</h2><p>Use a clear photo of the actual item. Maximum 20 MB.</p></div></div><label class="gear-photo-drop" for="gear-photo"><input id="gear-photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif" required><strong>CHOOSE GEAR PHOTO</strong><span id="gear-photo-name">JPG, PNG, WEBP or GIF</span></label><img id="gear-photo-preview" class="gear-photo-preview" alt="Selected gear preview" hidden></section>
+<section class="gear-form-card gear-rules-card"><label><input id="gear-agreement" type="checkbox" required><span>I own or am authorized to sell this item, the listing is accurate, and I understand BANDtroductions does not process or guarantee the transaction.</span></label></section><button id="gear-submit" class="gear-button gear-button-primary gear-submit-button" type="submit">PUBLISH FREE LISTING</button><p id="gear-submit-status" class="gear-status" aria-live="polite"></p></form></main><div id="global-footer"></div><script src="global.js?v=15"></script><script type="module" src="submit-gear.js?v=1"></script></body></html>
