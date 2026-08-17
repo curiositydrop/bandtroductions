@@ -1,80 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Gear Exchange | BANDtroductions</title>
-
-<link rel="stylesheet" href="style.css?v=6">
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-60112G8RH3');
-</script>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Buy, sell and trade music gear directly with the BANDtroductions community.">
+  <title>Gear Exchange | BANDtroductions</title>
+  <link rel="stylesheet" href="style.css?v=10"><link rel="stylesheet" href="gear-exchange.css?v=1">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-60112G8RH3');</script>
 </head>
-
-<body>
-
+<body class="gear-market-page">
 <div id="global-header"></div>
-
-<section class="page-hero gear-hero">
-  <h2>Gear Exchange</h2>
-  <p>
-    Buy, sell, and trade music gear with Maine’s local music scene.
-  </p>
-  <p class="gear-subtext">
-    <strong>Only $5 to list your item.</strong> Fill out the form, complete payment, and we’ll get it posted.
-  </p>
-
-  <div class="hero-buttons">
-    <a class="button" href="/bandtroductions/submit-gear.html">Pay &amp; List – $5</a>
-  </div>
-
-  <p class="gear-mini-note">
-    Music gear only. Local listings only. No fake or misleading posts.
-  </p>
-</section>
-
-<section class="musician-directory">
-  <div class="section-intro">
-    <h2>Listing Preview</h2>
-    <p>Here’s what your listing can look like.</p>
-  </div>
-
-  <div class="profile-grid">
-    <div class="profile-card gear-card">
-      <img src="/bandtroductions/IMG_9367.png" alt="Sample Gear Listing">
-      <h3>Fender Stratocaster <span style="color:#ffcc66;">(Sample)</span></h3>
-      <p><strong>Price:</strong> $450</p>
-      <p><strong>Location:</strong> Portland, ME</p>
-      <p><strong>Condition:</strong> Excellent</p>
-      <p><strong>Category:</strong> Guitar</p>
-      <p style="font-size:16px; opacity:0.8; margin-top:10px;">
-        Clean condition, great player, ready for gigs or studio use.
-      </p>
-      <a class="button" href="#" onclick="return false;" style="opacity:0.6; cursor:not-allowed;">
-        Contact Seller
-      </a>
-    </div>
-  </div>
-</section>
-
-<section class="cta">
-  <h2>Ready to list your gear?</h2>
-  <p style="font-size:20px; max-width:700px; margin:0 auto 20px auto;">
-    Submit your item, pay the $5 listing fee, and we’ll review it and get it live.
-  </p>
-  <a class="button" href="/bandtroductions/submit-gear.html">Pay &amp; List – $5</a>
-</section>
-
-<div id="global-footer"></div>
-
-<script src="/bandtroductions/global.js?v=1"></script>
-
-</body>
-</html>
+<main>
+  <section class="gear-market-hero"><div class="gear-hero-copy"><p class="gear-kicker">THE SCENE'S CLASSIFIEDS</p><h1>GEAR <span>EXCHANGE</span></h1><p>Buy, sell and trade instruments, amps, pedals, recording gear and everything that keeps the music alive.</p><div class="gear-hero-actions"><a class="gear-button gear-button-primary" href="submit-gear.html">+ LIST GEAR FREE</a><button class="gear-button" id="my-listings-button" type="button">MY LISTINGS</button></div><div class="gear-trust-row"><span>✓ Free member listings</span><span>✓ Private seller messaging</span><span>✓ Optional featured placement</span></div></div><div class="gear-hero-mark" aria-hidden="true"><span>BUY</span><b>SELL</b><span>TRADE</span></div></section>
+  <section class="gear-market-shell">
+    <div class="gear-toolbar"><label class="gear-search"><span>SEARCH THE RACKS</span><input id="gear-search" type="search" placeholder="Guitar, Marshall, microphone…"></label><label><span>CATEGORY</span><select id="gear-category"><option value="">All categories</option></select></label><label><span>CONDITION</span><select id="gear-condition"><option value="">Any condition</option><option>Excellent</option><option>Very Good</option><option>Good</option><option>Fair</option><option>Needs Work</option></select></label><label><span>SORT</span><select id="gear-sort"><option value="newest">Newest first</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label></div>
+    <div class="gear-results-head"><div><p class="gear-kicker">LIVE LISTINGS</p><h2>Find Your Next Piece of Gear</h2></div><strong id="gear-result-count">Loading…</strong></div>
+    <div id="gear-listings" class="gear-listing-grid" aria-live="polite"></div><p id="gear-status" class="gear-status">Loading the Gear Exchange…</p>
+  </section>
+  <section class="gear-feature-callout"><div><p class="gear-kicker">WANT MORE EYES ON IT?</p><h2>Put Your Gear in the Front Row</h2><p>Standard listings are free. Optional featured placement keeps your item above standard listings and gives it a premium badge.</p></div><div class="gear-feature-price"><strong>$5</strong><span>7 DAYS FEATURED</span><a class="gear-button gear-button-primary" href="submit-gear.html?tier=featured">FEATURE MY GEAR</a></div></section>
+  <section class="gear-safety"><h2>Keep the Exchange Safe</h2><p>BANDtroductions connects buyers and sellers but does not handle or guarantee transactions. Inspect gear before paying, meet in a safe public location, and never send money to someone you do not trust.</p></section>
+</main>
+<div id="global-footer"></div><script src="global.js?v=15"></script><script type="module" src="gear-exchange.js?v=1"></script>
+</body></html>
