@@ -46,6 +46,7 @@ const RADIO_LOGO='5C9409EE-59F6-4151-9624-2998D7DDF2D0.png';
 const STATION_CONTROL_ID='__stationControl';
 let playlists={};
 let stationEnabled=true;
+let stationSettings={};
 let audio=null;
 let currentKey='';
 let userUnmuted=false;
@@ -74,6 +75,7 @@ function playerMarkup(s){
   const item=s?.item||{};
   const p=s?.p||{};
   const next=nextPlaylist(playlists);
+  const upNextLabel=String(stationSettings.upNextLabel||'UP NEXT').trim()||'UP NEXT';
   const track=live?(item.type==='sponsor'?`Sponsor: ${item.title||'BANDtroductions Sponsor'}`:(item.title||'Untitled')):'Station standing by';
   const band=live?(item.artist||'Independent Music'):'';
   const playlist=live?(p.name||'Scheduled Programming'):(stationEnabled?'No playlist is scheduled for this time.':'Station has been taken off air.');
@@ -85,7 +87,7 @@ function playerMarkup(s){
     <div class="bt-radio-track">${esc(track)}</div>
     ${band?`<div class="bt-radio-band">${esc(band)}</div>`:''}
     <div class="bt-radio-playlist">${esc(playlist)}</div>
-    ${next?`<div class="bt-radio-next"><div class="bt-radio-next-label">UP NEXT · ${next.dayOffset===0?'TODAY':next.dayOffset===1?'TOMORROW':String(next.day||'').toUpperCase()} · ${formatMinutes(next.startMinutes)}</div><div class="bt-radio-next-name">${esc(next.name||'Scheduled Programming')}</div></div>`:''}
+    ${next?`<div class="bt-radio-next"><div class="bt-radio-next-label">${esc(upNextLabel)} · ${next.dayOffset===0?'TODAY':next.dayOffset===1?'TOMORROW':String(next.day||'').toUpperCase()} · ${formatMinutes(next.startMinutes)}</div><div class="bt-radio-next-name">${esc(next.upNextDisplayName||next.name||'Scheduled Programming')}</div></div>`:''}
     <div class="bt-radio-eq ${live?'':'off'}" aria-hidden="true">${eqBars()}</div>
     <button type="button" class="btn primary bt-radio-listen" ${live?'':'disabled'}>${button}</button>
     ${actions()}
@@ -179,10 +181,12 @@ async function synchronize(forcePlay=false){
 
 onSnapshot(collection(devDb,'radioPlaylists'),snap=>{
   playlists={};
+  stationSettings={};
   stationEnabled=true;
   snap.forEach(d=>{
     if(d.id===STATION_CONTROL_ID){
-      stationEnabled=d.data()?.stationOnAir!==false;
+      stationSettings=d.data()||{};
+      stationEnabled=stationSettings.stationOnAir!==false;
       return;
     }
     playlists[d.id]={id:d.id,...d.data()};
