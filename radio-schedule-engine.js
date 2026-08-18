@@ -41,6 +41,28 @@ export function activePlaylist(playlists,date=new Date()){
   return matches.sort((a,b)=>(Number(b.priority||0)-Number(a.priority||0))||(Number(b.startMinutes||0)-Number(a.startMinutes||0))||(Number(b.createdAt||0)-Number(a.createdAt||0)))[0]||null;
 }
 
+export function nextPlaylist(playlists,date=new Date()){
+  const now=easternClock(date);
+  const day=now.weekday.toLowerCase().slice(0,3);
+  const todayIndex=DAYS.indexOf(day);
+  if(todayIndex<0)return null;
+  const list=Object.entries(playlists||{}).map(([id,p])=>({id,...p})).filter(p=>p.active!==false&&Array.isArray(p.items)&&p.items.length);
+  const candidates=[];
+  for(const p of list){
+    const days=Array.isArray(p.days)&&p.days.length?p.days:['every'];
+    const start=((Number(p.startMinutes)||0)%1440+1440)%1440;
+    for(let dayOffset=0;dayOffset<=7;dayOffset++){
+      const candidateDay=DAYS[(todayIndex+dayOffset)%7];
+      if(!days.includes('every')&&!days.includes(candidateDay))continue;
+      const minutesUntil=dayOffset*1440+start-now.minutes;
+      if(minutesUntil<=0)continue;
+      candidates.push({...p,dayOffset,day:candidateDay,minutesUntil});
+      break;
+    }
+  }
+  return candidates.sort((a,b)=>a.minutesUntil-b.minutesUntil||(Number(b.priority||0)-Number(a.priority||0))||(Number(b.createdAt||0)-Number(a.createdAt||0)))[0]||null;
+}
+
 export function playlistPosition(playlist,date=new Date()){
   if(!playlist||!Array.isArray(playlist.items)||!playlist.items.length)return null;
   const now=easternClock(date);
