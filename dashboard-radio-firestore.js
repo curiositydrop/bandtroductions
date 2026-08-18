@@ -1,6 +1,6 @@
 import { db as devDb } from './firebase-dev.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { activePlaylist, playlistPosition } from './radio-schedule-engine.js?v=2';
+import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes } from './radio-schedule-engine.js?v=3';
 
 const oldPanel=document.querySelector('.radio-panel');
 if(!oldPanel)throw new Error('Radio panel not found');
@@ -25,6 +25,9 @@ style.textContent=`
 .bt-radio-track{color:var(--teal);font-size:10px;font-weight:950;line-height:1.15;margin-top:3px;overflow-wrap:anywhere}
 .bt-radio-band{color:#fff;font-size:8px;font-weight:900;line-height:1.2;margin-top:4px;overflow-wrap:anywhere}
 .bt-radio-playlist{color:#8f9998;font-size:6.5px;line-height:1.2;margin-top:3px;overflow-wrap:anywhere}
+.bt-radio-next{margin:7px 0 0;padding:6px 5px;border:1px solid #294b49;border-radius:3px;background:#0b1514;line-height:1.2}
+.bt-radio-next-label{color:#8f9998;font-size:6px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.bt-radio-next-name{color:#fff;font-size:7px;font-weight:950;margin-top:2px;overflow-wrap:anywhere}
 .bt-radio-eq{height:24px;display:flex;justify-content:center;align-items:end;gap:3px;margin:8px 0 9px;overflow:hidden}
 .bt-radio-eq span{display:block;width:3px;min-height:4px;background:var(--teal);animation:btRadioEq .62s ease-in-out infinite alternate;transform-origin:bottom;box-shadow:0 0 5px rgba(37,199,193,.25)}
 .bt-radio-eq span:nth-child(2n){animation-duration:.46s}.bt-radio-eq span:nth-child(3n){animation-duration:.78s}.bt-radio-eq span:nth-child(4n){animation-duration:.56s}.bt-radio-eq span:nth-child(5n){animation-duration:.9s}
@@ -34,7 +37,7 @@ style.textContent=`
 .bt-radio-listen:disabled{cursor:default!important;opacity:.55!important}
 .bt-radio-actions{display:grid;grid-template-columns:1fr;gap:5px;margin-top:0}
 .bt-radio-actions .btn{display:block!important;text-align:center!important;margin:0!important;padding:6px 3px!important;font-size:6px!important;line-height:1.05!important}
-@media(min-width:651px){.bt-radio-box{padding:13px!important}.bt-radio-status{font-size:10px}.bt-radio-track{font-size:15px}.bt-radio-band{font-size:12px}.bt-radio-playlist{font-size:10px}.bt-radio-now{font-size:9px}.bt-radio-listen{font-size:10px!important;padding:9px!important}.bt-radio-actions .btn{font-size:9px!important;padding:8px!important}.bt-radio-eq{height:32px}.bt-radio-art-row{gap:10px}}
+@media(min-width:651px){.bt-radio-box{padding:13px!important}.bt-radio-status{font-size:10px}.bt-radio-track{font-size:15px}.bt-radio-band{font-size:12px}.bt-radio-playlist{font-size:10px}.bt-radio-next-label{font-size:8px}.bt-radio-next-name{font-size:10px}.bt-radio-now{font-size:9px}.bt-radio-listen{font-size:10px!important;padding:9px!important}.bt-radio-actions .btn{font-size:9px!important;padding:8px!important}.bt-radio-eq{height:32px}.bt-radio-art-row{gap:10px}}
 `;
 document.head.appendChild(style);
 
@@ -70,6 +73,7 @@ function playerMarkup(s){
   const live=Boolean(s);
   const item=s?.item||{};
   const p=s?.p||{};
+  const next=nextPlaylist(playlists);
   const track=live?(item.type==='sponsor'?`Sponsor: ${item.title||'BANDtroductions Sponsor'}`:(item.title||'Untitled')):'Station standing by';
   const band=live?(item.artist||'Independent Music'):'';
   const playlist=live?(p.name||'Scheduled Programming'):(stationEnabled?'No playlist is scheduled for this time.':'Station has been taken off air.');
@@ -81,6 +85,7 @@ function playerMarkup(s){
     <div class="bt-radio-track">${esc(track)}</div>
     ${band?`<div class="bt-radio-band">${esc(band)}</div>`:''}
     <div class="bt-radio-playlist">${esc(playlist)}</div>
+    ${next?`<div class="bt-radio-next"><div class="bt-radio-next-label">UP NEXT · ${next.dayOffset===0?'TODAY':next.dayOffset===1?'TOMORROW':String(next.day||'').toUpperCase()} · ${formatMinutes(next.startMinutes)}</div><div class="bt-radio-next-name">${esc(next.name||'Scheduled Programming')}</div></div>`:''}
     <div class="bt-radio-eq ${live?'':'off'}" aria-hidden="true">${eqBars()}</div>
     <button type="button" class="btn primary bt-radio-listen" ${live?'':'disabled'}>${button}</button>
     ${actions()}
