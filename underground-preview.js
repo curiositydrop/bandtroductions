@@ -44,6 +44,24 @@ const stampMs = stamp => stamp?.toMillis ? stamp.toMillis() : (stamp?.seconds ? 
 const postMs = post => stampMs(post.createdAt)||stampMs(post.updatedAt)||stampMs(post.publishedAt)||stampMs(post.submittedAt)||0;
 const formatDate = stamp => !stamp?.toDate ? 'Just now' : new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(stamp.toDate());
 function safeText(value=''){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));}
+function linkifyText(value=''){
+  const source=String(value||'');
+  const urlPattern=/(?:https?:\/\/|www\.)[^\s<>]+/gi;
+  let html='',lastIndex=0;
+  for(const match of source.matchAll(urlPattern)){
+    const raw=match[0];
+    let url=raw,trailing='';
+    while(url&&/[.,!?;:)}\]]$/.test(url)){trailing=url.slice(-1)+trailing;url=url.slice(0,-1);}
+    html+=safeText(source.slice(lastIndex,match.index));
+    if(url){
+      const href=/^www\./i.test(url)?`https://${url}`:url;
+      html+=`<a class="community-inline-link" href="${safeText(href)}" target="_blank" rel="noopener noreferrer">${safeText(url)}</a>`;
+    }
+    html+=safeText(trailing);
+    lastIndex=match.index+raw.length;
+  }
+  return html+safeText(source.slice(lastIndex));
+}
 function normalizeDate(value){if(!value)return null;const d=new Date(`${value}T12:00:00`);return Number.isNaN(d.getTime())?null:d;}
 function normalizeUrl(value=''){const t=String(value||'').trim();if(!t)return'';return /^https?:\/\//i.test(t)?t:`https://${t}`;}
 function profileHref(post){
@@ -70,10 +88,10 @@ function renderPostContent(post){
   if(targetUrl){
     const match=text.match(/^(.*?\bWelcome\s+)(.+?)(\s+[—–-]\s+.*)$/i);
     if(match){
-      return `<p>${safeText(match[1])}<a class="inline-profile-link" style="color:#25c7c1;font-weight:900;text-decoration:underline;text-underline-offset:2px" href="${safeText(targetUrl)}">${safeText(match[2])}</a>${safeText(match[3])}</p>`;
+      return `<p>${linkifyText(match[1])}<a class="inline-profile-link" style="color:#25c7c1;font-weight:900;text-decoration:underline;text-underline-offset:2px" href="${safeText(targetUrl)}">${safeText(match[2])}</a>${linkifyText(match[3])}</p>`;
     }
   }
-  return text?`<p>${safeText(text)}</p>`:'';
+  return text?`<p>${linkifyText(text)}</p>`:'';
 }
 function renderVideo(post){
   const youtube=youtubeFromPost(post);
