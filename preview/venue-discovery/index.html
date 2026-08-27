@@ -20,6 +20,14 @@
     :root{--discover-teal:#25c7c1;--discover-panel:#111414;--discover-line:#2a3333}
     *{box-sizing:border-box}
     body.discover-page{background:radial-gradient(circle at 50% 0,#172020 0,#090b0b 42%,#050606 100%);color:#f5f7f7}
+    .discover-brand-header{padding:12px 16px;background:#070808;border-bottom:1px solid var(--discover-line);text-align:left}
+    .discover-brand-link{display:flex;align-items:center;gap:14px;width:min(1180px,100%);margin:0 auto;color:#fff;text-decoration:none}
+    .discover-brand-logo{display:block;width:76px;height:58px;object-fit:contain;flex:0 0 auto}
+    .discover-brand-copy{display:grid;gap:2px;min-width:0}
+    .discover-brand-name{font-size:clamp(1.55rem,4vw,2.45rem);font-weight:900;line-height:1;letter-spacing:-.035em;white-space:nowrap}
+    .discover-brand-name>span{color:var(--discover-teal)}
+    .discover-social-stamp{display:inline-block;margin-left:7px;padding:3px 6px;border:2px solid var(--discover-teal);color:#fff;font-size:.36em;letter-spacing:0;vertical-align:middle;transform:rotate(-4deg)}
+    .discover-brand-tagline{color:var(--discover-teal);font-size:clamp(.72rem,1.8vw,.98rem);font-weight:800;line-height:1.25}
     .discover-shell{width:min(1180px,100%);margin:0 auto;padding:26px 16px 72px}
     .discover-hero{text-align:center;padding:26px 18px;border:1px solid var(--discover-line);background:linear-gradient(145deg,rgba(37,199,193,.12),rgba(8,10,10,.95));border-radius:18px}
     .discover-kicker{margin:0 0 7px;color:var(--discover-teal);font-size:.78rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
@@ -51,6 +59,7 @@
     .discover-dialog-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:9px 15px;border:1px solid var(--discover-teal);border-radius:9px;color:var(--discover-teal);font-weight:900;text-decoration:none}
     .discover-dialog-actions a:first-child{background:var(--discover-teal);color:#06100f}
     @media(max-width:620px){
+      .discover-brand-header{padding:8px 10px}.discover-brand-link{gap:8px}.discover-brand-logo{width:52px;height:43px}.discover-brand-name{font-size:1.36rem}.discover-social-stamp{margin-left:4px;padding:2px 4px;border-width:1.5px}.discover-brand-tagline{font-size:.68rem}
       .discover-shell{padding:14px 7px 52px}.discover-hero{padding:21px 10px;border-radius:13px}.discover-hero p:last-child{font-size:.88rem}
       .discover-tools{grid-template-columns:1fr 120px;gap:7px;margin-top:12px}.discover-tools input,.discover-tools select{min-height:42px;padding:8px;font-size:.86rem}
       .discover-grid{gap:6px}.discover-card{border-radius:8px}.discover-card-copy{padding:7px 6px 8px}.discover-card h2{font-size:.72rem}.discover-card p{font-size:.61rem;margin-top:3px}
@@ -59,6 +68,16 @@
   </style>
 </head>
 <body class="discover-page">
+  <header class="discover-brand-header">
+    <a class="discover-brand-link" href="index.html" aria-label="BANDtroductions Social home">
+      <img class="discover-brand-logo" src="IMG_9367.png" alt="BANDtroductions logo">
+      <span class="discover-brand-copy">
+        <span class="discover-brand-name">BAND<span>troductions</span><span class="discover-social-stamp">SOCIAL</span></span>
+        <span class="discover-brand-tagline">The Social Platform for Local Music. Everywhere.</span>
+      </span>
+    </a>
+  </header>
+
   <div id="global-header"></div>
 
   <main class="discover-shell">
