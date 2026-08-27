@@ -198,6 +198,7 @@ function buildRankedBands() {
   if (!firebaseStats) return [];
 
   return Object.entries(firebaseStats)
+    .filter(([id]) => !id.startsWith('__'))
     .map(([id, bandData]) => {
       const votes = safeNumber(bandData.votes);
       const likes = safeNumber(bandData.likes);
