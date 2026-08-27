@@ -138,6 +138,14 @@
       <label for="band-genre">Genre *</label>
       <input type="text" id="band-genre" name="Genre" placeholder="Ex: Rock, Alternative (pick best 2)" required>
 
+      <label for="band-music-type">Music Type *</label>
+      <select id="band-music-type" name="Music Type" required>
+        <option value="">Choose one</option>
+        <option value="Cover Band / Artist">Cover Band / Artist</option>
+        <option value="Original">Original</option>
+        <option value="Both">Both</option>
+      </select>
+
       <label for="band-members">Current Members</label>
       <input type="text" id="band-members" name="Members">
 
@@ -251,6 +259,14 @@
 
       <label for="musician-genre">Style / Genre *</label>
       <input type="text" id="musician-genre" name="Genre" placeholder="Ex: Rock, Acoustic (pick best 2)" required>
+
+      <label for="musician-music-type">Music Type *</label>
+      <select id="musician-music-type" name="Music Type" required>
+        <option value="">Choose one</option>
+        <option value="Cover Band / Artist">Cover Band / Artist</option>
+        <option value="Original">Original</option>
+        <option value="Both">Both</option>
+      </select>
 
       <label for="musician-looking-band">Are you looking to join a band?</label>
       <select id="musician-looking-band" name="Looking To Join A Band?" onchange="toggleMusicianLookingFields()">
