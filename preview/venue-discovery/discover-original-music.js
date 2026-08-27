@@ -27,6 +27,23 @@ function normalized(value) {
   return clean(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+function searchableWords(value) {
+  return normalized(value).replace(/[^a-z0-9]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+}
+
+function matchesSearch(video, searchTerm) {
+  const haystack = normalized([video.artistName, video.location, video.genre].join(' '));
+  if (!searchTerm) return true;
+
+  // Profiles use both "Maine" and "ME". Treat either state search as the same filter.
+  if (searchTerm === 'maine' || searchTerm === 'me') {
+    const words = searchableWords(haystack);
+    return words.includes('maine') || words.includes('me');
+  }
+
+  return haystack.includes(searchTerm);
+}
+
 function profileMeta(profile) {
   return [profile.location, profile.genre || profile.instruments].map(clean).filter(Boolean).join(' • ');
 }
@@ -202,8 +219,7 @@ function render() {
   const searchTerm = normalized(search.value);
   const selectedGenre = normalized(genre.value);
   const visible = allVideos.filter(video => {
-    const haystack = normalized([video.artistName, video.location, video.genre].join(' '));
-    const searchMatch = !searchTerm || haystack.includes(searchTerm);
+    const searchMatch = matchesSearch(video, searchTerm);
     const genreMatch = selectedGenre === 'all' || normalized(video.genre).includes(selectedGenre);
     return searchMatch && genreMatch;
   });
