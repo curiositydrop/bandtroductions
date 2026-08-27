@@ -166,6 +166,13 @@ function openVideo(video) {
   profileLink.href = video.profileUrl;
   youtubeLink.href = `https://www.youtube.com/watch?v=${video.videoId}`;
   dialog.showModal();
+  window.dispatchEvent(new CustomEvent('bandtroductions:venue-video-opened', {
+    detail: {
+      artistName: video.artistName,
+      profileUrl: video.profileUrl,
+      videoId: video.videoId
+    }
+  }));
 }
 
 function closeVideo() {
