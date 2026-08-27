@@ -149,6 +149,7 @@
 
 <div id="global-footer"></div>
 
+<script src="profile-video-utils.js?v=1"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
@@ -170,55 +171,19 @@ let youtubeApiReady = false;
 let playerReady = false;
 
 function normalizeYouTubeUrl(url) {
-  if (!url) return null;
-
-  try {
-    const cleanUrl = url.trim();
-
-    if (cleanUrl.includes("youtube.com/embed/")) {
-      return cleanUrl;
-    }
-
-    if (cleanUrl.includes("youtu.be/")) {
-      const parts = cleanUrl.split("youtu.be/")[1];
-      const videoId = parts.split("?")[0].split("&")[0].split("/")[0];
-      return `https://www.youtube.com/embed/${videoId}`;
-    }
-
-    if (cleanUrl.includes("youtube.com/watch")) {
-      const parsed = new URL(cleanUrl);
-      const videoId = parsed.searchParams.get("v");
-      if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}`;
-      }
-    }
-
-    return null;
-  } catch (e) {
-    return null;
-  }
+  return BTProfileVideos.youtubeEmbedUrl(url) || null;
 }
 
 function extractYouTubeVideoId(url) {
-  const embedUrl = normalizeYouTubeUrl(url);
-  if (!embedUrl) return null;
-
-  const match = embedUrl.match(/embed\/([^?&/]+)/);
-  return match ? match[1] : null;
+  return BTProfileVideos.youtubeIdFromUrl(url) || null;
 }
 
 function toAbsoluteBandUrl(relativeOrAbsoluteUrl) {
-  if (!relativeOrAbsoluteUrl) return "https://curiositydrop.com/bandtroductions/";
-
-  if (relativeOrAbsoluteUrl.startsWith("http://") || relativeOrAbsoluteUrl.startsWith("https://")) {
-    return relativeOrAbsoluteUrl;
+  try {
+    return new URL(relativeOrAbsoluteUrl || 'index.html', location.href).href;
+  } catch (_) {
+    return location.href;
   }
-
-  const cleanPath = relativeOrAbsoluteUrl.startsWith("/")
-    ? relativeOrAbsoluteUrl
-    : `/bandtroductions/${relativeOrAbsoluteUrl.replace(/^\/+/, "")}`;
-
-  return "https://curiositydrop.com" + cleanPath;
 }
 
 function shareSpecificPage(profileUrl, title) {
@@ -465,10 +430,13 @@ async function loadBandfeed() {
 
   const finalItems = [];
 
-  for (const card of allCards) {
-    const videoData = await extractVideoFromProfile(card.profileUrl, card.dataVideo);
-    if (!videoData || !videoData.videoId) continue;
+  const legacyResults = await Promise.all(allCards.map(async card => ({
+    card,
+    videoData: await extractVideoFromProfile(card.profileUrl, card.dataVideo)
+  })));
 
+  legacyResults.forEach(({ card, videoData }) => {
+    if (!videoData?.videoId) return;
     finalItems.push({
       title: card.title,
       image: card.image,
@@ -478,7 +446,7 @@ async function loadBandfeed() {
       videoId: videoData.videoId,
       fallbackUrl: null
     });
-  }
+  });
 
   bandfeedItems = finalItems;
   browserContainer.innerHTML = "";
@@ -487,6 +455,7 @@ async function loadBandfeed() {
     loadingMessage.textContent = "No videos found yet. Add more band and musician profiles with videos to populate BANDfeed.";
     videoTitle.textContent = "No videos loaded yet";
     videoMeta.textContent = "";
+    window.dispatchEvent(new CustomEvent('bandfeed:legacy-loaded'));
     return;
   }
 
@@ -498,6 +467,7 @@ async function loadBandfeed() {
   });
 
   buildPlayerIfReady();
+  window.dispatchEvent(new CustomEvent('bandfeed:legacy-loaded'));
 }
 
 function onYouTubeIframeAPIReady() {
@@ -507,7 +477,7 @@ function onYouTubeIframeAPIReady() {
 
 loadBandfeed();
 </script>
-<script src="bandfeed-live-profiles.js?v=1"></script>
+<script src="bandfeed-live-profiles.js?v=2"></script>
 <script src="global.js"></script>
 
 <script>
