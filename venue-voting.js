@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
-import { getDatabase, ref, runTransaction } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js';
+import { getDatabase, ref, set } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyApLiiJsKTw1Fp8J3aQatMqiSZoP_6EycE',
@@ -131,47 +131,20 @@ async function saveVote() {
     const app = getApps().find(candidate => candidate.options?.projectId === firebaseConfig.projectId)
       || initializeApp(firebaseConfig, 'venue-voting');
     const database = getDatabase(app);
-    const campaignRef = ref(database, `Bands/__venueCampaigns/${venueSlug}`);
     const deviceId = voterId();
     const submittedAct = { ...currentAct };
     const now = Date.now();
-
-    const result = await runTransaction(campaignRef, current => {
-      const campaign = current && typeof current === 'object' ? current : {};
-      const totals = campaign.totals && typeof campaign.totals === 'object' ? { ...campaign.totals } : {};
-      const actNames = campaign.actNames && typeof campaign.actNames === 'object' ? { ...campaign.actNames } : {};
-      const voters = campaign.voters && typeof campaign.voters === 'object' ? { ...campaign.voters } : {};
-      const previousActId = clean(voters[deviceId]?.actId);
-
-      if (previousActId && previousActId !== submittedAct.actId) {
-        const previousTotal = Math.max(0, Number(totals[previousActId]) || 0);
-        if (previousTotal <= 1) delete totals[previousActId];
-        else totals[previousActId] = previousTotal - 1;
-      }
-
-      if (previousActId !== submittedAct.actId) {
-        totals[submittedAct.actId] = Math.max(0, Number(totals[submittedAct.actId]) || 0) + 1;
-      }
-
-      actNames[submittedAct.actId] = submittedAct.actName.slice(0, 120);
-      voters[deviceId] = {
+    const voteRef = ref(database, `Bands/__venueCampaigns/comments/${venueSlug}_${deviceId}`);
+    await set(voteRef, {
+      name: venueName.slice(0, 120),
+      message: JSON.stringify({
+        venueSlug,
         actId: submittedAct.actId,
         actName: submittedAct.actName.slice(0, 120),
-        profileUrl: submittedAct.profileUrl.slice(0, 300),
-        updatedAt: now
-      };
-
-      return {
-        ...campaign,
-        venueName: venueName.slice(0, 120),
-        totals,
-        actNames,
-        voters,
-        updatedAt: now
-      };
-    }, { applyLocally: false });
-
-    if (!result.committed) throw new Error('Vote transaction was not committed.');
+        profileUrl: submittedAct.profileUrl.slice(0, 300)
+      }),
+      createdAt: now
+    });
 
     memorySelection = {
       actId: submittedAct.actId,
