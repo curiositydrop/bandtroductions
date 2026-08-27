@@ -96,6 +96,24 @@
         <label>Location<input id="location" type="text" maxlength="100" placeholder="Portland, Maine"></label>
         <label>About<textarea id="bio" maxlength="1000" rows="5" required placeholder="Tell the music community about yourself..."></textarea></label>
 
+        <div id="artist-classification-fields" class="signup-fields" hidden>
+          <label>Music type *
+            <select id="music-type">
+              <option value="">Choose one</option>
+              <option value="cover">Cover Band / Artist</option>
+              <option value="original">Original</option>
+              <option value="both">Both</option>
+            </select>
+          </label>
+          <label id="featured-music-type-field" hidden>Featured video type *
+            <select id="featured-music-type">
+              <option value="">Choose one</option>
+              <option value="original">Original Song</option>
+              <option value="cover">Cover Song</option>
+            </select>
+          </label>
+        </div>
+
         <div id="band-fields" class="signup-fields" hidden>
           <div class="auth-grid"><label>Genre<input id="genre" type="text" maxlength="120" placeholder="Rock / Metal"></label><label>Year formed<input id="year-formed" type="number" min="1900" max="2100"></label></div>
           <label>Band members<textarea id="members" rows="4" maxlength="800" placeholder="Names and roles"></textarea></label>
@@ -183,6 +201,10 @@
     const signupMessage = document.getElementById('signup-message');
     const accountTypeInput = document.getElementById('account-type');
     const displayNameInput = document.getElementById('display-name');
+    const musicTypeInput = document.getElementById('music-type');
+    const featuredMusicTypeInput = document.getElementById('featured-music-type');
+    const artistClassificationFields = document.getElementById('artist-classification-fields');
+    const featuredMusicTypeField = document.getElementById('featured-music-type-field');
     const loginLink = document.getElementById('login-link');
     const changeLoginButton = document.getElementById('change-login-button');
     let createdUser = null;
@@ -222,7 +244,23 @@
       document.querySelectorAll('.signup-fields').forEach(section => section.hidden = true);
       const section = document.getElementById(`${type}-fields`);
       if (section) section.hidden = false;
+      const artistAccount = type === 'band' || type === 'musician';
+      artistClassificationFields.hidden = !artistAccount;
+      musicTypeInput.required = artistAccount;
+      if (!artistAccount) {
+        musicTypeInput.value = '';
+        featuredMusicTypeInput.value = '';
+      }
+      syncFeaturedMusicType();
       updateFinalState();
+    }
+
+    function syncFeaturedMusicType() {
+      const artistAccount = accountTypeInput.value === 'band' || accountTypeInput.value === 'musician';
+      const needsChoice = artistAccount && musicTypeInput.value === 'both';
+      featuredMusicTypeField.hidden = !needsChoice;
+      featuredMusicTypeInput.required = needsChoice;
+      if (!needsChoice) featuredMusicTypeInput.value = artistAccount ? musicTypeInput.value : '';
     }
 
     function updateFinalState() {
@@ -238,6 +276,7 @@
     passwordInput.addEventListener('input', updateContinueState);
     document.getElementById('claim-agreements').addEventListener('change', updateContinueState);
     accountTypeInput.addEventListener('change', () => showAccountFields(accountTypeInput.value));
+    musicTypeInput.addEventListener('change', () => { syncFeaturedMusicType(); updateFinalState(); });
     profileForm.addEventListener('input', updateFinalState);
     profileForm.addEventListener('change', updateFinalState);
 
@@ -351,6 +390,8 @@
           bannerImageUrl: '',
           imageUrl: '',
           bio: value('bio'),
+          musicType: accountType === 'band' || accountType === 'musician' ? value('music-type') : '',
+          featuredMusicType: accountType === 'band' || accountType === 'musician' ? value('featured-music-type') : '',
           genre: value('genre'),
           yearFormed: value('year-formed'),
           members: value('members'),
