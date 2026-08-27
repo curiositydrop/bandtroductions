@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
-import { getDatabase, ref, set } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js';
+import { getDatabase, push, ref } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyApLiiJsKTw1Fp8J3aQatMqiSZoP_6EycE',
@@ -134,14 +134,16 @@ async function saveVote() {
     const deviceId = voterId();
     const submittedAct = { ...currentAct };
     const now = Date.now();
-    const voteRef = ref(database, `Bands/__venueCampaigns/comments/${venueSlug}_${deviceId}`);
-    await set(voteRef, {
+    const votesRef = ref(database, 'Bands/__venueCampaigns/comments');
+    await push(votesRef, {
       name: venueName.slice(0, 120),
       message: JSON.stringify({
         venueSlug,
+        voterId: deviceId,
         actId: submittedAct.actId,
         actName: submittedAct.actName.slice(0, 120),
-        profileUrl: submittedAct.profileUrl.slice(0, 300)
+        profileUrl: submittedAct.profileUrl.slice(0, 300),
+        previousActId: clean(previousSelection?.actId)
       }),
       createdAt: now
     });
