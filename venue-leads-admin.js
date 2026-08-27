@@ -1,7 +1,7 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
-import { getDatabase, onValue, ref } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js';
+import { getDatabase, onValue, ref, update } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js';
 import { auth } from './firebase-dev.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { isAdminAccount } from './admin-access.js';
 
 const firebaseConfig = {
@@ -18,6 +18,9 @@ const body = document.getElementById('cr-venue-leads-body');
 let allVenues = [];
 let rawVoteRows = {};
 let started = false;
+let legacyAuth = null;
+let venueDatabase = null;
+let pendingDeletion = null;
 
 function clean(value) {
   return String(value || '').trim();
@@ -28,6 +31,88 @@ function campaignUrl(venue) {
   if (venue.venueLocation) params.set('venueLocation', venue.venueLocation);
   if (venue.venueProfileUrl) params.set('venueProfile', venue.venueProfileUrl);
   return `discover-original-music.html?${params.toString()}`;
+}
+
+function rawVenueId(row) {
+  let payload = null;
+  try {
+    payload = typeof row?.message === 'string' ? JSON.parse(row.message) : row?.message;
+  } catch (_) {
+    payload = null;
+  }
+  return clean(payload?.venueId || payload?.venueSlug)
+    || globalThis.BTVenueCampaign?.slug(payload?.venueName || row?.name)
+    || '';
+}
+
+function rawIdsForVenue(venue) {
+  const venueIds = new Set([clean(venue.venueId), clean(venue.venueSlug)].filter(Boolean));
+  return Object.entries(rawVoteRows)
+    .filter(([, row]) => venueIds.has(rawVenueId(row)))
+    .map(([id]) => id);
+}
+
+function deletionDialog() {
+  return document.getElementById('venue-delete-auth');
+}
+
+function closeDeletionDialog() {
+  const dialog = deletionDialog();
+  if (dialog?.open) dialog.close();
+  const password = document.getElementById('venue-delete-password');
+  const status = document.getElementById('venue-delete-auth-status');
+  if (password) password.value = '';
+  if (status) status.textContent = '';
+}
+
+async function deleteVenueRows(request) {
+  if (!venueDatabase || !isAdminAccount(auth.currentUser)) return;
+  const ids = request.ids.filter(id => Object.prototype.hasOwnProperty.call(rawVoteRows, id));
+  if (!ids.length) {
+    alert('No vote records remain for this venue.');
+    return;
+  }
+  request.button.disabled = true;
+  request.button.textContent = 'Deleting…';
+  try {
+    const patch = Object.fromEntries(ids.map(id => [id, null]));
+    await update(ref(venueDatabase, 'Bands/__venueCampaigns/comments'), patch);
+    alert(`${ids.length} vote record${ids.length === 1 ? '' : 's'} for "${request.venue.venueName}" ${ids.length === 1 ? 'was' : 'were'} permanently deleted.`);
+  } catch (error) {
+    console.error('Venue vote data could not be deleted:', error);
+    const denied = String(error?.code || '').includes('PERMISSION_DENIED');
+    alert(denied
+      ? 'The legacy database rejected the deletion. No venue data was removed.'
+      : 'The venue data could not be deleted. No other records were changed.');
+    request.button.disabled = false;
+    request.button.textContent = 'Delete Venue Data';
+  }
+}
+
+async function authorizeAndDelete(request) {
+  const currentEmail = clean(auth.currentUser?.email).toLowerCase();
+  const legacyEmail = clean(legacyAuth?.currentUser?.email).toLowerCase();
+  if (currentEmail && legacyEmail === currentEmail) {
+    await deleteVenueRows(request);
+    return;
+  }
+  pendingDeletion = request;
+  const dialog = deletionDialog();
+  const email = document.getElementById('venue-delete-email');
+  if (email) email.textContent = currentEmail;
+  if (dialog?.showModal) dialog.showModal();
+  else alert('Legacy database authentication is not supported in this browser. No data was removed.');
+}
+
+function requestVenueDeletion(venue, button) {
+  const ids = rawIdsForVenue(venue);
+  if (!ids.length) {
+    alert('No raw vote records were found for this venue.');
+    return;
+  }
+  const typed = prompt(`Permanently delete all ${ids.length} raw vote record${ids.length === 1 ? '' : 's'} for "${venue.venueName}"?\n\nThis cannot be undone. Type DELETE to continue:`, '');
+  if (typed !== 'DELETE') return;
+  authorizeAndDelete({ venue, button, ids });
 }
 
 function formatDate(milliseconds) {
@@ -121,6 +206,12 @@ function render() {
       profile.textContent = 'Open Venue Profile';
       actions.appendChild(profile);
     }
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'danger';
+    remove.textContent = 'Delete Venue Data';
+    remove.addEventListener('click', () => requestVenueDeletion(venue, remove));
+    actions.appendChild(remove);
     row.append(top, metrics, acts, actions);
     list.appendChild(row);
   });
@@ -144,13 +235,51 @@ function install() {
   section.innerHTML = `
     <div class="cr-head"><div><p class="cr-kicker">Inbound Sales</p><h2>Venue Leads & Campaign Results</h2><div class="cr-muted">Fans choose the venue and act. Pre-campaign demand identifies who to pitch; QR activity tracks active campaigns. Total voters are deduplicated by device within each venue.</div></div><span id="venue-lead-count" class="cr-inline-count">Loading…</span></div>
     <div class="cr-tools"><input id="venue-lead-search" type="search" placeholder="Search venue, town, or requested act…"><select id="venue-lead-period" aria-label="Venue report period"><option value="0">All time</option><option value="30">Last 30 days</option><option value="60">Last 60 days</option><option value="90">Last 90 days</option></select></div>
-    <div id="venue-lead-list" class="cr-list"><div class="cr-empty">Loading venue demand…</div></div>`;
+    <div id="venue-lead-list" class="cr-list"><div class="cr-empty">Loading venue demand…</div></div>
+    <dialog id="venue-delete-auth" class="venue-delete-auth">
+      <form id="venue-delete-auth-form">
+        <h3>Confirm legacy database access</h3>
+        <p>Venue votes are stored in the original BANDtroductions database. Sign in as <strong id="venue-delete-email"></strong> to complete this deletion.</p>
+        <label for="venue-delete-password">Password</label>
+        <input id="venue-delete-password" type="password" autocomplete="current-password" required>
+        <p id="venue-delete-auth-status" class="cr-status" role="status"></p>
+        <div class="cr-actions">
+          <button type="submit">Sign In & Delete</button>
+          <button id="venue-delete-cancel" type="button">Cancel</button>
+        </div>
+      </form>
+    </dialog>`;
   body.appendChild(section);
   const style = document.createElement('style');
-  style.textContent = '.venue-lead-metrics{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:4px}.venue-lead-acts{padding:10px;border:1px solid #2e4542;border-radius:10px;background:#090c0c}.venue-lead-acts strong{color:#0ccfbd}.venue-lead-acts ol{margin:7px 0 0;padding-left:22px;color:#d4dbda}.venue-lead-acts li+li{margin-top:5px}.venue-lead-acts a{color:#7afff5}@media(max-width:560px){.venue-lead-metrics{grid-template-columns:1fr 1fr}.venue-lead-metrics .cr-stat:last-child{grid-column:1/-1}}';
+  style.textContent = '.venue-lead-metrics{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:4px}.venue-lead-acts{padding:10px;border:1px solid #2e4542;border-radius:10px;background:#090c0c}.venue-lead-acts strong{color:#0ccfbd}.venue-lead-acts ol{margin:7px 0 0;padding-left:22px;color:#d4dbda}.venue-lead-acts li+li{margin-top:5px}.venue-lead-acts a{color:#7afff5}.venue-delete-auth{max-width:430px;border:1px solid #397a74;border-radius:14px;background:#101414;color:#fff;padding:18px}.venue-delete-auth::backdrop{background:rgba(0,0,0,.78)}.venue-delete-auth h3{margin:0 0 8px;color:#0ccfbd}.venue-delete-auth p{color:#b7c0bf;line-height:1.45}.venue-delete-auth label{display:block;margin:12px 0 6px;font-weight:800}.venue-delete-auth input{width:100%;box-sizing:border-box;border:1px solid #4b5a58;border-radius:10px;background:#070909;color:#fff;padding:10px;font:inherit}@media(max-width:560px){.venue-lead-metrics{grid-template-columns:1fr 1fr}.venue-lead-metrics .cr-stat:last-child{grid-column:1/-1}}';
   document.head.appendChild(style);
   document.getElementById('venue-lead-search').addEventListener('input', render);
   document.getElementById('venue-lead-period').addEventListener('change', () => { aggregateForPeriod(); render(); });
+  document.getElementById('venue-delete-cancel').addEventListener('click', () => {
+    pendingDeletion = null;
+    closeDeletionDialog();
+  });
+  document.getElementById('venue-delete-auth-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const request = pendingDeletion;
+    const password = document.getElementById('venue-delete-password');
+    const status = document.getElementById('venue-delete-auth-status');
+    const submit = event.submitter;
+    if (!request || !password?.value || !legacyAuth || !auth.currentUser?.email) return;
+    submit.disabled = true;
+    status.textContent = 'Checking access…';
+    try {
+      await signInWithEmailAndPassword(legacyAuth, auth.currentUser.email, password.value);
+      pendingDeletion = null;
+      closeDeletionDialog();
+      await deleteVenueRows(request);
+    } catch (error) {
+      console.error('Legacy database sign-in failed:', error);
+      status.textContent = 'That sign-in did not work. No data was removed.';
+    } finally {
+      submit.disabled = false;
+    }
+  });
 }
 
 function start() {
@@ -158,8 +287,9 @@ function start() {
   started = true;
   install();
   const app = getApps().find(candidate => candidate.name === 'venue-leads-admin') || initializeApp(firebaseConfig, 'venue-leads-admin');
-  const database = getDatabase(app);
-  onValue(ref(database, 'Bands/__venueCampaigns/comments'), snapshot => {
+  venueDatabase = getDatabase(app);
+  legacyAuth = getAuth(app);
+  onValue(ref(venueDatabase, 'Bands/__venueCampaigns/comments'), snapshot => {
     rawVoteRows = snapshot.val() || {};
     aggregateForPeriod();
     render();

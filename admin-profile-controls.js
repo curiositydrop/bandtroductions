@@ -58,10 +58,11 @@ onAuthStateChanged(auth,async user=>{
   });
   const remove=document.createElement('button');remove.type='button';remove.className='auth-button admin-danger';remove.textContent='Delete Profile Listing';
   remove.addEventListener('click',async()=>{
-    if(!confirm('Delete this profile listing permanently? This does not delete the person’s Firebase login, but their public profile will be removed.'))return;
+    const label=String(profile.displayName||profile.email||'Unnamed Member').trim();
+    if(!confirm(`Delete the public profile listing for "${label}"?\n\nThis cannot be undone, but the member login, posts, and uploaded media will NOT be deleted.`))return;
     remove.disabled=true;
-    try{await deleteDoc(doc(db,'profiles',profileId));location.href='community.html';}
-    catch(error){console.error(error);alert('The profile could not be deleted.');remove.disabled=false;}
+    try{await deleteDoc(doc(db,'profiles',profileId));alert(`The profile listing for "${label}" was deleted. The member login and other content were left intact.`);location.href='community.html';}
+    catch(error){console.error(error);alert('The profile listing could not be deleted. Nothing else was changed.');remove.disabled=false;}
   });
   actions.append(edit,media,publish,remove);panel.append(heading,note,actions);content.appendChild(panel);
 });
