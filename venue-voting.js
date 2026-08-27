@@ -13,10 +13,14 @@ const firebaseConfig = {
 
 const params = new URLSearchParams(location.search);
 const venueName = clean(params.get('venue'));
+const venueLocation = clean(params.get('venueLocation'));
+const venueProfileUrl = clean(params.get('venueProfile'));
 const voteButton = document.getElementById('discover-vote-button');
 const voteStatus = document.getElementById('discover-vote-status');
 const voteHelp = document.getElementById('discover-vote-help');
-const venueSlug = slug(venueName);
+const venueSlug = slug(params.get('venueId') || venueName);
+const venueId = clean(params.get('venueId')) || venueSlug;
+const voteSource = params.get('source') === 'general-discovery' ? 'general-discovery' : 'venue-qr';
 const selectionKey = venueSlug ? `bandtroductions_venue_vote_${venueSlug}` : '';
 const voterKey = 'bandtroductions_venue_voter_id';
 let currentAct = null;
@@ -123,6 +127,7 @@ async function saveVote() {
   if (!currentAct || !venueSlug || saving) return;
   const previousSelection = readSelection();
   if (previousSelection?.actId === currentAct.actId) return;
+  const firstSource = previousSelection?.firstSource || (previousSelection ? 'venue-qr' : voteSource);
 
   saving = true;
   updateButton();
@@ -138,7 +143,14 @@ async function saveVote() {
     await push(votesRef, {
       name: venueName.slice(0, 120),
       message: JSON.stringify({
+        eventVersion: 2,
+        venueId,
+        venueName: venueName.slice(0, 120),
         venueSlug,
+        venueLocation: venueLocation.slice(0, 120),
+        venueProfileUrl: venueProfileUrl.slice(0, 300),
+        source: voteSource,
+        firstSource,
         voterId: deviceId,
         actId: submittedAct.actId,
         actName: submittedAct.actName.slice(0, 120),
@@ -150,14 +162,15 @@ async function saveVote() {
 
     memorySelection = {
       actId: submittedAct.actId,
-      actName: submittedAct.actName
+      actName: submittedAct.actName,
+      firstSource
     };
     writeStorage(selectionKey, JSON.stringify(memorySelection));
     setStatus(previousSelection
       ? `Vote changed to ${submittedAct.actName}! 🤘`
       : `Vote counted for ${submittedAct.actName}! 🤘`, 'success');
     window.dispatchEvent(new CustomEvent('bandtroductions:venue-vote-saved', {
-      detail: { venueName, venueSlug, ...submittedAct }
+      detail: { venueName, venueId, venueSlug, venueLocation, source: voteSource, ...submittedAct }
     }));
   } catch (error) {
     console.error('Venue vote could not be saved:', error);
@@ -176,7 +189,7 @@ if (venueName) {
     const actName = clean(detail.artistName);
     if (!actName) return;
     currentAct = {
-      actId: slug(detail.profileUrl || actName || detail.videoId),
+      actId: clean(detail.actId) || slug(detail.profileUrl || actName || detail.videoId),
       actName,
       profileUrl: clean(detail.profileUrl)
     };
@@ -184,6 +197,27 @@ if (venueName) {
   });
   voteButton.addEventListener('click', saveVote);
 } else {
-  voteButton.hidden = true;
-  voteHelp.textContent = 'Tap a video to watch and explore the artist.';
+  voteHelp.textContent = 'Choose a venue, then watch and vote for who you want to see there.';
+  window.addEventListener('bandtroductions:venue-video-opened', event => {
+    const detail = event.detail || {};
+    const actName = clean(detail.artistName);
+    if (!actName) return;
+    currentAct = {
+      actId: clean(detail.actId) || slug(detail.profileUrl || actName || detail.videoId),
+      actName,
+      profileUrl: clean(detail.profileUrl)
+    };
+    voteButton.hidden = false;
+    voteButton.disabled = false;
+    voteButton.textContent = `Choose a venue to vote for ${actName}`;
+    setStatus('Pick where you would like to see this act perform.');
+  });
+  voteButton.addEventListener('click', () => {
+    document.getElementById('discover-player')?.close();
+    const player = document.getElementById('discover-iframe');
+    if (player) player.src = '';
+    const picker = document.getElementById('discover-venue-picker');
+    picker?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    window.setTimeout(() => document.getElementById('discover-venue-input')?.focus(), 450);
+  });
 }

@@ -32,6 +32,15 @@
     .discover-kicker{margin:0 0 7px;color:var(--discover-teal);font-size:.78rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
     .discover-hero h1{margin:0;font-size:clamp(2rem,6vw,4.3rem);line-height:1.02}
     .discover-hero p:last-child{max-width:760px;margin:14px auto 0;color:#c8d0d0;line-height:1.5}
+    .discover-venue-picker{margin:14px 0 0;padding:16px;border:1px solid #31504d;border-radius:14px;background:linear-gradient(145deg,rgba(37,199,193,.08),rgba(8,10,10,.96))}
+    .discover-venue-picker h2{margin:0;font-size:1.2rem}.discover-venue-picker p{margin:6px 0 12px;color:#aeb8b8;font-size:.88rem;line-height:1.45}
+    .discover-venue-form{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(180px,.75fr) auto;gap:9px;align-items:end}
+    .discover-venue-form label{display:grid;gap:5px;color:#aeb8b8;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+    .discover-venue-form input{width:100%;min-height:44px;box-sizing:border-box;border:1px solid #354242;border-radius:10px;background:#0d1010;color:#fff;padding:9px 11px;font:inherit}
+    .discover-venue-submit,.discover-change-venue{min-height:44px;border:1px solid var(--discover-teal);border-radius:10px;background:var(--discover-teal);color:#06100f;padding:9px 14px;font:inherit;font-weight:900;cursor:pointer;text-decoration:none}
+    .discover-venue-status{min-height:20px;margin:8px 0 0!important;color:#9fb0ae!important;font-size:.78rem!important}
+    .discover-selected-venue{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.discover-selected-venue strong{color:#75fff6}.discover-selected-venue p{margin:3px 0 0}
+    .discover-change-venue{min-height:38px;background:transparent;color:var(--discover-teal);padding:7px 12px}
     .discover-tools{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(150px,.7fr);gap:10px;margin:18px 0 12px}
     .discover-tools label{display:grid;gap:5px;color:#aeb8b8;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
     .discover-tools input,.discover-tools select{width:100%;min-height:46px;border:1px solid #354242;border-radius:10px;background:#0d1010;color:#fff;padding:10px 12px;font:inherit}
@@ -67,6 +76,7 @@
     @media(max-width:620px){
       .discover-brand-header{padding:8px 10px}.discover-brand-link{gap:8px}.discover-brand-logo{width:52px;height:43px}.discover-brand-name{font-size:1.36rem}.discover-social-stamp{margin-left:4px;padding:2px 4px;border-width:1.5px}.discover-brand-tagline{font-size:.68rem}
       .discover-shell{padding:14px 7px 52px}.discover-hero{padding:21px 10px;border-radius:13px}.discover-hero p:last-child{font-size:.88rem}
+      .discover-venue-picker{padding:12px 10px}.discover-venue-form{grid-template-columns:1fr}.discover-venue-submit{width:100%}
       .discover-tools{grid-template-columns:1fr 120px;gap:7px;margin-top:12px}.discover-tools input,.discover-tools select{min-height:42px;padding:8px;font-size:.86rem}
       .discover-grid{gap:6px}.discover-card{border-radius:8px}.discover-card-copy{padding:7px 6px 8px}.discover-card h2{font-size:.72rem}.discover-card p{font-size:.61rem;margin-top:3px}
       .discover-play{font-size:1.65rem}.discover-music-type{top:4px;left:4px;padding:2px 4px;font-size:.46rem}.discover-summary,.discover-vote-help{font-size:.76rem;margin-left:2px}.discover-dialog-info{padding:13px}.discover-dialog-info h2{font-size:1.1rem}
@@ -91,6 +101,28 @@
       <p class="discover-kicker">BANDtroductions Original Music Discovery</p>
       <h1 id="discover-heading">Discover Original Music</h1>
       <p id="discover-intro">Watch original bands and musicians, visit their profiles, and discover who you want to see live.</p>
+    </section>
+
+    <section id="discover-venue-picker" class="discover-venue-picker" aria-label="Choose a venue">
+      <div id="discover-selected-venue" class="discover-selected-venue" hidden>
+        <div><h2 id="discover-venue-title">Your selected venue</h2><p><strong id="discover-selected-venue-name"></strong><span id="discover-selected-venue-location"></span></p></div>
+        <button id="discover-change-venue" class="discover-change-venue" type="button">Change Venue</button>
+      </div>
+      <div id="discover-venue-search">
+        <h2>Where should they play?</h2>
+        <p>Choose a listed venue or add one near you. Your vote helps tell BANDtroductions which venues—and which acts—to contact.</p>
+        <form id="discover-venue-form" class="discover-venue-form">
+          <label>Venue
+            <input id="discover-venue-input" type="text" list="discover-venue-options" maxlength="120" placeholder="Search or type a venue name" autocomplete="off" required>
+            <datalist id="discover-venue-options"></datalist>
+          </label>
+          <label>Town / State
+            <input id="discover-venue-location" type="text" maxlength="120" placeholder="Required for a new venue">
+          </label>
+          <button class="discover-venue-submit" type="submit">Set Venue</button>
+        </form>
+        <p id="discover-venue-status" class="discover-venue-status" aria-live="polite">Loading venue choices…</p>
+      </div>
     </section>
 
     <section class="discover-tools" aria-label="Filter original music videos">
@@ -139,8 +171,9 @@
 
   <div id="global-footer"></div>
   <script src="profile-video-utils.js?v=1"></script>
-  <script type="module" src="discover-original-music.js?v=2"></script>
-  <script type="module" src="venue-voting.js?v=1"></script>
+  <script type="module" src="venue-discovery-selector.js?v=1"></script>
+  <script type="module" src="discover-original-music.js?v=3"></script>
+  <script type="module" src="venue-voting.js?v=2"></script>
   <script src="global.js"></script>
 </body>
 </html>

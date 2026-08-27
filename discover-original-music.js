@@ -27,6 +27,14 @@ function normalized(value) {
   return clean(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+function slug(value) {
+  return normalized(value).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 100);
+}
+
+function actIdFor(video) {
+  return slug(video.profileUrl || video.artistName || video.videoId);
+}
+
 function searchableWords(value) {
   return normalized(value).replace(/[^a-z0-9]+/g, ' ').trim().split(/\s+/).filter(Boolean);
 }
@@ -178,6 +186,7 @@ function openVideo(video) {
   window.dispatchEvent(new CustomEvent('bandtroductions:venue-video-opened', {
     detail: {
       artistName: video.artistName,
+      actId: actIdFor(video),
       profileUrl: video.profileUrl,
       videoId: video.videoId
     }
@@ -268,6 +277,9 @@ async function load() {
   if (legacyResult.status === 'rejected') console.error('Legacy profile videos could not be loaded:', legacyResult.reason);
   allVideos = combineVideos(firebaseVideos, legacyVideos);
   render();
+  const requestedAct = slug(filters.get('act'));
+  const selectedAct = requestedAct ? allVideos.find(video => actIdFor(video) === requestedAct) : null;
+  if (selectedAct) window.setTimeout(() => openVideo(selectedAct), 80);
 }
 
 search.addEventListener('input', render);
