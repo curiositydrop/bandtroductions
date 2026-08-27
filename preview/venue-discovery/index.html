@@ -37,6 +37,7 @@
     .discover-tools label{display:grid;gap:5px;color:#aeb8b8;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
     .discover-tools input,.discover-tools select{width:100%;min-height:46px;border:1px solid #354242;border-radius:10px;background:#0d1010;color:#fff;padding:10px 12px;font:inherit}
     .discover-summary{min-height:24px;margin:0 0 12px;color:#adb8b8;font-size:.9rem}
+    .discover-vote-help{margin:0 0 8px;color:#dbe2e2;font-size:.9rem;font-weight:800}
     .discover-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
     .discover-card{position:relative;min-width:0;overflow:hidden;border:1px solid var(--discover-line);border-radius:13px;background:var(--discover-panel);color:#fff;box-shadow:0 12px 28px rgba(0,0,0,.18);cursor:pointer;transition:transform .16s ease,border-color .16s ease}
     .discover-card:hover,.discover-card:focus-visible{transform:translateY(-2px);border-color:var(--discover-teal);outline:none}
@@ -56,14 +57,19 @@
     .discover-dialog-info h2{margin:0;font-size:1.35rem}
     .discover-dialog-meta{margin:7px 0 16px;color:#aeb8b8}
     .discover-dialog-actions{display:flex;gap:10px;flex-wrap:wrap}
-    .discover-dialog-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:9px 15px;border:1px solid var(--discover-teal);border-radius:9px;color:var(--discover-teal);font-weight:900;text-decoration:none}
+    .discover-dialog-actions a,.discover-vote-button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:9px 15px;border:1px solid var(--discover-teal);border-radius:9px;color:var(--discover-teal);background:transparent;font:inherit;font-weight:900;text-decoration:none;cursor:pointer}
     .discover-dialog-actions a:first-child{background:var(--discover-teal);color:#06100f}
+    .discover-vote-button{flex:1 0 100%;background:var(--discover-teal);color:#06100f}
+    .discover-vote-button:disabled{cursor:default;opacity:.68}
+    .discover-vote-status{min-height:22px;margin:12px 0 0;color:#c8d0d0;font-size:.88rem;line-height:1.4}
+    .discover-vote-status.is-success{color:#73fff5;font-weight:800}
+    .discover-vote-status.is-error{color:#ff8e9f;font-weight:800}
     @media(max-width:620px){
       .discover-brand-header{padding:8px 10px}.discover-brand-link{gap:8px}.discover-brand-logo{width:52px;height:43px}.discover-brand-name{font-size:1.36rem}.discover-social-stamp{margin-left:4px;padding:2px 4px;border-width:1.5px}.discover-brand-tagline{font-size:.68rem}
       .discover-shell{padding:14px 7px 52px}.discover-hero{padding:21px 10px;border-radius:13px}.discover-hero p:last-child{font-size:.88rem}
       .discover-tools{grid-template-columns:1fr 120px;gap:7px;margin-top:12px}.discover-tools input,.discover-tools select{min-height:42px;padding:8px;font-size:.86rem}
       .discover-grid{gap:6px}.discover-card{border-radius:8px}.discover-card-copy{padding:7px 6px 8px}.discover-card h2{font-size:.72rem}.discover-card p{font-size:.61rem;margin-top:3px}
-      .discover-play{font-size:1.65rem}.discover-summary{font-size:.76rem;margin-left:2px}.discover-dialog-info{padding:13px}.discover-dialog-info h2{font-size:1.1rem}
+      .discover-play{font-size:1.65rem}.discover-summary,.discover-vote-help{font-size:.76rem;margin-left:2px}.discover-dialog-info{padding:13px}.discover-dialog-info h2{font-size:1.1rem}
     }
   </style>
 </head>
@@ -109,6 +115,7 @@
       </label>
     </section>
 
+    <p id="discover-vote-help" class="discover-vote-help">Tap a video to watch and vote.</p>
     <p id="discover-summary" class="discover-summary" role="status">Loading original music…</p>
     <section id="discover-grid" class="discover-grid" aria-live="polite"></section>
   </main>
@@ -122,15 +129,18 @@
       <h2 id="discover-player-title">Original Music</h2>
       <p id="discover-player-meta" class="discover-dialog-meta"></p>
       <div class="discover-dialog-actions">
+        <button id="discover-vote-button" class="discover-vote-button" type="button" hidden>Vote for this act</button>
         <a id="discover-profile-link" href="#">View Profile</a>
         <a id="discover-youtube-link" href="#" target="_blank" rel="noopener">Open on YouTube</a>
       </div>
+      <p id="discover-vote-status" class="discover-vote-status" aria-live="polite"></p>
     </div>
   </dialog>
 
   <div id="global-footer"></div>
   <script src="preview/venue-discovery/profile-video-utils.js?v=2"></script>
-  <script type="module" src="preview/venue-discovery/discover-original-music.js?v=4"></script>
+  <script type="module" src="preview/venue-discovery/discover-original-music.js?v=5"></script>
+  <script type="module" src="preview/venue-discovery/venue-voting.js?v=1"></script>
   <script src="global.js"></script>
 </body>
 </html>
