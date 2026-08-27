@@ -40,7 +40,7 @@ function setPreview(id,url,fallback){
 }
 
 function fillProfile(data){
-  const ids=['display-name','location','bio','genre','year-formed','members','booking-email','instruments','experience','looking-for-band','capacity','venue-type','venue-booking','profile-emoji','favorite-genres','fan-interests','website','media-link'];
+  const ids=['display-name','location','bio','music-type','featured-music-type','genre','year-formed','members','booking-email','instruments','experience','looking-for-band','capacity','venue-type','venue-booking','profile-emoji','favorite-genres','fan-interests','website','media-link'];
   ids.forEach(id=>{
     const element=document.getElementById(id);if(!element)return;
     const key=id.replace(/-([a-z])/g,(_,letter)=>letter.toUpperCase());
@@ -116,7 +116,7 @@ form.addEventListener('submit',async event=>{
       displayName:value('display-name'),location:value('location'),
       bannerImageUrl,coverImageUrl:bannerImageUrl,bannerUrl:bannerImageUrl,
       imageUrl,avatarUrl:imageUrl,photoURL:imageUrl,
-      bio:value('bio'),genre:value('genre'),yearFormed:value('year-formed'),members:value('members'),bookingEmail:value('booking-email'),
+      bio:value('bio'),musicType:value('music-type')||targetProfile.musicType||'',featuredMusicType:value('featured-music-type')||targetProfile.featuredMusicType||'',genre:value('genre'),yearFormed:value('year-formed'),members:value('members'),bookingEmail:value('booking-email'),
       instruments:value('instruments'),experience:value('experience'),lookingForBand:value('looking-for-band'),
       capacity:value('capacity'),venueType:value('venue-type'),venueBooking:value('venue-booking'),profileEmoji:value('profile-emoji'),
       favoriteGenres:value('favorite-genres'),fanInterests:value('fan-interests'),website:normalizeUrl(value('website')),

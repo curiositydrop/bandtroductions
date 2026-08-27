@@ -48,6 +48,10 @@ function profileMeta(profile) {
   return [profile.location, profile.genre || profile.instruments].map(clean).filter(Boolean).join(' • ');
 }
 
+function musicTypeLabel(value) {
+  return ({ original: 'ORIGINAL', both: 'BOTH' })[normalized(value)] || '';
+}
+
 function configureVenueHeading() {
   if (!venueName) return;
   document.title = `Who Should Play at ${venueName}? | BANDtroductions`;
@@ -128,6 +132,9 @@ async function loadFirebaseVideos() {
     const accountType = normalized(profile.accountType || profile.profileType);
     if (accountType !== 'band' && accountType !== 'musician') return;
     if (profile.venueDiscoveryEligible === false) return;
+    const musicType = normalized(profile.musicType || profile.performanceType);
+    const featuredMusicType = normalized(profile.featuredMusicType || profile.featuredSongType);
+    if (musicType === 'cover' || featuredMusicType === 'cover') return;
 
     const artistName = clean(profile.displayName || profile.bandName || profile.name) || 'Original Artist';
     if (EXCLUDED_ACT_NAMES.has(normalized(artistName))) return;
@@ -142,7 +149,9 @@ async function loadFirebaseVideos() {
       profileUrl: `profile.html?id=${encodeURIComponent(profileDocument.id)}`,
       location: clean(profile.location),
       genre: clean(profile.genre || profile.instruments),
-      accountType
+      accountType,
+      musicType,
+      featuredMusicType
     });
   });
 
@@ -202,6 +211,13 @@ function videoCard(video) {
   play.setAttribute('aria-hidden', 'true');
   play.textContent = '▶';
   thumb.append(image, play);
+  const typeLabel = musicTypeLabel(video.musicType);
+  if (typeLabel) {
+    const badge = document.createElement('span');
+    badge.className = 'discover-music-type';
+    badge.textContent = typeLabel;
+    thumb.appendChild(badge);
+  }
 
   const copy = document.createElement('div');
   copy.className = 'discover-card-copy';
