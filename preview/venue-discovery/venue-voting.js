@@ -84,6 +84,7 @@ function setStatus(message = '', state = '') {
   voteStatus.textContent = message;
   voteStatus.classList.toggle('is-success', state === 'success');
   voteStatus.classList.toggle('is-error', state === 'error');
+  if (state !== 'error') delete voteStatus.dataset.errorCode;
 }
 
 function updateButton(preserveStatus = false) {
@@ -185,6 +186,7 @@ async function saveVote() {
     }));
   } catch (error) {
     console.error('Venue vote could not be saved:', error);
+    voteStatus.dataset.errorCode = clean(error?.code || error?.message).slice(0, 160);
     setStatus('Your vote could not be saved. Please try again.', 'error');
   } finally {
     saving = false;
