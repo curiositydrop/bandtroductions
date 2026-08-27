@@ -30,7 +30,7 @@ if(panel){
   loadDirectory().finally(()=>{
     onValue(ref(db,'Bands'),snap=>{
       const data=snap.val()||{};
-      const ranked=Object.entries(data).map(([id,b])=>({id,b,score:scoreFor(b)})).sort((a,b)=>b.score-a.score);
+      const ranked=Object.entries(data).filter(([id])=>!id.startsWith('__')).map(([id,b])=>({id,b,score:scoreFor(b)})).sort((a,b)=>b.score-a.score);
       if(!ranked.length){body.innerHTML='<p style="color:#888">No leaderboard activity yet.</p><a class="btn" href="band-of-the-week.html">VIEW LEADERBOARD</a>';return;}
       const winner=ranked[0];
       const name=nameFor(winner.id,winner.b);
