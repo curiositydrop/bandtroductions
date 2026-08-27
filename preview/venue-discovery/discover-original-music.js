@@ -1,7 +1,7 @@
 import { db } from '../../firebase-dev.js';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
-const SOURCE_PAGES = ['bands.html', 'musicians.html'];
+const SOURCE_PAGES = ['bands.html?venue-preview=3', 'musicians.html?venue-preview=3'];
 const EXCLUDED_LEGACY_PROFILES = new Set(['april-wood-shakira.html']);
 const EXCLUDED_ACT_NAMES = new Set(['april wood/shakira']);
 const grid = document.getElementById('discover-grid');
