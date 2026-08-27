@@ -2,6 +2,8 @@ import { db } from '../../firebase-dev.js';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const SOURCE_PAGES = ['bands.html', 'musicians.html'];
+const EXCLUDED_LEGACY_PROFILES = new Set(['april-wood-shakira.html']);
+const EXCLUDED_ACT_NAMES = new Set(['april wood/shakira']);
 const grid = document.getElementById('discover-grid');
 const summary = document.getElementById('discover-summary');
 const search = document.getElementById('discover-search');
@@ -56,7 +58,7 @@ function legacyCardsFromHtml(html) {
       genre: clean(card.dataset.genre) || genreLine.replace(/^(genre|style)\s*:\s*/i, ''),
       dataVideo: clean(card.dataset.video)
     };
-  }).filter(card => card.profileUrl);
+  }).filter(card => card.profileUrl && !EXCLUDED_LEGACY_PROFILES.has(card.profileUrl.toLowerCase()));
 }
 
 async function videosFromLegacyCard(card) {
@@ -78,17 +80,19 @@ async function videosFromLegacyCard(card) {
     });
   });
 
-  return ids.map((videoId, index) => ({
+  const videoId = ids[0];
+  if (!videoId) return [];
+  return [{
     videoId,
     artistName: card.artistName,
-    videoTitle: index ? `More Video ${index + 1}` : 'Featured Video',
+    videoTitle: 'Featured Video',
     image: card.image,
     thumbnailUrl: BTProfileVideos.youtubeThumbnail(videoId),
     profileUrl: card.profileUrl,
     location: card.location,
     genre: card.genre,
     accountType: 'legacy'
-  }));
+  }];
 }
 
 async function loadLegacyVideos() {
@@ -106,20 +110,22 @@ async function loadFirebaseVideos() {
     const profile = profileDocument.data() || {};
     const accountType = normalized(profile.accountType || profile.profileType);
     if (accountType !== 'band' && accountType !== 'musician') return;
+    if (profile.venueDiscoveryEligible === false) return;
 
     const artistName = clean(profile.displayName || profile.bandName || profile.name) || 'Original Artist';
-    BTProfileVideos.collectProfileVideos(profile).forEach(video => {
-      videos.push({
-        videoId: video.videoId,
-        artistName,
-        videoTitle: video.title,
-        image: profile.imageUrl || profile.avatarUrl || profile.photoURL || '',
-        thumbnailUrl: video.thumbnailUrl,
-        profileUrl: `profile.html?id=${encodeURIComponent(profileDocument.id)}`,
-        location: clean(profile.location),
-        genre: clean(profile.genre || profile.instruments),
-        accountType
-      });
+    if (EXCLUDED_ACT_NAMES.has(normalized(artistName))) return;
+    const featuredVideo = BTProfileVideos.collectProfileVideos(profile)[0];
+    if (!featuredVideo) return;
+    videos.push({
+      videoId: featuredVideo.videoId,
+      artistName,
+      videoTitle: 'Featured Video',
+      image: profile.imageUrl || profile.avatarUrl || profile.photoURL || '',
+      thumbnailUrl: featuredVideo.thumbnailUrl,
+      profileUrl: `profile.html?id=${encodeURIComponent(profileDocument.id)}`,
+      location: clean(profile.location),
+      genre: clean(profile.genre || profile.instruments),
+      accountType
     });
   });
 
@@ -127,12 +133,13 @@ async function loadFirebaseVideos() {
 }
 
 function combineVideos(firebaseVideos, legacyVideos) {
-  const byId = new Map();
+  const byArtist = new Map();
   [...firebaseVideos, ...legacyVideos].forEach(video => {
-    if (!video.videoId || byId.has(video.videoId)) return;
-    byId.set(video.videoId, video);
+    const artistKey = normalized(video.artistName);
+    if (!video.videoId || !artistKey || EXCLUDED_ACT_NAMES.has(artistKey) || byArtist.has(artistKey)) return;
+    byArtist.set(artistKey, video);
   });
-  return [...byId.values()].sort((a, b) => a.artistName.localeCompare(b.artistName) || a.videoTitle.localeCompare(b.videoTitle));
+  return [...byArtist.values()].sort((a, b) => a.artistName.localeCompare(b.artistName));
 }
 
 function openVideo(video) {
