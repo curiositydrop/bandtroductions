@@ -131,7 +131,7 @@ async function saveVote() {
     const app = getApps().find(candidate => candidate.options?.projectId === firebaseConfig.projectId)
       || initializeApp(firebaseConfig, 'venue-voting');
     const database = getDatabase(app);
-    const campaignRef = ref(database, `VenueCampaigns/${venueSlug}`);
+    const campaignRef = ref(database, `Bands/__venueCampaigns/${venueSlug}`);
     const deviceId = voterId();
     const submittedAct = { ...currentAct };
     const now = Date.now();
