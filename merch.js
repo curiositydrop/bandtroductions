@@ -293,6 +293,14 @@ function createActionButton(label, handler, className = 'button primary') {
   return button;
 }
 
+function createMerchLoginLink() {
+  const link = document.createElement('a');
+  link.className = 'button primary';
+  link.href = 'login.html?returnTo=merch.html';
+  link.textContent = 'LOGIN / CREATE ACCOUNT';
+  return link;
+}
+
 async function requestStore() {
   if (!currentUser || !ownedBand) return;
   const button = ownerActions.querySelector('button');
@@ -410,12 +418,8 @@ async function loadOwnerState(user) {
   setOwnerMessage('');
 
   if (!user) {
-    ownerSummary.textContent = 'Sign in with the account that owns your band profile to begin.';
-    const signIn = document.createElement('a');
-    signIn.className = 'button primary';
-    signIn.href = 'login.html';
-    signIn.textContent = 'SIGN IN';
-    ownerActions.appendChild(signIn);
+    ownerSummary.textContent = 'Log in with the account that owns your band profile, or create a band account to begin.';
+    ownerActions.appendChild(createMerchLoginLink());
     return;
   }
 
@@ -424,11 +428,7 @@ async function loadOwnerState(user) {
     ownedBand = await findOwnedBandProfile(user);
     if (!ownedBand) {
       ownerSummary.textContent = 'A published BANDtroductions band profile is required to open a merch store.';
-      const createProfile = document.createElement('a');
-      createProfile.className = 'button primary';
-      createProfile.href = 'create-profile.html';
-      createProfile.textContent = 'CREATE BAND PROFILE';
-      ownerActions.appendChild(createProfile);
+      ownerActions.appendChild(createMerchLoginLink());
       return;
     }
     const storeSnapshot = await getDoc(doc(db, 'merchStores', ownedBand.id));
