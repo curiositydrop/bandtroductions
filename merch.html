@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Merch Marketplace | BANDtroductions Social</title>
+  <meta name="description" content="Shop official BANDtroductions gear and independent band merchandise, all in one music-first marketplace.">
+  <link rel="canonical" href="https://www.bandtroductions.com/merch.html">
+  <meta property="og:title" content="BANDtroductions Merch Marketplace">
+  <meta property="og:description" content="Support the platform. Support the bands. Wear the scene.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.bandtroductions.com/merch.html">
+  <meta property="og:image" content="https://www.bandtroductions.com/merch-platform-hoodie.webp">
+  <style>
+    :root{--bg:#070909;--panel:#111414;--panel-2:#0b0d0d;--line:#343a3a;--teal:#25c7c1;--teal-bright:#73fff5;--text:#f2f4f4;--muted:#a3adad;--danger:#ff5b6e}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:radial-gradient(circle at 50% 0,#172020 0,#090b0b 35%,#050606 100%);color:var(--text);font-family:Arial,Helvetica,sans-serif;line-height:1.5}
+    button,input,textarea{font:inherit}
+    a{color:inherit}
+    [hidden]{display:none!important}
+    .merch-shell{width:min(100%,1500px);margin:0 auto;padding:12px}
+    .market-header{position:sticky;top:0;z-index:100;background:#090a0a;box-shadow:0 10px 24px rgba(0,0,0,.65)}
+    .market-top{border:1px solid var(--line);background:#080909;padding:13px 16px;display:grid;grid-template-columns:1fr 420px;gap:16px;align-items:center}
+    .brand-block{display:flex;align-items:center;gap:12px;min-width:0;text-decoration:none}
+    .header-logo-frame{width:64px;height:64px;overflow:hidden;display:flex;align-items:center;flex:none}
+    .header-logo{height:135%;width:auto;max-width:none;object-fit:contain;object-position:left center;display:block}
+    .brand-copy{min-width:0}.brand{font-size:clamp(28px,4vw,58px);font-weight:900;letter-spacing:-2px;white-space:nowrap}.brand span{color:var(--teal)}
+    .social-stamp{font-size:.42em;border:2px solid var(--teal);padding:3px 6px;transform:rotate(-4deg);display:inline-block}.tag{color:var(--teal);font-weight:800}
+    .news-card{height:58px;border:1px solid var(--line);background:#0e1010;display:grid;grid-template-columns:82px minmax(0,1fr);overflow:hidden}
+    .news-label{display:grid;place-items:center;text-align:center;background:var(--teal);color:#06100f;font-size:12px;font-weight:950;line-height:.95;letter-spacing:.04em}
+    .news-track-wrap{overflow:hidden;display:flex;align-items:center}.news-track{display:flex;width:max-content;animation:news-scroll 30s linear infinite}.news-group{display:flex;align-items:center;gap:34px;padding:0 18px;white-space:nowrap;font-size:12px;font-weight:800}.news-group a{color:var(--teal);text-decoration:none}
+    @keyframes news-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+    .market-nav{display:grid;grid-template-columns:repeat(9,1fr);border:1px solid var(--line);border-top:0;background:#0c0d0d}.market-nav a{padding:12px 6px;text-align:center;color:#ddd;text-decoration:none;border-right:1px solid #222;font-weight:800;font-size:13px}.market-nav a[aria-current="page"]{background:var(--teal);color:#051111}
+    main{padding:14px 0 30px}.section-card{border:1px solid var(--line);background:linear-gradient(155deg,#151818,#0a0c0c);box-shadow:0 14px 34px rgba(0,0,0,.25);margin-bottom:14px}
+    .platform-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,340px);min-height:320px;overflow:hidden}.hero-copy{padding:clamp(24px,3.5vw,46px);display:flex;flex-direction:column;justify-content:center}.eyebrow{margin:0 0 8px;color:var(--teal);font-size:.78rem;font-weight:950;letter-spacing:.16em;text-transform:uppercase}.hero-copy h1{margin:0;font-size:clamp(2.4rem,5vw,4.7rem);line-height:.88;letter-spacing:-.055em}.hero-copy h1 span{display:block;color:var(--teal)}.hero-copy>p:not(.eyebrow){max-width:690px;margin:15px 0 0;color:#ccd2d2;font-size:clamp(.95rem,1.6vw,1.12rem)}
+    .hero-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}.button{appearance:none;display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:9px 15px;border:1px solid var(--teal);border-radius:4px;background:transparent;color:var(--teal);font-weight:950;text-decoration:none;cursor:pointer}.button.primary{background:var(--teal);color:#06110f}.button.secondary{border-color:#555;color:#ddd}.button.danger{border-color:#7b3340;color:#ff8d99}.button:disabled{opacity:.5;cursor:not-allowed}.price-note{color:#aab3b3;font-size:.85rem;font-weight:800}
+    .hero-product{position:relative;min-height:320px;display:grid;place-items:center;background:#050707;overflow:hidden}.hero-product img{width:88%;height:88%;object-fit:contain;display:block}.hero-product::after{content:"Official platform merch";position:absolute;left:12px;bottom:12px;padding:6px 8px;border:1px solid rgba(115,255,245,.55);background:rgba(4,9,9,.84);color:#dffffd;font-size:.67rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+    .market-section{padding:clamp(18px,3vw,34px)}.section-heading{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:20px}.section-heading h2{margin:0;font-size:clamp(1.8rem,4vw,3.25rem);line-height:1}.section-heading p{max-width:650px;margin:0;color:var(--muted)}
+    .band-grid{display:grid;grid-template-columns:repeat(3,minmax(0,240px));gap:12px}.product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.band-card,.product-card{min-width:0;border:1px solid #343b3b;background:#0a0c0c;overflow:hidden}.band-card{appearance:none;padding:0;color:var(--text);text-align:left;cursor:pointer;transition:transform .16s,border-color .16s}.band-card:hover,.band-card:focus-visible{transform:translateY(-2px);border-color:var(--teal);outline:none}.band-card img,.band-fallback{width:100%;aspect-ratio:1;object-fit:cover;display:grid;place-items:center;background:linear-gradient(145deg,#202828,#0b0d0d);color:var(--teal);font-size:2rem;font-weight:950}.band-card-copy{padding:9px 10px}.band-card-copy strong{display:block;font-size:.92rem}.band-card-copy span{display:block;margin-top:2px;color:var(--teal);font-size:.7rem;font-weight:900}
+    .market-status{grid-column:1/-1;padding:32px 16px;border:1px dashed #3b4444;background:#0a0c0c;color:var(--muted);text-align:center}.market-status strong{display:block;margin-bottom:5px;color:#e8eeee;font-size:1.1rem}
+    .store-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}.store-logo{width:72px;height:72px;flex:none;border:2px solid var(--teal);background:#111;object-fit:cover;display:grid;place-items:center;color:var(--teal);font-weight:950}.store-head h2{margin:0;font-size:clamp(1.8rem,4vw,3rem)}.store-head p{margin:4px 0 0;color:var(--muted)}
+    .product-card{display:flex;flex-direction:column}.product-card img{width:100%;aspect-ratio:1;object-fit:cover;background:#171b1b}.product-info{display:flex;flex:1;flex-direction:column;padding:13px}.product-info h3{margin:0;font-size:1.12rem}.product-price{margin:5px 0;color:var(--teal);font-size:1.1rem;font-weight:950}.product-description{margin:0 0 8px;color:#c3caca;font-size:.9rem}.product-options{margin:auto 0 10px;color:#939d9d;font-size:.78rem}.product-info .button{width:100%}
+    .seller-intro{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,.7fr);gap:24px;align-items:center}.seller-intro h2{margin:0 0 8px;font-size:clamp(2rem,4vw,3.5rem);line-height:1}.seller-intro p{margin:0;color:#bbc3c3}.price-block{padding:20px;border:1px solid #38635f;background:#091211;text-align:center}.price-block strong{display:block;color:var(--teal);font-size:2.5rem;line-height:1}.price-block span{display:block;margin-top:6px;color:#bdc7c7;font-weight:800}
+    .owner-panel{margin-top:22px;padding-top:22px;border-top:1px solid #333}.owner-panel h3{margin:0 0 5px;font-size:1.45rem}.owner-panel>p{margin:0 0 16px;color:var(--muted)}.owner-message{min-height:1.4em;margin:10px 0;color:var(--teal);font-weight:800}.owner-message.error{color:#ff9ba6}
+    .merch-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.merch-form label{display:grid;gap:6px;color:#dce2e2;font-size:.83rem;font-weight:900}.merch-form .full{grid-column:1/-1}.merch-form input,.merch-form textarea{width:100%;padding:11px 12px;border:1px solid #3d4444;border-radius:5px;background:#070909;color:#f3f5f5}.merch-form input:focus,.merch-form textarea:focus{outline:2px solid rgba(37,199,193,.3);border-color:var(--teal)}.checkbox-line{display:flex!important;grid-template-columns:auto 1fr!important;align-items:center}.checkbox-line input{width:auto}.form-actions{grid-column:1/-1;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .owner-products{display:grid;gap:8px;margin-top:18px}.owner-product{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px;border:1px solid #333;background:#090b0b}.owner-product img{width:58px;height:58px;object-fit:cover}.owner-product strong,.owner-product span{display:block}.owner-product span{color:var(--muted);font-size:.78rem}.owner-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.owner-actions .button{min-height:36px;padding:6px 9px;font-size:.75rem}
+    .market-disclaimer{padding:15px 18px;border:1px solid #2e3333;background:#090b0b;color:#8f9999;font-size:.78rem;text-align:center}.market-disclaimer strong{color:#cbd1d1}
+    footer{text-align:center;padding:24px;color:#899292;font-size:.82rem}footer a{color:var(--teal)}
+    @media(max-width:1000px){.market-top{grid-template-columns:1fr}.news-card{height:42px}.market-nav{grid-template-columns:repeat(4,1fr)}.platform-hero{grid-template-columns:minmax(0,1fr) minmax(220px,32%)}.product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(max-width:700px){.merch-shell{padding:5px}.market-top{padding:7px 9px;gap:7px}.header-logo-frame{width:40px;height:40px}.brand-block{gap:7px}.brand{font-size:25px;letter-spacing:-1px}.tag{font-size:10px}.news-card{height:31px;grid-template-columns:55px 1fr}.news-label{font-size:7px}.news-group{font-size:8px;gap:18px;padding:0 10px}.market-nav{grid-template-columns:repeat(4,1fr)}.market-nav a{padding:8px 3px;font-size:9px}.platform-hero{grid-template-columns:minmax(0,1fr) 125px;min-height:235px}.hero-copy{padding:21px 15px}.hero-copy h1{font-size:clamp(2rem,10vw,3.2rem)}.hero-copy>p:not(.eyebrow){margin-top:10px;font-size:.84rem}.hero-actions{margin-top:13px}.price-note{display:none}.hero-product{min-height:235px}.hero-product img{width:96%;height:96%}.hero-product::after{display:none}.section-heading{display:block}.section-heading p{margin-top:8px}.band-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.band-card-copy{padding:7px 6px}.band-card-copy strong{font-size:.68rem}.band-card-copy span{font-size:.54rem}.market-section{padding:16px 9px}.seller-intro{grid-template-columns:1fr}.merch-form{grid-template-columns:1fr}.merch-form .full,.form-actions{grid-column:1}.owner-product{grid-template-columns:48px minmax(0,1fr)}.owner-product img{width:48px;height:48px}.owner-actions{grid-column:1/-1;justify-content:flex-start}.product-info{padding:10px}.product-info h3{font-size:.95rem}.product-description{font-size:.8rem}.button{font-size:.79rem;padding:8px 9px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.news-track{animation:none}.band-card{transition:none}}
+  </style>
+</head>
+<body>
+  <div class="merch-shell">
+    <header class="market-header">
+      <div class="market-top">
+        <a class="brand-block" href="index.html" aria-label="BANDtroductions Social home">
+          <span class="header-logo-frame"><img class="header-logo" src="IMG_9367.png" alt=""></span>
+          <span class="brand-copy"><span class="brand">BAND<span>troductions</span> <small class="social-stamp">SOCIAL</small></span><span class="tag">Built in Maine. Expanding Globally.</span></span>
+        </a>
+        <div class="news-card" aria-label="BANDtroductions updates"><div class="news-label">SPECIAL<br>REPORT</div><div class="news-track-wrap"><div class="news-track"><div class="news-group"><span>🛍️ Support the scene — shop independent band merch</span><span>🎸 Bands: open your merch store for $15/month</span><span>🤘 No sales commission. Bands handle every purchase directly.</span></div><div class="news-group" aria-hidden="true"><span>🛍️ Support the scene — shop independent band merch</span><span>🎸 Bands: open your merch store for $15/month</span><span>🤘 No sales commission. Bands handle every purchase directly.</span></div></div></div></div>
+      </div>
+      <nav class="market-nav" aria-label="Main navigation"><a href="index.html">HOME</a><a href="bands.html">BANDS</a><a href="musicians.html">MUSICIANS</a><a href="venues.html">VENUES</a><a href="radio.html">RADIO</a><a href="bandfeed1.html">BTV</a><a href="merch.html" aria-current="page">MERCH</a><a href="index.html">COMMUNITY</a><a href="sponsors.html">SPONSORS</a></nav>
+    </header>
+
+    <main>
+      <section class="section-card platform-hero" aria-labelledby="merch-title">
+        <div class="hero-copy"><p class="eyebrow">Official BANDtroductions Merch</p><h1 id="merch-title">WEAR THE <span>SCENE.</span></h1><p>Support BANDtroductions, discover gear from independent bands, and put more money directly into the music community.</p><div class="hero-actions"><a id="platform-buy-button" class="button primary" href="#platform-checkout-placeholder">BUY THE HOODIE</a><a class="button secondary" href="#band-marketplace">SHOP BAND MERCH</a><span class="price-note">Official checkout link coming soon.</span></div></div>
+        <div class="hero-product"><img src="merch-platform-hoodie.webp" alt="Black BANDtroductions Social hoodie"></div>
+      </section>
+
+      <section id="band-marketplace" class="section-card market-section" aria-labelledby="band-market-title">
+        <div class="section-heading"><div><p class="eyebrow">Independent Artist Stores</p><h2 id="band-market-title">SHOP BY BAND</h2></div><p>Choose a band to open its store directly below. Purchases go through each band’s own checkout.</p></div>
+        <div id="band-store-grid" class="band-grid"><div class="market-status"><strong>Loading band stores…</strong>Connecting to the BANDtroductions marketplace.</div></div>
+      </section>
+
+      <section id="selected-store" class="section-card market-section" hidden aria-live="polite"><div id="selected-store-head" class="store-head"></div><div id="selected-product-grid" class="product-grid"></div></section>
+
+      <section id="sell-merch" class="section-card market-section" aria-labelledby="seller-title">
+        <div class="seller-intro"><div><p class="eyebrow">For BANDtroductions Bands</p><h2 id="seller-title">PUT YOUR MERCH IN THE MARKETPLACE.</h2><p>Your branded storefront, product grid, images, and direct purchase links. BANDtroductions takes no percentage of your sales.</p></div><div class="price-block"><strong>$15</strong><span>per month · recurring</span></div></div>
+        <div id="owner-panel" class="owner-panel"><h3>Band Store Access</h3><p id="owner-summary">Sign in with the account that owns your band profile to begin.</p><div id="owner-actions"><a class="button primary" href="login.html">SIGN IN</a></div><p id="owner-message" class="owner-message" role="status"></p>
+          <form id="product-form" class="merch-form" hidden>
+            <label>Product name<input id="product-name" maxlength="100" required placeholder="Tour T-Shirt"></label>
+            <label>Price<input id="product-price" maxlength="40" required placeholder="$25.00"></label>
+            <label class="full">Description<textarea id="product-description" rows="3" maxlength="500" placeholder="Heavyweight black tee with front and back print."></textarea></label>
+            <label>Sizes / options<input id="product-options" maxlength="200" placeholder="S–3XL · Black"></label>
+            <label>Band checkout link<input id="product-buy-url" type="url" maxlength="1000" required placeholder="https://your-checkout-link.com"></label>
+            <label class="full">Product image<input id="product-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" required></label>
+            <label class="full checkbox-line"><input id="product-published" type="checkbox" checked> Publish this product immediately</label>
+            <div class="form-actions"><button id="save-product" class="button primary" type="submit">ADD PRODUCT</button><span>Up to 20 products. Images must be under 8 MB.</span></div>
+          </form>
+          <div id="owner-products" class="owner-products"></div>
+        </div>
+      </section>
+
+      <div class="market-disclaimer"><strong>Marketplace notice:</strong> Merchandise purchases, payments, shipping, returns, refunds, product quality, and customer service are handled directly by the individual band or seller. BANDtroductions provides marketplace visibility and storefront hosting only.</div>
+    </main>
+    <footer>© BANDtroductions · <a href="about.html">About BANDtroductions</a> · <a href="index.html">Back to Community</a></footer>
+  </div>
+  <script type="module" src="merch.js?v=1"></script>
+</body>
+</html>
