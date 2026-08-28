@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
-import { getDatabase, onValue, ref, update } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js';
+import { getDatabase, onValue, push, ref, update } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js';
 import { auth } from './firebase-dev.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { isAdminAccount } from './admin-access.js';
@@ -40,7 +40,7 @@ function rawVenueId(row) {
   } catch (_) {
     payload = null;
   }
-  return clean(payload?.venueId || payload?.venueSlug)
+  return clean(payload?.venueId || payload?.i || payload?.venueSlug)
     || globalThis.BTVenueCampaign?.slug(payload?.venueName || row?.name)
     || '';
 }
@@ -81,12 +81,39 @@ async function deleteVenueRows(request) {
   } catch (error) {
     console.error('Venue vote data could not be deleted:', error);
     const denied = String(error?.code || '').includes('PERMISSION_DENIED');
-    alert(denied
-      ? 'The legacy database rejected the deletion. No venue data was removed.'
-      : 'The venue data could not be deleted. No other records were changed.');
+    if (denied) {
+      try {
+        await removeVenueRowsFromResults(request, ids);
+        return;
+      } catch (fallbackError) {
+        console.error('Venue vote removal markers could not be saved:', fallbackError);
+      }
+    }
+    alert('The venue data could not be removed. No other records were changed.');
     request.button.disabled = false;
-    request.button.textContent = 'Delete Venue Data';
+    request.button.textContent = 'Remove Venue Data';
   }
+}
+
+async function removeVenueRowsFromResults(request, ids) {
+  const latestByVoter = new Map();
+  ids.forEach(id => {
+    const event = globalThis.BTVenueCampaign?.parseEvent(id, rawVoteRows[id]);
+    if (!event?.voterId) return;
+    const previous = latestByVoter.get(event.voterId);
+    if (!previous || event.createdAt >= previous.createdAt) latestByVoter.set(event.voterId, event);
+  });
+  const activeVotes = [...latestByVoter.values()].filter(event => !event.deleted);
+  if (!activeVotes.length) throw new Error('No active vote records were found.');
+
+  const votesRef = ref(venueDatabase, 'Bands/__venueCampaigns/comments');
+  const now = Date.now();
+  await Promise.all(activeVotes.map((event, index) => push(votesRef, {
+    name: request.venue.venueName.slice(0, 120),
+    message: JSON.stringify({ v: 3, i: event.venueId, u: event.voterId, d: 1 }),
+    createdAt: now + index
+  })));
+  alert(`${activeVotes.length} vote${activeVotes.length === 1 ? '' : 's'} for "${request.venue.venueName}" ${activeVotes.length === 1 ? 'was' : 'were'} removed from campaign results.`);
 }
 
 async function authorizeAndDelete(request) {
@@ -110,7 +137,7 @@ function requestVenueDeletion(venue, button) {
     alert('No raw vote records were found for this venue.');
     return;
   }
-  const typed = prompt(`Permanently delete all ${ids.length} raw vote record${ids.length === 1 ? '' : 's'} for "${venue.venueName}"?\n\nThis cannot be undone. Type DELETE to continue:`, '');
+  const typed = prompt(`Remove all counted vote data for "${venue.venueName}" from campaign results?\n\nType DELETE to continue:`, '');
   if (typed !== 'DELETE') return;
   authorizeAndDelete({ venue, button, ids });
 }
@@ -209,7 +236,7 @@ function render() {
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'danger';
-    remove.textContent = 'Delete Venue Data';
+    remove.textContent = 'Remove Venue Data';
     remove.addEventListener('click', () => requestVenueDeletion(venue, remove));
     actions.appendChild(remove);
     row.append(top, metrics, acts, actions);

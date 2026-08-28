@@ -30,7 +30,8 @@
     const voterId = clean(payload.voterId || payload.u);
     const actId = clean(payload.actId || payload.a);
     const actName = clean(payload.actName || payload.n);
-    if (!venueName || !venueId || !voterId || !actId || !actName) return null;
+    const deleted = payload.deleted === true || payload.d === 1;
+    if (!venueName || !venueId || !voterId || (!deleted && (!actId || !actName))) return null;
     const source = payload.source === 'general-discovery' || payload.s === 'g' ? 'general-discovery' : 'venue-qr';
     const firstSource = payload.firstSource === 'general-discovery' || payload.f === 'g' ? 'general-discovery' : source;
     return {
@@ -45,6 +46,7 @@
       actName,
       profileUrl: clean(payload.profileUrl || payload.p),
       previousActId: clean(payload.previousActId),
+      deleted,
       source,
       firstSource,
       createdAt: Number(row.createdAt || payload.createdAt || 0)
@@ -65,6 +67,7 @@
 
     const venues = new Map();
     latestByVenueVoter.forEach(event => {
+      if (event.deleted) return;
       if (!venues.has(event.venueId)) {
         venues.set(event.venueId, {
           venueId: event.venueId,
