@@ -57,7 +57,10 @@ function render(stores) {
     const name = document.createElement('strong');
     name.textContent = store.bandName || 'Unnamed Band Store';
     const details = document.createElement('span');
-    details.textContent = `${statusLabel(store.subscriptionStatus)} · $${store.subscriptionPrice || 15}/month · Profile: ${store.profileId || store.id}`;
+    const introMonths = store.introMonths || 3;
+    const introPrice = store.introPrice || 15;
+    const renewalPrice = store.renewalPrice || store.subscriptionPrice || 15;
+    details.textContent = `${statusLabel(store.subscriptionStatus)} · First ${introMonths} months $${introPrice}, then $${renewalPrice}/month · Profile: ${store.profileId || store.id}`;
     const actions = document.createElement('div');
     actions.className = 'welcome-actions';
     actions.style.marginTop = '10px';

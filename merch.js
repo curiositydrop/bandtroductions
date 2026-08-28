@@ -17,6 +17,7 @@ import {
 import { uploadUserImage, validateImageFile, storageUnavailableMessage } from './storage-upload.js';
 
 const SUBSCRIPTION_PRICE = 15;
+const INTRO_MONTHS = 3;
 const MAX_PRODUCTS = 20;
 const ACTIVE_STATUSES = new Set(['active', 'trialing']);
 // Replace these three placeholders when the live recurring checkout,
@@ -231,7 +232,19 @@ async function openStore(storeId, updateHistory = false) {
     ? 'Sample storefront · Products and checkout links are placeholders.'
     : 'Official band merchandise · Purchases are completed through the band.';
   copy.append(title, note);
-  selectedStoreHead.append(logo, copy);
+  const browseAll = document.createElement('a');
+  browseAll.className = 'button secondary store-browse';
+  browseAll.href = '#band-marketplace';
+  browseAll.textContent = 'BROWSE ALL BAND MERCH';
+  browseAll.addEventListener('click', event => {
+    event.preventDefault();
+    const url = new URL(location.href);
+    url.searchParams.delete('band');
+    history.pushState({}, '', url);
+    selectedStoreSection.hidden = true;
+    document.getElementById('band-marketplace').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  selectedStoreHead.append(logo, copy, browseAll);
   showEmpty(selectedProductGrid, 'Loading products…', 'Opening this band’s storefront.');
 
   if (updateHistory) {
@@ -318,13 +331,17 @@ async function requestStore() {
       coverImageUrl: ownedBand.imageUrl || ownedBand.bannerImageUrl || '',
       subscriptionStatus: status,
       subscriptionPrice: SUBSCRIPTION_PRICE,
+      introPrice: SUBSCRIPTION_PRICE,
+      introMonths: INTRO_MONTHS,
+      renewalPrice: SUBSCRIPTION_PRICE,
+      offerCode: 'first-three-months-15-then-15-monthly',
       published: ACTIVE_STATUSES.has(status),
       updatedAt: serverTimestamp(),
       ...(existing.exists() ? {} : { createdAt: serverTimestamp() })
     }, { merge: true });
     await loadOwnerState(currentUser);
     if (STORE_SUBSCRIPTION_CHECKOUT_URL) location.href = STORE_SUBSCRIPTION_CHECKOUT_URL;
-    else setOwnerMessage('Your request is saved. The $15 monthly checkout link is still a placeholder; your upload tools will unlock after payment is confirmed.');
+    else setOwnerMessage('Your request is saved. The first-three-months-for-$15 checkout link is still a placeholder; your upload tools will unlock after payment is confirmed.');
   } catch (error) {
     console.error(error);
     setOwnerMessage('Your store request could not be saved. Please try again.', true);
@@ -336,11 +353,11 @@ function renderOwnerLocked(status) {
   productForm.hidden = true;
   ownerProducts.replaceChildren();
   ownerActions.replaceChildren();
-  const statusLabel = status === 'pending' ? 'PAYMENT PENDING' : status === 'past_due' ? 'UPDATE PAYMENT' : 'START MY STORE — $15/MONTH';
+  const statusLabel = status === 'pending' ? 'PAYMENT PENDING' : status === 'past_due' ? 'UPDATE PAYMENT' : 'START MY STORE — 3 MONTHS FOR $15';
   ownerActions.appendChild(createActionButton(statusLabel, requestStore));
   if (status === 'pending') ownerSummary.textContent = `${ownedBand.displayName}'s store request is ready. Product uploads unlock after the recurring payment is confirmed.`;
   else if (status === 'past_due' || status === 'paused') ownerSummary.textContent = `${ownedBand.displayName}'s storefront is paused until billing is active again.`;
-  else ownerSummary.textContent = `${ownedBand.displayName} is eligible for a storefront with up to ${MAX_PRODUCTS} products and no sales commission.`;
+  else ownerSummary.textContent = `${ownedBand.displayName} is eligible for a storefront with up to ${MAX_PRODUCTS} products and no sales commission. The first three months are $15 total, then $15/month.`;
 }
 
 function renderOwnerProduct(product) {

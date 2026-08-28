@@ -9,6 +9,7 @@ const editButton = document.getElementById('edit-profile');
 const shareButton = document.getElementById('share-profile');
 const sharePanel = document.getElementById('share-panel');
 const shareStatus = document.getElementById('share-status');
+const shopMerchButton = document.getElementById('shop-merch');
 let loadedProfile = null;
 let signedInUser = null;
 let signedInProfile = null;
@@ -95,6 +96,20 @@ function addLink(label, url) {
   return true;
 }
 
+async function updateProfileMerchLink(profileType) {
+  shopMerchButton.hidden = true;
+  if (profileType !== 'band' || !profileId) return;
+  try {
+    const storeSnapshot = await getDoc(doc(db, 'merchStores', profileId));
+    const store = storeSnapshot.exists() ? storeSnapshot.data() : null;
+    if (!store || !['active', 'trialing'].includes(store.subscriptionStatus) || store.published === false) return;
+    shopMerchButton.href = `merch.html?band=${encodeURIComponent(profileId)}`;
+    shopMerchButton.hidden = false;
+  } catch (error) {
+    console.warn('Could not check this band’s merch store.', error);
+  }
+}
+
 function renderVideo(container, url, title) {
   const embed = youtubeEmbedUrl(url);
   if (!embed) return false;
@@ -167,6 +182,7 @@ async function loadProfile(user) {
 
     const type = loadedProfile.accountType || 'fan';
     const layout = layouts[type] || layouts.fan;
+    void updateProfileMerchLink(type);
     document.body.classList.toggle('fan-profile', type === 'fan');
     document.title = `${loadedProfile.displayName || 'Profile'} | BANDtroductions`;
     document.getElementById('profile-name').textContent = loadedProfile.displayName || 'BANDtroductions Member';
