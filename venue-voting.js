@@ -23,6 +23,7 @@ const venueId = clean(params.get('venueId')) || venueSlug;
 const voteSource = params.get('source') === 'general-discovery' ? 'general-discovery' : 'venue-qr';
 const selectionKey = venueSlug ? `bandtroductions_venue_vote_${venueSlug}` : '';
 const voterKey = 'bandtroductions_venue_voter_id';
+const maxStoredMessageLength = 280;
 let currentAct = null;
 let saving = false;
 let memorySelection = null;
@@ -40,6 +41,54 @@ function slug(value) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80);
+}
+
+function stableId(value) {
+  const id = clean(value);
+  if (id.length <= 64) return id;
+  let hash = 2166136261;
+  for (let index = 0; index < id.length; index += 1) {
+    hash ^= id.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${id.slice(0, 48)}-${(hash >>> 0).toString(36)}`;
+}
+
+function sourceCode(value) {
+  return value === 'general-discovery' ? 'g' : 'q';
+}
+
+function addWithinMessageLimit(payload, key, value, maximumLength) {
+  const candidate = clean(value).slice(0, maximumLength);
+  if (!candidate) return;
+  payload[key] = candidate;
+  let overBy = JSON.stringify(payload).length - maxStoredMessageLength;
+  if (overBy <= 0) return;
+  const reducedLength = candidate.length - overBy;
+  if (reducedLength < 8) delete payload[key];
+  else payload[key] = candidate.slice(0, reducedLength);
+}
+
+function voteMessage(deviceId, submittedAct, firstSource) {
+  const payload = {
+    v: 3,
+    i: stableId(venueId || venueSlug),
+    s: sourceCode(voteSource),
+    f: sourceCode(firstSource),
+    u: stableId(deviceId),
+    a: stableId(submittedAct.actId),
+    n: submittedAct.actName.slice(0, 80)
+  };
+
+  let overBy = JSON.stringify(payload).length - maxStoredMessageLength;
+  if (overBy > 0) payload.n = payload.n.slice(0, Math.max(20, payload.n.length - overBy));
+  addWithinMessageLimit(payload, 'l', venueLocation, 80);
+  addWithinMessageLimit(payload, 'r', venueProfileUrl, 160);
+  addWithinMessageLimit(payload, 'p', submittedAct.profileUrl, 160);
+
+  const message = JSON.stringify(payload);
+  if (message.length > maxStoredMessageLength) throw new Error('Vote record is too large to save.');
+  return message;
 }
 
 function readStorage(key) {
@@ -142,21 +191,7 @@ async function saveVote() {
     const votesRef = ref(database, 'Bands/__venueCampaigns/comments');
     await push(votesRef, {
       name: venueName.slice(0, 120),
-      message: JSON.stringify({
-        eventVersion: 2,
-        venueId,
-        venueName: venueName.slice(0, 120),
-        venueSlug,
-        venueLocation: venueLocation.slice(0, 120),
-        venueProfileUrl: venueProfileUrl.slice(0, 300),
-        source: voteSource,
-        firstSource,
-        voterId: deviceId,
-        actId: submittedAct.actId,
-        actName: submittedAct.actName.slice(0, 120),
-        profileUrl: submittedAct.profileUrl.slice(0, 300),
-        previousActId: clean(previousSelection?.actId)
-      }),
+      message: voteMessage(deviceId, submittedAct, firstSource),
       createdAt: now
     });
 

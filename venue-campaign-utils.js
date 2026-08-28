@@ -26,24 +26,24 @@
     if (!payload || typeof payload !== 'object') return null;
     const venueName = clean(payload.venueName || row.name);
     const venueSlug = clean(payload.venueSlug) || slug(venueName);
-    const venueId = clean(payload.venueId) || venueSlug;
-    const voterId = clean(payload.voterId);
-    const actId = clean(payload.actId);
-    const actName = clean(payload.actName);
+    const venueId = clean(payload.venueId || payload.i) || venueSlug;
+    const voterId = clean(payload.voterId || payload.u);
+    const actId = clean(payload.actId || payload.a);
+    const actName = clean(payload.actName || payload.n);
     if (!venueName || !venueId || !voterId || !actId || !actName) return null;
-    const source = payload.source === 'general-discovery' ? 'general-discovery' : 'venue-qr';
-    const firstSource = payload.firstSource === 'general-discovery' ? 'general-discovery' : source;
+    const source = payload.source === 'general-discovery' || payload.s === 'g' ? 'general-discovery' : 'venue-qr';
+    const firstSource = payload.firstSource === 'general-discovery' || payload.f === 'g' ? 'general-discovery' : source;
     return {
       id,
       venueId,
       venueSlug,
       venueName,
-      venueLocation: clean(payload.venueLocation),
-      venueProfileUrl: clean(payload.venueProfileUrl),
+      venueLocation: clean(payload.venueLocation || payload.l),
+      venueProfileUrl: clean(payload.venueProfileUrl || payload.r),
       voterId,
       actId,
       actName,
-      profileUrl: clean(payload.profileUrl),
+      profileUrl: clean(payload.profileUrl || payload.p),
       previousActId: clean(payload.previousActId),
       source,
       firstSource,
