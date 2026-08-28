@@ -25,6 +25,54 @@ const STORE_SUBSCRIPTION_CHECKOUT_URL = '';
 const PLATFORM_HOODIE_CHECKOUT_URL = '';
 const BILLING_PORTAL_URL = '';
 
+const SAMPLE_STORES = [
+  {
+    id: 'sample-burning-time',
+    bandName: 'BURNING TIME · SAMPLE',
+    coverImageUrl: 'IMG_9382.jpeg',
+    isSample: true
+  },
+  {
+    id: 'sample-bandtroductions',
+    bandName: 'YOUR BAND HERE',
+    coverImageUrl: '6088D6CE-FC3E-40D6-BF94-9191E0A7FE10.png',
+    isSample: true
+  },
+  {
+    id: 'sample-country-roads',
+    bandName: 'COUNTRY ROADS · SAMPLE',
+    coverImageUrl: 'IMG_9496.jpeg',
+    isSample: true
+  }
+];
+
+const SAMPLE_PRODUCTS = [
+  {
+    name: 'Logo Hoodie',
+    price: '$45.00',
+    description: 'Premium black pullover hoodie with the band logo.',
+    options: 'S–3XL · Black',
+    imageUrl: 'merch-platform-hoodie.webp',
+    published: true
+  },
+  {
+    name: 'Tour T-Shirt',
+    price: '$25.00',
+    description: 'Soft heavyweight tee made for loud nights.',
+    options: 'S–3XL · Black',
+    imageUrl: 'IMG_9382.jpeg',
+    published: true
+  },
+  {
+    name: 'Sticker Pack',
+    price: '$8.00',
+    description: 'A set of weatherproof band logo stickers.',
+    options: '5-piece pack',
+    imageUrl: '6088D6CE-FC3E-40D6-BF94-9191E0A7FE10.png',
+    published: true
+  }
+];
+
 const bandGrid = document.getElementById('band-store-grid');
 const selectedStoreSection = document.getElementById('selected-store');
 const selectedStoreHead = document.getElementById('selected-store-head');
@@ -41,6 +89,12 @@ let currentUser = null;
 let ownedBand = null;
 let ownedStore = null;
 let ownedProducts = [];
+
+function fillStoreRow(stores) {
+  const liveStores = Array.isArray(stores) ? stores : [];
+  const openSlots = Math.max(0, 3 - liveStores.length);
+  return [...liveStores, ...SAMPLE_STORES.slice(0, openSlots)];
+}
 
 function setOwnerMessage(message, isError = false) {
   ownerMessage.textContent = message || '';
@@ -173,7 +227,9 @@ async function openStore(storeId, updateHistory = false) {
   const title = document.createElement('h2');
   title.textContent = store.bandName || 'Band Merch';
   const note = document.createElement('p');
-  note.textContent = 'Official band merchandise · Purchases are completed through the band.';
+  note.textContent = store.isSample
+    ? 'Sample storefront · Products and checkout links are placeholders.'
+    : 'Official band merchandise · Purchases are completed through the band.';
   copy.append(title, note);
   selectedStoreHead.append(logo, copy);
   showEmpty(selectedProductGrid, 'Loading products…', 'Opening this band’s storefront.');
@@ -182,6 +238,13 @@ async function openStore(storeId, updateHistory = false) {
     const url = new URL(location.href);
     url.searchParams.set('band', store.id);
     history.pushState({ storeId: store.id }, '', url);
+  }
+
+  if (store.isSample) {
+    selectedProductGrid.replaceChildren();
+    SAMPLE_PRODUCTS.forEach(product => selectedProductGrid.appendChild(createProductCard({ ...product, storeId: store.id })));
+    selectedStoreSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
   }
 
   try {
@@ -200,15 +263,17 @@ async function openStore(storeId, updateHistory = false) {
 }
 
 onSnapshot(collection(db, 'merchStores'), snapshot => {
-  publicStores = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
+  const liveStores = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
     .filter(store => ACTIVE_STATUSES.has(store.subscriptionStatus) && store.published !== false)
     .sort((a, b) => (a.bandName || '').localeCompare(b.bandName || ''));
+  publicStores = fillStoreRow(liveStores);
   renderBandStores();
   const requestedStore = new URLSearchParams(location.search).get('band');
   if (requestedStore && publicStores.some(store => store.id === requestedStore)) openStore(requestedStore, false);
 }, error => {
   console.error('Could not load merch stores:', error);
-  showEmpty(bandGrid, 'The marketplace could not be loaded.', 'Please refresh the page and try again.');
+  publicStores = fillStoreRow([]);
+  renderBandStores();
 });
 
 async function findOwnedBandProfile(user) {
