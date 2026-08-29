@@ -465,7 +465,7 @@ async function requestStore(event) {
       websiteUrl,
       storeDescription,
       sellerAgreementAccepted: true,
-      sellerAgreementAcceptedAt: existing.data()?.sellerAgreementAcceptedAt || serverTimestamp(),
+      sellerAgreementAcceptedAt: ownedStore?.sellerAgreementAcceptedAt || serverTimestamp(),
       subscriptionStatus: status,
       subscriptionPrice: SUBSCRIPTION_PRICE,
       introPrice: INTRO_PRICE,
