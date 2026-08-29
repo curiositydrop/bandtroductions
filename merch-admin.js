@@ -40,7 +40,7 @@ function actionButton(label, className, handler) {
 
 async function setStoreStatus(store, subscriptionStatus, billingPlan = store.billingPlan || '') {
   const verb = subscriptionStatus === 'comped' ? 'comp as a launch-partner store' : subscriptionStatus === 'active' ? 'activate' : subscriptionStatus === 'paused' ? 'pause' : 'mark pending';
-  if (!confirm(`${verb[0].toUpperCase()}${verb.slice(1)} the merch store for ${store.bandName || 'this band'}?`)) return;
+  if (!confirm(`${verb[0].toUpperCase()}${verb.slice(1)} the merch store for ${store.bandName || 'this artist'}?`)) return;
   try {
     const isPublic = ['active', 'trialing', 'comped'].includes(subscriptionStatus);
     const exemptLaunchPartner = subscriptionStatus === 'comped'
@@ -139,7 +139,7 @@ function render(stores) {
   if (!stores.length) {
     const empty = document.createElement('p');
     empty.className = 'welcome-help';
-    empty.textContent = 'No bands have requested a merch store yet.';
+    empty.textContent = 'No bands or musicians have requested a merch store yet.';
     container.appendChild(empty);
     return;
   }
@@ -153,7 +153,7 @@ function render(stores) {
     card.className = 'control-card';
     card.style.minHeight = '0';
     const name = document.createElement('strong');
-    name.textContent = store.bandName || 'Unnamed Band Store';
+    name.textContent = store.bandName || 'Unnamed Artist Store';
     const details = document.createElement('span');
     const introMonths = store.introMonths ?? 2;
     const renewalPrice = store.renewalPrice ?? store.subscriptionPrice ?? 15;

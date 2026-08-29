@@ -23,6 +23,7 @@ const INTRO_PRICE = 0;
 const MAX_PRODUCTS = 20;
 const ACTIVE_STATUSES = new Set(['active', 'trialing', 'comped']);
 const PRODUCT_EDIT_STATUSES = new Set(['pending', 'active', 'trialing', 'comped', 'past_due', 'paused']);
+const MERCH_PROFILE_TYPES = new Set(['band', 'musician']);
 // Replace these three placeholders when the live recurring checkout,
 // platform-product checkout, and customer billing portal links are ready.
 const STORE_SUBSCRIPTION_CHECKOUT_URL = 'https://buy.stripe.com/4gM8wI94qccabjzaOL6oo0e';
@@ -175,7 +176,7 @@ function createStoreImage(store, className = '') {
   const image = document.createElement('img');
   image.className = className;
   image.src = url;
-  image.alt = `${store.bandName || 'Band'} cover art`;
+  image.alt = `${store.bandName || 'Artist'} cover art`;
   image.loading = 'lazy';
   return image;
 }
@@ -183,7 +184,7 @@ function createStoreImage(store, className = '') {
 function renderBandStores() {
   bandGrid.replaceChildren();
   if (!publicStores.length) {
-    showEmpty(bandGrid, 'The first band stores are coming soon.', 'When subscribed bands publish merchandise, their cover art will appear here.');
+    showEmpty(bandGrid, 'The first artist stores are coming soon.', 'When subscribed bands and musicians publish merchandise, their cover art will appear here.');
     return;
   }
 
@@ -196,7 +197,7 @@ function renderBandStores() {
     const copy = document.createElement('span');
     copy.className = 'band-card-copy';
     const name = document.createElement('strong');
-    name.textContent = store.bandName || 'BANDtroductions Band';
+    name.textContent = store.bandName || 'BANDtroductions Artist';
     const action = document.createElement('span');
     action.textContent = 'OPEN MERCH STORE →';
     copy.append(name, action);
@@ -211,24 +212,24 @@ function createProductCard(product) {
   card.className = 'product-card';
   const image = document.createElement('img');
   image.src = product.imageUrl || imageForStore(publicStores.find(store => store.id === product.storeId) || {});
-  image.alt = product.name || 'Band merchandise';
+  image.alt = product.name || 'Artist merchandise';
   image.loading = 'lazy';
   const info = document.createElement('div');
   info.className = 'product-info';
   const title = document.createElement('h3');
-  title.textContent = product.name || 'Band Merchandise';
+  title.textContent = product.name || 'Artist Merchandise';
   const price = document.createElement('div');
   price.className = 'product-price';
-  price.textContent = product.price || 'See band checkout';
+  price.textContent = product.price || 'See artist checkout';
   const description = document.createElement('p');
   description.className = 'product-description';
   description.textContent = product.description || '';
   const options = document.createElement('p');
   options.className = 'product-options';
-  options.textContent = product.options ? `Options: ${product.options}` : 'See the band checkout for available options.';
+  options.textContent = product.options ? `Options: ${product.options}` : 'See the artist checkout for available options.';
   const buy = document.createElement('a');
   buy.className = 'button primary';
-  buy.textContent = 'BUY FROM BAND';
+  buy.textContent = 'BUY FROM ARTIST';
   buy.href = isValidWebUrl(product.buyUrl) ? product.buyUrl : '#';
   buy.target = '_blank';
   buy.rel = 'noopener';
@@ -236,7 +237,7 @@ function createProductCard(product) {
     buy.removeAttribute('target');
     buy.addEventListener('click', event => {
       event.preventDefault();
-      alert('This band is still connecting its checkout link.');
+      alert('This artist is still connecting their checkout link.');
     });
   }
   info.append(title, price, description, options, buy);
@@ -254,16 +255,16 @@ async function openStore(storeId, updateHistory = false) {
   const logo = createStoreImage(store, 'store-logo');
   const copy = document.createElement('div');
   const title = document.createElement('h2');
-  title.textContent = store.bandName || 'Band Merch';
+  title.textContent = store.bandName || 'Artist Merch';
   const note = document.createElement('p');
   note.textContent = store.isSample
     ? 'Sample storefront · Products and checkout links are placeholders.'
-    : (store.storeDescription || 'Official band merchandise · Purchases are completed through the band.');
+    : (store.storeDescription || 'Official artist merchandise · Purchases are completed through the artist.');
   copy.append(title, note);
   const browseAll = document.createElement('a');
   browseAll.className = 'button secondary store-browse';
   browseAll.href = '#band-marketplace';
-  browseAll.textContent = 'BROWSE ALL BAND MERCH';
+  browseAll.textContent = 'BROWSE ALL ARTIST MERCH';
   browseAll.addEventListener('click', event => {
     event.preventDefault();
     const url = new URL(location.href);
@@ -273,7 +274,7 @@ async function openStore(storeId, updateHistory = false) {
     document.getElementById('band-marketplace').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   selectedStoreHead.append(logo, copy, browseAll);
-  showEmpty(selectedProductGrid, 'Loading products…', 'Opening this band’s storefront.');
+  showEmpty(selectedProductGrid, 'Loading products…', 'Opening this artist’s storefront.');
 
   if (updateHistory) {
     const url = new URL(location.href);
@@ -298,10 +299,10 @@ async function openStore(storeId, updateHistory = false) {
       .filter(product => product.published === true)
       .sort((a, b) => (Number(a.sortOrder) || 999) - (Number(b.sortOrder) || 999) || timestampValue(b.createdAt) - timestampValue(a.createdAt));
     selectedProductGrid.replaceChildren();
-    if (!products.length) showEmpty(selectedProductGrid, 'This band is stocking the shelves.', 'Check back soon for published merchandise.');
+    if (!products.length) showEmpty(selectedProductGrid, 'This artist is stocking the shelves.', 'Check back soon for published merchandise.');
     else products.forEach(product => selectedProductGrid.appendChild(createProductCard(product)));
   } catch (error) {
-    console.error('Could not load band merchandise:', error);
+    console.error('Could not load artist merchandise:', error);
     showEmpty(selectedProductGrid, 'This store could not be loaded.', 'Please refresh the page and try again.');
   }
   selectedStoreSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -316,25 +317,25 @@ function renderAdminStorePreview() {
   const logo = createStoreImage(ownedStore, 'store-logo');
   const copy = document.createElement('div');
   const title = document.createElement('h2');
-  title.textContent = ownedStore.bandName || ownedBand?.displayName || 'Band Merch';
+  title.textContent = ownedStore.bandName || ownedBand?.displayName || 'Artist Merch';
   const note = document.createElement('p');
   const visibility = ACTIVE_STATUSES.has(ownedStore.subscriptionStatus)
     ? 'This is the current fan-facing storefront.'
     : 'ADMIN PREVIEW — this storefront is still hidden from fans.';
-  note.textContent = `${visibility} ${ownedStore.storeDescription || 'Official band merchandise · Purchases are completed through the band.'}`;
+  note.textContent = `${visibility} ${ownedStore.storeDescription || 'Official artist merchandise · Purchases are completed through the artist.'}`;
   copy.append(title, note);
 
   const browseAll = document.createElement('a');
   browseAll.className = 'button secondary store-browse';
   browseAll.href = '#band-marketplace';
-  browseAll.textContent = 'BROWSE ALL BAND MERCH';
+  browseAll.textContent = 'BROWSE ALL ARTIST MERCH';
   selectedStoreHead.append(logo, copy, browseAll);
 
   const previewProducts = ownedProducts
     .filter(product => product.published === true)
     .sort((a, b) => (Number(a.sortOrder) || 999) - (Number(b.sortOrder) || 999));
   if (!previewProducts.length) {
-    showEmpty(selectedProductGrid, 'This band is stocking the shelves.', 'No products are marked to appear in the storefront yet.');
+    showEmpty(selectedProductGrid, 'This artist is stocking the shelves.', 'No products are marked to appear in the storefront yet.');
   } else {
     previewProducts.forEach(product => selectedProductGrid.appendChild(createProductCard(product)));
   }
@@ -354,12 +355,12 @@ onSnapshot(query(collection(db, 'merchStorefronts'), where('published', '==', tr
   renderBandStores();
 });
 
-async function findOwnedBandProfile(user) {
+async function findOwnedMerchProfile(user) {
   const direct = await getDoc(doc(db, 'profiles', user.uid));
-  if (direct.exists() && direct.data().accountType === 'band') return { id: direct.id, ...direct.data() };
+  if (direct.exists() && MERCH_PROFILE_TYPES.has(direct.data().accountType)) return { id: direct.id, ...direct.data() };
   const owned = await getDocs(query(collection(db, 'profiles'), where('ownerId', '==', user.uid)));
-  const bandDoc = owned.docs.find(item => item.data().accountType === 'band');
-  return bandDoc ? { id: bandDoc.id, ...bandDoc.data() } : null;
+  const artistDoc = owned.docs.find(item => MERCH_PROFILE_TYPES.has(item.data().accountType));
+  return artistDoc ? { id: artistDoc.id, ...artistDoc.data() } : null;
 }
 
 function createActionButton(label, handler, className = 'button primary') {
@@ -406,7 +407,7 @@ function renderStoreApplication(status) {
   populateStoreForm();
 
   if (isAdminManagingStore()) {
-    ownerSummary.textContent = `ADMIN MODE — managing ${ownedStore.bandName || ownedBand?.displayName || 'this band'}'s store. Changes save directly to their storefront record.`;
+    ownerSummary.textContent = `ADMIN MODE — managing ${ownedStore.bandName || ownedBand?.displayName || 'this artist'}'s store. Changes save directly to their storefront record.`;
     return;
   }
 
@@ -446,6 +447,7 @@ async function requestStore(event) {
     batch.set(storeRef, {
       ownerId: storeOwnerId,
       profileId: ownedBand.id,
+      profileType: ownedBand.accountType || 'band',
       bandName: ownedBand.displayName || 'BANDtroductions Band',
       coverImageUrl: ownedBand.imageUrl || ownedBand.bannerImageUrl || '',
       contactEmail,
@@ -467,6 +469,7 @@ async function requestStore(event) {
     if (ACTIVE_STATUSES.has(status)) {
       batch.set(doc(db, 'merchStorefronts', ownedBand.id), {
         profileId: ownedBand.id,
+        profileType: ownedBand.accountType || 'band',
         bandName: ownedBand.displayName || 'BANDtroductions Band',
         coverImageUrl: ownedBand.imageUrl || ownedBand.bannerImageUrl || '',
         websiteUrl,
@@ -611,12 +614,12 @@ async function loadOwnerState(user) {
   setOwnerMessage('');
 
   if (!user) {
-    ownerSummary.textContent = 'Log in with the account that owns your band profile, or create a band account to begin.';
+    ownerSummary.textContent = 'Log in with the account that owns your band or musician profile, or create an artist account to begin.';
     ownerActions.appendChild(createMerchLoginLink());
     return;
   }
 
-  ownerSummary.textContent = 'Checking your band profile and store access…';
+  ownerSummary.textContent = 'Checking your artist profile and store access…';
   try {
     if (adminManagedStoreId) {
       const managedStoreSnapshot = await getDoc(doc(db, 'merchStores', adminManagedStoreId));
@@ -662,11 +665,11 @@ async function loadOwnerState(user) {
       return;
     }
 
-    ownedBand = await findOwnedBandProfile(user);
+    ownedBand = await findOwnedMerchProfile(user);
     if (!ownedBand) {
-      ownerSummary.textContent = `You are signed in as ${user.email || 'a BANDtroductions member'}, but this account does not own a published band profile. Sign in with the band's account to open its merch store.`;
+      ownerSummary.textContent = `You are signed in as ${user.email || 'a BANDtroductions member'}, but this account does not own a published band or musician profile. Sign in with the artist's account to open their merch store.`;
       ownerActions.appendChild(createAccountSwitchButton());
-      ownerActions.appendChild(createAccountSwitchButton('CREATE BAND ACCOUNT', 'signup.html?returnTo=merch.html'));
+      ownerActions.appendChild(createAccountSwitchButton('CREATE ARTIST ACCOUNT', 'signup.html?returnTo=merch.html'));
       if (currentUserIsAdmin) {
         const adminLink = document.createElement('a');
         adminLink.className = 'button primary';
@@ -725,7 +728,7 @@ cancelProductEditButton.addEventListener('click', () => {
 productForm.addEventListener('submit', async event => {
   event.preventDefault();
   if (!currentUser || !ownedBand || !ownedStore || (!PRODUCT_EDIT_STATUSES.has(ownedStore.subscriptionStatus) && !isAdminManagingStore())) {
-    setOwnerMessage('Submit your band store before adding products.', true);
+    setOwnerMessage('Submit your artist store before adding products.', true);
     return;
   }
   if (!editingProductId && ownedProducts.length >= MAX_PRODUCTS) {
