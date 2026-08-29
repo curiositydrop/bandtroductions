@@ -1,5 +1,5 @@
 import { auth, db } from './firebase-dev.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import {
   addDoc,
   collection,
@@ -379,6 +379,20 @@ function createMerchLoginLink() {
   return link;
 }
 
+function createAccountSwitchButton(label = 'SWITCH ACCOUNT', destination = 'login.html?returnTo=merch.html') {
+  return createActionButton(label, async event => {
+    event.currentTarget.disabled = true;
+    try {
+      await signOut(auth);
+      location.href = destination;
+    } catch (error) {
+      console.error('Could not switch merch account:', error);
+      event.currentTarget.disabled = false;
+      setOwnerMessage('That account could not be signed out. Please refresh and try again.', true);
+    }
+  }, 'button secondary');
+}
+
 function populateStoreForm() {
   document.getElementById('store-contact-email').value = ownedStore?.contactEmail || currentUser?.email || '';
   document.getElementById('store-website').value = ownedStore?.websiteUrl || ownedBand?.website || '';
@@ -650,8 +664,16 @@ async function loadOwnerState(user) {
 
     ownedBand = await findOwnedBandProfile(user);
     if (!ownedBand) {
-      ownerSummary.textContent = 'A published BANDtroductions band profile is required to open a merch store.';
-      ownerActions.appendChild(createMerchLoginLink());
+      ownerSummary.textContent = `You are signed in as ${user.email || 'a BANDtroductions member'}, but this account does not own a published band profile. Sign in with the band's account to open its merch store.`;
+      ownerActions.appendChild(createAccountSwitchButton());
+      ownerActions.appendChild(createAccountSwitchButton('CREATE BAND ACCOUNT', 'signup.html?returnTo=merch.html'));
+      if (currentUserIsAdmin) {
+        const adminLink = document.createElement('a');
+        adminLink.className = 'button primary';
+        adminLink.href = 'admin.html';
+        adminLink.textContent = 'OPEN MERCH ADMIN';
+        ownerActions.appendChild(adminLink);
+      }
       return;
     }
     const storeSnapshot = await getDoc(doc(db, 'merchStores', ownedBand.id));
