@@ -1,5 +1,6 @@
-import { auth, db } from './firebase-dev.js';
+import { app, auth, db } from './firebase-dev.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-functions.js';
 import {
   addDoc,
   collection,
@@ -11,19 +12,17 @@ import {
   query,
   serverTimestamp,
   updateDoc,
-  where,
-  writeBatch
+  where
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { uploadUserImage, validateImageFile, storageUnavailableMessage } from './storage-upload.js';
 import { isAdminAccount } from './admin-access.js';
 
-const SUBSCRIPTION_PRICE = 15;
-const INTRO_MONTHS = 2;
-const INTRO_PRICE = 0;
 const MAX_PRODUCTS = 20;
 const ACTIVE_STATUSES = new Set(['active', 'trialing', 'comped']);
 const PRODUCT_EDIT_STATUSES = new Set(['pending', 'active', 'trialing', 'comped', 'past_due', 'paused']);
 const MERCH_PROFILE_TYPES = new Set(['band', 'musician']);
+const functions = getFunctions(app, 'us-central1');
+const saveMerchStoreRequest = httpsCallable(functions, 'saveMerchStoreRequest');
 // Replace these three placeholders when the live recurring checkout,
 // platform-product checkout, and customer billing portal links are ready.
 const STORE_SUBSCRIPTION_CHECKOUT_URL = 'https://buy.stripe.com/4gM8wI94qccabjzaOL6oo0e';
@@ -450,53 +449,22 @@ async function requestStore(event) {
   requestStoreButton.disabled = true;
   setOwnerMessage('Saving your store request…');
   try {
-    const storeRef = doc(db, 'merchStores', ownedBand.id);
-    const storeOwnerId = ownedStore?.ownerId || currentUser.uid;
-    const existingStatus = ownedStore?.subscriptionStatus || '';
-    const status = existingStatus && existingStatus !== 'canceled' ? existingStatus : 'pending';
-    const batch = writeBatch(db);
-    batch.set(storeRef, {
-      ownerId: storeOwnerId,
+    const result = await saveMerchStoreRequest({
       profileId: ownedBand.id,
-      profileType: ownedBand.accountType || 'band',
-      bandName: ownedBand.displayName || 'BANDtroductions Band',
-      coverImageUrl: ownedBand.imageUrl || ownedBand.bannerImageUrl || '',
       contactEmail,
       websiteUrl,
       storeDescription,
-      sellerAgreementAccepted: true,
-      sellerAgreementAcceptedAt: ownedStore?.sellerAgreementAcceptedAt || serverTimestamp(),
-      subscriptionStatus: status,
-      subscriptionPrice: SUBSCRIPTION_PRICE,
-      introPrice: INTRO_PRICE,
-      introMonths: INTRO_MONTHS,
-      renewalPrice: SUBSCRIPTION_PRICE,
-      offerCode: 'two-months-free-then-15-monthly',
-      applicationStatus: ACTIVE_STATUSES.has(status) ? 'approved' : 'pending',
-      published: ACTIVE_STATUSES.has(status),
-      updatedAt: serverTimestamp(),
-      ...(ownedStore ? {} : { createdAt: serverTimestamp() })
-    }, { merge: true });
-    if (ACTIVE_STATUSES.has(status)) {
-      batch.set(doc(db, 'merchStorefronts', ownedBand.id), {
-        profileId: ownedBand.id,
-        profileType: ownedBand.accountType || 'band',
-        bandName: ownedBand.displayName || 'BANDtroductions Band',
-        coverImageUrl: ownedBand.imageUrl || ownedBand.bannerImageUrl || '',
-        websiteUrl,
-        storeDescription,
-        published: true,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-    }
-    await batch.commit();
+      sellerAgreementAccepted: agreementAccepted
+    });
+    const status = result.data?.subscriptionStatus || 'pending';
     await loadOwnerState(currentUser);
     const checkoutUrl = storeSubscriptionCheckoutUrl();
     if (checkoutUrl && !ACTIVE_STATUSES.has(status)) location.href = checkoutUrl;
     else setOwnerMessage(ACTIVE_STATUSES.has(status) ? 'Store details saved.' : 'Store submitted. Add your merchandise below while it awaits approval.');
   } catch (error) {
     console.error(error);
-    setOwnerMessage('Your store request could not be saved. Please try again.', true);
+    const callableMessage = String(error?.message || '').replace(/^Firebase(?:Error)?:\s*/i, '').replace(/\s*\([^)]*\)\.?$/, '').trim();
+    setOwnerMessage(callableMessage || 'Your store request could not be saved. Please try again.', true);
     requestStoreButton.disabled = false;
   }
 }
