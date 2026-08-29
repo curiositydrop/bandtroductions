@@ -97,12 +97,13 @@ function addLink(label, url) {
 }
 
 async function updateProfileMerchLink(profileType) {
+  if (!shopMerchButton) return;
   shopMerchButton.hidden = true;
   if (profileType !== 'band' || !profileId) return;
   try {
-    const storeSnapshot = await getDoc(doc(db, 'merchStores', profileId));
+    const storeSnapshot = await getDoc(doc(db, 'merchStorefronts', profileId));
     const store = storeSnapshot.exists() ? storeSnapshot.data() : null;
-    if (!store || !['active', 'trialing'].includes(store.subscriptionStatus) || store.published === false) return;
+    if (!store || store.published !== true) return;
     shopMerchButton.href = `merch.html?band=${encodeURIComponent(profileId)}`;
     shopMerchButton.hidden = false;
   } catch (error) {

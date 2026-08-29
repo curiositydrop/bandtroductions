@@ -10,16 +10,18 @@ import {
   onSnapshot,
   query,
   serverTimestamp,
-  setDoc,
   updateDoc,
-  where
+  where,
+  writeBatch
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { uploadUserImage, validateImageFile, storageUnavailableMessage } from './storage-upload.js';
 
 const SUBSCRIPTION_PRICE = 15;
-const INTRO_MONTHS = 3;
+const INTRO_MONTHS = 2;
+const INTRO_PRICE = 0;
 const MAX_PRODUCTS = 20;
-const ACTIVE_STATUSES = new Set(['active', 'trialing']);
+const ACTIVE_STATUSES = new Set(['active', 'trialing', 'comped']);
+const PRODUCT_EDIT_STATUSES = new Set(['pending', 'active', 'trialing', 'comped', 'past_due', 'paused']);
 // Replace these three placeholders when the live recurring checkout,
 // platform-product checkout, and customer billing portal links are ready.
 const STORE_SUBSCRIPTION_CHECKOUT_URL = '';
@@ -81,15 +83,25 @@ const selectedProductGrid = document.getElementById('selected-product-grid');
 const ownerSummary = document.getElementById('owner-summary');
 const ownerActions = document.getElementById('owner-actions');
 const ownerMessage = document.getElementById('owner-message');
+const storeForm = document.getElementById('store-form');
+const requestStoreButton = document.getElementById('request-store');
+const productEditor = document.getElementById('product-editor');
 const productForm = document.getElementById('product-form');
+const productEditorTitle = document.getElementById('product-editor-title');
+const productEditorNote = document.getElementById('product-editor-note');
+const productImageInput = document.getElementById('product-image');
+const productImageLabel = document.getElementById('product-image-label');
+const productPublishLabel = document.getElementById('product-publish-label');
 const ownerProducts = document.getElementById('owner-products');
 const saveProductButton = document.getElementById('save-product');
+const cancelProductEditButton = document.getElementById('cancel-product-edit');
 
 let publicStores = [];
 let currentUser = null;
 let ownedBand = null;
 let ownedStore = null;
 let ownedProducts = [];
+let editingProductId = null;
 
 function fillStoreRow(stores) {
   const liveStores = Array.isArray(stores) ? stores : [];
@@ -230,7 +242,7 @@ async function openStore(storeId, updateHistory = false) {
   const note = document.createElement('p');
   note.textContent = store.isSample
     ? 'Sample storefront · Products and checkout links are placeholders.'
-    : 'Official band merchandise · Purchases are completed through the band.';
+    : (store.storeDescription || 'Official band merchandise · Purchases are completed through the band.');
   copy.append(title, note);
   const browseAll = document.createElement('a');
   browseAll.className = 'button secondary store-browse';
@@ -261,7 +273,11 @@ async function openStore(storeId, updateHistory = false) {
   }
 
   try {
-    const snapshot = await getDocs(query(collection(db, 'merchProducts'), where('storeId', '==', store.id)));
+    const snapshot = await getDocs(query(
+      collection(db, 'merchProducts'),
+      where('storeId', '==', store.id),
+      where('published', '==', true)
+    ));
     const products = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
       .filter(product => product.published === true)
       .sort((a, b) => (Number(a.sortOrder) || 999) - (Number(b.sortOrder) || 999) || timestampValue(b.createdAt) - timestampValue(a.createdAt));
@@ -275,9 +291,9 @@ async function openStore(storeId, updateHistory = false) {
   selectedStoreSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-onSnapshot(collection(db, 'merchStores'), snapshot => {
+onSnapshot(query(collection(db, 'merchStorefronts'), where('published', '==', true)), snapshot => {
   const liveStores = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
-    .filter(store => ACTIVE_STATUSES.has(store.subscriptionStatus) && store.published !== false)
+    .filter(store => store.published === true)
     .sort((a, b) => (a.bandName || '').localeCompare(b.bandName || ''));
   publicStores = fillStoreRow(liveStores);
   renderBandStores();
@@ -314,50 +330,122 @@ function createMerchLoginLink() {
   return link;
 }
 
-async function requestStore() {
+function populateStoreForm() {
+  document.getElementById('store-contact-email').value = ownedStore?.contactEmail || currentUser?.email || '';
+  document.getElementById('store-website').value = ownedStore?.websiteUrl || ownedBand?.website || '';
+  document.getElementById('store-description').value = ownedStore?.storeDescription || '';
+  document.getElementById('store-agreement').checked = ownedStore?.sellerAgreementAccepted === true;
+}
+
+function renderStoreApplication(status) {
+  storeForm.hidden = false;
+  requestStoreButton.textContent = ownedStore ? 'SAVE STORE DETAILS' : 'SUBMIT STORE';
+  populateStoreForm();
+
+  if (!ownedStore) {
+    ownerSummary.textContent = `${ownedBand.displayName} can submit a storefront and prepare up to ${MAX_PRODUCTS} products. Nothing goes public until BANDtroductions approves it.`;
+    return;
+  }
+
+  if (status === 'pending') ownerSummary.textContent = `${ownedBand.displayName}'s store submission is awaiting approval. You can add and update draft products below.`;
+  else if (status === 'past_due' || status === 'paused') ownerSummary.textContent = `${ownedBand.displayName}'s storefront is hidden until billing is active again. Store details and products can still be updated.`;
+  else if (status === 'comped') ownerSummary.textContent = `${ownedBand.displayName} is active as a launch-partner store with no monthly charge.`;
+  else ownerSummary.textContent = `${ownedBand.displayName}'s merch store is active. Add or manage products below.`;
+}
+
+async function requestStore(event) {
+  event?.preventDefault();
   if (!currentUser || !ownedBand) return;
-  const button = ownerActions.querySelector('button');
-  if (button) button.disabled = true;
+  const contactEmail = document.getElementById('store-contact-email').value.trim();
+  const websiteUrl = document.getElementById('store-website').value.trim();
+  const storeDescription = document.getElementById('store-description').value.trim();
+  const agreementAccepted = document.getElementById('store-agreement').checked;
+  if (!contactEmail || (websiteUrl && !isValidWebUrl(websiteUrl)) || !agreementAccepted) {
+    setOwnerMessage('Add a contact email, use a valid website link, and accept the seller agreement.', true);
+    return;
+  }
+  requestStoreButton.disabled = true;
   setOwnerMessage('Saving your store request…');
   try {
     const storeRef = doc(db, 'merchStores', ownedBand.id);
     const existing = await getDoc(storeRef);
     const existingStatus = existing.data()?.subscriptionStatus || '';
-    const status = ACTIVE_STATUSES.has(existingStatus) ? existingStatus : 'pending';
-    await setDoc(storeRef, {
+    const status = existingStatus && existingStatus !== 'canceled' ? existingStatus : 'pending';
+    const batch = writeBatch(db);
+    batch.set(storeRef, {
       ownerId: currentUser.uid,
       profileId: ownedBand.id,
       bandName: ownedBand.displayName || 'BANDtroductions Band',
       coverImageUrl: ownedBand.imageUrl || ownedBand.bannerImageUrl || '',
+      contactEmail,
+      websiteUrl,
+      storeDescription,
+      sellerAgreementAccepted: true,
+      sellerAgreementAcceptedAt: existing.data()?.sellerAgreementAcceptedAt || serverTimestamp(),
       subscriptionStatus: status,
       subscriptionPrice: SUBSCRIPTION_PRICE,
-      introPrice: SUBSCRIPTION_PRICE,
+      introPrice: INTRO_PRICE,
       introMonths: INTRO_MONTHS,
       renewalPrice: SUBSCRIPTION_PRICE,
-      offerCode: 'first-three-months-15-then-15-monthly',
+      offerCode: 'two-months-free-then-15-monthly',
+      applicationStatus: ACTIVE_STATUSES.has(status) ? 'approved' : 'pending',
       published: ACTIVE_STATUSES.has(status),
       updatedAt: serverTimestamp(),
       ...(existing.exists() ? {} : { createdAt: serverTimestamp() })
     }, { merge: true });
+    if (ACTIVE_STATUSES.has(status)) {
+      batch.set(doc(db, 'merchStorefronts', ownedBand.id), {
+        profileId: ownedBand.id,
+        bandName: ownedBand.displayName || 'BANDtroductions Band',
+        coverImageUrl: ownedBand.imageUrl || ownedBand.bannerImageUrl || '',
+        websiteUrl,
+        storeDescription,
+        published: true,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    }
+    await batch.commit();
     await loadOwnerState(currentUser);
-    if (STORE_SUBSCRIPTION_CHECKOUT_URL) location.href = STORE_SUBSCRIPTION_CHECKOUT_URL;
-    else setOwnerMessage('Your request is saved. The first-three-months-for-$15 checkout link is still a placeholder; your upload tools will unlock after payment is confirmed.');
+    if (STORE_SUBSCRIPTION_CHECKOUT_URL && !ACTIVE_STATUSES.has(status)) location.href = STORE_SUBSCRIPTION_CHECKOUT_URL;
+    else setOwnerMessage(ACTIVE_STATUSES.has(status) ? 'Store details saved.' : 'Store submitted. Add your merchandise below while it awaits approval.');
   } catch (error) {
     console.error(error);
     setOwnerMessage('Your store request could not be saved. Please try again.', true);
-    if (button) button.disabled = false;
+    requestStoreButton.disabled = false;
   }
 }
 
-function renderOwnerLocked(status) {
-  productForm.hidden = true;
-  ownerProducts.replaceChildren();
-  ownerActions.replaceChildren();
-  const statusLabel = status === 'pending' ? 'PAYMENT PENDING' : status === 'past_due' ? 'UPDATE PAYMENT' : 'START MY STORE — 3 MONTHS FOR $15';
-  ownerActions.appendChild(createActionButton(statusLabel, requestStore));
-  if (status === 'pending') ownerSummary.textContent = `${ownedBand.displayName}'s store request is ready. Product uploads unlock after the recurring payment is confirmed.`;
-  else if (status === 'past_due' || status === 'paused') ownerSummary.textContent = `${ownedBand.displayName}'s storefront is paused until billing is active again.`;
-  else ownerSummary.textContent = `${ownedBand.displayName} is eligible for a storefront with up to ${MAX_PRODUCTS} products and no sales commission. The first three months are $15 total, then $15/month.`;
+function resetProductForm() {
+  editingProductId = null;
+  productForm.reset();
+  document.getElementById('product-published').checked = true;
+  productImageInput.required = true;
+  productEditorTitle.textContent = 'Add Merchandise';
+  productEditorNote.textContent = 'Add each item separately. Draft items can be prepared while your store is awaiting approval.';
+  productImageLabel.firstChild.textContent = 'Product image';
+  saveProductButton.textContent = 'ADD PRODUCT';
+  cancelProductEditButton.hidden = true;
+  saveProductButton.disabled = ownedProducts.length >= MAX_PRODUCTS;
+}
+
+function startProductEdit(product) {
+  editingProductId = product.id;
+  document.getElementById('product-name').value = product.name || '';
+  document.getElementById('product-price').value = product.price || '';
+  document.getElementById('product-description').value = product.description || '';
+  document.getElementById('product-options').value = product.options || '';
+  document.getElementById('product-buy-url').value = product.buyUrl || '';
+  document.getElementById('product-published').checked = product.published === true;
+  productImageInput.value = '';
+  productImageInput.required = false;
+  productEditorTitle.textContent = `Edit ${product.name || 'Merchandise'}`;
+  productEditorNote.textContent = 'Update the product details below. Leave the image empty to keep the current photo.';
+  productImageLabel.firstChild.textContent = 'Replace product image (optional)';
+  saveProductButton.textContent = 'SAVE CHANGES';
+  saveProductButton.disabled = false;
+  cancelProductEditButton.hidden = false;
+  setOwnerMessage('Editing product.');
+  productEditor.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function renderOwnerProduct(product) {
@@ -370,10 +458,14 @@ function renderOwnerProduct(product) {
   const name = document.createElement('strong');
   name.textContent = product.name || 'Merchandise';
   const meta = document.createElement('span');
-  meta.textContent = `${product.price || 'No price'} · ${product.published ? 'Published' : 'Hidden'}`;
+  const visibility = product.published
+    ? (ACTIVE_STATUSES.has(ownedStore?.subscriptionStatus) ? 'Published' : 'Ready when approved')
+    : 'Hidden';
+  meta.textContent = `${product.price || 'No price'} · ${visibility}`;
   copy.append(name, meta);
   const actions = document.createElement('div');
   actions.className = 'owner-actions';
+  const edit = createActionButton('EDIT', () => startProductEdit(product), 'button primary');
   const toggle = createActionButton(product.published ? 'HIDE' : 'PUBLISH', async () => {
     toggle.disabled = true;
     try {
@@ -390,6 +482,7 @@ function renderOwnerProduct(product) {
     remove.disabled = true;
     try {
       await deleteDoc(doc(db, 'merchProducts', product.id));
+      if (editingProductId === product.id) resetProductForm();
       await loadOwnerProducts();
       setOwnerMessage('Product removed.');
     } catch (error) {
@@ -398,7 +491,7 @@ function renderOwnerProduct(product) {
       remove.disabled = false;
     }
   }, 'button danger');
-  actions.append(toggle, remove);
+  actions.append(edit, toggle, remove);
   row.append(image, copy, actions);
   return row;
 }
@@ -417,8 +510,8 @@ async function loadOwnerProducts() {
       empty.textContent = 'No products added yet.';
       ownerProducts.appendChild(empty);
     } else ownedProducts.forEach(product => ownerProducts.appendChild(renderOwnerProduct(product)));
-    saveProductButton.disabled = ownedProducts.length >= MAX_PRODUCTS;
-    if (ownedProducts.length >= MAX_PRODUCTS) setOwnerMessage(`This store has reached its ${MAX_PRODUCTS}-product limit.`);
+    saveProductButton.disabled = !editingProductId && ownedProducts.length >= MAX_PRODUCTS;
+    if (!editingProductId && ownedProducts.length >= MAX_PRODUCTS) setOwnerMessage(`This store has reached its ${MAX_PRODUCTS}-product limit.`);
   } catch (error) {
     console.error(error);
     setOwnerMessage('Your current products could not be loaded.', true);
@@ -429,7 +522,13 @@ async function loadOwnerState(user) {
   currentUser = user;
   ownedBand = null;
   ownedStore = null;
-  productForm.hidden = true;
+  ownedProducts = [];
+  editingProductId = null;
+  productForm.reset();
+  productImageInput.required = true;
+  storeForm.hidden = true;
+  productEditor.hidden = true;
+  requestStoreButton.disabled = false;
   ownerProducts.replaceChildren();
   ownerActions.replaceChildren();
   setOwnerMessage('');
@@ -451,17 +550,31 @@ async function loadOwnerState(user) {
     const storeSnapshot = await getDoc(doc(db, 'merchStores', ownedBand.id));
     ownedStore = storeSnapshot.exists() ? { id: storeSnapshot.id, ...storeSnapshot.data() } : null;
     const status = ownedStore?.subscriptionStatus || 'not_started';
-    if (!ACTIVE_STATUSES.has(status)) {
-      renderOwnerLocked(status);
-      return;
+
+    renderStoreApplication(status);
+
+    if (ACTIVE_STATUSES.has(status)) {
+      const viewStore = document.createElement('a');
+      viewStore.className = 'button primary';
+      viewStore.href = `merch.html?band=${encodeURIComponent(ownedBand.id)}`;
+      viewStore.textContent = 'VIEW MY STORE';
+      ownerActions.appendChild(viewStore);
     }
-    ownerSummary.textContent = `${ownedBand.displayName}'s $15/month store is active. Add or manage products below.`;
-    ownerActions.appendChild(createActionButton('MANAGE BILLING', () => {
-      if (BILLING_PORTAL_URL) window.open(BILLING_PORTAL_URL, '_blank', 'noopener');
-      else alert('The subscription management link is being connected with the live checkout.');
-    }, 'button secondary'));
-    productForm.hidden = false;
-    await loadOwnerProducts();
+
+    if (ownedStore && status !== 'comped' && status !== 'pending') {
+      ownerActions.appendChild(createActionButton('MANAGE BILLING', () => {
+        if (BILLING_PORTAL_URL) window.open(BILLING_PORTAL_URL, '_blank', 'noopener');
+        else alert('The subscription management link is being connected with the live checkout.');
+      }, 'button secondary'));
+    }
+
+    if (ownedStore && PRODUCT_EDIT_STATUSES.has(status)) {
+      productEditor.hidden = false;
+      productPublishLabel.textContent = ACTIVE_STATUSES.has(status)
+        ? 'Publish this product immediately'
+        : 'Show this item when the store is approved';
+      await loadOwnerProducts();
+    }
   } catch (error) {
     console.error('Could not load merch owner tools:', error);
     ownerSummary.textContent = 'Your store access could not be checked right now.';
@@ -469,13 +582,19 @@ async function loadOwnerState(user) {
   }
 }
 
+storeForm.addEventListener('submit', requestStore);
+cancelProductEditButton.addEventListener('click', () => {
+  resetProductForm();
+  setOwnerMessage('Product edit canceled.');
+});
+
 productForm.addEventListener('submit', async event => {
   event.preventDefault();
-  if (!currentUser || !ownedBand || !ownedStore || !ACTIVE_STATUSES.has(ownedStore.subscriptionStatus)) {
-    setOwnerMessage('An active merch subscription is required before products can be added.', true);
+  if (!currentUser || !ownedBand || !ownedStore || !PRODUCT_EDIT_STATUSES.has(ownedStore.subscriptionStatus)) {
+    setOwnerMessage('Submit your band store before adding products.', true);
     return;
   }
-  if (ownedProducts.length >= MAX_PRODUCTS) {
+  if (!editingProductId && ownedProducts.length >= MAX_PRODUCTS) {
     setOwnerMessage(`This store has reached its ${MAX_PRODUCTS}-product limit.`, true);
     return;
   }
@@ -487,8 +606,9 @@ productForm.addEventListener('submit', async event => {
   const file = document.getElementById('product-image').files?.[0];
   const published = document.getElementById('product-published').checked;
   const validation = validateImageFile(file);
-  if (!name || !price || !file || !isValidWebUrl(buyUrl)) {
-    setOwnerMessage('Add a product name, price, valid checkout link, and product image.', true);
+  const editingProduct = editingProductId ? ownedProducts.find(product => product.id === editingProductId) : null;
+  if (!name || !price || (!editingProduct && !file) || !isValidWebUrl(buyUrl)) {
+    setOwnerMessage(`Add a product name, price, valid checkout link${editingProduct ? '' : ', and product image'}.`, true);
     return;
   }
   if (!validation.ok) {
@@ -497,14 +617,12 @@ productForm.addEventListener('submit', async event => {
   }
 
   saveProductButton.disabled = true;
-  setOwnerMessage('Uploading product image…');
+  setOwnerMessage(file ? 'Uploading product image…' : 'Saving product…');
   try {
-    const imageUrl = await uploadUserImage({ userId: currentUser.uid, folder: 'merch-products', file });
-    setOwnerMessage('Saving product…');
-    await addDoc(collection(db, 'merchProducts'), {
-      storeId: ownedBand.id,
-      ownerId: currentUser.uid,
-      bandName: ownedBand.displayName || 'BANDtroductions Band',
+    const imageUrl = file
+      ? await uploadUserImage({ userId: currentUser.uid, folder: 'merch-products', file })
+      : editingProduct?.imageUrl || '';
+    const productDetails = {
       name,
       price,
       description,
@@ -512,19 +630,32 @@ productForm.addEventListener('submit', async event => {
       buyUrl,
       imageUrl,
       published,
-      sortOrder: ownedProducts.length + 1,
-      createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    });
-    productForm.reset();
-    document.getElementById('product-published').checked = true;
+    };
+    if (editingProduct) {
+      await updateDoc(doc(db, 'merchProducts', editingProduct.id), productDetails);
+    } else {
+      await addDoc(collection(db, 'merchProducts'), {
+        storeId: ownedBand.id,
+        ownerId: currentUser.uid,
+        bandName: ownedBand.displayName || 'BANDtroductions Band',
+        ...productDetails,
+        sortOrder: ownedProducts.length + 1,
+        createdAt: serverTimestamp()
+      });
+    }
+    const wasEditing = Boolean(editingProduct);
+    resetProductForm();
     await loadOwnerProducts();
-    setOwnerMessage('Product added to your store.');
+    if (wasEditing) setOwnerMessage('Product changes saved.');
+    else setOwnerMessage(ACTIVE_STATUSES.has(ownedStore.subscriptionStatus)
+      ? 'Product added to your store.'
+      : 'Draft product saved. It will stay hidden until your store is approved.');
   } catch (error) {
     console.error(error);
     setOwnerMessage(storageUnavailableMessage(error), true);
   } finally {
-    saveProductButton.disabled = ownedProducts.length >= MAX_PRODUCTS;
+    saveProductButton.disabled = !editingProductId && ownedProducts.length >= MAX_PRODUCTS;
   }
 });
 

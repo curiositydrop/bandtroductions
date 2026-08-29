@@ -1,13 +1,16 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { collection, doc, onSnapshot, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { collection, doc, onSnapshot, serverTimestamp, updateDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { isAdminAccount } from './admin-access.js';
 
 const container = document.getElementById('cr-merch-body');
 let stopStores = null;
+let stopProducts = null;
+let allStores = [];
+let allProducts = [];
 
 function statusLabel(status) {
-  return ({ active: 'Active', trialing: 'Trialing', pending: 'Payment pending', past_due: 'Past due', paused: 'Paused', canceled: 'Canceled' })[status] || 'Not started';
+  return ({ active: 'Active', trialing: 'Free trial', comped: 'Launch partner', pending: 'Awaiting approval', past_due: 'Past due', paused: 'Paused', canceled: 'Canceled' })[status] || 'Not started';
 }
 
 function actionButton(label, className, handler) {
@@ -20,16 +23,30 @@ function actionButton(label, className, handler) {
   return button;
 }
 
-async function setStoreStatus(store, subscriptionStatus) {
-  const verb = subscriptionStatus === 'active' ? 'activate' : subscriptionStatus === 'paused' ? 'pause' : 'mark pending';
+async function setStoreStatus(store, subscriptionStatus, billingPlan = store.billingPlan || '') {
+  const verb = subscriptionStatus === 'comped' ? 'comp as a launch-partner store' : subscriptionStatus === 'active' ? 'activate' : subscriptionStatus === 'paused' ? 'pause' : 'mark pending';
   if (!confirm(`${verb[0].toUpperCase()}${verb.slice(1)} the merch store for ${store.bandName || 'this band'}?`)) return;
   try {
-    await updateDoc(doc(db, 'merchStores', store.id), {
+    const isPublic = ['active', 'trialing', 'comped'].includes(subscriptionStatus);
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'merchStores', store.id), {
       subscriptionStatus,
-      published: subscriptionStatus === 'active' || subscriptionStatus === 'trialing',
+      billingPlan,
+      applicationStatus: isPublic ? 'approved' : 'pending',
+      published: isPublic,
       adminUpdatedAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+    batch.set(doc(db, 'merchStorefronts', store.id), {
+      profileId: store.profileId || store.id,
+      bandName: store.bandName || 'BANDtroductions Band',
+      coverImageUrl: store.coverImageUrl || '',
+      websiteUrl: store.websiteUrl || '',
+      storeDescription: store.storeDescription || '',
+      published: isPublic,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    await batch.commit();
   } catch (error) {
     console.error(error);
     alert('That merch store could not be updated.');
@@ -57,38 +74,70 @@ function render(stores) {
     const name = document.createElement('strong');
     name.textContent = store.bandName || 'Unnamed Band Store';
     const details = document.createElement('span');
-    const introMonths = store.introMonths || 3;
-    const introPrice = store.introPrice || 15;
-    const renewalPrice = store.renewalPrice || store.subscriptionPrice || 15;
-    details.textContent = `${statusLabel(store.subscriptionStatus)} · First ${introMonths} months $${introPrice}, then $${renewalPrice}/month · Profile: ${store.profileId || store.id}`;
+    const introMonths = store.introMonths ?? 2;
+    const renewalPrice = store.renewalPrice ?? store.subscriptionPrice ?? 15;
+    const plan = store.subscriptionStatus === 'comped'
+      ? 'No monthly charge'
+      : `First ${introMonths} months free, then $${renewalPrice}/month`;
+    details.textContent = `${statusLabel(store.subscriptionStatus)} · ${plan} · Profile: ${store.profileId || store.id}`;
+    const contact = document.createElement('span');
+    contact.style.display = 'block';
+    contact.style.marginTop = '5px';
+    contact.textContent = `Contact: ${store.contactEmail || 'Not supplied'}${store.websiteUrl ? ` · ${store.websiteUrl}` : ''}`;
+    const submittedProducts = allProducts.filter(product => product.storeId === store.id);
+    const products = document.createElement('span');
+    products.style.display = 'block';
+    products.style.marginTop = '5px';
+    products.textContent = submittedProducts.length
+      ? `${submittedProducts.length} item${submittedProducts.length === 1 ? '' : 's'}: ${submittedProducts.map(product => product.name || 'Unnamed item').join(', ')}`
+      : 'No merchandise items submitted yet.';
     const actions = document.createElement('div');
     actions.className = 'welcome-actions';
     actions.style.marginTop = '10px';
-    if (store.subscriptionStatus !== 'active') actions.appendChild(actionButton('ACTIVATE', 'approve-button', () => setStoreStatus(store, 'active')));
+    if (store.subscriptionStatus !== 'comped') actions.appendChild(actionButton('COMP LAUNCH STORE', 'approve-button', () => setStoreStatus(store, 'comped', 'launch-partner')));
+    if (store.subscriptionStatus !== 'active') actions.appendChild(actionButton('ACTIVATE', '', () => setStoreStatus(store, 'active', 'monthly')));
     if (store.subscriptionStatus !== 'pending') actions.appendChild(actionButton('MARK PENDING', '', () => setStoreStatus(store, 'pending')));
     if (store.subscriptionStatus !== 'paused') actions.appendChild(actionButton('PAUSE', '', () => setStoreStatus(store, 'paused')));
-    const view = document.createElement('a');
-    view.className = 'auth-button';
-    view.style.width = 'auto';
-    view.href = `merch.html?band=${encodeURIComponent(store.id)}`;
-    view.textContent = 'VIEW STORE';
-    actions.appendChild(view);
-    card.append(name, details, actions);
+    if (['active', 'trialing', 'comped'].includes(store.subscriptionStatus)) {
+      const view = document.createElement('a');
+      view.className = 'auth-button';
+      view.style.width = 'auto';
+      view.href = `merch.html?band=${encodeURIComponent(store.id)}`;
+      view.textContent = 'VIEW STORE';
+      actions.appendChild(view);
+    }
+    const profile = document.createElement('a');
+    profile.className = 'auth-button';
+    profile.style.width = 'auto';
+    profile.href = `profile.html?id=${encodeURIComponent(store.profileId || store.id)}`;
+    profile.textContent = 'VIEW PROFILE';
+    actions.appendChild(profile);
+    card.append(name, details, contact, products, actions);
     container.appendChild(card);
   });
 }
 
 onAuthStateChanged(auth, user => {
   if (stopStores) stopStores();
+  if (stopProducts) stopProducts();
   stopStores = null;
+  stopProducts = null;
   if (!isAdminAccount(user)) {
     container.textContent = 'Administrator access is required.';
     return;
   }
   stopStores = onSnapshot(collection(db, 'merchStores'), snapshot => {
-    render(snapshot.docs.map(item => ({ id: item.id, ...item.data() })));
+    allStores = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+    render([...allStores]);
   }, error => {
     console.error(error);
     container.textContent = 'Merch store requests could not be loaded.';
+  });
+  stopProducts = onSnapshot(collection(db, 'merchProducts'), snapshot => {
+    allProducts = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+    render([...allStores]);
+  }, error => {
+    console.error(error);
+    container.textContent = 'Merch product submissions could not be loaded.';
   });
 });
