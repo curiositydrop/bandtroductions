@@ -336,11 +336,43 @@ onSnapshot(query(collection(db, 'merchStorefronts'), where('published', '==', tr
 });
 
 async function findOwnedMerchProfile(user) {
-  const direct = await getDoc(doc(db, 'profiles', user.uid));
-  if (direct.exists() && MERCH_PROFILE_TYPES.has(direct.data().accountType)) return { id: direct.id, ...direct.data() };
-  const owned = await getDocs(query(collection(db, 'profiles'), where('ownerId', '==', user.uid)));
-  const artistDoc = owned.docs.find(item => MERCH_PROFILE_TYPES.has(item.data().accountType));
-  return artistDoc ? { id: artistDoc.id, ...artistDoc.data() } : null;
+  let completedLookup = false;
+  try {
+    const owned = await getDocs(query(collection(db, 'profiles'), where('ownerId', '==', user.uid)));
+    completedLookup = true;
+    const artistDoc = owned.docs.find(item => MERCH_PROFILE_TYPES.has(item.data().accountType));
+    if (artistDoc) return { id: artistDoc.id, ...artistDoc.data() };
+  } catch (error) {
+    console.warn('Could not query owned merch profiles:', error);
+  }
+
+  try {
+    const direct = await getDoc(doc(db, 'profiles', user.uid));
+    completedLookup = true;
+    if (direct.exists() && MERCH_PROFILE_TYPES.has(direct.data().accountType)) return { id: direct.id, ...direct.data() };
+  } catch (error) {
+    console.warn('Could not load direct merch profile:', error);
+  }
+
+  if (!completedLookup) throw new Error('Artist profile access could not be verified.');
+  return null;
+}
+
+async function findOwnedMerchStore(user, profileId) {
+  try {
+    const owned = await getDocs(query(collection(db, 'merchStores'), where('ownerId', '==', user.uid)));
+    const storeDoc = owned.docs.find(item => item.id === profileId || item.data().profileId === profileId);
+    return storeDoc ? { id: storeDoc.id, ...storeDoc.data() } : null;
+  } catch (queryError) {
+    console.warn('Could not query owned merch stores:', queryError);
+    try {
+      const direct = await getDoc(doc(db, 'merchStores', profileId));
+      return direct.exists() ? { id: direct.id, ...direct.data() } : null;
+    } catch (directError) {
+      console.warn('Could not load direct merch store:', directError);
+      throw queryError;
+    }
+  }
 }
 
 function createActionButton(label, handler, className = 'button primary') {
@@ -419,9 +451,8 @@ async function requestStore(event) {
   setOwnerMessage('Saving your store request…');
   try {
     const storeRef = doc(db, 'merchStores', ownedBand.id);
-    const existing = await getDoc(storeRef);
-    const storeOwnerId = existing.data()?.ownerId || ownedStore?.ownerId || currentUser.uid;
-    const existingStatus = existing.data()?.subscriptionStatus || '';
+    const storeOwnerId = ownedStore?.ownerId || currentUser.uid;
+    const existingStatus = ownedStore?.subscriptionStatus || '';
     const status = existingStatus && existingStatus !== 'canceled' ? existingStatus : 'pending';
     const batch = writeBatch(db);
     batch.set(storeRef, {
@@ -444,7 +475,7 @@ async function requestStore(event) {
       applicationStatus: ACTIVE_STATUSES.has(status) ? 'approved' : 'pending',
       published: ACTIVE_STATUSES.has(status),
       updatedAt: serverTimestamp(),
-      ...(existing.exists() ? {} : { createdAt: serverTimestamp() })
+      ...(ownedStore ? {} : { createdAt: serverTimestamp() })
     }, { merge: true });
     if (ACTIVE_STATUSES.has(status)) {
       batch.set(doc(db, 'merchStorefronts', ownedBand.id), {
@@ -659,8 +690,7 @@ async function loadOwnerState(user) {
       }
       return;
     }
-    const storeSnapshot = await getDoc(doc(db, 'merchStores', ownedBand.id));
-    ownedStore = storeSnapshot.exists() ? { id: storeSnapshot.id, ...storeSnapshot.data() } : null;
+    ownedStore = await findOwnedMerchStore(user, ownedBand.id);
     const status = ownedStore?.subscriptionStatus || 'not_started';
 
     renderStoreApplication(status);
