@@ -20,6 +20,9 @@ const VAPID_PRIVATE_KEY = defineSecret('VAPID_PRIVATE_KEY');
 const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
 const REGION = 'us-central1';
 const GOOD_MERCH_BILLING_STATUSES = new Set(['active', 'trialing']);
+const MERCH_PROFILE_TYPES = new Set(['band', 'musician']);
+const MERCH_ACTIVE_STATUSES = new Set(['active', 'trialing', 'comped']);
+const MERCH_ADMIN_EMAILS = new Set(['mbergeron79@gmail.com', 'mbegeron79@gmail.com']);
 
 function requireAuth(request) {
   if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in to manage notifications.');
@@ -28,6 +31,20 @@ function requireAuth(request) {
 
 function cleanString(value, max = 2000) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function isValidWebUrl(value) {
+  if (!value) return true;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch (_) {
+    return false;
+  }
 }
 
 function subscriptionDocId(endpoint) {
@@ -285,6 +302,91 @@ exports.stripeMerchWebhook = onRequest(
       console.error('Stripe merch webhook failed', event?.id, event?.type, error);
       response.status(500).send('Webhook processing failed');
     }
+  }
+);
+
+exports.saveMerchStoreRequest = onCall(
+  { region: REGION },
+  async request => {
+    const uid = requireAuth(request);
+    const profileId = cleanString(request.data?.profileId, 200);
+    const contactEmail = cleanString(request.data?.contactEmail, 200).toLowerCase();
+    const websiteUrl = cleanString(request.data?.websiteUrl, 1000);
+    const storeDescription = cleanString(request.data?.storeDescription, 500);
+    const sellerAgreementAccepted = request.data?.sellerAgreementAccepted === true;
+
+    if (!profileId || profileId.includes('/')) throw new HttpsError('invalid-argument', 'Invalid artist profile.');
+    if (!isValidEmail(contactEmail)) throw new HttpsError('invalid-argument', 'Add a valid store contact email.');
+    if (!isValidWebUrl(websiteUrl)) throw new HttpsError('invalid-argument', 'Add a valid artist website or social page.');
+    if (!sellerAgreementAccepted) throw new HttpsError('failed-precondition', 'Accept the seller agreement to continue.');
+
+    const profileSnapshot = await db.collection('profiles').doc(profileId).get();
+    if (!profileSnapshot.exists) throw new HttpsError('not-found', 'Artist profile not found.');
+    const profile = profileSnapshot.data() || {};
+    const profileType = cleanString(profile.accountType, 40).toLowerCase();
+    if (!MERCH_PROFILE_TYPES.has(profileType)) {
+      throw new HttpsError('failed-precondition', 'A band or musician profile is required.');
+    }
+
+    const profileOwnerId = cleanString(profile.ownerId || profile.userId || profile.uid || profileSnapshot.id, 200);
+    const requesterEmail = cleanString(request.auth.token?.email, 200).toLowerCase();
+    const isAdmin = MERCH_ADMIN_EMAILS.has(requesterEmail);
+    if (profileOwnerId !== uid && !isAdmin) {
+      throw new HttpsError('permission-denied', 'This account does not own that artist profile.');
+    }
+
+    const storeRef = db.collection('merchStores').doc(profileId);
+    const storeSnapshot = await storeRef.get();
+    const existing = storeSnapshot.data() || {};
+    if (storeSnapshot.exists && cleanString(existing.ownerId, 200) !== uid && !isAdmin) {
+      throw new HttpsError('permission-denied', 'This account does not own that merchandise store.');
+    }
+
+    const existingStatus = cleanString(existing.subscriptionStatus, 40);
+    const subscriptionStatus = existingStatus && existingStatus !== 'canceled' ? existingStatus : 'pending';
+    const active = MERCH_ACTIVE_STATUSES.has(subscriptionStatus);
+    const ownerId = cleanString(existing.ownerId, 200) || profileOwnerId || uid;
+    const bandName = cleanString(profile.displayName, 120) || 'BANDtroductions Artist';
+    const coverImageUrl = cleanString(profile.imageUrl || profile.bannerImageUrl, 2000);
+    const batch = db.batch();
+    batch.set(storeRef, {
+      ownerId,
+      profileId,
+      profileType,
+      bandName,
+      coverImageUrl,
+      contactEmail,
+      websiteUrl,
+      storeDescription,
+      sellerAgreementAccepted: true,
+      sellerAgreementAcceptedAt: existing.sellerAgreementAcceptedAt || FieldValue.serverTimestamp(),
+      subscriptionStatus,
+      subscriptionPrice: 15,
+      introPrice: 0,
+      introMonths: 2,
+      renewalPrice: 15,
+      offerCode: 'two-months-free-then-15-monthly',
+      applicationStatus: active ? 'approved' : 'pending',
+      published: active,
+      updatedAt: FieldValue.serverTimestamp(),
+      ...(storeSnapshot.exists ? {} : { createdAt: FieldValue.serverTimestamp() })
+    }, { merge: true });
+
+    if (active) {
+      batch.set(db.collection('merchStorefronts').doc(profileId), {
+        profileId,
+        profileType,
+        bandName,
+        coverImageUrl,
+        websiteUrl,
+        storeDescription,
+        published: true,
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+
+    await batch.commit();
+    return { ok: true, storeId: profileId, subscriptionStatus };
   }
 );
 
