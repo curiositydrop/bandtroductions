@@ -25,7 +25,7 @@ const ACTIVE_STATUSES = new Set(['active', 'trialing', 'comped']);
 const PRODUCT_EDIT_STATUSES = new Set(['pending', 'active', 'trialing', 'comped', 'past_due', 'paused']);
 // Replace these three placeholders when the live recurring checkout,
 // platform-product checkout, and customer billing portal links are ready.
-const STORE_SUBSCRIPTION_CHECKOUT_URL = '';
+const STORE_SUBSCRIPTION_CHECKOUT_URL = 'https://buy.stripe.com/4gM8wI94qccabjzaOL6oo0e';
 const PLATFORM_HOODIE_CHECKOUT_URL = '';
 const BILLING_PORTAL_URL = '';
 
@@ -136,6 +136,15 @@ function isValidWebUrl(value) {
   } catch (_) {
     return false;
   }
+}
+
+function storeSubscriptionCheckoutUrl() {
+  if (!STORE_SUBSCRIPTION_CHECKOUT_URL || !ownedBand) return '';
+  const checkout = new URL(STORE_SUBSCRIPTION_CHECKOUT_URL);
+  checkout.searchParams.set('client_reference_id', ownedBand.id);
+  const checkoutEmail = ownedStore?.contactEmail || currentUser?.email || '';
+  if (checkoutEmail) checkout.searchParams.set('prefilled_email', checkoutEmail);
+  return checkout.toString();
 }
 
 function timestampValue(value) {
@@ -392,7 +401,9 @@ function renderStoreApplication(status) {
     return;
   }
 
-  if (status === 'pending') ownerSummary.textContent = `${ownedBand.displayName}'s store submission is awaiting approval. You can add and update draft products below.`;
+  if (status === 'pending' && ownedStore?.applicationStatus === 'payment_review') ownerSummary.textContent = `${ownedBand.displayName}'s checkout was received, but the billing email needs review. Your draft products remain saved.`;
+  else if (status === 'pending' && ownedStore?.billingVerified === true) ownerSummary.textContent = `${ownedBand.displayName}'s subscription is confirmed and the store is awaiting final approval. You can add and update draft products below.`;
+  else if (status === 'pending') ownerSummary.textContent = `${ownedBand.displayName}'s store submission is awaiting payment verification and approval. You can add and update draft products below.`;
   else if (status === 'past_due' || status === 'paused') ownerSummary.textContent = `${ownedBand.displayName}'s storefront is hidden until billing is active again. Store details and products can still be updated.`;
   else if (status === 'comped') ownerSummary.textContent = `${ownedBand.displayName} is active as a launch-partner store with no monthly charge.`;
   else ownerSummary.textContent = `${ownedBand.displayName}'s merch store is active. Add or manage products below.`;
@@ -452,7 +463,8 @@ async function requestStore(event) {
     }
     await batch.commit();
     await loadOwnerState(currentUser);
-    if (STORE_SUBSCRIPTION_CHECKOUT_URL && !ACTIVE_STATUSES.has(status)) location.href = STORE_SUBSCRIPTION_CHECKOUT_URL;
+    const checkoutUrl = storeSubscriptionCheckoutUrl();
+    if (checkoutUrl && !ACTIVE_STATUSES.has(status)) location.href = checkoutUrl;
     else setOwnerMessage(ACTIVE_STATUSES.has(status) ? 'Store details saved.' : 'Store submitted. Add your merchandise below while it awaits approval.');
   } catch (error) {
     console.error(error);
@@ -669,6 +681,11 @@ async function loadOwnerState(user) {
         ? 'Publish this product immediately'
         : 'Show this item when the store is approved';
       await loadOwnerProducts();
+    }
+    if (new URLSearchParams(location.search).get('checkout') === 'success') {
+      setOwnerMessage(ownedStore?.billingVerified === true
+        ? 'Subscription confirmed. Your store is awaiting final approval.'
+        : 'Checkout complete. Stripe is verifying your subscription; refresh this page in a moment.');
     }
   } catch (error) {
     console.error('Could not load merch owner tools:', error);

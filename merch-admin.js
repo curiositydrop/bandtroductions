@@ -9,8 +9,23 @@ let stopProducts = null;
 let allStores = [];
 let allProducts = [];
 
-function statusLabel(status) {
-  return ({ active: 'Active', trialing: 'Free trial', comped: 'Launch partner', pending: 'Awaiting approval', past_due: 'Past due', paused: 'Paused', canceled: 'Canceled' })[status] || 'Not started';
+function statusLabel(store) {
+  if (store.subscriptionStatus === 'comped' || store.launchPartner === true) return 'Launch partner';
+  if (store.applicationStatus === 'payment_review') return 'Payment needs review';
+  if (store.applicationStatus === 'payment_verified' && store.published !== true) return 'Payment verified — ready for approval';
+  return ({ active: 'Active', trialing: 'Free trial', pending: 'Awaiting payment', past_due: 'Past due', paused: 'Paused', canceled: 'Canceled' })[store.subscriptionStatus] || 'Not started';
+}
+
+function billingLabel(store) {
+  if (store.subscriptionStatus === 'comped' || store.launchPartner === true || store.billingPlan === 'launch-partner') return 'Billing exempt';
+  return ({
+    active: 'Billing active',
+    trialing: '60-day trial verified',
+    checkout_complete: 'Checkout verified',
+    past_due: 'Payment failed',
+    paused: 'Billing paused',
+    canceled: 'Subscription canceled'
+  })[store.billingStatus] || 'Payment not verified';
 }
 
 function actionButton(label, className, handler) {
@@ -28,11 +43,19 @@ async function setStoreStatus(store, subscriptionStatus, billingPlan = store.bil
   if (!confirm(`${verb[0].toUpperCase()}${verb.slice(1)} the merch store for ${store.bandName || 'this band'}?`)) return;
   try {
     const isPublic = ['active', 'trialing', 'comped'].includes(subscriptionStatus);
+    const exemptLaunchPartner = subscriptionStatus === 'comped'
+      || (subscriptionStatus === 'paused' && store.billingPlan === 'launch-partner');
+    const wasApproved = store.adminApproved === true || store.applicationStatus === 'approved' || store.published === true;
+    const adminApproved = isPublic || (subscriptionStatus === 'paused' && wasApproved);
     const batch = writeBatch(db);
     batch.update(doc(db, 'merchStores', store.id), {
       subscriptionStatus,
       billingPlan,
-      applicationStatus: isPublic ? 'approved' : 'pending',
+      applicationStatus: adminApproved ? 'approved' : 'pending',
+      adminApproved,
+      adminPaused: subscriptionStatus === 'paused',
+      launchPartner: subscriptionStatus === 'comped',
+      billingEnforcement: exemptLaunchPartner ? 'exempt-launch-partner' : 'stripe',
       published: isPublic,
       adminUpdatedAt: serverTimestamp(),
       updatedAt: serverTimestamp()
@@ -137,7 +160,7 @@ function render(stores) {
     const plan = store.subscriptionStatus === 'comped'
       ? 'No monthly charge'
       : `First ${introMonths} months free, then $${renewalPrice}/month`;
-    details.textContent = `${statusLabel(store.subscriptionStatus)} · ${plan} · Profile: ${store.profileId || store.id}`;
+    details.textContent = `${statusLabel(store)} · ${billingLabel(store)} · ${plan} · Profile: ${store.profileId || store.id}`;
     const contact = document.createElement('span');
     contact.style.display = 'block';
     contact.style.marginTop = '5px';
@@ -154,8 +177,11 @@ function render(stores) {
     actions.style.marginTop = '10px';
     const isAdminTestStore = store.id === 'admin-merch-preview';
     if (!isAdminTestStore && store.subscriptionStatus !== 'comped') actions.appendChild(actionButton('COMP LAUNCH STORE', 'approve-button', () => setStoreStatus(store, 'comped', 'launch-partner')));
-    if (!isAdminTestStore && store.subscriptionStatus !== 'active') actions.appendChild(actionButton('ACTIVATE', '', () => setStoreStatus(store, 'active', 'monthly')));
-    if (!isAdminTestStore && store.subscriptionStatus !== 'pending') actions.appendChild(actionButton('MARK PENDING', '', () => setStoreStatus(store, 'pending')));
+    const verifiedStatus = store.billingStatus === 'trialing' ? 'trialing' : 'active';
+    const canApproveVerifiedStore = store.billingVerified === true && store.published !== true && store.subscriptionStatus !== 'comped';
+    if (!isAdminTestStore && canApproveVerifiedStore) actions.appendChild(actionButton('APPROVE STORE', 'approve-button', () => setStoreStatus(store, verifiedStatus, 'monthly')));
+    if (!isAdminTestStore && !canApproveVerifiedStore && store.subscriptionStatus !== 'active') actions.appendChild(actionButton('ACTIVATE OVERRIDE', '', () => setStoreStatus(store, 'active', 'monthly')));
+    if (!isAdminTestStore && store.subscriptionStatus !== 'pending') actions.appendChild(actionButton('MARK PENDING', '', () => setStoreStatus(store, 'pending', '')));
     if (!isAdminTestStore && store.subscriptionStatus !== 'paused') actions.appendChild(actionButton('PAUSE', '', () => setStoreStatus(store, 'paused')));
     const manage = document.createElement('a');
     manage.className = 'auth-button';
