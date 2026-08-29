@@ -32,21 +32,9 @@ const BILLING_PORTAL_URL = '';
 
 const SAMPLE_STORES = [
   {
-    id: 'sample-burning-time',
-    bandName: 'BURNING TIME · SAMPLE',
-    coverImageUrl: 'IMG_9382.jpeg',
-    isSample: true
-  },
-  {
     id: 'sample-bandtroductions',
     bandName: 'YOUR BAND HERE',
     coverImageUrl: '6088D6CE-FC3E-40D6-BF94-9191E0A7FE10.png',
-    isSample: true
-  },
-  {
-    id: 'sample-country-roads',
-    bandName: 'COUNTRY ROADS · SAMPLE',
-    coverImageUrl: 'IMG_9496.jpeg',
     isSample: true
   }
 ];
@@ -58,14 +46,6 @@ const SAMPLE_PRODUCTS = [
     description: 'Premium black pullover hoodie with the band logo.',
     options: 'S–3XL · Black',
     imageUrl: 'merch-platform-hoodie.webp',
-    published: true
-  },
-  {
-    name: 'Tour T-Shirt',
-    price: '$25.00',
-    description: 'Soft heavyweight tee made for loud nights.',
-    options: 'S–3XL · Black',
-    imageUrl: 'IMG_9382.jpeg',
     published: true
   },
   {
