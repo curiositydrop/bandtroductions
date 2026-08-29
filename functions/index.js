@@ -3,14 +3,23 @@ const webpush = require('web-push');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { defineSecret } = require('firebase-functions/params');
-const { HttpsError, onCall } = require('firebase-functions/v2/https');
+const { HttpsError, onCall, onRequest } = require('firebase-functions/v2/https');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const {
+  cleanStripeId,
+  isLaunchPartner,
+  merchStatusFromStripe,
+  subscriptionIdFromInvoice,
+  verifyStripeSignature
+} = require('./stripe-webhook-utils');
 
 initializeApp();
 const db = getFirestore();
 const VAPID_PUBLIC_KEY = defineSecret('VAPID_PUBLIC_KEY');
 const VAPID_PRIVATE_KEY = defineSecret('VAPID_PRIVATE_KEY');
+const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
 const REGION = 'us-central1';
+const GOOD_MERCH_BILLING_STATUSES = new Set(['active', 'trialing']);
 
 function requireAuth(request) {
   if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in to manage notifications.');
@@ -70,6 +79,214 @@ async function sendToUser(uid, payload) {
 
   return { sent, removed };
 }
+
+function merchStorefrontData(store, published) {
+  return {
+    profileId: cleanString(store.profileId || store.id, 200),
+    bandName: cleanString(store.bandName, 120) || 'BANDtroductions Band',
+    coverImageUrl: cleanString(store.coverImageUrl, 2000),
+    websiteUrl: cleanString(store.websiteUrl, 1000),
+    storeDescription: cleanString(store.storeDescription, 500),
+    published,
+    updatedAt: FieldValue.serverTimestamp()
+  };
+}
+
+function merchStoreWasApproved(store) {
+  return store.adminApproved === true
+    || store.published === true
+    || store.applicationStatus === 'approved';
+}
+
+async function findMerchStoreBySubscription(subscriptionId) {
+  if (!subscriptionId) return null;
+  const mapping = await db.collection('stripeMerchSubscriptions').doc(subscriptionId).get();
+  const mappedStoreId = cleanString(mapping.data()?.storeId, 200);
+  if (mappedStoreId) {
+    const mappedStore = await db.collection('merchStores').doc(mappedStoreId).get();
+    if (mappedStore.exists) return mappedStore;
+  }
+
+  const matches = await db.collection('merchStores')
+    .where('stripeSubscriptionId', '==', subscriptionId)
+    .limit(1)
+    .get();
+  return matches.empty ? null : matches.docs[0];
+}
+
+async function applyMerchBillingStatus(storeSnapshot, billingStatus, eventId, extra = {}) {
+  if (!storeSnapshot?.exists) return '';
+  const store = { id: storeSnapshot.id, ...storeSnapshot.data() };
+  const storeRef = storeSnapshot.ref;
+  const status = merchStatusFromStripe(billingStatus);
+  const common = {
+    billingStatus: status,
+    billingVerified: GOOD_MERCH_BILLING_STATUSES.has(status),
+    billingUpdatedAt: FieldValue.serverTimestamp(),
+    lastStripeEventId: cleanString(eventId, 200),
+    updatedAt: FieldValue.serverTimestamp(),
+    ...extra
+  };
+
+  if (isLaunchPartner(store)) {
+    await storeRef.set({
+      ...common,
+      billingEnforcement: 'exempt-launch-partner'
+    }, { merge: true });
+    return store.id;
+  }
+
+  const approved = merchStoreWasApproved(store);
+  const billingGood = GOOD_MERCH_BILLING_STATUSES.has(status);
+  const shouldPublish = approved && billingGood && store.adminPaused !== true;
+  const privateUpdate = {
+    ...common,
+    adminApproved: approved,
+    applicationStatus: approved ? 'approved' : (billingGood ? 'payment_verified' : 'pending'),
+    published: shouldPublish
+  };
+
+  if (approved) privateUpdate.subscriptionStatus = status;
+  else if (!store.subscriptionStatus || store.subscriptionStatus === 'canceled') privateUpdate.subscriptionStatus = 'pending';
+
+  const batch = db.batch();
+  batch.set(storeRef, privateUpdate, { merge: true });
+  if (approved || store.published === true) {
+    batch.set(
+      db.collection('merchStorefronts').doc(store.id),
+      merchStorefrontData(store, shouldPublish),
+      { merge: true }
+    );
+  }
+  await batch.commit();
+  return store.id;
+}
+
+async function handleMerchCheckoutSession(session, eventId) {
+  if (session?.mode !== 'subscription' || session?.status !== 'complete') return '';
+  const storeId = cleanString(session.client_reference_id, 200);
+  if (!storeId || storeId === 'admin-merch-preview') return '';
+  const storeSnapshot = await db.collection('merchStores').doc(storeId).get();
+  if (!storeSnapshot.exists) {
+    console.warn('Stripe merch checkout has no matching store', eventId, storeId);
+    return '';
+  }
+
+  const store = storeSnapshot.data() || {};
+  const subscriptionId = cleanStripeId(session.subscription);
+  const customerId = cleanStripeId(session.customer);
+  const checkoutEmail = cleanString(session.customer_details?.email || session.customer_email, 200).toLowerCase();
+  const storeEmail = cleanString(store.contactEmail, 200).toLowerCase();
+  const emailMatches = !checkoutEmail || !storeEmail || checkoutEmail === storeEmail;
+  const launchPartner = isLaunchPartner(store);
+  const approved = merchStoreWasApproved(store);
+  const batch = db.batch();
+  batch.set(storeSnapshot.ref, {
+    stripeCustomerId: customerId,
+    stripeSubscriptionId: subscriptionId,
+    stripeCheckoutSessionId: cleanStripeId(session.id),
+    stripePaymentLinkId: cleanStripeId(session.payment_link),
+    checkoutEmail,
+    billingIdentityMatch: emailMatches,
+    billingStatus: launchPartner ? (store.billingStatus || 'comped') : 'trialing',
+    billingVerified: launchPartner || emailMatches,
+    billingEnforcement: launchPartner ? 'exempt-launch-partner' : 'stripe',
+    applicationStatus: approved ? 'approved' : (emailMatches ? 'payment_verified' : 'payment_review'),
+    lastStripeEventId: cleanString(eventId, 200),
+    checkoutCompletedAt: FieldValue.serverTimestamp(),
+    billingUpdatedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp()
+  }, { merge: true });
+  if (subscriptionId) {
+    batch.set(db.collection('stripeMerchSubscriptions').doc(subscriptionId), {
+      storeId,
+      customerId,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+  }
+  await batch.commit();
+  return storeId;
+}
+
+async function handleMerchSubscription(subscription, eventId, forcedStatus = '') {
+  const subscriptionId = cleanStripeId(subscription?.id);
+  const storeSnapshot = await findMerchStoreBySubscription(subscriptionId);
+  if (!storeSnapshot) {
+    console.warn('Stripe subscription event has no matching merch store', eventId, subscriptionId);
+    return '';
+  }
+  return applyMerchBillingStatus(storeSnapshot, forcedStatus || subscription.status, eventId, {
+    stripeCustomerId: cleanStripeId(subscription.customer),
+    stripeSubscriptionId: subscriptionId,
+    stripeCurrentPeriodEnd: Number(subscription.current_period_end || 0),
+    stripeCancelAtPeriodEnd: subscription.cancel_at_period_end === true
+  });
+}
+
+async function handleMerchInvoice(invoice, eventId, billingStatus) {
+  const subscriptionId = subscriptionIdFromInvoice(invoice);
+  const storeSnapshot = await findMerchStoreBySubscription(subscriptionId);
+  if (!storeSnapshot) {
+    console.warn('Stripe invoice event has no matching merch store', eventId, subscriptionId);
+    return '';
+  }
+  return applyMerchBillingStatus(storeSnapshot, billingStatus, eventId, {
+    stripeSubscriptionId: subscriptionId,
+    stripeInvoiceId: cleanStripeId(invoice.id),
+    lastInvoiceAmountPaid: Number(invoice.amount_paid || 0),
+    lastInvoiceAt: FieldValue.serverTimestamp()
+  });
+}
+
+async function handleStripeMerchEvent(event) {
+  const object = event?.data?.object || {};
+  if (event.type === 'checkout.session.completed') return handleMerchCheckoutSession(object, event.id);
+  if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated') {
+    return handleMerchSubscription(object, event.id);
+  }
+  if (event.type === 'customer.subscription.deleted') {
+    return handleMerchSubscription(object, event.id, 'canceled');
+  }
+  if (event.type === 'invoice.paid') return handleMerchInvoice(object, event.id, 'active');
+  if (event.type === 'invoice.payment_failed') return handleMerchInvoice(object, event.id, 'past_due');
+  return '';
+}
+
+exports.stripeMerchWebhook = onRequest(
+  { region: REGION, secrets: [STRIPE_WEBHOOK_SECRET], cors: false },
+  async (request, response) => {
+    if (request.method !== 'POST') {
+      response.status(405).send('Method not allowed');
+      return;
+    }
+    const rawBody = Buffer.isBuffer(request.rawBody)
+      ? request.rawBody
+      : Buffer.from(request.rawBody || '');
+    const signature = request.get('stripe-signature');
+    if (!verifyStripeSignature(rawBody, signature, STRIPE_WEBHOOK_SECRET.value())) {
+      response.status(400).send('Invalid Stripe signature');
+      return;
+    }
+
+    let event;
+    try {
+      event = JSON.parse(rawBody.toString('utf8'));
+    } catch (_) {
+      response.status(400).send('Invalid JSON');
+      return;
+    }
+
+    try {
+      const storeId = await handleStripeMerchEvent(event);
+      console.log('Stripe merch webhook processed', event.id, event.type, storeId || 'no-store-change');
+      response.status(200).json({ received: true });
+    } catch (error) {
+      console.error('Stripe merch webhook failed', event?.id, event?.type, error);
+      response.status(500).send('Webhook processing failed');
+    }
+  }
+);
 
 exports.getPushConfig = onCall(
   { region: REGION, secrets: [VAPID_PUBLIC_KEY] },
