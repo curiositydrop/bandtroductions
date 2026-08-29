@@ -15,6 +15,7 @@ import {
   writeBatch
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { uploadUserImage, validateImageFile, storageUnavailableMessage } from './storage-upload.js';
+import { isAdminAccount } from './admin-access.js';
 
 const SUBSCRIPTION_PRICE = 15;
 const INTRO_MONTHS = 2;
@@ -102,6 +103,12 @@ let ownedBand = null;
 let ownedStore = null;
 let ownedProducts = [];
 let editingProductId = null;
+let currentUserIsAdmin = false;
+let adminManagedStoreId = '';
+
+function isAdminManagingStore() {
+  return currentUserIsAdmin && Boolean(adminManagedStoreId) && ownedStore?.id === adminManagedStoreId;
+}
 
 function fillStoreRow(stores) {
   const liveStores = Array.isArray(stores) ? stores : [];
@@ -291,6 +298,39 @@ async function openStore(storeId, updateHistory = false) {
   selectedStoreSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function renderAdminStorePreview() {
+  if (!isAdminManagingStore() || !ownedStore) return;
+  selectedStoreSection.hidden = false;
+  selectedStoreHead.replaceChildren();
+  selectedProductGrid.replaceChildren();
+
+  const logo = createStoreImage(ownedStore, 'store-logo');
+  const copy = document.createElement('div');
+  const title = document.createElement('h2');
+  title.textContent = ownedStore.bandName || ownedBand?.displayName || 'Band Merch';
+  const note = document.createElement('p');
+  const visibility = ACTIVE_STATUSES.has(ownedStore.subscriptionStatus)
+    ? 'This is the current fan-facing storefront.'
+    : 'ADMIN PREVIEW — this storefront is still hidden from fans.';
+  note.textContent = `${visibility} ${ownedStore.storeDescription || 'Official band merchandise · Purchases are completed through the band.'}`;
+  copy.append(title, note);
+
+  const browseAll = document.createElement('a');
+  browseAll.className = 'button secondary store-browse';
+  browseAll.href = '#band-marketplace';
+  browseAll.textContent = 'BROWSE ALL BAND MERCH';
+  selectedStoreHead.append(logo, copy, browseAll);
+
+  const previewProducts = ownedProducts
+    .filter(product => product.published === true)
+    .sort((a, b) => (Number(a.sortOrder) || 999) - (Number(b.sortOrder) || 999));
+  if (!previewProducts.length) {
+    showEmpty(selectedProductGrid, 'This band is stocking the shelves.', 'No products are marked to appear in the storefront yet.');
+  } else {
+    previewProducts.forEach(product => selectedProductGrid.appendChild(createProductCard(product)));
+  }
+}
+
 onSnapshot(query(collection(db, 'merchStorefronts'), where('published', '==', true)), snapshot => {
   const liveStores = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
     .filter(store => store.published === true)
@@ -342,6 +382,11 @@ function renderStoreApplication(status) {
   requestStoreButton.textContent = ownedStore ? 'SAVE STORE DETAILS' : 'SUBMIT STORE';
   populateStoreForm();
 
+  if (isAdminManagingStore()) {
+    ownerSummary.textContent = `ADMIN MODE — managing ${ownedStore.bandName || ownedBand?.displayName || 'this band'}'s store. Changes save directly to their storefront record.`;
+    return;
+  }
+
   if (!ownedStore) {
     ownerSummary.textContent = `${ownedBand.displayName} can submit a storefront and prepare up to ${MAX_PRODUCTS} products. Nothing goes public until BANDtroductions approves it.`;
     return;
@@ -369,11 +414,12 @@ async function requestStore(event) {
   try {
     const storeRef = doc(db, 'merchStores', ownedBand.id);
     const existing = await getDoc(storeRef);
+    const storeOwnerId = existing.data()?.ownerId || ownedStore?.ownerId || currentUser.uid;
     const existingStatus = existing.data()?.subscriptionStatus || '';
     const status = existingStatus && existingStatus !== 'canceled' ? existingStatus : 'pending';
     const batch = writeBatch(db);
     batch.set(storeRef, {
-      ownerId: currentUser.uid,
+      ownerId: storeOwnerId,
       profileId: ownedBand.id,
       bandName: ownedBand.displayName || 'BANDtroductions Band',
       coverImageUrl: ownedBand.imageUrl || ownedBand.bannerImageUrl || '',
@@ -501,7 +547,7 @@ async function loadOwnerProducts() {
   try {
     const snapshot = await getDocs(query(collection(db, 'merchProducts'), where('storeId', '==', ownedBand.id)));
     ownedProducts = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
-      .filter(product => product.ownerId === currentUser.uid)
+      .filter(product => isAdminManagingStore() || product.ownerId === currentUser.uid)
       .sort((a, b) => timestampValue(b.createdAt) - timestampValue(a.createdAt));
     ownerProducts.replaceChildren();
     if (!ownedProducts.length) {
@@ -512,6 +558,7 @@ async function loadOwnerProducts() {
     } else ownedProducts.forEach(product => ownerProducts.appendChild(renderOwnerProduct(product)));
     saveProductButton.disabled = !editingProductId && ownedProducts.length >= MAX_PRODUCTS;
     if (!editingProductId && ownedProducts.length >= MAX_PRODUCTS) setOwnerMessage(`This store has reached its ${MAX_PRODUCTS}-product limit.`);
+    if (isAdminManagingStore()) renderAdminStorePreview();
   } catch (error) {
     console.error(error);
     setOwnerMessage('Your current products could not be loaded.', true);
@@ -520,6 +567,10 @@ async function loadOwnerProducts() {
 
 async function loadOwnerState(user) {
   currentUser = user;
+  currentUserIsAdmin = isAdminAccount(user);
+  adminManagedStoreId = currentUserIsAdmin
+    ? new URLSearchParams(location.search).get('manage') || ''
+    : '';
   ownedBand = null;
   ownedStore = null;
   ownedProducts = [];
@@ -541,6 +592,50 @@ async function loadOwnerState(user) {
 
   ownerSummary.textContent = 'Checking your band profile and store access…';
   try {
+    if (adminManagedStoreId) {
+      const managedStoreSnapshot = await getDoc(doc(db, 'merchStores', adminManagedStoreId));
+      if (!managedStoreSnapshot.exists()) {
+        ownerSummary.textContent = 'ADMIN MODE — that merch store could not be found.';
+        const back = document.createElement('a');
+        back.className = 'button secondary';
+        back.href = 'admin.html';
+        back.textContent = 'BACK TO CONTROL ROOM';
+        ownerActions.appendChild(back);
+        return;
+      }
+
+      ownedStore = { id: managedStoreSnapshot.id, ...managedStoreSnapshot.data() };
+      const managedProfileId = ownedStore.profileId || adminManagedStoreId;
+      const managedProfileSnapshot = await getDoc(doc(db, 'profiles', managedProfileId));
+      ownedBand = managedProfileSnapshot.exists()
+        ? { id: managedProfileSnapshot.id, ...managedProfileSnapshot.data() }
+        : {
+            id: managedProfileId,
+            displayName: ownedStore.bandName || 'BANDtroductions Band',
+            imageUrl: ownedStore.coverImageUrl || '',
+            bannerImageUrl: ''
+          };
+      const status = ownedStore.subscriptionStatus || 'pending';
+      renderStoreApplication(status);
+
+      const back = document.createElement('a');
+      back.className = 'button secondary';
+      back.href = 'admin.html';
+      back.textContent = 'BACK TO CONTROL ROOM';
+      ownerActions.appendChild(back);
+      ownerActions.appendChild(createActionButton('PREVIEW STORE', () => {
+        renderAdminStorePreview();
+        selectedStoreSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }));
+
+      productEditor.hidden = false;
+      productPublishLabel.textContent = ACTIVE_STATUSES.has(status)
+        ? 'Publish this product immediately'
+        : 'Show this item when the store is approved';
+      await loadOwnerProducts();
+      return;
+    }
+
     ownedBand = await findOwnedBandProfile(user);
     if (!ownedBand) {
       ownerSummary.textContent = 'A published BANDtroductions band profile is required to open a merch store.';
@@ -590,7 +685,7 @@ cancelProductEditButton.addEventListener('click', () => {
 
 productForm.addEventListener('submit', async event => {
   event.preventDefault();
-  if (!currentUser || !ownedBand || !ownedStore || !PRODUCT_EDIT_STATUSES.has(ownedStore.subscriptionStatus)) {
+  if (!currentUser || !ownedBand || !ownedStore || (!PRODUCT_EDIT_STATUSES.has(ownedStore.subscriptionStatus) && !isAdminManagingStore())) {
     setOwnerMessage('Submit your band store before adding products.', true);
     return;
   }
@@ -637,8 +732,8 @@ productForm.addEventListener('submit', async event => {
     } else {
       await addDoc(collection(db, 'merchProducts'), {
         storeId: ownedBand.id,
-        ownerId: currentUser.uid,
-        bandName: ownedBand.displayName || 'BANDtroductions Band',
+        ownerId: ownedStore.ownerId || currentUser.uid,
+        bandName: ownedStore.bandName || ownedBand.displayName || 'BANDtroductions Band',
         ...productDetails,
         sortOrder: ownedProducts.length + 1,
         createdAt: serverTimestamp()

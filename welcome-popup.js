@@ -43,7 +43,7 @@
         <div class="bt-welcome-kicker">Built for the scene. Not the algorithm.</div>
         <h1 class="bt-welcome-title">Welcome to BANDtroductions Social <span>A social platform for the music scene.</span></h1>
         <p class="bt-welcome-copy">BANDtroductions Social is a music-first community for <strong>bands, musicians, venues, photographers, promoters and fans</strong>. No politics. No algorithm deciding what you see. No unrelated bullshit. Just music, shows, connections, community — and BANDtroductions Radio while you browse.</p>
-        <p class="bt-welcome-tag">Built in Maine. Growing far beyond. 🤘</p>
+        <p class="bt-welcome-tag">The Social Platform for Local Music. Everywhere. 🤘</p>
         <div class="bt-welcome-actions">
           <button type="button" class="bt-welcome-btn" data-action="share">SHARE</button>
           <a class="bt-welcome-btn primary" data-action="signup" href="signup.html">CREATE ACCOUNT</a>
