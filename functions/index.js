@@ -22,6 +22,7 @@ const REGION = 'us-central1';
 const GOOD_MERCH_BILLING_STATUSES = new Set(['active', 'trialing']);
 const MERCH_PROFILE_TYPES = new Set(['band', 'musician']);
 const MERCH_ACTIVE_STATUSES = new Set(['active', 'trialing', 'comped']);
+const BUSINESS_ACTIVE_STATUSES = new Set(['active', 'comped']);
 const MERCH_ADMIN_EMAILS = new Set(['mbergeron79@gmail.com', 'mbegeron79@gmail.com']);
 
 function requireAuth(request) {
@@ -387,6 +388,131 @@ exports.saveMerchStoreRequest = onCall(
 
     await batch.commit();
     return { ok: true, storeId: profileId, subscriptionStatus };
+  }
+);
+
+exports.saveBusinessStoreRequest = onCall(
+  { region: REGION },
+  async request => {
+    const uid = requireAuth(request);
+    const requesterEmail = cleanString(request.auth.token?.email, 200).toLowerCase();
+    const isAdmin = MERCH_ADMIN_EMAILS.has(requesterEmail);
+    const requestedStoreId = cleanString(request.data?.storeId, 200);
+    const storeId = isAdmin && requestedStoreId ? requestedStoreId : uid;
+    const businessName = cleanString(request.data?.businessName, 120);
+    const category = cleanString(request.data?.category, 100);
+    const contactEmail = cleanString(request.data?.contactEmail, 200).toLowerCase();
+    const location = cleanString(request.data?.location, 140);
+    const websiteUrl = cleanString(request.data?.websiteUrl, 1000);
+    const tagline = cleanString(request.data?.tagline, 160);
+    const businessDescription = cleanString(request.data?.businessDescription, 700);
+    const memberOffer = cleanString(request.data?.memberOffer, 300);
+    const logoImageUrl = cleanString(request.data?.logoImageUrl, 2000);
+    const sellerAgreementAccepted = request.data?.sellerAgreementAccepted === true;
+
+    if (!storeId || storeId.includes('/')) throw new HttpsError('invalid-argument', 'Invalid business storefront.');
+    if (!businessName) throw new HttpsError('invalid-argument', 'Add your business name.');
+    if (!category) throw new HttpsError('invalid-argument', 'Choose a business category.');
+    if (!isValidEmail(contactEmail)) throw new HttpsError('invalid-argument', 'Add a valid business contact email.');
+    if (!location) throw new HttpsError('invalid-argument', 'Add your city, state or service region.');
+    if (!isValidWebUrl(websiteUrl) || !websiteUrl) throw new HttpsError('invalid-argument', 'Add a valid business website or social page.');
+    if (!businessDescription) throw new HttpsError('invalid-argument', 'Add a business description.');
+    if (!isValidWebUrl(logoImageUrl) || !logoImageUrl) throw new HttpsError('invalid-argument', 'Add a business logo or storefront image.');
+    if (!sellerAgreementAccepted) throw new HttpsError('failed-precondition', 'Accept the seller agreement to continue.');
+
+    const storeRef = db.collection('businessStores').doc(storeId);
+    const storeSnapshot = await storeRef.get();
+    const existing = storeSnapshot.data() || {};
+    if (storeSnapshot.exists && cleanString(existing.ownerId, 200) !== uid && !isAdmin) {
+      throw new HttpsError('permission-denied', 'This account does not own that business storefront.');
+    }
+
+    const existingStatus = cleanString(existing.subscriptionStatus, 40);
+    const subscriptionStatus = existingStatus && existingStatus !== 'canceled' ? existingStatus : 'pending';
+    const active = BUSINESS_ACTIVE_STATUSES.has(subscriptionStatus);
+    const ownerId = cleanString(existing.ownerId, 200) || uid;
+    const storefront = {
+      ownerId,
+      businessName,
+      category,
+      contactEmail,
+      location,
+      websiteUrl,
+      tagline,
+      businessDescription,
+      memberOffer,
+      logoImageUrl,
+      featured: existing.featured === true,
+      subscriptionStatus,
+      subscriptionPrice: 35,
+      billingPlan: cleanString(existing.billingPlan, 80) || 'monthly',
+      applicationStatus: active ? 'approved' : 'pending',
+      sellerAgreementAccepted: true,
+      sellerAgreementAcceptedAt: existing.sellerAgreementAcceptedAt || FieldValue.serverTimestamp(),
+      published: active,
+      updatedAt: FieldValue.serverTimestamp(),
+      ...(storeSnapshot.exists ? {} : { createdAt: FieldValue.serverTimestamp() })
+    };
+
+    const batch = db.batch();
+    batch.set(storeRef, storefront, { merge: true });
+    if (active) {
+      batch.set(db.collection('merchStorefronts').doc(storeId), {
+        storeKind: 'business',
+        businessName,
+        category,
+        contactEmail,
+        location,
+        websiteUrl,
+        tagline,
+        businessDescription,
+        memberOffer,
+        logoImageUrl,
+        featured: existing.featured === true,
+        published: true,
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+    await batch.commit();
+    return { ok: true, storeId, subscriptionStatus };
+  }
+);
+
+exports.getBusinessStore = onCall(
+  { region: REGION },
+  async request => {
+    const uid = requireAuth(request);
+    const requesterEmail = cleanString(request.auth.token?.email, 200).toLowerCase();
+    const isAdmin = MERCH_ADMIN_EMAILS.has(requesterEmail);
+    const requestedStoreId = cleanString(request.data?.storeId, 200);
+    const storeId = isAdmin && requestedStoreId ? requestedStoreId : uid;
+    if (!storeId || storeId.includes('/')) throw new HttpsError('invalid-argument', 'Invalid business storefront.');
+    const snapshot = await db.collection('businessStores').doc(storeId).get();
+    if (!snapshot.exists) return { store: null };
+    const store = snapshot.data() || {};
+    if (cleanString(store.ownerId, 200) !== uid && !isAdmin) {
+      throw new HttpsError('permission-denied', 'This account does not own that business storefront.');
+    }
+    return {
+      store: {
+        id: snapshot.id,
+        ownerId: cleanString(store.ownerId, 200),
+        businessName: cleanString(store.businessName, 120),
+        category: cleanString(store.category, 100),
+        contactEmail: cleanString(store.contactEmail, 200),
+        location: cleanString(store.location, 140),
+        websiteUrl: cleanString(store.websiteUrl, 1000),
+        tagline: cleanString(store.tagline, 160),
+        businessDescription: cleanString(store.businessDescription, 700),
+        memberOffer: cleanString(store.memberOffer, 300),
+        logoImageUrl: cleanString(store.logoImageUrl, 2000),
+        featured: store.featured === true,
+        subscriptionStatus: cleanString(store.subscriptionStatus, 40) || 'pending',
+        billingPlan: cleanString(store.billingPlan, 80) || 'monthly',
+        sellerAgreementAccepted: store.sellerAgreementAccepted === true,
+        published: store.published === true
+      }
+    };
   }
 );
 
