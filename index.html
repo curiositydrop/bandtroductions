@@ -74,6 +74,23 @@
 .nav .merch-nav-highlight{position:relative;z-index:1;color:#effffd;background:rgba(37,199,193,.12);animation:merchNavPulse 1.8s ease-in-out infinite}
 @keyframes merchNavPulse{0%,100%{box-shadow:inset 0 0 0 1px rgba(37,199,193,.48),0 0 5px rgba(37,199,193,.3);text-shadow:0 0 5px rgba(115,255,245,.5)}50%{box-shadow:inset 0 0 16px rgba(37,199,193,.36),0 0 19px rgba(37,199,193,.9);text-shadow:0 0 12px rgba(115,255,245,1)}}
 @media(prefers-reduced-motion:reduce){.nav .merch-nav-highlight{animation:none;box-shadow:inset 0 0 13px rgba(37,199,193,.3),0 0 10px rgba(37,199,193,.68)}}
+/* Mobile readability pass: typography only; the three-column dashboard layout is unchanged. */
+@media(max-width:650px){
+  .sticky-header .news-label{font-size:8px!important}.sticky-header .news-group{font-size:8.5px!important}
+  .nav a{font-size:9px;padding:8px 1px}
+  .panel h3{font-size:9px;line-height:1.15}.menu a{font-size:9px;line-height:1.25}
+  .online-card .online-label{font-size:6.5px}.online-empty{font-size:7px}.sponsor{font-size:8px}
+  .hero h1{font-size:18px}.hero p{font-size:10px}.btn{font-size:8px}
+  .post-name{font-size:10px}.post-meta{font-size:7.5px}.post p{font-size:10.5px;line-height:1.42}.post-actions{font-size:7.5px}
+  .post-actions .dashboard-feed-action{font-size:7.5px!important}.dashboard-reactor-list{font-size:7px!important}
+  .dashboard-comment-composer textarea{font-size:9px!important}.dashboard-comment-buttons button{font-size:7.5px!important}
+  .dashboard-comment-status,.dashboard-comments-empty{font-size:7px!important}.dashboard-comment-row{font-size:8.5px!important}.dashboard-comment-actions{font-size:7.5px!important}.dashboard-comment-admin-delete{font-size:6.5px!important}
+  .show{font-size:8px}.date{font-size:7px}.date span{font-size:12px}.show b{font-size:8.5px}.show-venue,.show-time,.show-extra{font-size:7.5px;line-height:1.3}.show-details-btn{font-size:7px}.show-admin-edit{font-size:6.5px!important}
+  .radio h2{font-size:11px!important}.radio small,.radio div{font-size:8px}.right p{font-size:8px}
+  .right .dashboard-radio-actions .btn{font-size:6.8px!important}.right .dashboard-radio-play{font-size:7.5px!important}.right .radio-live-badge{width:55px;font-size:5.8px!important}
+  .right .bt-radio-now{font-size:7px}.right .bt-radio-track{font-size:11px}.right .bt-radio-band{font-size:9px}.right .bt-radio-playlist{font-size:7.5px}.right .bt-radio-next-label{font-size:7px}.right .bt-radio-next-name{font-size:8px}.right .bt-radio-listen{font-size:8px!important}.right .bt-radio-actions .btn{font-size:7px!important}
+  .note{font-size:8px;line-height:1.3}.venue-vote-card strong{font-size:9px}.venue-vote-card span{font-size:7px}
+}
 </style>
 </head>
 <body>
