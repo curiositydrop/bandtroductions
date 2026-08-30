@@ -39,7 +39,15 @@ function actionButton(label, className, handler) {
 }
 
 async function setStoreStatus(store, subscriptionStatus, billingPlan = store.billingPlan || '') {
-  const verb = subscriptionStatus === 'comped' ? 'comp as a launch-partner store' : subscriptionStatus === 'active' ? 'activate' : subscriptionStatus === 'paused' ? 'pause' : 'mark pending';
+  const verb = subscriptionStatus === 'comped'
+    ? 'comp as a launch-partner store'
+    : subscriptionStatus === 'active'
+      ? 'activate'
+      : subscriptionStatus === 'trialing'
+        ? 'approve'
+        : subscriptionStatus === 'paused'
+          ? 'pause'
+          : 'mark pending';
   if (!confirm(`${verb[0].toUpperCase()}${verb.slice(1)} the merch store for ${store.bandName || 'this artist'}?`)) return;
   try {
     const isPublic = ['active', 'trialing', 'comped'].includes(subscriptionStatus);
