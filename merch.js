@@ -110,6 +110,16 @@ function imageForStore(store) {
   return store.coverImageUrl || store.imageUrl || store.bannerImageUrl || '';
 }
 
+function scrollBelowStickyHeader(element) {
+  if (!element) return;
+  requestAnimationFrame(() => {
+    const header = document.querySelector('.market-header');
+    const headerHeight = header?.getBoundingClientRect().height || 0;
+    const top = element.getBoundingClientRect().top + window.scrollY - headerHeight - 8;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  });
+}
+
 function isValidWebUrl(value) {
   try {
     const parsed = new URL(value);
@@ -277,6 +287,7 @@ async function openStore(storeId, updateHistory = false) {
     document.getElementById('band-marketplace').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   showEmpty(selectedProductGrid, 'Loading products…', 'Opening this artist’s storefront.');
+  scrollBelowStickyHeader(selectedStoreSection);
 
   if (updateHistory) {
     const url = new URL(location.href);
@@ -287,7 +298,6 @@ async function openStore(storeId, updateHistory = false) {
   if (store.isSample) {
     selectedProductGrid.replaceChildren();
     SAMPLE_PRODUCTS.forEach(product => selectedProductGrid.appendChild(createProductCard({ ...product, storeId: store.id })));
-    selectedStoreSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     return;
   }
 
@@ -307,7 +317,6 @@ async function openStore(storeId, updateHistory = false) {
     console.error('Could not load artist merchandise:', error);
     showEmpty(selectedProductGrid, 'This store could not be loaded.', 'Please refresh the page and try again.');
   }
-  selectedStoreSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function renderAdminStorePreview() {
@@ -642,7 +651,7 @@ async function loadOwnerState(user) {
       ownerActions.appendChild(back);
       ownerActions.appendChild(createActionButton('PREVIEW STORE', () => {
         renderAdminStorePreview();
-        selectedStoreSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        scrollBelowStickyHeader(selectedStoreSection);
       }));
 
       productEditor.hidden = false;
