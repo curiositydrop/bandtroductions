@@ -112,8 +112,69 @@ async function createAdminTestStore() {
   }
 }
 
+async function restoreAscentToPowerStore() {
+  if (!confirm('Restore the paid Ascent To Power store request and reconnect it to Rick\'s existing Stripe trial?')) return;
+  try {
+    const profilesSnapshot = await getDocs(collection(db, 'profiles'));
+    const profileSnapshot = profilesSnapshot.docs.find(item => {
+      const profile = item.data() || {};
+      const name = String(profile.displayName || '').trim().toLowerCase();
+      const emails = [profile.email, profile.bookingEmail, profile.claimedByEmail]
+        .map(value => String(value || '').trim().toLowerCase());
+      return name === 'ascent to power' || emails.includes('strengthabovepower@roadrunner.com');
+    });
+    if (!profileSnapshot) {
+      alert('The Ascent To Power profile could not be found. Nothing was changed.');
+      return;
+    }
+    if (allStores.some(store => store.id === profileSnapshot.id)) {
+      alert('The Ascent To Power store already exists. Nothing was changed.');
+      return;
+    }
+
+    const profile = profileSnapshot.data() || {};
+    const ownerId = profile.ownerId || profile.userId || profile.uid || profileSnapshot.id;
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'merchStores', profileSnapshot.id), {
+      ownerId,
+      profileId: profileSnapshot.id,
+      profileType: profile.accountType || 'band',
+      bandName: profile.displayName || 'Ascent To Power',
+      coverImageUrl: profile.imageUrl || profile.bannerImageUrl || '',
+      contactEmail: 'strengthabovepower@roadrunner.com',
+      websiteUrl: 'https://ascenttopower.threadless.com/',
+      storeDescription: 'Official ATP Merch',
+      sellerAgreementAccepted: true,
+      sellerAgreementAcceptedAt: serverTimestamp(),
+      subscriptionStatus: 'trialing',
+      subscriptionPrice: 15,
+      introPrice: 0,
+      introMonths: 2,
+      renewalPrice: 15,
+      offerCode: 'two-months-free-then-15-monthly',
+      billingPlan: 'monthly',
+      billingStatus: 'trialing',
+      billingVerified: true,
+      billingEnforcement: 'stripe',
+      applicationStatus: 'payment_verified',
+      adminApproved: false,
+      published: false,
+      restoredAfterAccidentalDeletion: true,
+      restoredAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    await batch.commit();
+    alert('Ascent To Power has been restored. Use APPROVE STORE on its card to publish it.');
+  } catch (error) {
+    console.error(error);
+    alert('Ascent To Power could not be restored. Nothing else was changed.');
+  }
+}
+
 async function deleteStore(store) {
   if (!confirm(`Permanently delete ${store.bandName || 'this merch store'} and all of its product records?`)) return;
+  if (!confirm(`LAST CHANCE: This cannot be undone. Permanently delete ${store.bandName || 'this merch store'}?`)) return;
   try {
     const productsSnapshot = await getDocs(query(collection(db, 'merchProducts'), where('storeId', '==', store.id)));
     const batch = writeBatch(db);
@@ -134,6 +195,10 @@ function render(stores) {
   adminTools.style.marginBottom = '10px';
   if (!stores.some(store => store.id === 'admin-merch-preview')) {
     adminTools.appendChild(actionButton('CREATE ADMIN TEST STORE', '', createAdminTestStore));
+  }
+  if (!stores.some(store => String(store.bandName || '').trim().toLowerCase() === 'ascent to power')) {
+    const restore = actionButton('RESTORE ASCENT TO POWER', 'approve-button', restoreAscentToPowerStore);
+    adminTools.appendChild(restore);
   }
   container.appendChild(adminTools);
   if (!stores.length) {
