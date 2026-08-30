@@ -171,6 +171,7 @@
     import { auth, db } from './firebase-dev.js';
     import { sendAdminApprovalEmail } from './admin-approval-email.js?v=3';
     import { createWelcomePost } from './welcome-profile-post.js?v=2';
+    import { createAdminAccountNotification } from './admin-new-account-notification.js?v=1';
     import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
     import { doc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
@@ -309,6 +310,12 @@
           rightsAcknowledgmentAccepted: true,
           createdAt: serverTimestamp()
         });
+        await createAdminAccountNotification({
+          userId: credential.user.uid,
+          profileId: credential.user.uid,
+          displayName,
+          accountType
+        }).catch(error => console.warn('Admin account notification could not be created:', error));
         await sendEmailVerification(credential.user).catch(error => console.warn('Verification email could not be sent:', error));
         await sendAdminApprovalEmail({
           kind: 'signup',
@@ -380,6 +387,13 @@
             rightsAcknowledgmentAccepted: true,
             createdAt: serverTimestamp()
           });
+          await createAdminAccountNotification({
+            userId: createdUser.uid,
+            profileId: createdUser.uid,
+            displayName,
+            accountType,
+            location: value('location')
+          }).catch(error => console.warn('Admin account notification could not be created:', error));
         }
 
         const profileData = {
