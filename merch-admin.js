@@ -180,7 +180,7 @@ function render(stores) {
     const verifiedStatus = store.billingStatus === 'trialing' ? 'trialing' : 'active';
     const canApproveVerifiedStore = store.billingVerified === true && store.published !== true && store.subscriptionStatus !== 'comped';
     if (!isAdminTestStore && canApproveVerifiedStore) actions.appendChild(actionButton('APPROVE STORE', 'approve-button', () => setStoreStatus(store, verifiedStatus, 'monthly')));
-    if (!isAdminTestStore && !canApproveVerifiedStore && store.subscriptionStatus !== 'active') actions.appendChild(actionButton('ACTIVATE OVERRIDE', '', () => setStoreStatus(store, 'active', 'monthly')));
+    if (!isAdminTestStore && !canApproveVerifiedStore && !['active', 'comped'].includes(store.subscriptionStatus)) actions.appendChild(actionButton('ACTIVATE OVERRIDE', '', () => setStoreStatus(store, 'active', 'monthly')));
     if (!isAdminTestStore && store.subscriptionStatus !== 'pending') actions.appendChild(actionButton('MARK PENDING', '', () => setStoreStatus(store, 'pending', '')));
     if (!isAdminTestStore && store.subscriptionStatus !== 'paused') actions.appendChild(actionButton('PAUSE', '', () => setStoreStatus(store, 'paused')));
     const manage = document.createElement('a');
