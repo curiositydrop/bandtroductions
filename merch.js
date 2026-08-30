@@ -170,27 +170,31 @@ function renderSelectedStorePresentation(store, previewNote = '') {
   nameBlock.className = 'store-name';
   const artistTitle = document.createElement('h2');
   artistTitle.textContent = artistName;
-  nameBlock.appendChild(artistTitle);
+  const merchandiseTitle = document.createElement('p');
+  merchandiseTitle.className = 'store-subtitle';
+  merchandiseTitle.textContent = 'Official Artist Merchandise';
+  nameBlock.append(artistTitle, merchandiseTitle);
 
   const browseAll = document.createElement('a');
   browseAll.className = 'button secondary store-browse';
   browseAll.href = '#band-marketplace';
   browseAll.textContent = 'BROWSE ALL ARTIST MERCH';
+  browseAll.hidden = true;
   selectedStoreHead.append(logo, nameBlock, browseAll);
 
-  const merchandiseTitle = document.createElement('h2');
-  merchandiseTitle.textContent = 'Official Artist Merchandise';
   if (previewNote) {
     const preview = document.createElement('strong');
     preview.className = 'store-preview-note';
     preview.textContent = previewNote;
     selectedStoreIntro.appendChild(preview);
   }
+  const divider = document.createElement('div');
+  divider.className = 'store-divider';
+  divider.setAttribute('aria-hidden', 'true');
   const notice = document.createElement('p');
-  const noticeLead = document.createElement('strong');
-  noticeLead.textContent = `All payments and product orders are handled via ${artistName}. `;
-  notice.append(noticeLead, document.createTextNode('BANDtroductions is merely their storefront.'));
-  selectedStoreIntro.append(merchandiseTitle, notice);
+  notice.className = 'store-notice';
+  notice.textContent = `Payments & orders handled by ${artistName} · BANDtroductions is storefront only.`;
+  selectedStoreIntro.append(divider, notice);
   return browseAll;
 }
 
