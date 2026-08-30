@@ -331,7 +331,7 @@ function renderAdminStorePreview() {
 
 onSnapshot(query(collection(db, 'merchStorefronts'), where('published', '==', true)), snapshot => {
   const liveStores = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
-    .filter(store => store.published === true)
+    .filter(store => store.published === true && store.storeKind !== 'business')
     .sort((a, b) => (a.bandName || '').localeCompare(b.bandName || ''));
   publicStores = fillStoreRow(liveStores);
   renderBandStores();
