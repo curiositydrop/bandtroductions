@@ -2,7 +2,6 @@ import { db } from './firebase-dev.js';
 import {
   collection,
   doc,
-  getDoc,
   getDocs,
   query,
   serverTimestamp,
@@ -52,8 +51,6 @@ export async function createAdminAccountNotification({
   await Promise.all(recipientIds.map(async recipientId => {
     const notificationId = `new-account_${safeId(recipientId)}_${subjectId}`;
     const notificationRef = doc(db, 'notifications', notificationId);
-    const existing = await getDoc(notificationRef);
-    if (existing.exists()) return;
 
     await setDoc(notificationRef, {
       recipientId,
