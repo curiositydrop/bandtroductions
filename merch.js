@@ -60,6 +60,7 @@ const SAMPLE_PRODUCTS = [
 const bandGrid = document.getElementById('band-store-grid');
 const selectedStoreSection = document.getElementById('selected-store');
 const selectedStoreHead = document.getElementById('selected-store-head');
+const selectedStoreIntro = document.getElementById('selected-store-intro');
 const selectedProductGrid = document.getElementById('selected-product-grid');
 const ownerSummary = document.getElementById('owner-summary');
 const ownerActions = document.getElementById('owner-actions');
@@ -160,6 +161,39 @@ function createStoreImage(store, className = '') {
   return image;
 }
 
+function renderSelectedStorePresentation(store, previewNote = '') {
+  selectedStoreHead.replaceChildren();
+  selectedStoreIntro.replaceChildren();
+  const artistName = store.bandName || ownedBand?.displayName || 'BANDtroductions Artist';
+  const logo = createStoreImage(store, 'store-logo');
+  const nameBlock = document.createElement('div');
+  nameBlock.className = 'store-name';
+  const artistTitle = document.createElement('h2');
+  artistTitle.textContent = artistName;
+  nameBlock.appendChild(artistTitle);
+
+  const browseAll = document.createElement('a');
+  browseAll.className = 'button secondary store-browse';
+  browseAll.href = '#band-marketplace';
+  browseAll.textContent = 'BROWSE ALL ARTIST MERCH';
+  selectedStoreHead.append(logo, nameBlock, browseAll);
+
+  const merchandiseTitle = document.createElement('h2');
+  merchandiseTitle.textContent = 'Official Artist Merchandise';
+  if (previewNote) {
+    const preview = document.createElement('strong');
+    preview.className = 'store-preview-note';
+    preview.textContent = previewNote;
+    selectedStoreIntro.appendChild(preview);
+  }
+  const notice = document.createElement('p');
+  const noticeLead = document.createElement('strong');
+  noticeLead.textContent = `All payments and product orders are handled via ${artistName}. `;
+  notice.append(noticeLead, document.createTextNode('BANDtroductions is merely their storefront.'));
+  selectedStoreIntro.append(merchandiseTitle, notice);
+  return browseAll;
+}
+
 function renderBandStores() {
   bandGrid.replaceChildren();
   if (!publicStores.length) {
@@ -228,22 +262,8 @@ async function openStore(storeId, updateHistory = false) {
   const store = publicStores.find(item => item.id === storeId);
   if (!store) return;
   selectedStoreSection.hidden = false;
-  selectedStoreHead.replaceChildren();
   selectedProductGrid.replaceChildren();
-
-  const logo = createStoreImage(store, 'store-logo');
-  const copy = document.createElement('div');
-  const title = document.createElement('h2');
-  title.textContent = store.bandName || 'Artist Merch';
-  const note = document.createElement('p');
-  note.textContent = store.isSample
-    ? 'Sample storefront · Products and checkout links are placeholders.'
-    : (store.storeDescription || 'Official artist merchandise · Purchases are completed through the artist.');
-  copy.append(title, note);
-  const browseAll = document.createElement('a');
-  browseAll.className = 'button secondary store-browse';
-  browseAll.href = '#band-marketplace';
-  browseAll.textContent = 'BROWSE ALL ARTIST MERCH';
+  const browseAll = renderSelectedStorePresentation(store);
   browseAll.addEventListener('click', event => {
     event.preventDefault();
     const url = new URL(location.href);
@@ -252,7 +272,6 @@ async function openStore(storeId, updateHistory = false) {
     selectedStoreSection.hidden = true;
     document.getElementById('band-marketplace').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
-  selectedStoreHead.append(logo, copy, browseAll);
   showEmpty(selectedProductGrid, 'Loading products…', 'Opening this artist’s storefront.');
 
   if (updateHistory) {
@@ -290,25 +309,11 @@ async function openStore(storeId, updateHistory = false) {
 function renderAdminStorePreview() {
   if (!isAdminManagingStore() || !ownedStore) return;
   selectedStoreSection.hidden = false;
-  selectedStoreHead.replaceChildren();
   selectedProductGrid.replaceChildren();
-
-  const logo = createStoreImage(ownedStore, 'store-logo');
-  const copy = document.createElement('div');
-  const title = document.createElement('h2');
-  title.textContent = ownedStore.bandName || ownedBand?.displayName || 'Artist Merch';
-  const note = document.createElement('p');
   const visibility = ACTIVE_STATUSES.has(ownedStore.subscriptionStatus)
     ? 'This is the current fan-facing storefront.'
     : 'ADMIN PREVIEW — this storefront is still hidden from fans.';
-  note.textContent = `${visibility} ${ownedStore.storeDescription || 'Official artist merchandise · Purchases are completed through the artist.'}`;
-  copy.append(title, note);
-
-  const browseAll = document.createElement('a');
-  browseAll.className = 'button secondary store-browse';
-  browseAll.href = '#band-marketplace';
-  browseAll.textContent = 'BROWSE ALL ARTIST MERCH';
-  selectedStoreHead.append(logo, copy, browseAll);
+  renderSelectedStorePresentation(ownedStore, visibility);
 
   const previewProducts = ownedProducts
     .filter(product => product.published === true)
@@ -774,7 +779,7 @@ productForm.addEventListener('submit', async event => {
   }
 });
 
-document.getElementById('platform-buy-button').addEventListener('click', event => {
+document.getElementById('platform-buy-button')?.addEventListener('click', event => {
   if (PLATFORM_HOODIE_CHECKOUT_URL) {
     event.currentTarget.href = PLATFORM_HOODIE_CHECKOUT_URL;
     return;
