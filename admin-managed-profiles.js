@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { isAdminAccount } from './admin-access.js';
 import { createWelcomePost } from './welcome-profile-post.js?v=2';
 
@@ -23,137 +23,20 @@ const ownerIdFor=p=>p.ownerId||p.userId||p.uid||p.id;
 const isOnline=p=>{const user=users.find(u=>u.id===ownerIdFor(p));const stamp=user?.lastActiveAt;return Boolean(stamp?.toMillis&&Date.now()-stamp.toMillis()<150000&&user?.isOnline!==false)};
 
 const legacyAccountRecoveries={
-  'kris@krishype.com':{
-    legacyPage:'burning-time.html',
-    profileName:'Burning Time',
-    accountType:'band',
-    location:'Maine',
-    genre:'Rock / Metal',
-    staticSeed:{
-      displayName:'Burning Time',
-      location:'Maine',
-      genre:'Rock / Metal',
-      bannerImageUrl:'IMG_0389.jpeg',
-      imageUrl:'IMG_5121.jpeg',
-      bio:'Burning Time has been playing together since 2014 with a sound that has been described as heavy meets melodic rock. They have played in numerous venues with a wide variety of artists and have developed a loyal fan base. Whether performing for hundreds at local clubs or thousands at festivals, BT delivers an unforgettable performance and an experience that won\'t soon be forgotten! Their mission? Bring a unique sound to the world and to keep the spirit of rock alive!',
-      members:'Kris Hype – Vocals/Guitar\nDan Aldrich – Drums\nDoug Waycott – Bass\nCarl Watson – Guitar\nJarred Desrochers – Guitar',
-      bookingEmail:'kris@krishype.com',
-      website:'https://www.burningtimemusic.com',
-      spotify:'https://open.spotify.com/artist/4C2RKw1TtA1lgLTlI3tF0C?si=0gflAgIaSDiBs3sJthgSkw',
-      youtube:'https://youtube.com/@burningtime?si=otLMdQiGU3VoS_Dr',
-      instagram:'https://www.instagram.com/burningtimeband?igsh=MTJlajNkNzJ0YXlxOQ==',
-      facebook:'https://www.facebook.com/share/1LnXNiU1Zt/?mibextid=wwXIfr',
-      mediaLink:'https://www.youtube.com/watch?v=RyAK3AAX49g',
-      featuredTitle:'Featured Release: “Hard to Follow”',
-      additionalMedia:[
-        {title:'More Video 1',url:'https://www.youtube.com/watch?v=o_a3zRmXjf0'},
-        {title:'More Video 2',url:'https://www.youtube.com/watch?v=mAAIqAtM9lU'},
-        {title:'More Video 3',url:'https://www.youtube.com/watch?v=Es5BP4jGlcc'},
-        {title:'More Video 4',url:'https://www.youtube.com/watch?v=hg3FNy3xgGo'}
-      ]
-    }
-  }
+  'kris@krishype.com':{legacyPage:'burning-time.html',profileName:'Burning Time',accountType:'band'}
 };
-
 const normalizeEmail=value=>String(value||'').trim().toLowerCase();
-const absoluteUrl=(value,baseUrl)=>{if(!value)return'';try{return new URL(value,baseUrl||location.href).href}catch{return value}};
-const firstText=(root,selectors)=>{for(const selector of selectors){const text=root.querySelector(selector)?.textContent?.replace(/\s+/g,' ').trim();if(text)return text}return''};
-const firstImage=(root,selectors,baseUrl)=>{for(const selector of selectors){const value=root.querySelector(selector)?.getAttribute('src');if(value)return absoluteUrl(value,baseUrl)}return''};
-const cleanLocation=value=>String(value||'').replace(/^📍\s*(based in)?\s*/i,'').trim();
-const youtubeUrl=value=>{try{const url=new URL(value,location.href);if(url.hostname.includes('youtube.com')&&url.pathname.includes('/embed/')){const id=url.pathname.split('/embed/')[1]?.split('/')[0];return id?`https://www.youtube.com/watch?v=${id}`:value}}catch{}return value};
-
-async function buildLegacyRecoveryProfile(recovery){
-  if(recovery.staticSeed){
-    const seed={...recovery.staticSeed};
-    seed.accountType=recovery.accountType;
-    seed.bannerImageUrl=absoluteUrl(seed.bannerImageUrl,location.href);
-    seed.imageUrl=absoluteUrl(seed.imageUrl,location.href);
-    seed.additionalMedia=seed.additionalMedia.map(item=>({...item}));
-    seed.mediaItems=seed.additionalMedia.map(item=>({type:'video',url:item.url,caption:item.title}));
-    return seed;
-  }
-  const pageUrl=absoluteUrl(recovery.legacyPage,location.href);
-  const response=await fetch(`${pageUrl}${pageUrl.includes('?')?'&':'?'}recover=${Date.now()}`,{cache:'no-store'});
-  if(!response.ok)throw new Error(`Legacy profile returned ${response.status}`);
-  const parsed=new DOMParser().parseFromString(await response.text(),'text/html');
-  const members=[...parsed.querySelectorAll('#band-members-list li,.band-members li,.members li')]
-    .map(item=>item.textContent?.replace(/\s+/g,' ').trim()).filter(Boolean).join('\n');
-  const media=[...parsed.querySelectorAll('iframe[src],[data-video]')]
-    .map(element=>youtubeUrl(absoluteUrl(element.getAttribute('src')||element.getAttribute('data-video'),pageUrl)))
-    .filter(url=>/youtube\.com|youtu\.be|vimeo\.com/i.test(url));
-  const links={};
-  parsed.querySelectorAll('a[href]').forEach(anchor=>{
-    const label=anchor.textContent?.replace(/\s+/g,' ').trim().toLowerCase()||'';
-    const href=absoluteUrl(anchor.getAttribute('href'),pageUrl);
-    if(!links.spotify&&/spotify/.test(label))links.spotify=href;
-    if(!links.youtube&&/youtube/.test(label))links.youtube=href;
-    if(!links.instagram&&/instagram/.test(label))links.instagram=href;
-    if(!links.facebook&&/facebook/.test(label))links.facebook=href;
-    if(!links.website&&/website|official site/.test(label))links.website=href;
-  });
-  const bookingEmail=normalizeEmail(parsed.querySelector('a[href^="mailto:"]')?.getAttribute('href')?.replace(/^mailto:/i,'').split('?')[0]||'');
-  return{
-    accountType:recovery.accountType,
-    displayName:firstText(parsed,['#band-name','#musician-name','#venue-name','.profile-action-card h1','main h1','h1'])||recovery.profileName,
-    location:cleanLocation(firstText(parsed,['#band-location-status','#musician-location-status','#venue-location-status','.profile-location']))||recovery.location,
-    genre:recovery.genre||'',
-    bannerImageUrl:firstImage(parsed,['#band-banner-image','#musician-banner-image','#venue-banner-image','.profile-banner-img','.profile-banner img'],pageUrl),
-    imageUrl:firstImage(parsed,['#band-avatar-image','#musician-avatar-image','#venue-avatar-image','.profile-avatar-card img','.profile-avatar img'],pageUrl),
-    bio:firstText(parsed,['#band-bio','#musician-bio','#venue-bio','.profile-bio','.bio','.about-copy']),
-    members,
-    bookingEmail,
-    website:links.website||'',spotify:links.spotify||'',youtube:links.youtube||'',instagram:links.instagram||'',facebook:links.facebook||'',
-    mediaLink:media[0]||'',
-    featuredTitle:firstText(parsed,['#featured-release-title','.profile-featured-video h2','.featured-video h2']),
-    additionalMedia:media.slice(1).map((url,index)=>({title:`More Video ${index+1}`,url})),
-    mediaItems:media.slice(1).map((url,index)=>({type:'video',url,caption:`More Video ${index+1}`}))
-  };
+function recoveryClaimUrl(recovery){
+  const params=new URLSearchParams({page:recovery.legacyPage,name:recovery.profileName,type:recovery.accountType,fresh:'owner-v1'});
+  return new URL(`claim-profile.html?${params}`,location.href).href;
 }
-
-async function recoverLegacyAccount(profile,recovery,button){
-  const ownerId=ownerIdFor(profile);
-  if(!ownerId||!recovery)return;
-  if(!confirm(`Recover the existing ${recovery.profileName} profile and publish it under ${profile.email}?`))return;
-  button.disabled=true;
-  const originalLabel=button.textContent;
-  button.textContent='Recovering…';
+async function copyRecoveryClaim(recovery){
+  const url=recoveryClaimUrl(recovery);
   try{
-    const seed=await buildLegacyRecoveryProfile(recovery);
-    if(!seed.bio||!seed.imageUrl||!seed.bannerImageUrl)throw new Error('Legacy profile data was incomplete.');
-    const now=serverTimestamp();
-    const batch=writeBatch(db);
-    batch.set(doc(db,'profiles',ownerId),{
-      ...seed,
-      ownerId,
-      legacyPage:recovery.legacyPage,
-      claimEmail:normalizeEmail(profile.email),
-      claimedLegacyProfile:true,
-      claimMethod:'admin-recovered-email-match',
-      claimedByEmail:normalizeEmail(profile.email),
-      claimedAt:now,
-      approvalStatus:'approved',
-      published:true,
-      approvedAt:now,
-      approvedBy:auth.currentUser?.uid||'',
-      updatedAt:now
-    });
-    batch.set(doc(db,'users',ownerId),{
-      accountType:seed.accountType,
-      displayName:seed.displayName,
-      activeProfileId:ownerId,
-      profileComplete:true,
-      claimedLegacyProfile:true,
-      updatedAt:now
-    },{merge:true});
-    await batch.commit();
-    await createWelcomePost({profileId:ownerId,displayName:seed.displayName,accountType:seed.accountType});
-    alert(`${seed.displayName} is connected to ${profile.email} and published.`);
-  }catch(error){
-    console.error('Legacy account recovery failed:',error);
-    const detail=error?.code||error?.message||'';
-    alert(`The legacy profile could not be recovered${detail?` (${detail})`:''}. Nothing was partially published.`);
-    button.disabled=false;
-    button.textContent=originalLabel;
+    await navigator.clipboard.writeText(url);
+    alert(`Claim link copied. Send it to the owner of ${recovery.profileName}. They must open it while signed into their own account.`);
+  }catch{
+    prompt(`Copy and send this claim link to the owner of ${recovery.profileName}:`,url);
   }
 }
 
@@ -222,8 +105,8 @@ function makeCard(profile){
   else{
     const recovery=legacyAccountRecoveries[normalizeEmail(profile.email)];
     if(recovery){
-      const recover=document.createElement('button');recover.type='button';recover.className='auth-button managed-approve';recover.textContent=`Recover ${recovery.profileName}`;
-      recover.addEventListener('click',()=>recoverLegacyAccount(profile,recovery,recover));actions.append(recover);
+      const recover=document.createElement('button');recover.type='button';recover.className='auth-button managed-approve';recover.textContent=`Copy ${recovery.profileName} Claim Link`;
+      recover.addEventListener('click',()=>copyRecoveryClaim(recovery));actions.append(recover);
     }else{
       const setup=document.createElement('a');setup.className='auth-button auth-button-secondary';setup.href=`profile-setup.html?adminProfile=${encodeURIComponent(profile.id)}`;setup.textContent='Review Account';actions.append(setup);
     }

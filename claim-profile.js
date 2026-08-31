@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { addDoc, collection, doc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { addDoc, collection, doc, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const params = new URLSearchParams(location.search);
 const legacyPage = params.get('page') || '';
@@ -15,6 +15,33 @@ const linkEmail = normalizeEmail(params.get('email') || '');
 
 const claimEmailOverrides = {
   'burning-time.html': 'kris@krishype.com'
+};
+
+const claimSeedOverrides = {
+  'burning-time.html': {
+    accountType: 'band',
+    displayName: 'Burning Time',
+    location: 'Maine',
+    genre: 'Rock / Metal',
+    bannerImageUrl: 'IMG_0389.jpeg',
+    imageUrl: 'IMG_5121.jpeg',
+    bio: 'Burning Time has been playing together since 2014 with a sound that has been described as heavy meets melodic rock. They have played in numerous venues with a wide variety of artists and have developed a loyal fan base. Whether performing for hundreds at local clubs or thousands at festivals, BT delivers an unforgettable performance and an experience that won\'t soon be forgotten! Their mission? Bring a unique sound to the world and to keep the spirit of rock alive!',
+    members: 'Kris Hype – Vocals/Guitar\nDan Aldrich – Drums\nDoug Waycott – Bass\nCarl Watson – Guitar\nJarred Desrochers – Guitar',
+    bookingEmail: 'kris@krishype.com',
+    website: 'https://www.burningtimemusic.com',
+    spotify: 'https://open.spotify.com/artist/4C2RKw1TtA1lgLTlI3tF0C?si=0gflAgIaSDiBs3sJthgSkw',
+    youtube: 'https://youtube.com/@burningtime?si=otLMdQiGU3VoS_Dr',
+    instagram: 'https://www.instagram.com/burningtimeband?igsh=MTJlajNkNzJ0YXlxOQ==',
+    facebook: 'https://www.facebook.com/share/1LnXNiU1Zt/?mibextid=wwXIfr',
+    mediaLink: 'https://www.youtube.com/watch?v=RyAK3AAX49g',
+    featuredTitle: 'Featured Release: “Hard to Follow”',
+    additionalMedia: [
+      { title: 'More Video 1', url: 'https://www.youtube.com/watch?v=o_a3zRmXjf0' },
+      { title: 'More Video 2', url: 'https://www.youtube.com/watch?v=mAAIqAtM9lU' },
+      { title: 'More Video 3', url: 'https://www.youtube.com/watch?v=Es5BP4jGlcc' },
+      { title: 'More Video 4', url: 'https://www.youtube.com/watch?v=hg3FNy3xgGo' }
+    ]
+  }
 };
 
 const status = document.getElementById('claim-status');
@@ -209,7 +236,15 @@ async function prepareLegacyProfile() {
   preparationPromise = (async () => {
     const override = normalizeEmail(claimEmailOverrides[pageKey()]);
     requiredEmail = override || linkEmail;
-    legacySeed = directoryFallbackSeed();
+    const rawSeedOverride = claimSeedOverrides[pageKey()];
+    const seedOverride = rawSeedOverride ? {
+      ...rawSeedOverride,
+      imageUrl: absoluteUrl(rawSeedOverride.imageUrl || '', location.href),
+      bannerImageUrl: absoluteUrl(rawSeedOverride.bannerImageUrl || '', location.href),
+      additionalMedia: Array.isArray(rawSeedOverride.additionalMedia) ? rawSeedOverride.additionalMedia.map(item => ({ ...item })) : [],
+      mediaItems: Array.isArray(rawSeedOverride.additionalMedia) ? rawSeedOverride.additionalMedia.map(item => ({ type: 'video', url: item.url, caption: item.title })) : []
+    } : {};
+    legacySeed = { ...directoryFallbackSeed(), ...seedOverride };
     legacyPageLoaded = false;
 
     try {
@@ -218,7 +253,7 @@ async function prepareLegacyProfile() {
       if (!response.ok) throw new Error(`Legacy page returned ${response.status}`);
       const html = await response.text();
       const extracted = extractLegacySeed(html, pageUrl);
-      legacySeed = { ...legacySeed, ...extracted.seed };
+      legacySeed = { ...legacySeed, ...extracted.seed, ...seedOverride };
       legacyPageLoaded = true;
       if (!requiredEmail) requiredEmail = extracted.email;
     } catch (error) {
@@ -334,8 +369,9 @@ claimButton.addEventListener('click', async () => {
   status.textContent = 'Connecting the existing profile to your account…';
   try {
     const profileData = buildProfileData();
-    await setDoc(doc(db, 'profiles', currentUser.uid), profileData);
-    await setDoc(doc(db, 'users', currentUser.uid), {
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'profiles', currentUser.uid), profileData);
+    batch.set(doc(db, 'users', currentUser.uid), {
       accountType: profileData.accountType,
       displayName: profileData.displayName,
       activeProfileId: currentUser.uid,
@@ -343,6 +379,7 @@ claimButton.addEventListener('click', async () => {
       claimedLegacyProfile: true,
       updatedAt: serverTimestamp()
     }, { merge: true });
+    await batch.commit();
     controls.hidden = true;
     status.innerHTML = `<strong>Profile claimed!</strong><br>${profileData.displayName} is now connected to your account. Loading your profile…`;
     setTimeout(() => { window.location.href = `profile.html?id=${encodeURIComponent(currentUser.uid)}`; }, 800);
