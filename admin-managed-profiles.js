@@ -28,7 +28,30 @@ const legacyAccountRecoveries={
     profileName:'Burning Time',
     accountType:'band',
     location:'Maine',
-    genre:'Rock / Metal'
+    genre:'Rock / Metal',
+    staticSeed:{
+      displayName:'Burning Time',
+      location:'Maine',
+      genre:'Rock / Metal',
+      bannerImageUrl:'IMG_0389.jpeg',
+      imageUrl:'IMG_5121.jpeg',
+      bio:'Burning Time has been playing together since 2014 with a sound that has been described as heavy meets melodic rock. They have played in numerous venues with a wide variety of artists and have developed a loyal fan base. Whether performing for hundreds at local clubs or thousands at festivals, BT delivers an unforgettable performance and an experience that won\'t soon be forgotten! Their mission? Bring a unique sound to the world and to keep the spirit of rock alive!',
+      members:'Kris Hype – Vocals/Guitar\nDan Aldrich – Drums\nDoug Waycott – Bass\nCarl Watson – Guitar\nJarred Desrochers – Guitar',
+      bookingEmail:'kris@krishype.com',
+      website:'https://www.burningtimemusic.com',
+      spotify:'https://open.spotify.com/artist/4C2RKw1TtA1lgLTlI3tF0C?si=0gflAgIaSDiBs3sJthgSkw',
+      youtube:'https://youtube.com/@burningtime?si=otLMdQiGU3VoS_Dr',
+      instagram:'https://www.instagram.com/burningtimeband?igsh=MTJlajNkNzJ0YXlxOQ==',
+      facebook:'https://www.facebook.com/share/1LnXNiU1Zt/?mibextid=wwXIfr',
+      mediaLink:'https://www.youtube.com/watch?v=RyAK3AAX49g',
+      featuredTitle:'Featured Release: “Hard to Follow”',
+      additionalMedia:[
+        {title:'More Video 1',url:'https://www.youtube.com/watch?v=o_a3zRmXjf0'},
+        {title:'More Video 2',url:'https://www.youtube.com/watch?v=mAAIqAtM9lU'},
+        {title:'More Video 3',url:'https://www.youtube.com/watch?v=Es5BP4jGlcc'},
+        {title:'More Video 4',url:'https://www.youtube.com/watch?v=hg3FNy3xgGo'}
+      ]
+    }
   }
 };
 
@@ -40,6 +63,15 @@ const cleanLocation=value=>String(value||'').replace(/^📍\s*(based in)?\s*/i,'
 const youtubeUrl=value=>{try{const url=new URL(value,location.href);if(url.hostname.includes('youtube.com')&&url.pathname.includes('/embed/')){const id=url.pathname.split('/embed/')[1]?.split('/')[0];return id?`https://www.youtube.com/watch?v=${id}`:value}}catch{}return value};
 
 async function buildLegacyRecoveryProfile(recovery){
+  if(recovery.staticSeed){
+    const seed={...recovery.staticSeed};
+    seed.accountType=recovery.accountType;
+    seed.bannerImageUrl=absoluteUrl(seed.bannerImageUrl,location.href);
+    seed.imageUrl=absoluteUrl(seed.imageUrl,location.href);
+    seed.additionalMedia=seed.additionalMedia.map(item=>({...item}));
+    seed.mediaItems=seed.additionalMedia.map(item=>({type:'video',url:item.url,caption:item.title}));
+    return seed;
+  }
   const pageUrl=absoluteUrl(recovery.legacyPage,location.href);
   const response=await fetch(`${pageUrl}${pageUrl.includes('?')?'&':'?'}recover=${Date.now()}`,{cache:'no-store'});
   if(!response.ok)throw new Error(`Legacy profile returned ${response.status}`);
@@ -118,8 +150,8 @@ async function recoverLegacyAccount(profile,recovery,button){
     alert(`${seed.displayName} is connected to ${profile.email} and published.`);
   }catch(error){
     console.error('Legacy account recovery failed:',error);
-    const code=error?.code?` (${error.code})`:'';
-    alert(`The legacy profile could not be recovered${code}. Nothing was partially published.`);
+    const detail=error?.code||error?.message||'';
+    alert(`The legacy profile could not be recovered${detail?` (${detail})`:''}. Nothing was partially published.`);
     button.disabled=false;
     button.textContent=originalLabel;
   }
