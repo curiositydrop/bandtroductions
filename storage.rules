@@ -24,6 +24,17 @@ service firebase.storage {
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Audition Room video submissions. Members may upload video only
+    // inside their own UID folder. Videos are capped at 150 MB.
+    match /auditions/{userId}/{fileName} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+                            && request.auth.uid == userId
+                            && request.resource.size < 150 * 1024 * 1024
+                            && request.resource.contentType.matches('video/.*');
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
     // BANDtroductions Radio submissions. Members can upload only inside
     // their own UID folder. Audio is capped at 25 MB and cover art at 10 MB.
     match /radio-submissions/{userId}/{fileName} {
