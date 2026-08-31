@@ -28,6 +28,7 @@ const status=document.getElementById('submitStatus');
 let currentUser=null;
 let currentProfile=null;
 let currentProfileId='';
+let canSubmitBandOpening=false;
 
 const clean=v=>String(v||'').trim();
 const safeName=name=>String(name||'video').replace(/[^a-z0-9._-]+/gi,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'video';
@@ -39,6 +40,12 @@ function splitLocation(raw){
 }
 function setStatus(message,error=false){status.textContent=message;status.classList.toggle('error',error)}
 function setType(type){
+  if(type==='band'&&!canSubmitBandOpening){
+    type='musician';
+    setStatus('Band openings can only be submitted from a BANDtroductions Band profile.',true);
+  }else if(status?.textContent?.includes('Band openings can only')){
+    setStatus('');
+  }
   typeSelect.value=type;
   musicianType.classList.toggle('active',type==='musician');
   bandType.classList.toggle('active',type==='band');
@@ -63,18 +70,26 @@ function populate(profile){
   state.value=clean(currentProfile.state||loc.state);
   genre.value=clean(currentProfile.genre||currentProfile.style);
   const accountType=clean(currentProfile.accountType).toLowerCase();
-  setType(accountType==='band'?'band':'musician');
-  gate.innerHTML=`<strong>Verified BANDtroductions member:</strong> ${displayName.value||currentUser.email}<br><span style="color:#9ca7a7">This submission will be linked to your existing profile.</span>`;
+  canSubmitBandOpening=accountType==='band';
+  const bandOption=typeSelect.querySelector('option[value="band"]');
+  if(bandOption)bandOption.disabled=!canSubmitBandOpening;
+  bandType.disabled=!canSubmitBandOpening;
+  bandType.setAttribute('aria-disabled',String(!canSubmitBandOpening));
+  bandType.title=canSubmitBandOpening?'Submit a band opening':'Band openings require a Band profile';
+  bandType.style.opacity=canSubmitBandOpening?'':'0.45';
+  bandType.style.cursor=canSubmitBandOpening?'':'not-allowed';
+  setType(canSubmitBandOpening?'band':'musician');
+  gate.innerHTML=`<strong>Verified BANDtroductions member:</strong> ${displayName.value||currentUser.email}<br><span style="color:#9ca7a7">${canSubmitBandOpening?'You can submit either a personal musician audition or a band opening.':'You can submit a personal musician audition. Band openings require a Band profile.'}</span>`;
   area.hidden=false;
 }
 
 musicianType.addEventListener('click',()=>setType('musician'));
-bandType.addEventListener('click',()=>setType('band'));
+bandType.addEventListener('click',()=>{if(canSubmitBandOpening)setType('band');else setStatus('Band openings can only be submitted from a BANDtroductions Band profile.',true)});
 typeSelect.addEventListener('change',()=>setType(typeSelect.value));
 videoFile.addEventListener('change',()=>{const file=videoFile.files?.[0];videoName.textContent=file?file.name:'No video selected';videoSize.textContent=file?formatBytes(file.size):''});
 
 onAuthStateChanged(auth,async user=>{
-  currentUser=user;currentProfile=null;currentProfileId='';area.hidden=true;
+  currentUser=user;currentProfile=null;currentProfileId='';canSubmitBandOpening=false;area.hidden=true;
   if(!user){gate.innerHTML='<strong>Members only.</strong><br>You must be logged into BANDtroductions to post in the Audition Room.<div style="margin-top:10px"><a href="login.html?returnTo=submit-audition.html">Log in</a> · <a href="signup.html?returnTo=submit-audition.html">Create a free profile</a></div>';return}
   try{
     const userSnap=await getDoc(doc(db,'users',user.uid));
@@ -93,9 +108,8 @@ form.addEventListener('submit',async event=>{
   if(!file.type.startsWith('video/')){setStatus('The audition upload must be a video file.',true);return}
   if(file.size>=150*1024*1024){setStatus('That video is over the 150 MB limit. Please choose a smaller clip.',true);return}
   const type=typeSelect.value;
-  const accountType=clean(currentProfile.accountType).toLowerCase();
-  if(accountType==='band'&&type!=='band'){setStatus('This BANDtroductions profile is a band profile. Choose “We’re a Band.”',true);return}
-  if(accountType==='musician'&&type!=='musician'){setStatus('This BANDtroductions profile is a musician profile. Choose “I’m a Musician.”',true);return}
+  if(type==='band'&&!canSubmitBandOpening){setStatus('Band openings can only be submitted from a BANDtroductions Band profile.',true);setType('musician');return}
+  if(type!=='musician'&&type!=='band'){setStatus('Please choose a valid Audition Room submission type.',true);return}
   submitButton.disabled=true;
   try{
     setStatus('Uploading your audition video…');
