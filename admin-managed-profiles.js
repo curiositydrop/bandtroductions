@@ -89,7 +89,6 @@ async function recoverLegacyAccount(profile,recovery,button){
     const seed=await buildLegacyRecoveryProfile(recovery);
     if(!seed.bio||!seed.imageUrl||!seed.bannerImageUrl)throw new Error('Legacy profile data was incomplete.');
     const now=serverTimestamp();
-    const claimRef=doc(collection(db,'profileClaims'));
     const batch=writeBatch(db);
     batch.set(doc(db,'profiles',ownerId),{
       ...seed,
@@ -114,27 +113,13 @@ async function recoverLegacyAccount(profile,recovery,button){
       claimedLegacyProfile:true,
       updatedAt:now
     },{merge:true});
-    batch.set(claimRef,{
-      claimantId:ownerId,
-      claimantEmail:normalizeEmail(profile.email),
-      profileName:seed.displayName,
-      accountType:seed.accountType,
-      legacyPage:recovery.legacyPage,
-      verificationMethod:'admin-recovery-email-match',
-      role:'Email-matched legacy profile owner',
-      proof:'Recovered by BANDtroductions Admin after the original claim submission did not persist.',
-      status:'approved',
-      submittedAt:now,
-      approvedAt:now,
-      approvedBy:auth.currentUser?.uid||'',
-      updatedAt:now
-    });
     await batch.commit();
     await createWelcomePost({profileId:ownerId,displayName:seed.displayName,accountType:seed.accountType});
     alert(`${seed.displayName} is connected to ${profile.email} and published.`);
   }catch(error){
     console.error('Legacy account recovery failed:',error);
-    alert('The legacy profile could not be recovered. Nothing was partially published.');
+    const code=error?.code?` (${error.code})`:'';
+    alert(`The legacy profile could not be recovered${code}. Nothing was partially published.`);
     button.disabled=false;
     button.textContent=originalLabel;
   }
