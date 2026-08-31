@@ -1,5 +1,5 @@
 import { auth, db } from './firebase-dev.js';
-import { addDoc, collection, doc, getDocs, query, serverTimestamp, setDoc, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { collection, doc, getDocs, query, serverTimestamp, where, writeBatch } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const params = new URLSearchParams(location.search);
 const legacyPage = params.get('page') || '';
@@ -68,8 +68,10 @@ button?.addEventListener('click', async event => {
       role: 'Email-matched legacy profile owner', proof: 'The signed-in account email matches the contact email stored on the legacy profile.',
       verificationMethod: 'matching-account-email', status: 'pending', submittedAt: serverTimestamp(), updatedAt: serverTimestamp()
     };
-    await addDoc(collection(db, 'profileClaims'), claimData);
-    await setDoc(doc(db, 'profiles', user.uid), {
+    const claimRef = doc(collection(db, 'profileClaims'));
+    const batch = writeBatch(db);
+    batch.set(claimRef, claimData);
+    batch.set(doc(db, 'profiles', user.uid), {
       ...legacySeed,
       ownerId: user.uid,
       accountType: legacySeed.accountType || accountType,
@@ -83,7 +85,7 @@ button?.addEventListener('click', async event => {
       submittedAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     }, { merge: true });
-    await setDoc(doc(db, 'users', user.uid), {
+    batch.set(doc(db, 'users', user.uid), {
       accountType: legacySeed.accountType || accountType,
       displayName: legacySeed.displayName || profileName,
       activeProfileId: user.uid,
@@ -91,6 +93,7 @@ button?.addEventListener('click', async event => {
       claimedLegacyProfile: true,
       updatedAt: serverTimestamp()
     }, { merge: true });
+    await batch.commit();
     controls.hidden = true;
     status.innerHTML = '<strong>Claim submitted.</strong><br>Your verified ownership request is now waiting in the BANDtroductions Admin queue. The profile will transfer only after approval.';
   } catch (error) {
