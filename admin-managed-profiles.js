@@ -27,7 +27,7 @@ const legacyAccountRecoveries={
 };
 const normalizeEmail=value=>String(value||'').trim().toLowerCase();
 function recoveryClaimUrl(recovery){
-  const params=new URLSearchParams({page:recovery.legacyPage,name:recovery.profileName,type:recovery.accountType,fresh:'owner-v1'});
+  const params=new URLSearchParams({page:recovery.legacyPage,name:recovery.profileName,type:recovery.accountType,fresh:'owner-v2'});
   return new URL(`claim-profile.html?${params}`,location.href).href;
 }
 async function copyRecoveryClaim(recovery){

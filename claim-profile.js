@@ -285,8 +285,8 @@ function buildSummary() {
 }
 
 function showSignedOutPrompt(message = '') {
-  const login = `login.html?returnTo=${encodeURIComponent(returnTo)}`;
-  const signup = `signup.html?returnTo=${encodeURIComponent(returnTo)}`;
+  const login = `login.html?flow=claim-v2&returnTo=${encodeURIComponent(returnTo)}`;
+  const signup = `signup.html?flow=claim-v2&returnTo=${encodeURIComponent(returnTo)}`;
   const intro = message ? `${message}<br>` : '';
   status.innerHTML = `${intro}Please <a href="${signup}">create an account</a>, or <a href="${login}">log in</a> if you already have one.`;
 }

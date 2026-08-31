@@ -34,6 +34,7 @@
     const safeReturn = requestedReturn && !requestedReturn.startsWith('//') && !requestedReturn.includes('://')
       ? requestedReturn
       : 'index.html';
+    const isClaimReturn = /^claim-profile\.html(?:\?|$)/i.test(safeReturn);
 
     const signupLink = document.getElementById('signup-link');
     if (requestedReturn) signupLink.href = `signup.html?returnTo=${encodeURIComponent(safeReturn)}`;
@@ -86,7 +87,7 @@
           ]);
           const userData = userSnapshot.exists() ? userSnapshot.data() : {};
           const profileComplete = userData.profileComplete === true && profileSnapshot.exists();
-          if (!profileComplete) {
+          if (!profileComplete && !isClaimReturn) {
             window.location.href = 'profile-setup.html?resume=1';
             return;
           }
