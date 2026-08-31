@@ -21,10 +21,12 @@ const samples=[
   {id:'sample-drums',name:'Sample Musician',instrument:'Drums',genre:'Rock',city:'Biddeford',state:'ME',sample:true},
   {id:'sample-bass',name:'Sample Musician',instrument:'Bass',genre:'Metal',city:'Saco',state:'ME',sample:true}
 ];
+const prophecyBase={id:'prophecy-fallback',type:'band',profileId:'',name:'Prophecy of Ash',instrument:'Vocalists',genre:'',city:'',state:'',notes:'',imageUrl:'',videoUrl:'',fallback:'POA'};
 
 const clean=value=>String(value||'').trim();
 const norm=value=>clean(value).toLowerCase();
 const uniqueSorted=values=>[...new Set(values.map(clean).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+const timeout=(promise,ms)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timed out')),ms))]);
 
 function fillSelect(select,values){
   while(select.options.length>1)select.remove(1);
@@ -59,6 +61,8 @@ function openModal(item){
     const sample=document.createElement('div');sample.className='sample-video';sample.innerHTML='<div><strong>Sample Audition Card</strong>This placeholder shows how real uploaded video auditions will appear here.</div>';modalVideo.appendChild(sample);modalProfile.style.display='none';
   }else if(item.videoUrl){
     const video=document.createElement('video');video.src=item.videoUrl;video.controls=true;video.autoplay=true;video.playsInline=true;video.preload='metadata';video.style.width='100%';video.style.height='100%';video.style.objectFit='contain';modalVideo.appendChild(video);modalProfile.href=`profile.html?id=${encodeURIComponent(item.profileId)}`;modalProfile.textContent=item.type==='band'?'VIEW BAND PROFILE →':'VIEW PROFILE →';modalProfile.style.display='inline-flex';
+  }else{
+    const notice=document.createElement('div');notice.className='sample-video';notice.innerHTML='<div><strong>Band Opening</strong>Performance video will appear here once the live submission is approved.</div>';modalVideo.appendChild(notice);modalProfile.style.display=item.profileId?'inline-flex':'none';if(item.profileId){modalProfile.href=`profile.html?id=${encodeURIComponent(item.profileId)}`;modalProfile.textContent='VIEW BAND PROFILE →'}
   }
   modalName.textContent=item.name;modalInstrument.textContent=item.type==='band'?`Looking for ${item.instrument}`:item.instrument;
   modalMeta.textContent=[item.genre,[item.city,item.state].filter(Boolean).join(', '),item.notes].filter(Boolean).join(' • ');
@@ -72,28 +76,39 @@ function applyFilters(){
   if(!shown&&musicianItems.length){const empty=document.createElement('div');empty.className='empty filtered-empty';empty.innerHTML='<strong>No matches.</strong>Try widening one of the filters.';grid.appendChild(empty)}
   resultCount.textContent=`${shown} audition${shown===1?'':'s'}`;
 }
-async function loadProphecyFallback(){
-  try{
-    const snap=await getDocs(query(collection(db,'profiles'),where('published','==',true)));
-    for(const d of snap.docs){const p=d.data();if(norm(p.displayName)==='prophecy of ash'){return {id:'prophecy-fallback',type:'band',profileId:d.id,name:'Prophecy of Ash',instrument:'Vocalists',genre:clean(p.genre),city:'',state:'',notes:'',imageUrl:p.imageUrl||p.avatarUrl||p.profileImage||'',videoUrl:'',fallback:'POA'}}
-  }catch(error){console.warn('Could not load Prophecy of Ash fallback profile',error)}
-  return {id:'prophecy-fallback',type:'band',profileId:'',name:'Prophecy of Ash',instrument:'Vocalists',genre:'',city:'',state:'',notes:'',imageUrl:'',videoUrl:'',fallback:'POA'};
-}
-async function load(){
-  let live=[];
-  try{
-    const snap=await getDocs(collection(db,'auditions'));
-    live=snap.docs.map(d=>({id:d.id,...d.data()})).filter(item=>item.published===true&&item.approved===true&&item.reviewStatus!=='rejected').map(item=>({id:item.id,type:item.type,name:clean(item.displayName)||'BANDtroductions Member',instrument:clean(item.role)||'Musician',genre:clean(item.genre),city:clean(item.city),state:clean(item.state),notes:clean(item.notes),imageUrl:clean(item.imageUrl),videoUrl:clean(item.videoUrl),profileId:item.profileId||''}));
-  }catch(error){console.warn('Live Audition Room collection is not readable yet.',error)}
-
-  const bands=live.filter(item=>item.type==='band');
-  musicianItems=live.filter(item=>item.type==='musician');
-  bandNeedGrid.replaceChildren();
-  if(bands.length){bands.forEach(item=>bandNeedGrid.appendChild(makeBandCard(item)))}else{bandNeedGrid.appendChild(makeBandCard(await loadProphecyFallback()))}
-
-  if(!musicianItems.length)musicianItems=[...samples];
+function renderMusicians(items){
+  musicianItems=items.length?items:[...samples];
   grid.replaceChildren();musicianItems.forEach(item=>grid.appendChild(makeMusicianCard(item)));
   fillSelect(stateFilter,uniqueSorted(musicianItems.map(a=>a.state)));fillSelect(genreFilter,uniqueSorted(musicianItems.map(a=>a.genre)));fillSelect(instrumentFilter,uniqueSorted(musicianItems.map(a=>a.instrument)));applyFilters();
+}
+function renderBands(items){
+  bandNeedGrid.replaceChildren();(items.length?items:[prophecyBase]).forEach(item=>bandNeedGrid.appendChild(makeBandCard(item)));
+}
+async function loadProphecyProfile(){
+  const snap=await timeout(getDocs(query(collection(db,'profiles'),where('published','==',true))),5000);
+  for(const d of snap.docs){const p=d.data();if(norm(p.displayName)==='prophecy of ash'){return {...prophecyBase,profileId:d.id,genre:clean(p.genre),imageUrl:p.imageUrl||p.avatarUrl||p.profileImage||''}}}
+  return prophecyBase;
+}
+async function loadLiveAuditions(){
+  const snap=await timeout(getDocs(collection(db,'auditions')),5000);
+  return snap.docs.map(d=>({id:d.id,...d.data()})).filter(item=>item.published===true&&item.approved===true&&item.reviewStatus!=='rejected').map(item=>({id:item.id,type:item.type,name:clean(item.displayName)||'BANDtroductions Member',instrument:clean(item.role)||'Musician',genre:clean(item.genre),city:clean(item.city),state:clean(item.state),notes:clean(item.notes),imageUrl:clean(item.imageUrl),videoUrl:clean(item.videoUrl),profileId:item.profileId||''}));
+}
+async function load(){
+  // Never leave the public page sitting on Loading while Firebase is unavailable.
+  renderBands([prophecyBase]);
+  renderMusicians(samples);
+
+  loadProphecyProfile().then(prophecy=>{if(!document.querySelector('.band-card video'))renderBands([prophecy])}).catch(error=>console.warn('Prophecy profile lookup unavailable.',error));
+
+  try{
+    const live=await loadLiveAuditions();
+    const bands=live.filter(item=>item.type==='band');
+    const musicians=live.filter(item=>item.type==='musician');
+    if(bands.length)renderBands(bands);else loadProphecyProfile().then(prophecy=>renderBands([prophecy])).catch(()=>{});
+    if(musicians.length)renderMusicians(musicians);
+  }catch(error){
+    console.warn('Live Audition Room collection is not readable yet; showing public sample cards.',error);
+  }
 }
 [stateFilter,genreFilter,instrumentFilter].forEach(el=>el?.addEventListener('change',applyFilters));cityFilter?.addEventListener('input',applyFilters);
 document.getElementById('modalClose')?.addEventListener('click',closeModal);document.getElementById('modalClose2')?.addEventListener('click',closeModal);modal?.addEventListener('click',e=>{if(e.target===modal)closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
