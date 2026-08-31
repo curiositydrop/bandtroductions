@@ -1,6 +1,7 @@
 const ADMIN_EMAIL = 'mbergeron79@gmail.com';
 const FORM_ENDPOINT = `https://formsubmit.co/ajax/${encodeURIComponent(ADMIN_EMAIL)}`;
 const ADMIN_REVIEW_URL = 'https://bandtroductions.com/admin.html';
+const AUDITION_REVIEW_URL = 'https://bandtroductions.com/admin-auditions.html';
 
 export async function sendAdminApprovalEmail({ kind = 'profile', name = 'New profile', accountType = '', submittedBy = '', details = '' } = {}) {
   const subject = kind === 'claim'
@@ -9,7 +10,9 @@ export async function sendAdminApprovalEmail({ kind = 'profile', name = 'New pro
       ? `BANDtroductions new account: ${name}`
       : kind === 'radio-sponsor'
         ? `BANDtroductions Radio sponsor request: ${name}`
-        : `BANDtroductions profile approval needed: ${name}`;
+        : kind === 'audition'
+          ? `BANDtroductions Audition Room approval: ${name}`
+          : `BANDtroductions profile approval needed: ${name}`;
 
   const intro = kind === 'claim'
     ? 'A profile ownership claim was submitted.'
@@ -17,8 +20,11 @@ export async function sendAdminApprovalEmail({ kind = 'profile', name = 'New pro
       ? 'A new BANDtroductions account was created.'
       : kind === 'radio-sponsor'
         ? 'A new BANDtroductions Radio sponsorship request was submitted.'
-        : 'A new profile is waiting for approval.';
+        : kind === 'audition'
+          ? 'A new Audition Room listing is waiting for approval.'
+          : 'A new profile is waiting for approval.';
 
+  const reviewUrl = kind === 'audition' ? AUDITION_REVIEW_URL : ADMIN_REVIEW_URL;
   const lines = [
     intro,
     '',
@@ -27,7 +33,7 @@ export async function sendAdminApprovalEmail({ kind = 'profile', name = 'New pro
     submittedBy ? `Submitted by: ${submittedBy}` : '',
     details ? `Details: ${details}` : '',
     '',
-    `Review BANDtroductions admin: ${ADMIN_REVIEW_URL}`
+    `Review BANDtroductions admin: ${reviewUrl}`
   ].filter(Boolean);
 
   try {
