@@ -90,8 +90,14 @@ async function loadProphecyProfile(){
   return prophecyBase;
 }
 async function loadLiveAuditions(){
-  const snap=await timeout(getDocs(collection(db,'auditions')),5000);
-  return snap.docs.map(d=>({id:d.id,...d.data()})).filter(item=>item.published===true&&item.approved===true&&item.reviewStatus!=='rejected').map(item=>({id:item.id,type:item.type,name:clean(item.displayName)||'BANDtroductions Member',instrument:clean(item.role)||'Musician',genre:clean(item.genre),city:clean(item.city),state:clean(item.state),notes:clean(item.notes),imageUrl:clean(item.imageUrl),videoUrl:clean(item.videoUrl),profileId:item.profileId||''}));
+  const liveQuery=query(
+    collection(db,'auditions'),
+    where('published','==',true),
+    where('approved','==',true),
+    where('reviewStatus','==','approved')
+  );
+  const snap=await timeout(getDocs(liveQuery),5000);
+  return snap.docs.map(d=>({id:d.id,...d.data()})).map(item=>({id:item.id,type:item.type,name:clean(item.displayName)||'BANDtroductions Member',instrument:clean(item.role)||'Musician',genre:clean(item.genre),city:clean(item.city),state:clean(item.state),notes:clean(item.notes),imageUrl:clean(item.imageUrl),videoUrl:clean(item.videoUrl),profileId:item.profileId||''}));
 }
 async function load(){
   // Never leave the public page sitting on Loading while Firebase is unavailable.
