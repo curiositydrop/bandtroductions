@@ -5,6 +5,43 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/f
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { isAdminAccount } from './admin-access.js';
 
+// Keep the homepage visually stable while its independent Firebase-driven panels resolve.
+(function stabilizeHomepagePaint(){
+  const style=document.createElement('style');
+  style.id='bt-home-stability';
+  style.textContent=`
+    .news-scroller-card{height:62px!important}
+    .header-logo{width:auto!important;height:135%!important}
+    html.bt-home-booting .grid{visibility:hidden!important}
+    @media(max-width:1000px){.news-scroller-card{height:46px!important}}
+    @media(max-width:650px){.news-scroller-card{height:36px!important}.header-logo{height:145%!important}}
+  `;
+  document.head.appendChild(style);
+  document.documentElement.classList.add('bt-home-booting');
+
+  let released=false;
+  const release=()=>{
+    if(released)return;
+    released=true;
+    document.documentElement.classList.remove('bt-home-booting');
+    observer.disconnect();
+  };
+  const ready=()=>{
+    const feed=document.querySelector('.feed');
+    const online=document.querySelector('.left .online');
+    if(!feed||!online)return false;
+    const feedText=(feed.textContent||'').toLowerCase();
+    const feedResolved=!feedText.includes('loading community');
+    const onlineResolved=online.querySelector('.online-card,.online-empty')!==null;
+    if(feedResolved&&onlineResolved){release();return true;}
+    return false;
+  };
+  const observer=new MutationObserver(ready);
+  observer.observe(document.documentElement,{subtree:true,childList:true,characterData:true});
+  document.addEventListener('DOMContentLoaded',ready,{once:true});
+  setTimeout(release,2500);
+})();
+
 const link=document.getElementById('messages-link');
 let unsub=null;
 
