@@ -64,12 +64,23 @@
   }
 })();
 
-fetch('global.html?v=8')
+fetch('global.html?v=9')
   .then(response => response.text())
   .then(async data => {
     const temp = document.createElement('div');temp.innerHTML = data;
     const header = temp.querySelector('#site-header'),footer = temp.querySelector('#site-footer'),headerTarget = document.getElementById('global-header'),footerTarget = document.getElementById('global-footer');
-    if (header && headerTarget) { headerTarget.innerHTML = header.innerHTML; await initializeAuthNavigation(); }
+    if (header && headerTarget) {
+      headerTarget.innerHTML = header.innerHTML;
+      const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+      const aliases={'':'index.html','submit-audition.html':'auditions.html','gear-detail.html':'gear-exchange.html','submit-gear.html':'gear-exchange.html','radio-submit.html':'radio.html'};
+      const active=aliases[current]||current;
+      headerTarget.querySelectorAll('.bt-nav a').forEach(link=>{
+        const isActive=(link.dataset.page||'').toLowerCase()===active;
+        link.classList.toggle('bt-active',isActive);
+        if(isActive)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
+      });
+      await initializeAuthNavigation();
+    }
     if (footer && footerTarget) footerTarget.innerHTML = footer.innerHTML;
   })
   .catch(error => console.error('Error loading global header/footer:', error));
