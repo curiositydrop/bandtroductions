@@ -2,12 +2,6 @@
   const target=document.getElementById('global-header');
   if(!target)return;
 
-  const guard=document.createElement('style');
-  guard.id='bt-global-header-paint-guard';
-  guard.textContent='html.bt-header-loading body{visibility:hidden!important}';
-  document.head.appendChild(guard);
-  document.documentElement.classList.add('bt-header-loading');
-
   try{
     const response=await fetch('global-header-v2.html?v=2');
     if(!response.ok)throw new Error(`Header request failed: ${response.status}`);
@@ -30,8 +24,5 @@
     });
   }catch(error){
     console.error('Could not load BANDtroductions global header.',error);
-  }finally{
-    document.documentElement.classList.remove('bt-header-loading');
-    guard.remove();
   }
 })();
