@@ -43,6 +43,21 @@ function syncAdminLink(user){
   menu.insertBefore(adminLink,logout||null);
 }
 
+function syncFeatureNav(){
+  const nav=document.querySelector('.sticky-header .nav');
+  if(!nav)return;
+  const sponsors=[...nav.querySelectorAll('a')].find(a=>a.textContent.trim().toUpperCase()==='SPONSORS');
+  if(!sponsors)return;
+  sponsors.href='auditions.html';
+  sponsors.textContent='AUDITION ROOM';
+  const sponsorLink=document.createElement('a');
+  sponsorLink.href='sponsors.html';
+  sponsorLink.textContent='SPONSORS';
+  nav.appendChild(sponsorLink);
+}
+
+syncFeatureNav();
+
 function stampMs(stamp){return stamp?.toMillis?stamp.toMillis():(stamp?.seconds?stamp.seconds*1000:0);}
 
 onAuthStateChanged(auth,user=>{
