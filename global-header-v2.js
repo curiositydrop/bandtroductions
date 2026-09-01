@@ -2,6 +2,14 @@
   const target=document.getElementById('global-header');
   if(!target)return;
 
+  // Reserve the final header footprint before injection so the dashboard is not shoved down.
+  if(window.matchMedia('(max-width:650px)').matches) target.style.minHeight='124px';
+  else if(window.matchMedia('(max-width:1000px)').matches) target.style.minHeight='170px';
+  else target.style.minHeight='150px';
+
+  // Older index markup may still carry the previous boot class; release it immediately.
+  document.documentElement.classList.remove('bt-home-booting');
+
   try{
     const response=await fetch('global-header-v2.html?v=2');
     if(!response.ok)throw new Error(`Header request failed: ${response.status}`);
