@@ -21,7 +21,6 @@ const samples=[
   {id:'sample-drums',name:'Sample Musician',instrument:'Drums',genre:'Rock',city:'Biddeford',state:'ME',sample:true},
   {id:'sample-bass',name:'Sample Musician',instrument:'Bass',genre:'Metal',city:'Saco',state:'ME',sample:true}
 ];
-const prophecyBase={id:'prophecy-fallback',type:'band',profileId:'',name:'Prophecy of Ash',instrument:'Vocalists',genre:'',city:'',state:'',notes:'',imageUrl:'',videoUrl:'',fallback:'POA'};
 
 const clean=value=>String(value||'').trim();
 const norm=value=>clean(value).toLowerCase();
@@ -52,7 +51,7 @@ function makeMusicianCard(item){
 function makeBandCard(item){
   const button=document.createElement('button');button.type='button';button.className='band-card';button.style.padding='0';button.style.textAlign='left';button.style.cursor='pointer';
   const avatar=document.createElement('div');avatar.className='band-avatar';
-  if(item.imageUrl){const img=document.createElement('img');img.src=item.imageUrl;img.alt=item.name;img.loading='lazy';avatar.appendChild(img)}else avatar.textContent=item.fallback||'BAND';
+  if(item.imageUrl){const img=document.createElement('img');img.src=item.imageUrl;img.alt=item.name;img.loading='lazy';avatar.appendChild(img)}else avatar.textContent='BAND';
   const copy=document.createElement('div');copy.className='band-copy';const name=document.createElement('strong');name.textContent=item.name;const need=document.createElement('span');need.textContent=`Looking for ${item.instrument}`;copy.append(name,need);button.append(avatar,copy);button.addEventListener('click',()=>openModal(item));return button;
 }
 function openModal(item){
@@ -82,12 +81,11 @@ function renderMusicians(items){
   fillSelect(stateFilter,uniqueSorted(musicianItems.map(a=>a.state)));fillSelect(genreFilter,uniqueSorted(musicianItems.map(a=>a.genre)));fillSelect(instrumentFilter,uniqueSorted(musicianItems.map(a=>a.instrument)));applyFilters();
 }
 function renderBands(items){
-  bandNeedGrid.replaceChildren();(items.length?items:[prophecyBase]).forEach(item=>bandNeedGrid.appendChild(makeBandCard(item)));
-}
-async function loadProphecyProfile(){
-  const snap=await timeout(getDocs(query(collection(db,'profiles'),where('published','==',true))),5000);
-  for(const d of snap.docs){const p=d.data();if(norm(p.displayName)==='prophecy of ash'){return {...prophecyBase,profileId:d.id,genre:clean(p.genre),imageUrl:p.imageUrl||p.avatarUrl||p.profileImage||''}}}
-  return prophecyBase;
+  bandNeedGrid.replaceChildren();
+  if(!items.length){
+    const empty=document.createElement('div');empty.className='empty';empty.innerHTML='<strong>No band openings yet.</strong><br>Approved band submissions will appear here.';bandNeedGrid.appendChild(empty);return;
+  }
+  items.forEach(item=>bandNeedGrid.appendChild(makeBandCard(item)));
 }
 async function loadLiveAuditions(){
   const liveQuery=query(
@@ -101,16 +99,14 @@ async function loadLiveAuditions(){
 }
 async function load(){
   // Never leave the public page sitting on Loading while Firebase is unavailable.
-  renderBands([prophecyBase]);
+  renderBands([]);
   renderMusicians(samples);
-
-  loadProphecyProfile().then(prophecy=>{if(!document.querySelector('.band-card video'))renderBands([prophecy])}).catch(error=>console.warn('Prophecy profile lookup unavailable.',error));
 
   try{
     const live=await loadLiveAuditions();
     const bands=live.filter(item=>item.type==='band');
     const musicians=live.filter(item=>item.type==='musician');
-    if(bands.length)renderBands(bands);else loadProphecyProfile().then(prophecy=>renderBands([prophecy])).catch(()=>{});
+    renderBands(bands);
     if(musicians.length)renderMusicians(musicians);
   }catch(error){
     console.warn('Live Audition Room collection is not readable yet; showing public sample cards.',error);
