@@ -84,16 +84,18 @@ function setImage(avatar,src,alt,profileId){
 }
 
 function setProfileLink(nameEl,profileId){
-  if(!nameEl||!profileId)return;
+  if(!nameEl||!profileId||nameEl.dataset.profileLinked==='1')return;
   const href=`profile.html?id=${encodeURIComponent(profileId)}`;
   if(nameEl.tagName==='A'){
     nameEl.href=href;
+    nameEl.dataset.profileLinked='1';
     return;
   }
   const link=document.createElement('a');
   link.className=nameEl.className;
   link.textContent=nameEl.textContent;
   link.href=href;
+  link.dataset.profileLinked='1';
   nameEl.replaceWith(link);
 }
 
@@ -120,32 +122,52 @@ function ensureYouTube(card,post){
   if(actions)actions.insertAdjacentElement('beforebegin',box);else card.appendChild(box);
 }
 
-async function apply(posts){
-  const visible=posts.filter(p=>p.published!==false);
-  await Promise.all(visible.map(async(post,index)=>{
-    const card=findCard(post,index);if(!card)return;
-    ensureYouTube(card,post);
-    const avatar=card.querySelector('.post-avatar');const nameEl=card.querySelector('.post-name');if(!avatar)return;
-    if(isWelcomePost(post)){
-      if(nameEl)nameEl.textContent='BANDtroductions Admin';
-      const admin=await adminProfile();
-      const src=imageFor(admin)||post.adminAvatarUrl||'';
-      if(src)setImage(avatar,src,'BANDtroductions Admin',admin?.id||'');
-      else if(!avatar.querySelector('img'))avatar.textContent='BT';
-      setProfileLink(nameEl,admin?.id||'');
-      return;
-    }
-    const uid=authorId(post);const data=await profile(uid,post.authorName||'');
-    const profileId=data?.id||uid;
-    const src=imageFor(data)||post.authorAvatarUrl||post.authorImageUrl||post.authorPhotoUrl||post.authorPhotoURL||post.avatarUrl||post.imageUrlAuthor||'';
-    if(src)setImage(avatar,src,post.authorName||'Profile avatar',profileId);
-    setProfileLink(nameEl,profileId);
-  }));
+async function decorateCard(post,index){
+  const card=findCard(post,index);if(!card||card.dataset.profileDecorated==='1')return false;
+  ensureYouTube(card,post);
+  const avatar=card.querySelector('.post-avatar');const nameEl=card.querySelector('.post-name');if(!avatar)return false;
+  if(isWelcomePost(post)){
+    if(nameEl)nameEl.textContent='BANDtroductions Admin';
+    const admin=await adminProfile();
+    const src=imageFor(admin)||post.adminAvatarUrl||'';
+    if(src)setImage(avatar,src,'BANDtroductions Admin',admin?.id||'');
+    else if(!avatar.querySelector('img'))avatar.textContent='BT';
+    setProfileLink(nameEl,admin?.id||'');
+    card.dataset.profileDecorated='1';
+    return true;
+  }
+  const uid=authorId(post);const data=await profile(uid,post.authorName||'');
+  const profileId=data?.id||uid;
+  const src=imageFor(data)||post.authorAvatarUrl||post.authorImageUrl||post.authorPhotoUrl||post.authorPhotoURL||post.avatarUrl||post.imageUrlAuthor||'';
+  if(src)setImage(avatar,src,post.authorName||'Profile avatar',profileId);
+  setProfileLink(nameEl,profileId);
+  card.dataset.profileDecorated='1';
+  return true;
 }
 
-function scheduleApply(posts){[250,1000].forEach(delay=>setTimeout(()=>apply(posts),delay));}
+async function apply(posts){
+  const visible=posts.filter(p=>p.published!==false);
+  await Promise.all(visible.map((post,index)=>decorateCard(post,index)));
+}
+
+let latestPosts=[];
+let applyQueued=false;
+function queueApply(){
+  if(applyQueued)return;
+  applyQueued=true;
+  requestAnimationFrame(()=>{
+    applyQueued=false;
+    apply(latestPosts).catch(error=>console.warn('Dashboard post decoration skipped.',error));
+  });
+}
+
+const feed=document.querySelector('.feed');
+if(feed){
+  const observer=new MutationObserver(queueApply);
+  observer.observe(feed,{childList:true,subtree:true});
+}
 
 onSnapshot(collection(db,'posts'),snap=>{
-  const posts=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{const diff=postMs(b)-postMs(a);return diff||String(a.id).localeCompare(String(b.id));});
-  scheduleApply(posts);
+  latestPosts=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{const diff=postMs(b)-postMs(a);return diff||String(a.id).localeCompare(String(b.id));});
+  queueApply();
 },error=>console.warn('Could not decorate dashboard posts.',error));
