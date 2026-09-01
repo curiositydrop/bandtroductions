@@ -5,60 +5,6 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/f
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { isAdminAccount } from './admin-access.js';
 
-// Keep the homepage visually stable while its independent Firebase-driven panels resolve.
-(function stabilizeHomepagePaint(){
-  const style=document.createElement('style');
-  style.id='bt-home-stability';
-  style.textContent=`
-    html.bt-home-booting .grid{visibility:hidden!important}
-  `;
-  document.head.appendChild(style);
-  document.documentElement.classList.add('bt-home-booting');
-
-  let released=false;
-  let stableSince=0;
-  const release=()=>{
-    if(released)return;
-    released=true;
-    document.documentElement.classList.remove('bt-home-booting');
-    observer.disconnect();
-    clearInterval(stabilityTimer);
-  };
-  const dashboardReady=()=>{
-    const feed=document.querySelector('.feed');
-    const shows=[...document.querySelectorAll('.right .panel')].find(panel=>panel.querySelector('h3')?.textContent.trim()==='Upcoming Shows');
-    const online=document.querySelector('.left .online');
-    const profile=document.querySelector('.left .menu');
-    const sponsors=document.querySelector('.left .sponsors');
-    const radio=document.querySelector('.right .radio-panel');
-    if(!feed||!shows||!online||!profile||!sponsors||!radio)return false;
-
-    const pageText=(document.querySelector('.grid')?.textContent||'').toLowerCase();
-    const placeholdersGone=!pageText.includes('loading live community feed')
-      && !pageText.includes('loading show/event posts')
-      && !pageText.includes('connecting to bandtroductions social');
-    const feedResolved=!/loading live community feed/i.test(feed.textContent||'');
-    const showsResolved=!/loading show\/event posts/i.test(shows.textContent||'');
-    const profileResolved=Boolean(profile.querySelector('.dashboard-profile-summary:not([hidden])')) || !document.querySelector('.dashboard-profile-summary');
-    const onlineResolved=online.children.length>0;
-    const sponsorsResolved=sponsors.children.length>0;
-    const radioResolved=!/no remorse\s*lethal creed/i.test((radio.textContent||'').replace(/\s+/g,' '));
-
-    return placeholdersGone&&feedResolved&&showsResolved&&profileResolved&&onlineResolved&&sponsorsResolved&&radioResolved;
-  };
-  const checkStable=()=>{
-    if(!dashboardReady()){stableSince=0;return false;}
-    if(!stableSince)stableSince=Date.now();
-    if(Date.now()-stableSince>=350){release();return true;}
-    return false;
-  };
-  const observer=new MutationObserver(checkStable);
-  observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,characterData:true});
-  document.addEventListener('DOMContentLoaded',checkStable,{once:true});
-  const stabilityTimer=setInterval(checkStable,100);
-  setTimeout(release,4000);
-})();
-
 const link=document.getElementById('messages-link');
 let unsub=null;
 
