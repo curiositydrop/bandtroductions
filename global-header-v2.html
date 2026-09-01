@@ -1,29 +1,29 @@
 <div id="bt-global-header-component">
   <style>
     #global-header{width:100%;max-width:1500px;margin:0 auto;padding:12px;box-sizing:border-box;background:transparent}
-    #bt-global-header-component{--bt-bg:#090a0a;--bt-line:#343838;--bt-teal:#25c7c1;--bt-text:#eee;font-family:Arial,Helvetica,sans-serif;color:var(--bt-text)}
+    #bt-global-header-component{--bt-bg:#090a0a;--bt-line:#343838;--bt-teal:#25c7c1;--bt-text:#eee;font-family:Arial,Helvetica,sans-serif;color:var(--bt-text);text-align:left}
     #bt-global-header-component *{box-sizing:border-box}
-    #bt-global-header-component .bt-sticky-header{position:sticky;top:0;z-index:1000;background:var(--bt-bg);box-shadow:0 8px 18px rgba(0,0,0,.55)}
-    #bt-global-header-component .bt-top{border:1px solid var(--bt-line);background:#080909;padding:14px 16px;display:grid;grid-template-columns:1fr 420px;gap:16px;align-items:center}
-    #bt-global-header-component .bt-brand-block{display:flex;align-items:center;gap:12px;min-width:0;text-decoration:none;color:#fff}
+    #bt-global-header-component .bt-sticky-header{display:block;position:sticky;top:0;z-index:1000;margin:0;padding:0;text-align:left;background:var(--bt-bg);box-shadow:0 8px 18px rgba(0,0,0,.55)}
+    #bt-global-header-component .bt-top{margin:0;border:1px solid var(--bt-line);background:#080909;padding:14px 16px;display:grid;grid-template-columns:1fr 420px;gap:16px;align-items:center;text-align:left}
+    #bt-global-header-component .bt-brand-block{display:flex;align-items:center;gap:12px;min-width:0;margin:0;text-decoration:none;color:#fff;text-align:left}
     #bt-global-header-component .bt-header-logo-frame{width:64px;height:64px;overflow:hidden;display:flex;align-items:center;justify-content:flex-start;flex:none}
-    #bt-global-header-component .bt-header-logo{height:135%;width:auto;max-width:none;object-fit:contain;object-position:left center;display:block}
-    #bt-global-header-component .bt-brand-copy{min-width:0}
-    #bt-global-header-component .bt-brand{font-size:clamp(28px,4vw,58px);font-weight:900;letter-spacing:-2px;white-space:nowrap}
+    #bt-global-header-component .bt-header-logo{height:135%;width:auto;max-width:none;object-fit:contain;object-position:left center;display:block;margin:0}
+    #bt-global-header-component .bt-brand-copy{display:block;min-width:0;text-align:left}
+    #bt-global-header-component .bt-brand{display:block;font-size:clamp(28px,4vw,58px);font-weight:900;letter-spacing:-2px;white-space:nowrap;line-height:1.05}
     #bt-global-header-component .bt-brand span{color:var(--bt-teal)}
     #bt-global-header-component .bt-social-badge{font-size:.42em;border:2px solid var(--bt-teal);padding:3px 6px;transform:rotate(-4deg);display:inline-block}
-    #bt-global-header-component .bt-tag{color:var(--bt-teal);font-weight:800}
-    #bt-global-header-component .bt-news-card{height:62px;border:1px solid var(--bt-line);background:#0e1010;display:grid;grid-template-columns:82px minmax(0,1fr);overflow:hidden}
+    #bt-global-header-component .bt-tag{display:block;margin-top:3px;color:var(--bt-teal);font-weight:800;line-height:1.15;text-align:left}
+    #bt-global-header-component .bt-news-card{height:62px;margin:0;border:1px solid var(--bt-line);background:#0e1010;display:grid;grid-template-columns:82px minmax(0,1fr);overflow:hidden}
     #bt-global-header-component .bt-news-label{display:grid;place-items:center;text-align:center;background:var(--bt-teal);color:#06100f;font-size:12px;font-weight:950;line-height:.95;letter-spacing:.04em}
     #bt-global-header-component .bt-news-wrap{overflow:hidden;display:flex;align-items:center;min-width:0}
     #bt-global-header-component .bt-news-track{display:flex;width:max-content;animation:btNewsScroll 34s linear infinite;will-change:transform}
     #bt-global-header-component .bt-news-group{display:flex;align-items:center;gap:32px;padding:0 16px;white-space:nowrap;font-size:12px;font-weight:800}
-    #bt-global-header-component .bt-news-group span{color:#ddd}
-    #bt-global-header-component .bt-news-group a{color:var(--bt-teal);text-decoration:none}
+    #bt-global-header-component .bt-news-group span{color:#ddd;margin:0}
+    #bt-global-header-component .bt-news-group a{color:var(--bt-teal);text-decoration:none;margin:0;padding:0;font-size:inherit}
     #bt-global-header-component .bt-news-group a:hover{text-decoration:underline}
     @keyframes btNewsScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-    #bt-global-header-component .bt-nav{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid rgba(37,199,193,.42);border-top:0;background:#0c0d0d}
-    #bt-global-header-component .bt-nav a{padding:12px 8px;text-align:center;color:#ddd;text-decoration:none;border-right:1px solid rgba(37,199,193,.42);border-bottom:1px solid rgba(37,199,193,.42);font-weight:800;font-size:13px}
+    #bt-global-header-component .bt-nav{display:grid!important;grid-template-columns:repeat(5,1fr);align-items:stretch;justify-content:stretch;gap:0!important;flex-wrap:nowrap!important;margin:0!important;padding:0!important;border:1px solid rgba(37,199,193,.42);border-top:0;background:#0c0d0d}
+    #bt-global-header-component .bt-nav a{display:block;margin:0!important;padding:12px 8px;text-align:center;color:#ddd;text-decoration:none;border:0;border-right:1px solid rgba(37,199,193,.42);border-bottom:1px solid rgba(37,199,193,.42);border-radius:0;font-weight:800;font-size:13px;line-height:1.2}
     #bt-global-header-component .bt-nav a.bt-active{background:var(--bt-teal);color:#051111}
     #bt-global-header-component .bt-nav .bt-merch-highlight{position:relative;z-index:1;color:#effffd;background:rgba(37,199,193,.12);animation:btMerchPulse 1.8s ease-in-out infinite}
     #bt-global-header-component .bt-nav .bt-merch-highlight.bt-active{background:var(--bt-teal);color:#051111;animation:none}
@@ -41,7 +41,7 @@
       #bt-global-header-component .bt-header-logo-frame{width:31px;height:31px}
       #bt-global-header-component .bt-header-logo{height:145%}
       #bt-global-header-component .bt-brand{font-size:24px;letter-spacing:-1px}
-      #bt-global-header-component .bt-tag{font-size:10px}
+      #bt-global-header-component .bt-tag{font-size:10px;margin-top:2px}
       #bt-global-header-component .bt-news-card{height:36px;grid-template-columns:52px minmax(0,1fr)}
       #bt-global-header-component .bt-news-label{font-size:8px;line-height:.9}
       #bt-global-header-component .bt-news-group{font-size:8.5px;gap:18px;padding:0 10px}
