@@ -64,13 +64,15 @@
   }
 })();
 
-fetch('global.html?v=9')
-  .then(response => response.text())
-  .then(async data => {
-    const temp = document.createElement('div');temp.innerHTML = data;
-    const header = temp.querySelector('#site-header'),footer = temp.querySelector('#site-footer'),headerTarget = document.getElementById('global-header'),footerTarget = document.getElementById('global-footer');
-    if (header && headerTarget) {
-      headerTarget.innerHTML = header.innerHTML;
+Promise.all([
+  fetch('global-header-v2.html?v=1',{cache:'no-cache'}).then(response=>{if(!response.ok)throw new Error(`Header request failed: ${response.status}`);return response.text();}),
+  fetch('global.html?v=10',{cache:'no-cache'}).then(response=>{if(!response.ok)throw new Error(`Footer request failed: ${response.status}`);return response.text();})
+])
+  .then(async ([headerHtml,footerHtml]) => {
+    const headerTarget=document.getElementById('global-header');
+    const footerTarget=document.getElementById('global-footer');
+    if(headerTarget){
+      headerTarget.innerHTML=headerHtml;
       const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
       const aliases={'':'index.html','submit-audition.html':'auditions.html','gear-detail.html':'gear-exchange.html','submit-gear.html':'gear-exchange.html','radio-submit.html':'radio.html'};
       const active=aliases[current]||current;
@@ -81,7 +83,11 @@ fetch('global.html?v=9')
       });
       await initializeAuthNavigation();
     }
-    if (footer && footerTarget) footerTarget.innerHTML = footer.innerHTML;
+    if(footerTarget){
+      const temp=document.createElement('div');temp.innerHTML=footerHtml;
+      const footer=temp.querySelector('#site-footer');
+      if(footer)footerTarget.innerHTML=footer.innerHTML;
+    }
   })
   .catch(error => console.error('Error loading global header/footer:', error));
 
