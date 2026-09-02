@@ -2,17 +2,23 @@ import './account-onboarding-repair.js?v=2';
 import './pwa-notifications.js?v=1';
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { collection, getDocs, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { isAdminAccount } from './admin-access.js';
 
-const link=document.getElementById('messages-link');
-let unsub=null;
+const messagesLink=document.getElementById('messages-link');
+const notificationsLink=[...document.querySelectorAll('.left .menu a')].find(a=>new URL(a.href,location.href).pathname.endsWith('/notifications.html'))||null;
+let messageUnsub=null;
+let notificationUnsubs=[];
+let authGeneration=0;
+let unreadMessages=0;
+let unreadNotifications=0;
 
-function publishUnreadCount(count){
-  window.dispatchEvent(new CustomEvent('bt:pwa-unread-count',{detail:{count:Math.max(0,Number(count)||0)}}));
+function publishUnreadCount(){
+  const count=unreadMessages+unreadNotifications;
+  window.dispatchEvent(new CustomEvent('bt:pwa-unread-count',{detail:{count}}));
 }
 
-function ensureBadge(){
+function ensureBadge(link){
   if(!link)return null;
   let badge=link.querySelector('.menu-count');
   if(!badge){
@@ -22,6 +28,13 @@ function ensureBadge(){
     link.appendChild(badge);
   }
   return badge;
+}
+
+function updateBadge(link,badge,count,label){
+  if(!badge)return;
+  badge.textContent=String(count);
+  badge.style.display=count?'inline-block':'none';
+  link.title=count?`${count} unread ${label}${count===1?'':'s'}`:label[0].toUpperCase()+label.slice(1)+'s';
 }
 
 function syncAdminLink(user){
@@ -45,12 +58,39 @@ function syncAdminLink(user){
 
 function stampMs(stamp){return stamp?.toMillis?stamp.toMillis():(stamp?.seconds?stamp.seconds*1000:0);}
 
-onAuthStateChanged(auth,user=>{
+function clearListeners(){
+  if(messageUnsub){messageUnsub();messageUnsub=null;}
+  notificationUnsubs.forEach(unsub=>unsub());
+  notificationUnsubs=[];
+}
+
+async function notificationRecipientIds(user){
+  const recipients=new Set([user.uid]);
+  const ownedProfiles=await getDocs(query(collection(db,'profiles'),where('ownerId','==',user.uid)));
+  ownedProfiles.docs.forEach(docSnap=>recipients.add(docSnap.id));
+  if(isAdminAccount(user)){
+    const [adminProfiles,adminPosts]=await Promise.all([
+      getDocs(query(collection(db,'profiles'),where('isAdmin','==',true))),
+      getDocs(query(collection(db,'posts'),where('authorName','==','BANDtroductions Admin')))
+    ]);
+    adminProfiles.docs.forEach(docSnap=>recipients.add(docSnap.id));
+    adminPosts.docs.forEach(docSnap=>{const authorId=docSnap.data().authorId;if(authorId)recipients.add(authorId);});
+  }
+  return [...recipients].slice(0,30);
+}
+
+onAuthStateChanged(auth,async user=>{
+  const generation=++authGeneration;
   syncAdminLink(user);
-  if(unsub){unsub();unsub=null;}
-  const badge=ensureBadge();
-  if(!user){if(badge)badge.remove();publishUnreadCount(0);return;}
-  unsub=onSnapshot(collection(db,'messageInboxes',user.uid,'items'),snap=>{
+  clearListeners();
+  unreadMessages=0;
+  unreadNotifications=0;
+  const messageBadge=ensureBadge(messagesLink);
+  const notificationBadge=ensureBadge(notificationsLink);
+  if(!user){messageBadge?.remove();notificationBadge?.remove();publishUnreadCount();return;}
+
+  messageUnsub=onSnapshot(collection(db,'messageInboxes',user.uid,'items'),snap=>{
+    if(generation!==authGeneration)return;
     let unread=0;
     snap.docs.forEach(d=>{
       const row=d.data();
@@ -59,13 +99,36 @@ onAuthStateChanged(auth,user=>{
       const sender=row.lastSenderId||'';
       if(updated>read&&sender&&sender!==user.uid)unread++;
     });
-    publishUnreadCount(unread);
-    if(!badge)return;
-    badge.textContent=String(unread);
-    badge.style.display=unread?'inline-block':'none';
-    link.title=unread?`${unread} unread conversation${unread===1?'':'s'}`:'Messages';
-  },error=>{console.warn('Unread message count unavailable.',error);if(badge)badge.style.display='none';});
+    unreadMessages=unread;
+    updateBadge(messagesLink,messageBadge,unread,'conversation');
+    publishUnreadCount();
+  },error=>{console.warn('Unread message count unavailable.',error);unreadMessages=0;if(messageBadge)messageBadge.style.display='none';publishUnreadCount();});
+
+  try{
+    const recipientIds=await notificationRecipientIds(user);
+    if(generation!==authGeneration)return;
+    const chunks=[];
+    for(let i=0;i<recipientIds.length;i+=10)chunks.push(recipientIds.slice(i,i+10));
+    const snapshots=new Array(chunks.length);
+    notificationUnsubs=chunks.map((ids,index)=>{
+      const notificationsQuery=ids.length===1
+        ?query(collection(db,'notifications'),where('recipientId','==',ids[0]))
+        :query(collection(db,'notifications'),where('recipientId','in',ids));
+      return onSnapshot(notificationsQuery,snap=>{
+        if(generation!==authGeneration)return;
+        snapshots[index]=snap;
+        const merged=new Map();
+        snapshots.filter(Boolean).forEach(snapshot=>snapshot.docs.forEach(d=>merged.set(d.id,d.data())));
+        unreadNotifications=[...merged.values()].filter(item=>item.read!==true).length;
+        updateBadge(notificationsLink,notificationBadge,unreadNotifications,'notification');
+        publishUnreadCount();
+      },error=>{console.warn('Unread notification count unavailable.',error);if(notificationBadge)notificationBadge.style.display='none';});
+    });
+  }catch(error){
+    console.warn('Unread notification count unavailable.',error);
+    if(notificationBadge)notificationBadge.style.display='none';
+  }
 });
 
-// Load the No-App App help UI independently so it cannot interfere with message counts.
+// Load the No-App App help UI independently so it cannot interfere with dashboard counts.
 import('./no-app-app-help.js?v=2').catch(error=>console.warn('No-App App help unavailable.',error));
