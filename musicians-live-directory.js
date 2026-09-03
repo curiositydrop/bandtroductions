@@ -1,6 +1,115 @@
 import { db } from './firebase-dev.js';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
+function applyDirectoryCardLayout(){
+  if(document.getElementById('bt-directory-card-layout'))return;
+  const style=document.createElement('style');
+  style.id='bt-directory-card-layout';
+  style.textContent=`
+    .musician-directory{padding:34px 18px 50px}
+    .musician-directory .profile-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:18px;
+      width:min(1180px,100%);
+      margin:0 auto;
+      align-items:stretch;
+    }
+    .musician-directory .profile-card{
+      box-sizing:border-box;
+      width:auto;
+      min-width:0;
+      height:100%;
+      padding:0 0 18px;
+      margin:0;
+      display:flex;
+      flex-direction:column;
+      background:#0d1010;
+      border:1px solid #343b3b;
+      border-radius:2px;
+      overflow:hidden;
+      box-shadow:0 12px 30px rgba(0,0,0,.18);
+    }
+    .musician-directory .profile-card > img{
+      display:block;
+      width:100%;
+      height:auto;
+      aspect-ratio:1 / 1;
+      object-fit:cover;
+      object-position:center;
+      background:#171b1b;
+      margin:0 0 16px;
+      border:0;
+    }
+    .musician-directory .profile-card:not(:has(> img))::before{
+      content:'BANDtroductions';
+      display:grid;
+      place-items:center;
+      width:100%;
+      aspect-ratio:1 / 1;
+      background:radial-gradient(circle at 50% 38%,#183a3a 0,#111 55%,#080909 100%);
+      color:#27d6d6;
+      font-weight:900;
+      letter-spacing:.08em;
+      font-size:clamp(9px,1.4vw,18px);
+    }
+    .musician-directory .profile-card > h3,
+    .musician-directory .profile-card .band-info h3{
+      margin:0 14px 8px;
+      font-size:clamp(15px,2vw,27px);
+      line-height:1.12;
+      text-align:center;
+      color:#fff;
+    }
+    .musician-directory .profile-card > p,
+    .musician-directory .profile-card .band-info p{
+      margin:3px 14px;
+      font-size:clamp(11px,1.25vw,16px);
+      line-height:1.3;
+      color:#d5dddd;
+      text-align:center;
+    }
+    .musician-directory .profile-card > p:nth-of-type(n+3){display:none}
+    .musician-directory .profile-card .button{
+      margin:auto 12px 0;
+      padding:12px 4px 2px;
+      background:transparent;
+      color:#25d7d7;
+      border:0;
+      border-radius:0;
+      box-shadow:none;
+      font-size:clamp(11px,1.4vw,17px);
+      font-weight:900;
+      line-height:1.15;
+      text-decoration:none;
+      text-transform:uppercase;
+      text-align:center;
+    }
+    .musician-directory .profile-card .button::after{content:' →'}
+    .musician-directory .profile-card .band-actions{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      margin-top:auto;
+    }
+    .musician-directory .profile-card .band-actions .button{margin:0 8px}
+    @media (max-width:700px){
+      .musician-directory{padding:22px 6px 36px}
+      .musician-directory .profile-grid{gap:6px}
+      .musician-directory .profile-card{padding-bottom:9px}
+      .musician-directory .profile-card > img{margin-bottom:9px}
+      .musician-directory .profile-card > h3,
+      .musician-directory .profile-card .band-info h3{margin:0 5px 5px;font-size:clamp(11px,3.5vw,15px)}
+      .musician-directory .profile-card > p,
+      .musician-directory .profile-card .band-info p{margin:2px 5px;font-size:clamp(8px,2.55vw,11px);line-height:1.2}
+      .musician-directory .profile-card .button{margin:auto 4px 0;padding:8px 2px 0;font-size:clamp(8px,2.6vw,11px)}
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+applyDirectoryCardLayout();
+
 const grid=document.querySelector('.musician-directory .profile-grid');
 const genreFilter=document.getElementById('genreFilter');
 const instrumentFilter=document.getElementById('instrumentFilter');
