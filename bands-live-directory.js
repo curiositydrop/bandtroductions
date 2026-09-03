@@ -53,6 +53,14 @@ function applyDirectoryCardLayout(){
       letter-spacing:.08em;
       font-size:clamp(9px,1.4vw,18px);
     }
+    .musician-directory .profile-card .band-info{
+      flex:0 0 auto!important;
+      width:auto!important;
+      max-width:none!important;
+      min-width:0!important;
+      margin:0!important;
+      padding:0!important;
+    }
     .musician-directory .profile-card > h3,
     .musician-directory .profile-card .band-info h3{
       margin:0 14px 8px;
@@ -88,9 +96,10 @@ function applyDirectoryCardLayout(){
     .musician-directory .profile-card .button::after{content:' →'}
     .musician-directory .profile-card .band-actions{
       display:flex;
+      flex:0 0 auto!important;
       flex-wrap:wrap;
       justify-content:center;
-      margin-top:12px;
+      margin-top:12px!important;
     }
     .musician-directory .profile-card .band-actions .button{margin:0 8px}
     @media (max-width:700px){
