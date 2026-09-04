@@ -106,7 +106,7 @@
 <div id="global-header"></div>
 
 <section class="band-hero">
-  <h1>BANDfeed 🎸</h1>
+  <h1>BandTube 🎸</h1>
   <p>Watch, discover, and support Maine’s local music scene — all in one feed.</p>
 </section>
 
@@ -117,7 +117,7 @@
 
   <div class="now-playing">
     <h2 id="videoTitle">Loading videos...</h2>
-    <p class="now-playing-meta" id="videoMeta">Please wait while BANDfeed loads.</p>
+    <p class="now-playing-meta" id="videoMeta">Please wait while BandTube loads.</p>
 
     <div class="now-playing-links">
       <a id="profileLink" href="#">View Profile</a>
@@ -137,7 +137,7 @@
   </p>
 
   <div id="loadingMessage" class="loading-message">
-    Loading BANDfeed...
+    Loading BandTube...
   </div>
 
   <div class="video-browser" id="videoBrowser"></div>
@@ -271,7 +271,7 @@ function buildPlayerIfReady() {
 
   if (firstPlayableIndex === -1) {
     videoTitle.textContent = "No playable YouTube videos found yet";
-    videoMeta.textContent = "Add more profile videos to populate BANDfeed.";
+    videoMeta.textContent = "Add more profile videos to populate BandTube.";
     return;
   }
 
@@ -452,7 +452,7 @@ async function loadBandfeed() {
   browserContainer.innerHTML = "";
 
   if (!bandfeedItems.length) {
-    loadingMessage.textContent = "No videos found yet. Add more band and musician profiles with videos to populate BANDfeed.";
+    loadingMessage.textContent = "No videos found yet. Add more band and musician profiles with videos to populate BandTube.";
     videoTitle.textContent = "No videos loaded yet";
     videoMeta.textContent = "";
     window.dispatchEvent(new CustomEvent('bandfeed:legacy-loaded'));
