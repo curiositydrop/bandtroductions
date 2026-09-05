@@ -1,12 +1,21 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, serverTimestamp, setDoc, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { isAdminAccount } from './admin-access.js';
 
 let currentUser=auth.currentUser||null;
 let currentProfileName='';
 let postsById=new Map();
 let cleanups=[];
+let publishedTagProfilesPromise=null;
+
+function loadPublishedTagProfiles(){
+  if(publishedTagProfilesPromise)return publishedTagProfilesPromise;
+  publishedTagProfilesPromise=getDocs(query(collection(db,'profiles'),where('published','==',true)))
+    .then(snapshot=>snapshot.docs.map(d=>{const p=d.data()||{};return{profileId:d.id,displayName:String(p.displayName||'').trim()};}).filter(p=>p.displayName))
+    .catch(error=>{console.warn('Profile tag resolver unavailable',error);publishedTagProfilesPromise=null;return[];});
+  return publishedTagProfilesPromise;
+}
 
 const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]));
 const initials=name=>String(name||'BT').trim().split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'BT';
@@ -28,43 +37,50 @@ function renderLegacyCard(post){const article=document.createElement('article');
 function ensureAllFeedCards(posts){const feed=document.querySelector('.feed');if(!feed)return;const visible=posts.filter(p=>p.published!==false);const existing=[...feed.querySelectorAll('.post')];if(existing.length>=visible.length)return;for(let i=existing.length;i<visible.length;i++)feed.appendChild(renderLegacyCard(visible[i]));}
 function enhanceWelcomeProfileLink(article,post){if(!article||!post)return;const welcomedId=post.welcomedProfileId||'';const targetUrl=post.linkUrl||(welcomedId?`profile.html?id=${encodeURIComponent(welcomedId)}`:'');if(!targetUrl)return;const body=[...article.children].find(el=>el.tagName==='P')||article.querySelector('p');if(!body)return;const text=(body.textContent||'').trim();const newMatch=text.match(/^I'd like to welcome and introduce\s+(.+?)\s+to the BANDtroductions family\. Great to have you\. Thank you!\s*🤘$/i);const oldMatch=text.match(/^👋\s*Welcome\s+(.+?)\s+[—–-]\s+thank you for joining our community!\s*🤘$/i);const match=newMatch||oldMatch;if(!match)return;const profileName=match[1].trim();const link=document.createElement('a');link.href=targetUrl;link.textContent=profileName;link.className='inline-profile-link';if(newMatch)body.replaceChildren(document.createTextNode("I'd like to welcome and introduce "),link,document.createTextNode(' to the BANDtroductions family. Great to have you. Thank you! 🤘'));else body.replaceChildren(document.createTextNode('👋 Welcome '),link,document.createTextNode(' — thank you for joining our community! 🤘'));}
 function enhanceMentionLinks(article,post){
-  const mentions=(Array.isArray(post?.mentions)?post.mentions:[])
-    .filter(m=>m&&m.profileId&&m.displayName)
-    .map(m=>({profileId:String(m.profileId),displayName:String(m.displayName)}))
-    .sort((a,b)=>b.displayName.length-a.displayName.length);
-  if(!article||!mentions.length)return;
+  if(!article)return;
   const body=[...article.children].find(el=>el.tagName==='P')||article.querySelector('p');
   if(!body)return;
-  const nodes=[];
-  const walker=document.createTreeWalker(body,NodeFilter.SHOW_TEXT);
-  while(walker.nextNode())nodes.push(walker.currentNode);
-  nodes.forEach(node=>{
-    if(node.parentElement?.closest('a'))return;
-    const source=node.nodeValue||'';
-    const lower=source.toLowerCase();
-    let cursor=0,found=false;
-    const frag=document.createDocumentFragment();
-    while(cursor<source.length){
-      let next=null;
-      for(const mention of mentions){
-        const needle='@'+mention.displayName.toLowerCase();
-        const index=lower.indexOf(needle,cursor);
-        if(index!==-1&&(!next||index<next.index||(index===next.index&&needle.length>next.length)))next={index,length:needle.length,mention};
+  const applyMentions=mentions=>{
+    const usable=(Array.isArray(mentions)?mentions:[])
+      .filter(m=>m&&m.profileId&&m.displayName)
+      .map(m=>({profileId:String(m.profileId),displayName:String(m.displayName)}))
+      .sort((a,b)=>b.displayName.length-a.displayName.length);
+    if(!usable.length)return;
+    const nodes=[];
+    const walker=document.createTreeWalker(body,NodeFilter.SHOW_TEXT);
+    while(walker.nextNode())nodes.push(walker.currentNode);
+    nodes.forEach(node=>{
+      if(node.parentElement?.closest('a'))return;
+      const source=node.nodeValue||'';
+      const lower=source.toLowerCase();
+      let cursor=0,found=false;
+      const frag=document.createDocumentFragment();
+      while(cursor<source.length){
+        let next=null;
+        for(const mention of usable){
+          const needle='@'+mention.displayName.toLowerCase();
+          const index=lower.indexOf(needle,cursor);
+          if(index!==-1&&(!next||index<next.index||(index===next.index&&needle.length>next.length)))next={index,length:needle.length,mention};
+        }
+        if(!next)break;
+        found=true;
+        if(next.index>cursor)frag.appendChild(document.createTextNode(source.slice(cursor,next.index)));
+        const link=document.createElement('a');
+        link.href=`profile.html?id=${encodeURIComponent(next.mention.profileId)}`;
+        link.className='community-inline-link community-tag-link';
+        link.textContent=source.slice(next.index,next.index+next.length);
+        frag.appendChild(link);
+        cursor=next.index+next.length;
       }
-      if(!next)break;
-      found=true;
-      if(next.index>cursor)frag.appendChild(document.createTextNode(source.slice(cursor,next.index)));
-      const link=document.createElement('a');
-      link.href=`profile.html?id=${encodeURIComponent(next.mention.profileId)}`;
-      link.className='community-inline-link community-tag-link';
-      link.textContent=source.slice(next.index,next.index+next.length);
-      frag.appendChild(link);
-      cursor=next.index+next.length;
-    }
-    if(!found)return;
-    if(cursor<source.length)frag.appendChild(document.createTextNode(source.slice(cursor)));
-    node.replaceWith(frag);
-  });
+      if(!found)return;
+      if(cursor<source.length)frag.appendChild(document.createTextNode(source.slice(cursor)));
+      node.replaceWith(frag);
+    });
+  };
+  applyMentions(post?.mentions);
+  if((body.textContent||'').includes('@')){
+    loadPublishedTagProfiles().then(profiles=>applyMentions(profiles));
+  }
 }
 function lockWelcomeAuthor(article,post){if(!article||!isWelcomePost(post))return;article.dataset.systemWelcome='1';const name=article.querySelector('.post-name');if(name)name.textContent='BANDtroductions Admin';const avatar=article.querySelector('.post-avatar');if(avatar&&!avatar.querySelector('img'))avatar.textContent='BT';}
 async function sharePost(post){const url=`${location.origin}${location.pathname.replace(/[^/]+$/,'')}index.html?post=${encodeURIComponent(post.id)}`;try{if(navigator.share){await navigator.share({url});return;}await navigator.clipboard.writeText(url);alert('Post link copied.');}catch(error){if(error?.name!=='AbortError')console.warn('Share failed',error);}}
