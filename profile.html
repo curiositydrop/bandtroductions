@@ -25,7 +25,7 @@
     .profile-card h2{margin:0 0 10px;font-size:1.32rem}.profile-identity{text-align:center}
     .profile-kicker{margin:0 0 7px;font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:#0ccfbd;font-weight:800}
     .profile-title{margin:0;font-size:clamp(2rem,8vw,3.35rem);line-height:1;overflow-wrap:anywhere}.profile-location{margin:9px 0 0;color:#bbb}
-    .profile-badges,.profile-actions,.profile-links{margin-top:13px}.profile-actions .auth-button,.profile-links .auth-button{text-decoration:none;justify-content:center;border-radius:999px;max-width:100%}.profile-merch-button{background:#0ccfbd!important;border-color:#0ccfbd!important;color:#05110f!important;font-weight:950!important}
+    .profile-badges,.profile-actions,.profile-links{margin-top:13px}.profile-actions .auth-button,.profile-links .auth-button{text-decoration:none;justify-content:center;border-radius:999px;max-width:100%}.profile-merch-button{background:#0ccfbd!important;border-color:#0ccfbd!important;color:#05110f!important;font-weight:950!important}#shop-merch[hidden]{display:none!important}
     .profile-bio{white-space:pre-wrap;line-height:1.62;color:#ddd;margin:0;overflow-wrap:anywhere}.profile-details-grid{display:grid;grid-template-columns:1fr;gap:8px;min-width:0}
     .profile-detail{min-width:0;padding:13px;border:1px solid #333;border-radius:11px;background:#0d0d0d;overflow-wrap:anywhere}.profile-detail strong{display:block;margin-bottom:5px;color:#0ccfbd}
     .profile-side-note{color:#aaa;margin:0}.share-panel{margin-top:15px}.share-panel textarea{width:100%;box-sizing:border-box;margin-top:7px}
@@ -56,7 +56,7 @@
   <div id="global-footer"></div>
   <script src="global.js?v=23"></script>
   <script>const selectedProfileId=new URLSearchParams(location.search).get('id');if(selectedProfileId)document.getElementById('edit-profile').href=`profile-setup.html?id=${encodeURIComponent(selectedProfileId)}`;</script>
-  <script type="module" src="profile-page.js?v=7"></script>
+  <script type="module" src="profile-page.js?v=8"></script>
   <script type="module" src="admin-profile-controls.js?v=4"></script>
   <script type="module" src="profile-social.js?v=3"></script>
   <script type="module" src="profile-message-link.js?v=1"></script>
