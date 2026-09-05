@@ -181,7 +181,16 @@ async function notifyPostAudience(postId,content,authorName,mentions=[]){
   try{
     const follows=await getDocs(query(collection(db,'follows'),where('targetId','==',signedInUser.uid)));
     for(const followDoc of follows.docs){const followerId=followDoc.data()?.followerId;if(!followerId||followerId===signedInUser.uid)continue;await setDoc(doc(db,'notifications',`newpost_${postId}_${followerId}`),{recipientId:followerId,actorId:signedInUser.uid,actorName:authorName,type:'new-post',message:`${authorName} posted something new.`,linkUrl:`index.html?post=${encodeURIComponent(postId)}`,postId,read:false,createdAt:serverTimestamp()},{merge:true});}
-    for(const mention of mentions){const recipientId=mention?.recipientId||mention?.profileId;if(!recipientId||recipientId===signedInUser.uid)continue;await setDoc(doc(db,'notifications',`tag_${postId}_${recipientId}`),{recipientId,actorId:signedInUser.uid,actorName:authorName,type:'tag',message:`${authorName} tagged you in a post.`,linkUrl:`index.html?post=${encodeURIComponent(postId)}`,postId,profileId:mention.profileId||'',read:false,createdAt:serverTimestamp()},{merge:true});}
+    const lower=String(content||'').toLowerCase();
+    const resolved=[...(Array.isArray(mentions)?mentions:[])];
+    if(lower.includes('@')){
+      for(const profile of dashboardTagProfiles){
+        const name=String(profile?.displayName||'').trim();
+        if(!name||!lower.includes(`@${name.toLowerCase()}`))continue;
+        if(!resolved.some(x=>(x.profileId||'')===profile.profileId))resolved.push(profile);
+      }
+    }
+    for(const mention of resolved){const recipientId=mention?.recipientId||mention?.profileId;if(!recipientId||recipientId===signedInUser.uid)continue;await setDoc(doc(db,'notifications',`tag_${postId}_${recipientId}`),{recipientId,actorId:signedInUser.uid,actorName:authorName,type:'tag',message:`${authorName} tagged you in a post.`,linkUrl:`index.html?post=${encodeURIComponent(postId)}`,postId,profileId:mention.profileId||'',read:false,createdAt:serverTimestamp()},{merge:true});}
   }catch(error){console.warn('Post notifications unavailable',error);}
 }
 async function publishDashboardPost(){
