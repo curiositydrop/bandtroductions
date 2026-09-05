@@ -189,7 +189,18 @@ async function publishDashboardPost(){
   const status=composer.querySelector('#dash-compose-status'),button=composer.querySelector('#dash-publish-post');
   if(!signedInUser){openComposer();return;}
   const content=composer.querySelector('#dash-post-text').value.trim();
-  const mentions=dashboardTaggedProfiles.filter(m=>content.toLowerCase().includes(`@${String(m.displayName||'').toLowerCase()}`)).map(m=>({profileId:m.profileId,recipientId:m.recipientId,displayName:m.displayName,accountType:m.accountType||'member'}));
+  const lowerContent=content.toLowerCase();
+  const mentionSource=[...dashboardTagProfiles,...dashboardTaggedProfiles];
+  const mentions=[];
+  const seenMentionIds=new Set();
+  for(const m of mentionSource){
+    const displayName=String(m?.displayName||'').trim();
+    const profileId=String(m?.profileId||'').trim();
+    const recipientId=String(m?.recipientId||profileId).trim();
+    if(!displayName||!profileId||!lowerContent.includes(`@${displayName.toLowerCase()}`)||seenMentionIds.has(profileId))continue;
+    seenMentionIds.add(profileId);
+    mentions.push({profileId,recipientId,displayName,accountType:m.accountType||'member'});
+  }
   const activeMode=composer.querySelector('.dash-compose-tab.is-active')?.dataset.mode||'text';
   const imageUrl=activeMode==='image'?normalizeUrl(composer.querySelector('#dash-image-url').value):'';
   const videoUrl=activeMode==='video'?normalizeUrl(composer.querySelector('#dash-video-url').value):'';
