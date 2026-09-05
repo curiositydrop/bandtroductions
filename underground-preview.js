@@ -28,6 +28,8 @@ const messagesLink = document.getElementById('messages-link') || linkByText('Mes
 const logoutLink = linkByText('Log Out');
 let signedInUser=null;
 let signedInProfile=null;
+let dashboardTagProfiles=[];
+let dashboardTaggedProfiles=[];
 
 function syncHeaderLogo(){
   const logo=document.querySelector('.header-logo'),brand=document.querySelector('.brand');
@@ -44,23 +46,40 @@ const stampMs = stamp => stamp?.toMillis ? stamp.toMillis() : (stamp?.seconds ? 
 const postMs = post => stampMs(post.createdAt)||stampMs(post.updatedAt)||stampMs(post.publishedAt)||stampMs(post.submittedAt)||0;
 const formatDate = stamp => !stamp?.toDate ? 'Just now' : new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(stamp.toDate());
 function safeText(value=''){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));}
-function linkifyText(value=''){
+function linkifyText(value='',mentions=[]){
   const source=String(value||'');
+  const normalizedMentions=(Array.isArray(mentions)?mentions:[])
+    .filter(m=>m&&m.profileId&&m.displayName)
+    .map(m=>({profileId:String(m.profileId),displayName:String(m.displayName)}));
+  const lower=source.toLowerCase();
+  let html='',cursor=0;
   const urlPattern=/(?:https?:\/\/|www\.)[^\s<>]+/gi;
-  let html='',lastIndex=0;
-  for(const match of source.matchAll(urlPattern)){
-    const raw=match[0];
-    let url=raw,trailing='';
-    while(url&&/[.,!?;:)}\]]$/.test(url)){trailing=url.slice(-1)+trailing;url=url.slice(0,-1);}
-    html+=safeText(source.slice(lastIndex,match.index));
-    if(url){
-      const href=/^www\./i.test(url)?`https://${url}`:url;
-      html+=`<a class="community-inline-link" href="${safeText(href)}" target="_blank" rel="noopener noreferrer">${safeText(url)}</a>`;
+  const urls=[...source.matchAll(urlPattern)].map(match=>({index:match.index,raw:match[0],type:'url'}));
+  const mentionTokens=[];
+  normalizedMentions.forEach(m=>{
+    const token='@'+m.displayName,needle=token.toLowerCase();
+    let start=0;
+    while((start=lower.indexOf(needle,start))!==-1){
+      mentionTokens.push({index:start,raw:source.slice(start,start+token.length),type:'mention',mention:m});
+      start+=token.length;
     }
-    html+=safeText(trailing);
-    lastIndex=match.index+raw.length;
+  });
+  const tokens=[...urls,...mentionTokens].sort((a,b)=>a.index-b.index||(a.type==='mention'?-1:1));
+  for(const token of tokens){
+    if(token.index<cursor)continue;
+    html+=safeText(source.slice(cursor,token.index));
+    if(token.type==='mention'){
+      html+=`<a class="inline-profile-link community-tag-link" href="profile.html?id=${encodeURIComponent(token.mention.profileId)}">${safeText(token.raw)}</a>`;
+      cursor=token.index+token.raw.length;
+      continue;
+    }
+    let url=token.raw,trailing='';
+    while(url&&/[.,!?;:)}\]]$/.test(url)){trailing=url.slice(-1)+trailing;url=url.slice(0,-1);}
+    const href=/^www\./i.test(url)?`https://${url}`:url;
+    html+=`<a class="community-inline-link" href="${safeText(href)}" target="_blank" rel="noopener noreferrer">${safeText(url)}</a>${safeText(trailing)}`;
+    cursor=token.index+token.raw.length;
   }
-  return html+safeText(source.slice(lastIndex));
+  return html+safeText(source.slice(cursor));
 }
 function normalizeDate(value){if(!value)return null;const d=new Date(`${value}T12:00:00`);return Number.isNaN(d.getTime())?null:d;}
 function normalizeUrl(value=''){const t=String(value||'').trim();if(!t)return'';return /^https?:\/\//i.test(t)?t:`https://${t}`;}
@@ -88,10 +107,10 @@ function renderPostContent(post){
   if(targetUrl){
     const match=text.match(/^(.*?\bWelcome\s+)(.+?)(\s+[—–-]\s+.*)$/i);
     if(match){
-      return `<p>${linkifyText(match[1])}<a class="inline-profile-link" style="color:#25c7c1;font-weight:900;text-decoration:underline;text-underline-offset:2px" href="${safeText(targetUrl)}">${safeText(match[2])}</a>${linkifyText(match[3])}</p>`;
+      return `<p>${linkifyText(match[1],post.mentions)}<a class="inline-profile-link" style="color:#25c7c1;font-weight:900;text-decoration:underline;text-underline-offset:2px" href="${safeText(targetUrl)}">${safeText(match[2])}</a>${linkifyText(match[3],post.mentions)}</p>`;
     }
   }
-  return text?`<p>${linkifyText(text)}</p>`:'';
+  return text?`<p>${linkifyText(text,post.mentions)}</p>`:'';
 }
 function renderVideo(post){
   const youtube=youtubeFromPost(post);
@@ -109,18 +128,46 @@ function ensureComposer(){
     #dashboard-composer{display:none;border:2px solid var(--teal);box-shadow:0 0 0 1px rgba(37,199,193,.25),0 0 24px rgba(37,199,193,.12);background:linear-gradient(160deg,#12201f,#0b1111)}
     #dashboard-composer.is-open{display:block}
     .dash-compose-body{padding:12px}.dash-compose-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}.dash-compose-tab{border:1px solid #3c6663;background:#0b0f0f;color:#b8c8c7;padding:7px 10px;font-weight:900;cursor:pointer}.dash-compose-tab.is-active{background:var(--teal);color:#051111;border-color:var(--teal)}
-    .dash-compose-body textarea,.dash-compose-body input{width:100%;box-sizing:border-box;border:1px solid #3b5553;background:#080b0b;color:#eee;padding:10px;font:inherit}.dash-compose-body textarea{min-height:96px;resize:vertical}.dash-compose-extra{display:none;margin-top:8px}.dash-compose-extra.is-active{display:block}.dash-compose-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:9px}.dash-compose-status{min-height:1.1em;color:var(--teal);font-size:11px;margin-top:7px}.dash-compose-close{background:transparent;color:#aaa}
+    .dash-compose-body textarea,.dash-compose-body input{width:100%;box-sizing:border-box;border:1px solid #3b5553;background:#080b0b;color:#eee;padding:10px;font:inherit}.dash-compose-body textarea{min-height:96px;resize:vertical}.dash-tag-wrap{position:relative}.dash-tag-help{display:block;margin-top:5px;color:#879594;font-size:10px}.dash-tag-suggestions{display:grid;gap:5px;margin-top:6px;padding:7px;border:1px solid #315d59;background:#080b0b;max-height:210px;overflow:auto}.dash-tag-suggestions[hidden]{display:none!important}.dash-tag-option{border:1px solid #294b48;background:#111;color:#ddd;padding:8px;text-align:left;font:inherit;cursor:pointer}.dash-tag-option strong{color:var(--teal)}.community-tag-link{color:var(--teal)!important;font-weight:900;text-decoration:underline;text-underline-offset:2px}.dash-compose-extra{display:none;margin-top:8px}.dash-compose-extra.is-active{display:block}.dash-compose-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:9px}.dash-compose-status{min-height:1.1em;color:var(--teal);font-size:11px;margin-top:7px}.dash-compose-close{background:transparent;color:#aaa}
     @media(max-width:650px){.dash-compose-body{padding:6px}.dash-compose-tab{font-size:6px;padding:4px}.dash-compose-body textarea,.dash-compose-body input{font-size:8px;padding:6px}.dash-compose-body textarea{min-height:62px}.dash-compose-actions .btn{font-size:6px;padding:5px}.dash-compose-status{font-size:6px}}
   `;
   document.head.appendChild(style);
   composer=document.createElement('section');
   composer.id='dashboard-composer';composer.className='panel';
-  composer.innerHTML=`<h3>Create a Post</h3><div class="dash-compose-body"><div class="dash-compose-tabs"><button type="button" class="dash-compose-tab is-active" data-mode="text">COMMENT</button><button type="button" class="dash-compose-tab" data-mode="image">IMAGE</button><button type="button" class="dash-compose-tab" data-mode="video">VIDEO</button></div><textarea id="dash-post-text" maxlength="3000" placeholder="What do you want to share with the scene?"></textarea><div id="dash-image-field" class="dash-compose-extra"><input id="dash-image-url" type="url" maxlength="500" placeholder="Paste image URL"></div><div id="dash-video-field" class="dash-compose-extra"><input id="dash-video-url" type="url" maxlength="500" placeholder="Paste YouTube or video URL"></div><div class="dash-compose-actions"><button type="button" class="btn dash-compose-close">CANCEL</button><button type="button" class="btn primary" id="dash-publish-post">POST</button></div><div class="dash-compose-status" id="dash-compose-status"></div></div>`;
+  composer.innerHTML=`<h3>Create a Post</h3><div class="dash-compose-body"><div class="dash-compose-tabs"><button type="button" class="dash-compose-tab is-active" data-mode="text">COMMENT</button><button type="button" class="dash-compose-tab" data-mode="image">IMAGE</button><button type="button" class="dash-compose-tab" data-mode="video">VIDEO</button></div><div class="dash-tag-wrap"><textarea id="dash-post-text" maxlength="3000" placeholder="What do you want to share with the scene?"></textarea><small class="dash-tag-help">Type @ followed by a profile name to tag a band, musician, venue, or fan.</small><div id="dash-tag-suggestions" class="dash-tag-suggestions" hidden></div></div><div id="dash-image-field" class="dash-compose-extra"><input id="dash-image-url" type="url" maxlength="500" placeholder="Paste image URL"></div><div id="dash-video-field" class="dash-compose-extra"><input id="dash-video-url" type="url" maxlength="500" placeholder="Paste YouTube or video URL"></div><div class="dash-compose-actions"><button type="button" class="btn dash-compose-close">CANCEL</button><button type="button" class="btn primary" id="dash-publish-post">POST</button></div><div class="dash-compose-status" id="dash-compose-status"></div></div>`;
   heroPanel.insertAdjacentElement('afterend',composer);
   const tabs=[...composer.querySelectorAll('.dash-compose-tab')];
   const imageField=composer.querySelector('#dash-image-field'),videoField=composer.querySelector('#dash-video-field');
   tabs.forEach(tab=>tab.addEventListener('click',()=>{tabs.forEach(x=>x.classList.toggle('is-active',x===tab));const mode=tab.dataset.mode;imageField.classList.toggle('is-active',mode==='image');videoField.classList.toggle('is-active',mode==='video');}));
-  composer.querySelector('.dash-compose-close').addEventListener('click',()=>{composer.classList.remove('is-open');composer.querySelector('#dash-compose-status').textContent='';});
+  const tagInput=composer.querySelector('#dash-post-text'),tagSuggestions=composer.querySelector('#dash-tag-suggestions');
+  const refreshTagSuggestions=()=>{
+    const before=tagInput.value.slice(0,tagInput.selectionStart);
+    const match=before.match(/(?:^|\s)@([^@\n]{0,40})$/);
+    tagSuggestions.replaceChildren();
+    if(!match){tagSuggestions.hidden=true;return;}
+    const term=match[1].trim().toLowerCase();
+    const matches=dashboardTagProfiles.filter(p=>p.recipientId!==signedInUser?.uid&&String(p.displayName||'').toLowerCase().includes(term)).slice(0,8);
+    if(!matches.length){tagSuggestions.hidden=true;return;}
+    matches.forEach(p=>{
+      const button=document.createElement('button');button.type='button';button.className='dash-tag-option';
+      const strong=document.createElement('strong');strong.textContent=p.displayName||'Profile';
+      const meta=document.createElement('span');meta.textContent=` · ${p.accountType||'member'}`;
+      button.append(strong,meta);
+      button.addEventListener('click',()=>{
+        const full=match[0],leading=full.startsWith(' ')?' ':'',start=tagInput.selectionStart-full.length;
+        const beforeTag=tagInput.value.slice(0,start),after=tagInput.value.slice(tagInput.selectionStart);
+        const inserted=`${leading}@${p.displayName} `;
+        tagInput.value=beforeTag+inserted+after;
+        const caret=beforeTag.length+inserted.length;tagInput.focus();tagInput.setSelectionRange(caret,caret);
+        if(!dashboardTaggedProfiles.some(item=>item.profileId===p.profileId))dashboardTaggedProfiles.push(p);
+        tagSuggestions.hidden=true;
+      });
+      tagSuggestions.appendChild(button);
+    });
+    tagSuggestions.hidden=false;
+  };
+  tagInput.addEventListener('input',refreshTagSuggestions);tagInput.addEventListener('keyup',refreshTagSuggestions);tagInput.addEventListener('click',refreshTagSuggestions);
+  composer.querySelector('.dash-compose-close').addEventListener('click',()=>{composer.classList.remove('is-open');composer.querySelector('#dash-compose-status').textContent='';tagSuggestions.hidden=true;});
   composer.querySelector('#dash-publish-post').addEventListener('click',publishDashboardPost);
   return composer;
 }
@@ -130,13 +177,11 @@ function openComposer(event){
   const composer=ensureComposer();if(!composer)return;
   composer.classList.add('is-open');composer.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>composer.querySelector('#dash-post-text')?.focus(),250);
 }
-async function notifyPostAudience(postId,content,authorName){
+async function notifyPostAudience(postId,content,authorName,mentions=[]){
   try{
     const follows=await getDocs(query(collection(db,'follows'),where('targetId','==',signedInUser.uid)));
     for(const followDoc of follows.docs){const followerId=followDoc.data()?.followerId;if(!followerId||followerId===signedInUser.uid)continue;await setDoc(doc(db,'notifications',`newpost_${postId}_${followerId}`),{recipientId:followerId,actorId:signedInUser.uid,actorName:authorName,type:'new-post',message:`${authorName} posted something new.`,linkUrl:`index.html?post=${encodeURIComponent(postId)}`,postId,read:false,createdAt:serverTimestamp()},{merge:true});}
-    if(!content.includes('@'))return;
-    const profiles=await getDocs(query(collection(db,'profiles'),where('published','==',true))),lower=content.toLowerCase();
-    for(const profileDoc of profiles.docs){const profile=profileDoc.data()||{},name=String(profile.displayName||'').trim(),recipientId=profile.ownerId||profileDoc.id;if(!name||!recipientId||recipientId===signedInUser.uid||!lower.includes(`@${name.toLowerCase()}`))continue;await setDoc(doc(db,'notifications',`tag_${postId}_${recipientId}`),{recipientId,actorId:signedInUser.uid,actorName:authorName,type:'tag',message:`${authorName} tagged you in a post.`,linkUrl:`index.html?post=${encodeURIComponent(postId)}`,postId,read:false,createdAt:serverTimestamp()},{merge:true});}
+    for(const mention of mentions){const recipientId=mention?.recipientId||mention?.profileId;if(!recipientId||recipientId===signedInUser.uid)continue;await setDoc(doc(db,'notifications',`tag_${postId}_${recipientId}`),{recipientId,actorId:signedInUser.uid,actorName:authorName,type:'tag',message:`${authorName} tagged you in a post.`,linkUrl:`index.html?post=${encodeURIComponent(postId)}`,postId,profileId:mention.profileId||'',read:false,createdAt:serverTimestamp()},{merge:true});}
   }catch(error){console.warn('Post notifications unavailable',error);}
 }
 async function publishDashboardPost(){
@@ -144,6 +189,7 @@ async function publishDashboardPost(){
   const status=composer.querySelector('#dash-compose-status'),button=composer.querySelector('#dash-publish-post');
   if(!signedInUser){openComposer();return;}
   const content=composer.querySelector('#dash-post-text').value.trim();
+  const mentions=dashboardTaggedProfiles.filter(m=>content.toLowerCase().includes(`@${String(m.displayName||'').toLowerCase()}`)).map(m=>({profileId:m.profileId,recipientId:m.recipientId,displayName:m.displayName,accountType:m.accountType||'member'}));
   const activeMode=composer.querySelector('.dash-compose-tab.is-active')?.dataset.mode||'text';
   const imageUrl=activeMode==='image'?normalizeUrl(composer.querySelector('#dash-image-url').value):'';
   const videoUrl=activeMode==='video'?normalizeUrl(composer.querySelector('#dash-video-url').value):'';
@@ -160,11 +206,13 @@ async function publishDashboardPost(){
       content,
       imageUrl,
       videoUrl,
+      mentions,
       published:true,
       createdAt:serverTimestamp(),
       updatedAt:serverTimestamp()
     });
-    await notifyPostAudience(postRef.id,content,authorName);
+    await notifyPostAudience(postRef.id,content,authorName,mentions);
+    dashboardTaggedProfiles=[];
     composer.querySelector('#dash-post-text').value='';composer.querySelector('#dash-image-url').value='';composer.querySelector('#dash-video-url').value='';
     status.textContent='Posted.';setTimeout(()=>{composer.classList.remove('is-open');status.textContent='';},650);
   }catch(error){console.error(error);status.textContent=error.code==='permission-denied'?'Post permissions blocked this post.':'Post could not be published.';}
@@ -319,6 +367,10 @@ onAuthStateChanged(auth,async user=>{
     const [profileSnap,userSnap]=await Promise.all([getDoc(doc(db,'profiles',user.uid)),getDoc(doc(db,'users',user.uid))]);
     const profile=profileSnap.exists()?profileSnap.data():(userSnap.exists()?userSnap.data():{});
     signedInProfile=profile;
+    try{
+      const tagSnap=await getDocs(query(collection(db,'profiles'),where('published','==',true)));
+      dashboardTagProfiles=tagSnap.docs.map(d=>{const p=d.data()||{};return{profileId:d.id,recipientId:p.ownerId||d.id,displayName:String(p.displayName||'').trim(),accountType:p.accountType||'member'}}).filter(p=>p.displayName);
+    }catch(tagError){console.warn('Profile tagging list unavailable.',tagError);dashboardTagProfiles=[];}
     if(title)title.textContent='My Profile';
     renderProfileSummary(user,profile);
     if(profileLink){profileLink.textContent='View / Edit Profile';profileLink.href=`profile.html?id=${encodeURIComponent(user.uid)}`;}
