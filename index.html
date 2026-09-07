@@ -287,8 +287,8 @@ body{
     #020606;
 }
 
-/* Homepage-only override for the injected global header.
-   This intentionally does NOT modify global-header-v2.html, so other pages keep their current header. */
+/* Homepage styling for the shared global header.
+   Background artwork lives in global-header-v2.html. */
 body #global-header #bt-global-header-component .bt-sticky-header{
   background:rgba(2,7,8,.95)!important;
   box-shadow:0 10px 28px rgba(0,0,0,.66),0 0 24px rgba(28,232,226,.10)!important;
@@ -298,9 +298,6 @@ body #global-header #bt-global-header-component .bt-top{
   overflow:hidden!important;
   border:1px solid rgba(36,227,222,.72)!important;
   border-radius:12px 12px 8px 8px!important;
-  background:
-    linear-gradient(90deg,rgba(2,8,9,.90) 0%,rgba(2,8,9,.76) 36%,rgba(1,8,9,.34) 67%,rgba(1,8,9,.58) 100%),
-    url("bt-wide-crowd.jpg?v=20260907b") center 77%/cover no-repeat!important;
   box-shadow:
     inset 0 0 28px rgba(20,222,215,.10),
     0 0 18px rgba(23,218,212,.15)!important;
@@ -494,9 +491,6 @@ body #global-header #bt-global-header-component .bt-nav a.bt-active{
   }
   body #global-header #bt-global-header-component .bt-top{
     border-radius:7px 7px 5px 5px!important;
-    background:
-      linear-gradient(90deg,rgba(2,8,9,.88) 0%,rgba(2,8,9,.72) 44%,rgba(1,8,9,.30) 100%),
-      url("bt-wide-crowd.jpg?v=20260907b") center 80%/cover no-repeat!important;
   }
   body #global-header #bt-global-header-component .bt-nav{
     border-radius:0 0 6px 6px!important;
