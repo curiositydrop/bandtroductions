@@ -282,43 +282,63 @@ body{
 /* === TARGET MOCKUP VISUAL MATCH 2026-09-07 === */
 body{
   background:
-    linear-gradient(180deg,rgba(1,7,8,.70) 0%,rgba(1,7,8,.90) 38%,rgba(1,5,6,.97) 100%),
-    url("bt-wide-crowd.jpg") center top/100% auto no-repeat,
+    linear-gradient(180deg,rgba(1,7,8,.72) 0%,rgba(1,7,8,.90) 38%,rgba(1,5,6,.97) 100%),
+    url("bt-wide-crowd.jpg?v=20260907b") center top/100% auto no-repeat,
     #020606;
 }
+
+/* Homepage-only override for the injected global header.
+   This intentionally does NOT modify global-header-v2.html, so other pages keep their current header. */
 body #global-header #bt-global-header-component .bt-sticky-header{
-  background:rgba(2,7,8,.96)!important;
-  box-shadow:0 10px 28px rgba(0,0,0,.66),0 0 24px rgba(28,232,226,.08)!important;
+  background:rgba(2,7,8,.95)!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.66),0 0 24px rgba(28,232,226,.10)!important;
 }
 body #global-header #bt-global-header-component .bt-top{
-  position:relative;
-  overflow:hidden;
-  border:1px solid rgba(36,227,222,.68)!important;
-  border-radius:12px 12px 8px 8px;
+  position:relative!important;
+  overflow:hidden!important;
+  border:1px solid rgba(36,227,222,.72)!important;
+  border-radius:12px 12px 8px 8px!important;
   background:
-    linear-gradient(90deg,rgba(2,8,9,.96) 0%,rgba(2,8,9,.88) 38%,rgba(1,8,9,.58) 68%,rgba(1,8,9,.78) 100%),
-    url("bt-wide-crowd.jpg") center 42%/cover no-repeat!important;
-  box-shadow:inset 0 0 28px rgba(20,222,215,.10),0 0 18px rgba(23,218,212,.12);
+    linear-gradient(90deg,rgba(2,8,9,.90) 0%,rgba(2,8,9,.76) 36%,rgba(1,8,9,.34) 67%,rgba(1,8,9,.58) 100%),
+    url("bt-wide-crowd.jpg?v=20260907b") center 77%/cover no-repeat!important;
+  box-shadow:
+    inset 0 0 28px rgba(20,222,215,.10),
+    0 0 18px rgba(23,218,212,.15)!important;
+}
+body #global-header #bt-global-header-component .bt-top::after{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  pointer-events:none!important;
+  z-index:0!important;
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.16)),
+    radial-gradient(circle at 79% 14%,rgba(79,255,247,.17),transparent 26%)!important;
+}
+body #global-header #bt-global-header-component .bt-brand-block,
+body #global-header #bt-global-header-component .bt-news-card{
+  position:relative!important;
+  z-index:1!important;
 }
 body #global-header #bt-global-header-component .bt-brand,
 body #global-header #bt-global-header-component .bt-tag{
-  text-shadow:0 2px 12px rgba(0,0,0,.98),0 0 10px rgba(37,199,193,.10);
+  text-shadow:0 2px 12px rgba(0,0,0,.98),0 0 10px rgba(37,199,193,.12)!important;
 }
 body #global-header #bt-global-header-component .bt-news-card{
-  border-color:rgba(42,232,226,.62)!important;
-  border-radius:8px;
-  background:rgba(4,10,11,.88)!important;
-  box-shadow:0 0 14px rgba(37,199,193,.12);
+  border-color:rgba(42,232,226,.65)!important;
+  border-radius:8px!important;
+  background:rgba(4,10,11,.84)!important;
+  box-shadow:0 0 14px rgba(37,199,193,.14)!important;
 }
 body #global-header #bt-global-header-component .bt-news-label{
   background:linear-gradient(180deg,#35e3df,#20c4bf)!important;
 }
 body #global-header #bt-global-header-component .bt-nav{
-  border-color:rgba(36,227,222,.68)!important;
-  border-radius:0 0 10px 10px;
-  overflow:hidden;
+  border-color:rgba(36,227,222,.70)!important;
+  border-radius:0 0 10px 10px!important;
+  overflow:hidden!important;
   background:linear-gradient(180deg,rgba(3,10,11,.98),rgba(1,6,7,.99))!important;
-  box-shadow:0 7px 18px rgba(0,0,0,.46),0 0 16px rgba(37,199,193,.08);
+  box-shadow:0 7px 18px rgba(0,0,0,.46),0 0 16px rgba(37,199,193,.09)!important;
 }
 body #global-header #bt-global-header-component .bt-nav a{
   border-right-color:rgba(36,227,222,.42)!important;
@@ -326,8 +346,9 @@ body #global-header #bt-global-header-component .bt-nav a{
 }
 body #global-header #bt-global-header-component .bt-nav a.bt-active{
   background:linear-gradient(180deg,#39e5e1,#22c7c2)!important;
-  box-shadow:inset 0 0 14px rgba(255,255,255,.18),0 0 18px rgba(37,199,193,.30);
+  box-shadow:inset 0 0 14px rgba(255,255,255,.18),0 0 18px rgba(37,199,193,.30)!important;
 }
+
 .grid>.left .panel,
 .grid>.center .panel,
 .grid>.right .panel{
@@ -344,22 +365,35 @@ body #global-header #bt-global-header-component .bt-nav a.bt-active{
   border-bottom-color:rgba(36,227,222,.38);
   background:linear-gradient(90deg,rgba(20,222,215,.10),rgba(6,15,16,.08) 68%,transparent);
 }
+
+/* Hero / Create Post: deliberately brighter crowd-and-horns composition. */
 .grid>.center .hero{
   min-height:178px;
   display:flex;
   flex-direction:column;
   justify-content:center;
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
   background:
-    linear-gradient(180deg,rgba(1,7,8,.14) 0%,rgba(1,7,8,.36) 38%,rgba(1,7,8,.74) 100%),
-    radial-gradient(circle at 50% 5%,rgba(81,255,247,.22),transparent 30%),
-    url("bt-hero-concert.jpg") center 44%/cover no-repeat;
-  border-color:rgba(45,238,232,.86);
-  box-shadow:0 13px 32px rgba(0,0,0,.52),0 0 24px rgba(37,199,193,.21),inset 0 0 38px rgba(37,199,193,.07);
+    linear-gradient(180deg,rgba(1,7,8,.04) 0%,rgba(1,7,8,.18) 40%,rgba(1,7,8,.64) 100%),
+    radial-gradient(circle at 71% 9%,rgba(81,255,247,.16),transparent 28%),
+    url("bt-hero-concert.jpg?v=20260907b") center 72%/cover no-repeat;
+  border-color:rgba(45,238,232,.88);
+  box-shadow:
+    0 13px 32px rgba(0,0,0,.52),
+    0 0 24px rgba(37,199,193,.23),
+    inset 0 0 38px rgba(37,199,193,.06);
 }
 .grid>.center .hero:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
   background:
-    linear-gradient(90deg,rgba(16,230,221,.055),transparent 25%,transparent 75%,rgba(16,230,221,.05)),
-    radial-gradient(circle at 50% 0,rgba(121,255,249,.18),transparent 29%);
+    linear-gradient(90deg,rgba(16,230,221,.025),transparent 24%,transparent 76%,rgba(16,230,221,.03)),
+    radial-gradient(circle at 72% 7%,rgba(121,255,249,.14),transparent 25%);
 }
 .grid>.center .hero h1{
   color:#f7fbfb;
@@ -375,58 +409,66 @@ body #global-header #bt-global-header-component .bt-nav a.bt-active{
 }
 .grid>.center .hero .btn{
   border-color:#20d7d1;
-  background:rgba(2,8,9,.84);
+  background:rgba(2,8,9,.82);
   box-shadow:0 0 12px rgba(37,199,193,.12);
 }
 .grid>.center .hero .btn.primary{
   background:linear-gradient(180deg,#39e7e2,#21c7c1);
   box-shadow:0 0 20px rgba(37,199,193,.34);
 }
+
+/* Upcoming Shows: intentionally warmer/darker and separate from the cyan hero. */
 .grid>.right .panel:first-child{
+  overflow:hidden;
   background:
-    linear-gradient(180deg,rgba(3,10,11,.72),rgba(3,8,9,.86)),
-    url("bt-shows-crowd.jpg") center top/cover no-repeat;
+    linear-gradient(180deg,rgba(3,10,11,.70),rgba(3,8,9,.88)),
+    url("bt-shows-crowd.jpg?v=20260907b") center 58%/cover no-repeat;
 }
 .grid>.right .panel:first-child .show{
+  position:relative;
   background:
-    radial-gradient(circle at 84% 42%,rgba(255,180,78,.20),transparent 28%),
-    linear-gradient(90deg,rgba(2,8,9,.90) 0%,rgba(2,8,9,.62) 44%,rgba(2,8,9,.28) 100%),
-    url("bt-shows-crowd.jpg") center 58%/cover no-repeat;
+    radial-gradient(circle at 86% 44%,rgba(255,151,63,.30),transparent 26%),
+    linear-gradient(90deg,rgba(2,8,9,.92) 0%,rgba(2,8,9,.68) 43%,rgba(2,8,9,.32) 100%),
+    url("bt-shows-crowd.jpg?v=20260907b") center 62%/cover no-repeat;
   border-bottom-color:rgba(36,227,222,.24);
 }
 .grid>.right .panel:first-child .show:nth-of-type(even){
   background:
-    radial-gradient(circle at 18% 58%,rgba(255,174,74,.14),transparent 26%),
-    linear-gradient(90deg,rgba(2,8,9,.88) 0%,rgba(2,8,9,.60) 48%,rgba(2,8,9,.30) 100%),
-    url("bt-shows-crowd.jpg") center 78%/cover no-repeat;
+    radial-gradient(circle at 16% 58%,rgba(255,175,72,.23),transparent 25%),
+    linear-gradient(90deg,rgba(2,8,9,.90) 0%,rgba(2,8,9,.66) 48%,rgba(2,8,9,.34) 100%),
+    url("bt-shows-crowd.jpg?v=20260907b") center 82%/cover no-repeat;
 }
 .grid>.right .panel:first-child .date{
-  background:rgba(3,10,11,.78);
+  background:rgba(3,10,11,.80);
   border-color:rgba(45,236,230,.60);
   box-shadow:0 0 11px rgba(37,199,193,.10);
 }
+
+/* Radio: speaker/stage artwork gets its own identity. */
 .grid>.right .radio-panel{
-  border-color:rgba(42,235,229,.82);
+  overflow:hidden;
+  border-color:rgba(42,235,229,.84);
   background:
-    linear-gradient(180deg,rgba(2,9,10,.20),rgba(2,7,8,.72)),
-    url("bt-radio-stage.jpg") center 40%/cover no-repeat;
-  box-shadow:0 12px 30px rgba(0,0,0,.48),0 0 24px rgba(37,199,193,.20);
+    linear-gradient(180deg,rgba(2,9,10,.10),rgba(2,7,8,.58)),
+    url("bt-radio-stage.jpg?v=20260907b") center 52%/cover no-repeat;
+  box-shadow:0 12px 30px rgba(0,0,0,.48),0 0 24px rgba(37,199,193,.21);
 }
 .grid>.right .radio-panel .radio{
   background:
-    radial-gradient(circle at 50% 7%,rgba(255,40,32,.11),transparent 24%),
-    linear-gradient(180deg,rgba(1,8,9,.22),rgba(1,7,8,.58)),
-    url("bt-radio-stage.jpg") center 42%/cover no-repeat;
+    radial-gradient(circle at 50% 8%,rgba(255,42,30,.14),transparent 24%),
+    linear-gradient(180deg,rgba(1,8,9,.10),rgba(1,7,8,.48)),
+    url("bt-radio-stage.jpg?v=20260907b") center 54%/cover no-repeat;
 }
 .grid>.right .radio-panel .radio-box{
-  border-color:rgba(45,236,230,.52);
-  background:rgba(1,7,8,.64);
+  border-color:rgba(45,236,230,.54);
+  background:rgba(1,7,8,.58);
   box-shadow:inset 0 0 26px rgba(37,199,193,.07),0 0 14px rgba(37,199,193,.08);
 }
+
+/* Online Now: clean, dark, avatar-first. No decorative concert wallpaper. */
 .grid>.left section.panel:nth-of-type(2){
-  background:
-    linear-gradient(180deg,rgba(2,9,10,.58),rgba(2,8,9,.78)),
-    url("bt-wide-crowd.jpg") center 60%/cover no-repeat;
+  overflow:hidden;
+  background:linear-gradient(160deg,rgba(7,15,16,.97),rgba(2,7,8,.99));
 }
 .grid>.left section.panel:nth-of-type(1),
 .grid>.left section.panel:nth-of-type(3),
@@ -442,30 +484,36 @@ body #global-header #bt-global-header-component .bt-nav a.bt-active{
 .venue-vote-card{
   box-shadow:0 9px 22px rgba(0,0,0,.42),0 0 18px rgba(242,53,129,.18);
 }
+
 @media(max-width:650px){
   body{
     background:
       linear-gradient(180deg,rgba(1,7,8,.76) 0%,rgba(1,7,8,.92) 40%,rgba(1,5,6,.98) 100%),
-      url("bt-wide-crowd.jpg") center top/auto 360px no-repeat,
+      url("bt-wide-crowd.jpg?v=20260907b") center top/auto 360px no-repeat,
       #020606;
   }
   body #global-header #bt-global-header-component .bt-top{
-    border-radius:7px 7px 5px 5px;
+    border-radius:7px 7px 5px 5px!important;
     background:
-      linear-gradient(90deg,rgba(2,8,9,.94) 0%,rgba(2,8,9,.80) 48%,rgba(1,8,9,.46) 100%),
-      url("bt-wide-crowd.jpg") center 44%/cover no-repeat!important;
+      linear-gradient(90deg,rgba(2,8,9,.88) 0%,rgba(2,8,9,.72) 44%,rgba(1,8,9,.30) 100%),
+      url("bt-wide-crowd.jpg?v=20260907b") center 80%/cover no-repeat!important;
   }
-  body #global-header #bt-global-header-component .bt-nav{border-radius:0 0 6px 6px}
+  body #global-header #bt-global-header-component .bt-nav{
+    border-radius:0 0 6px 6px!important;
+  }
   .grid>.center .hero{
     min-height:126px;
-    background-position:52% 46%;
+    background:
+      linear-gradient(180deg,rgba(1,7,8,.02) 0%,rgba(1,7,8,.16) 38%,rgba(1,7,8,.60) 100%),
+      radial-gradient(circle at 72% 7%,rgba(81,255,247,.14),transparent 26%),
+      url("bt-hero-concert.jpg?v=20260907b") center 76%/cover no-repeat;
   }
   .grid>.right .panel:first-child .show{
-    background-position:center 62%;
+    background-position:center 68%;
   }
   .grid>.right .radio-panel .radio,
   .grid>.right .radio-panel{
-    background-position:center 45%;
+    background-position:center 58%;
   }
 }
 
