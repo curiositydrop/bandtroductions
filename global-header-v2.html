@@ -4,7 +4,7 @@
     #bt-global-header-component{--bt-bg:#090a0a;--bt-line:#343838;--bt-teal:#25c7c1;--bt-text:#eee;font-family:Arial,Helvetica,sans-serif;color:var(--bt-text);text-align:left}
     #bt-global-header-component *{box-sizing:border-box}
     #bt-global-header-component .bt-sticky-header{display:block;position:sticky;top:0;z-index:1000;margin:0;padding:0;text-align:left;background:var(--bt-bg);box-shadow:0 8px 18px rgba(0,0,0,.55)}
-    #bt-global-header-component .bt-top{margin:0;border:1px solid var(--bt-line);background:#080909;padding:14px 16px;display:grid;grid-template-columns:1fr 420px;gap:16px;align-items:center;text-align:left}
+    #bt-global-header-component .bt-top{position:relative;overflow:hidden;margin:0;border:1px solid rgba(36,227,222,.68);border-radius:12px 12px 8px 8px;background:#080909;padding:14px 16px;display:grid;grid-template-columns:1fr 420px;gap:16px;align-items:center;text-align:left;box-shadow:inset 0 0 28px rgba(20,222,215,.10),0 0 18px rgba(23,218,212,.12)}\n    #bt-global-header-component .bt-top::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.16)),radial-gradient(circle at 76% 18%,rgba(76,245,239,.16),transparent 28%)}\n    #bt-global-header-component .bt-brand-block,#bt-global-header-component .bt-news-card{position:relative;z-index:1}
     #bt-global-header-component .bt-brand-block{display:flex;align-items:center;gap:12px;min-width:0;margin:0;text-decoration:none;color:#fff;text-align:left}
     #bt-global-header-component .bt-header-logo-frame{width:64px;height:64px;overflow:hidden;display:flex;align-items:center;justify-content:flex-start;flex:none}
     #bt-global-header-component .bt-header-logo{height:135%;width:auto;max-width:none;object-fit:contain;object-position:left center;display:block;margin:0}
@@ -36,7 +36,7 @@
     }
     @media(max-width:650px){
       #global-header{padding:4px}
-      #bt-global-header-component .bt-top{grid-template-columns:1fr;padding:6px 8px;gap:5px}
+      #bt-global-header-component .bt-top{grid-template-columns:1fr;padding:6px 8px;gap:5px;border-radius:7px 7px 5px 5px}
       #bt-global-header-component .bt-brand-block{gap:6px}
       #bt-global-header-component .bt-header-logo-frame{width:31px;height:31px}
       #bt-global-header-component .bt-header-logo{height:145%}
