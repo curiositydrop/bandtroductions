@@ -3,6 +3,7 @@ import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'http
 
 const cache=new Map();
 const adminCache={value:undefined};
+const adminAvatarFallback='bt-admin-avatar.svg?v=1';
 const authorId=p=>p.authorId||p.authorUid||p.uid||p.userId||p.ownerId||p.createdBy||'';
 const imageFor=p=>p?.imageUrl||p?.profileImageUrl||p?.profilePhotoUrl||p?.avatarUrl||p?.photoURL||p?.photoUrl||p?.profileImage||p?.profilePhoto||p?.profilePic||p?.profilePicture||p?.avatar||p?.bandLogo||p?.logoUrl||p?.logoURL||p?.logo||p?.image||'';
 const stampMs=stamp=>stamp?.toMillis?stamp.toMillis():(stamp?.seconds?stamp.seconds*1000:0);
@@ -66,7 +67,7 @@ function findCard(post,index){
   return document.querySelectorAll('.feed .post')[index]||null;
 }
 
-function setImage(avatar,src,alt,profileId){
+function setImage(avatar,src,alt,profileId,fallback=''){
   if(!avatar||!src||avatar.dataset.avatarDone==='1')return;
   const img=new Image();
   img.alt=alt||'Profile avatar';
@@ -79,7 +80,10 @@ function setImage(avatar,src,alt,profileId){
     avatar.dataset.avatarDone='1';
     if(profileId){avatar.style.cursor='pointer';avatar.onclick=()=>location.href=`profile.html?id=${encodeURIComponent(profileId)}`;}
   };
-  img.onerror=()=>console.warn('Dashboard avatar image failed to load:',src);
+  img.onerror=()=>{
+    if(fallback&&img.src!==new URL(fallback,location.href).href){img.onerror=null;img.src=fallback;return;}
+    console.warn('Dashboard avatar image failed to load:',src);
+  };
   img.src=src;
 }
 
@@ -130,7 +134,8 @@ async function decorateCard(post,index){
     if(nameEl)nameEl.textContent='BANDtroductions Admin';
     const admin=await adminProfile();
     const src=imageFor(admin)||post.adminAvatarUrl||'';
-    if(src)setImage(avatar,src,'BANDtroductions Admin',admin?.id||'');
+    if(src)setImage(avatar,src,'BANDtroductions Admin',admin?.id||'',adminAvatarFallback);
+    else setImage(avatar,adminAvatarFallback,'BANDtroductions Admin',admin?.id||'');
     else if(!avatar.querySelector('img'))avatar.textContent='BT';
     setProfileLink(nameEl,admin?.id||'');
     card.dataset.profileDecorated='1';
@@ -139,7 +144,9 @@ async function decorateCard(post,index){
   const uid=authorId(post);const data=await profile(uid,post.authorName||'');
   const profileId=data?.id||uid;
   const src=imageFor(data)||post.authorAvatarUrl||post.authorImageUrl||post.authorPhotoUrl||post.authorPhotoURL||post.avatarUrl||post.imageUrlAuthor||'';
-  if(src)setImage(avatar,src,post.authorName||'Profile avatar',profileId);
+  const fallback=String(post.authorName||'').trim().toLowerCase()==='bandtroductions admin'?adminAvatarFallback:'';
+  if(src)setImage(avatar,src,post.authorName||'Profile avatar',profileId,fallback);
+  else if(fallback)setImage(avatar,fallback,post.authorName||'Profile avatar',profileId);
   setProfileLink(nameEl,profileId);
   card.dataset.profileDecorated='1';
   return true;
