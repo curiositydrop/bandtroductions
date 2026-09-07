@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 1000" role="img" aria-label="Original BANDtroductions radio artwork">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#07171a"/><stop offset=".5" stop-color="#061012"/><stop offset="1" stop-color="#010304"/></linearGradient>
+ <radialGradient id="gl" cx="50%" cy="8%" r="72%"><stop stop-color="#37f3e9" stop-opacity=".34"/><stop offset=".42" stop-color="#13bdb5" stop-opacity=".11"/><stop offset="1" stop-color="#13bdb5" stop-opacity="0"/></radialGradient>
+ <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#65fff7" stop-opacity=".36"/><stop offset="1" stop-color="#15b4ad" stop-opacity="0"/></linearGradient>
+ <filter id="blur"><feGaussianBlur stdDeviation="18"/></filter>
+</defs>
+<rect width="700" height="1000" fill="url(#bg)"/><rect width="700" height="1000" fill="url(#gl)"/>
+<g filter="url(#blur)"><path d="M95 0 L250 720 L330 720 L160 0Z" fill="url(#beam)"/><path d="M605 0 L440 720 L525 720 L660 0Z" fill="url(#beam)"/></g>
+<g fill="#031011" stroke="#17625f" stroke-width="5">
+ <rect x="82" y="342" width="126" height="340" rx="26"/><rect x="492" y="342" width="126" height="340" rx="26"/>
+ <circle cx="145" cy="438" r="38"/><circle cx="145" cy="565" r="54"/><circle cx="555" cy="438" r="38"/><circle cx="555" cy="565" r="54"/>
+ <circle cx="145" cy="438" r="17" fill="#0a2b2b"/><circle cx="145" cy="565" r="24" fill="#0a2b2b"/><circle cx="555" cy="438" r="17" fill="#0a2b2b"/><circle cx="555" cy="565" r="24" fill="#0a2b2b"/>
+</g>
+<g fill="none" stroke="#31ddd4" stroke-width="18" stroke-linecap="round">
+ <path d="M215 515 C220 315 480 315 485 515"/><path d="M214 510 L214 640"/><path d="M486 510 L486 640"/>
+</g>
+<g fill="#072728" stroke="#3cebe2" stroke-width="5"><rect x="178" y="505" width="72" height="170" rx="30"/><rect x="450" y="505" width="72" height="170" rx="30"/></g>
+<g fill="#000304">
+ <path d="M0 825 Q28 786 58 825 Q88 777 118 825 Q148 790 178 825 Q208 774 238 825 Q268 790 298 825 Q328 769 358 825 Q388 786 418 825 Q448 775 478 825 Q508 791 538 825 Q568 772 598 825 Q628 788 658 825 Q680 790 700 825 V1000 H0Z"/>
+ <path d="M110 816 l-7-105 20 72 14-132 18 123 20-88 8 128zM332 816 l8-112 18 78 19-139 18 131 22-93 5 135zM540 816 l-7-108 20 75 14-136 18 128 20-90 7 131z"/>
+</g>
+</svg>
