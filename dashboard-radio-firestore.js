@@ -13,7 +13,7 @@ const style=document.createElement('style');
 style.textContent=`
 .bt-radio-panel{border-color:var(--teal)!important;box-shadow:0 0 18px rgba(37,199,193,.15)!important;overflow:hidden!important;background:linear-gradient(180deg,rgba(1,7,8,.12),rgba(1,7,8,.42)),url("bt-radio-speaker-frame.webp?v=20260907-radio3") 78% center/cover no-repeat!important}
 .bt-radio-panel>h3{background:var(--teal)!important;color:#fff!important;text-align:center!important;border-bottom:0!important;font-weight:950!important;letter-spacing:.045em!important;text-shadow:0 1px 2px rgba(0,0,0,.45)!important}
-.bt-radio-box{position:relative!important;padding:9px!important;border-color:#315957!important;background:linear-gradient(160deg,rgba(11,16,16,.72),rgba(6,8,8,.70))!important;text-align:center}
+.bt-radio-box{position:relative!important;padding:9px!important;border-color:#315957!important;background:linear-gradient(160deg,rgba(11,16,16,.38),rgba(6,8,8,.34))!important;text-align:center}
 .bt-radio-status-row{display:flex;justify-content:center;margin:0 0 7px}
 .bt-radio-status{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:4px 9px;font-size:8px;font-weight:950;letter-spacing:.08em;line-height:1;text-transform:uppercase}
 .bt-radio-status.live{background:#991b1b;color:#fff;border:1px solid #ff6767;box-shadow:0 0 12px rgba(255,62,62,.28)}
