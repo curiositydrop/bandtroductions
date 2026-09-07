@@ -136,7 +136,7 @@ async function decorateCard(post,index){
     const src=imageFor(admin)||post.adminAvatarUrl||'';
     if(src)setImage(avatar,src,'BANDtroductions Admin',admin?.id||'',adminAvatarFallback);
     else setImage(avatar,adminAvatarFallback,'BANDtroductions Admin',admin?.id||'');
-    else if(!avatar.querySelector('img'))avatar.textContent='BT';
+    if(!src&&!avatar.querySelector('img'))avatar.textContent='BT';
     setProfileLink(nameEl,admin?.id||'');
     card.dataset.profileDecorated='1';
     return true;
