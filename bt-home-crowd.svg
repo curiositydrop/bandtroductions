@@ -1,13 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 420" role="img" aria-label="Stylized concert crowd">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" role="img" aria-label="Original BANDtroductions live crowd artwork">
 <defs>
- <linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#071719"/><stop offset=".55" stop-color="#071011"/><stop offset="1" stop-color="#020404"/></linearGradient>
- <radialGradient id="g1" cx="30%" cy="12%" r="58%"><stop stop-color="#2ce8dc" stop-opacity=".3"/><stop offset="1" stop-color="#2ce8dc" stop-opacity="0"/></radialGradient>
- <radialGradient id="g2" cx="76%" cy="0%" r="55%"><stop stop-color="#1bb8b0" stop-opacity=".24"/><stop offset="1" stop-color="#1bb8b0" stop-opacity="0"/></radialGradient>
+ <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#081719"/><stop offset=".55" stop-color="#071011"/><stop offset="1" stop-color="#010304"/></linearGradient>
+ <radialGradient id="g1" cx="22%" cy="5%" r="62%"><stop stop-color="#4cfff5" stop-opacity=".38"/><stop offset=".42" stop-color="#18c6bc" stop-opacity=".12"/><stop offset="1" stop-color="#18c6bc" stop-opacity="0"/></radialGradient>
+ <radialGradient id="g2" cx="78%" cy="0%" r="64%"><stop stop-color="#38e8df" stop-opacity=".32"/><stop offset=".45" stop-color="#14aaa3" stop-opacity=".1"/><stop offset="1" stop-color="#14aaa3" stop-opacity="0"/></radialGradient>
+ <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#62fff7" stop-opacity=".42"/><stop offset="1" stop-color="#18bbb3" stop-opacity="0"/></linearGradient>
+ <filter id="blur"><feGaussianBlur stdDeviation="16"/></filter>
 </defs>
-<rect width="1000" height="420" fill="url(#b)"/><rect width="1000" height="420" fill="url(#g1)"/><rect width="1000" height="420" fill="url(#g2)"/>
-<g fill="#63fff6" opacity=".16"><circle cx="210" cy="58" r="7"/><circle cx="315" cy="36" r="4"/><circle cx="610" cy="62" r="6"/><circle cx="790" cy="34" r="5"/><circle cx="900" cy="82" r="3"/></g>
-<g fill="#020404">
- <path d="M0 356 Q25 320 50 356 Q75 312 105 356 Q135 326 165 356 Q195 308 225 356 Q255 324 285 356 Q315 300 345 356 Q375 320 405 356 Q435 307 465 356 Q495 326 525 356 Q555 304 585 356 Q615 321 645 356 Q675 309 705 356 Q735 326 765 356 Q795 305 825 356 Q855 320 885 356 Q915 311 945 356 Q970 322 1000 356 V420 H0Z"/>
- <path d="M112 344 l-7-88 18 60 15-111 15 105 20-75 6 103zM330 344 l8-102 15 68 20-120 15 111 20-78 4 116zM605 344 l-9-90 21 61 12-106 17 100 20-74 7 109zM835 344 l6-91 18 64 14-115 17 108 20-72 6 106z"/>
+<rect width="1000" height="620" fill="url(#bg)"/><rect width="1000" height="620" fill="url(#g1)"/><rect width="1000" height="620" fill="url(#g2)"/>
+<g filter="url(#blur)" opacity=".86">
+ <path d="M60 0 L250 500 L360 500 L135 0Z" fill="url(#beam)"/>
+ <path d="M350 0 L430 500 L560 500 L460 0Z" fill="url(#beam)"/>
+ <path d="M710 0 L610 500 L750 500 L810 0Z" fill="url(#beam)"/>
+ <path d="M970 0 L790 500 L900 500 L1000 55Z" fill="url(#beam)"/>
 </g>
+<g fill="#000304">
+ <path d="M0 490 Q28 450 57 490 Q85 441 115 490 Q145 455 175 490 Q205 438 235 490 Q265 454 295 490 Q325 433 355 490 Q385 450 415 490 Q445 438 475 490 Q505 454 535 490 Q565 431 595 490 Q625 449 655 490 Q685 437 715 490 Q745 454 775 490 Q805 433 835 490 Q865 449 895 490 Q925 439 955 490 Q978 454 1000 490 V620 H0Z"/>
+ <path d="M95 480 l-8-112 21 78 16-138 17 130 21-92 7 132zM270 480 l8-120 18 82 20-148 17 140 23-98 3 144zM520 480 l-9-112 22 76 13-143 18 136 22-97 7 140zM790 480 l7-118 20 82 16-150 20 141 21-99 5 144z"/>
+</g>
+<g fill="#020708" stroke="#17635f" stroke-width="3" opacity=".9">
+ <circle cx="220" cy="312" r="19"/><rect x="205" y="330" width="30" height="82" rx="13"/>
+ <path d="M220 350 L168 300 M220 350 L270 292" fill="none" stroke-width="11" stroke-linecap="round"/>
+ <circle cx="705" cy="322" r="20"/><rect x="690" y="342" width="31" height="83" rx="13"/>
+ <path d="M705 362 L650 307 M705 362 L760 300" fill="none" stroke-width="11" stroke-linecap="round"/>
+</g>
+<g fill="#66fff7" opacity=".7"><circle cx="110" cy="70" r="5"/><circle cx="380" cy="48" r="4"/><circle cx="675" cy="75" r="5"/><circle cx="900" cy="52" r="4"/></g>
 </svg>
