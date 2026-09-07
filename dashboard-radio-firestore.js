@@ -11,7 +11,7 @@ oldPanel.replaceWith(panel);
 
 const style=document.createElement('style');
 style.textContent=`
-.bt-radio-panel{border-color:var(--teal)!important;box-shadow:0 0 18px rgba(37,199,193,.15)!important;overflow:hidden!important;background:linear-gradient(180deg,rgba(1,7,8,.06),rgba(1,7,8,.18)),url("bt-radio-panel-custom-crisp.webp?v=20260907-radio13") center center/cover no-repeat!important}
+.bt-radio-panel{border-color:var(--teal)!important;box-shadow:0 0 18px rgba(37,199,193,.15)!important;overflow:hidden!important;background:linear-gradient(180deg,rgba(1,7,8,.06),rgba(1,7,8,.18)),url("bt-radio-panel-real-crisp.jpg?v=20260907-radio14") center center/cover no-repeat!important}
 .bt-radio-panel>h3{background:var(--teal)!important;color:#fff!important;text-align:center!important;border-bottom:0!important;font-weight:950!important;letter-spacing:.045em!important;text-shadow:0 1px 2px rgba(0,0,0,.45)!important}
 .bt-radio-panel .radio{background:transparent!important}
 .bt-radio-box{position:relative!important;padding:9px!important;border:0!important;background:transparent!important;box-shadow:none!important;text-align:center}
