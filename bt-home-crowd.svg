@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 420" role="img" aria-label="Stylized concert crowd">
+<defs>
+ <linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#071719"/><stop offset=".55" stop-color="#071011"/><stop offset="1" stop-color="#020404"/></linearGradient>
+ <radialGradient id="g1" cx="30%" cy="12%" r="58%"><stop stop-color="#2ce8dc" stop-opacity=".3"/><stop offset="1" stop-color="#2ce8dc" stop-opacity="0"/></radialGradient>
+ <radialGradient id="g2" cx="76%" cy="0%" r="55%"><stop stop-color="#1bb8b0" stop-opacity=".24"/><stop offset="1" stop-color="#1bb8b0" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1000" height="420" fill="url(#b)"/><rect width="1000" height="420" fill="url(#g1)"/><rect width="1000" height="420" fill="url(#g2)"/>
+<g fill="#63fff6" opacity=".16"><circle cx="210" cy="58" r="7"/><circle cx="315" cy="36" r="4"/><circle cx="610" cy="62" r="6"/><circle cx="790" cy="34" r="5"/><circle cx="900" cy="82" r="3"/></g>
+<g fill="#020404">
+ <path d="M0 356 Q25 320 50 356 Q75 312 105 356 Q135 326 165 356 Q195 308 225 356 Q255 324 285 356 Q315 300 345 356 Q375 320 405 356 Q435 307 465 356 Q495 326 525 356 Q555 304 585 356 Q615 321 645 356 Q675 309 705 356 Q735 326 765 356 Q795 305 825 356 Q855 320 885 356 Q915 311 945 356 Q970 322 1000 356 V420 H0Z"/>
+ <path d="M112 344 l-7-88 18 60 15-111 15 105 20-75 6 103zM330 344 l8-102 15 68 20-120 15 111 20-78 4 116zM605 344 l-9-90 21 61 12-106 17 100 20-74 7 109zM835 344 l6-91 18 64 14-115 17 108 20-72 6 106z"/>
+</g>
+</svg>
