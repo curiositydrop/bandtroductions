@@ -92,6 +92,193 @@ html.bt-home-booting .grid{visibility:hidden!important}
   .right .bt-radio-now{font-size:7px}.right .bt-radio-track{font-size:11px}.right .bt-radio-band{font-size:9px}.right .bt-radio-playlist{font-size:7.5px}.right .bt-radio-next-label{font-size:7px}.right .bt-radio-next-name{font-size:8px}.right .bt-radio-listen{font-size:8px!important}.right .bt-radio-actions .btn{font-size:7px!important}
   .note{font-size:8px;line-height:1.3}.venue-vote-card strong{font-size:9px}.venue-vote-card span{font-size:7px}
 }
+
+/* === FUTURISTIC HOME VISUAL REFRESH 2026-09-07 === */
+:root{
+  --bt-glow:rgba(37,199,193,.34);
+  --bt-glow-strong:rgba(37,199,193,.62);
+  --bt-panel-top:rgba(15,25,26,.97);
+  --bt-panel-bottom:rgba(5,10,11,.98);
+}
+body{
+  background:
+    radial-gradient(circle at 50% -10%,rgba(18,95,92,.18),transparent 34%),
+    radial-gradient(circle at 8% 45%,rgba(12,68,67,.10),transparent 31%),
+    #050707;
+}
+.grid>.left .panel,
+.grid>.center .panel,
+.grid>.right .panel{
+  border-color:rgba(37,199,193,.38);
+  border-radius:13px;
+  background:linear-gradient(155deg,var(--bt-panel-top),var(--bt-panel-bottom));
+  box-shadow:
+    0 10px 28px rgba(0,0,0,.38),
+    inset 0 1px 0 rgba(255,255,255,.025),
+    0 0 14px rgba(37,199,193,.045);
+}
+.grid>.left .panel h3,
+.grid>.center .panel h3,
+.grid>.right .panel h3{
+  border-bottom-color:rgba(37,199,193,.26);
+  background:linear-gradient(90deg,rgba(37,199,193,.075),transparent 64%);
+}
+.grid>.center .hero{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  border-color:rgba(37,199,193,.62);
+  background:
+    linear-gradient(90deg,rgba(3,9,10,.91) 0%,rgba(3,9,10,.78) 45%,rgba(3,9,10,.48) 100%),
+    linear-gradient(180deg,rgba(4,11,12,.18),rgba(2,5,6,.74)),
+    url("bt-home-stage.svg") center 48%/cover no-repeat;
+  box-shadow:
+    0 14px 34px rgba(0,0,0,.48),
+    0 0 25px rgba(37,199,193,.15),
+    inset 0 0 44px rgba(22,190,181,.055);
+}
+.grid>.center .hero:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 68% 15%,rgba(82,255,245,.14),transparent 26%),
+    linear-gradient(115deg,transparent 0 67%,rgba(37,199,193,.055) 67% 68%,transparent 68% 100%);
+}
+.grid>.center .hero h1,
+.grid>.center .hero p{
+  text-shadow:0 2px 12px rgba(0,0,0,.92);
+}
+.grid>.center .hero h1 span{
+  text-shadow:0 0 18px rgba(37,199,193,.34),0 2px 12px rgba(0,0,0,.92);
+}
+.grid>.center .hero .btn{
+  border-radius:8px;
+  background:rgba(4,11,12,.76);
+  box-shadow:inset 0 0 0 1px rgba(37,199,193,.08);
+  transition:transform .16s ease,box-shadow .16s ease,background .16s ease;
+}
+.grid>.center .hero .btn.primary{
+  background:linear-gradient(180deg,#36d6d0,#20bbb5);
+  color:#04100f;
+  box-shadow:0 0 18px rgba(37,199,193,.28);
+}
+.grid>.center .hero .btn:hover,
+.grid>.center .hero .btn:focus-visible{
+  transform:translateY(-1px);
+  box-shadow:0 0 18px rgba(37,199,193,.24);
+}
+.grid>.center .feed{
+  overflow:hidden;
+}
+.grid>.center .feed .post{
+  background:linear-gradient(180deg,rgba(10,18,19,.54),rgba(5,9,10,.34));
+}
+.grid>.center .feed .post:hover{
+  background:linear-gradient(180deg,rgba(13,25,26,.68),rgba(6,11,12,.45));
+}
+.grid>.center .feed .post-avatar{
+  border-color:rgba(37,199,193,.62);
+  box-shadow:0 0 10px rgba(37,199,193,.16);
+}
+.grid>.left .menu a{
+  transition:background .15s ease,color .15s ease,padding-left .15s ease;
+}
+.grid>.left .menu a:hover,
+.grid>.left .menu a:focus-visible{
+  background:rgba(37,199,193,.07);
+  padding-left:15px;
+}
+.grid>.left section.panel:nth-of-type(2){
+  overflow:hidden;
+  background:
+    linear-gradient(180deg,rgba(5,12,13,.84),rgba(4,8,9,.92)),
+    url("bt-home-crowd.svg") center bottom/cover no-repeat;
+}
+.grid>.left .sponsor{
+  border-color:rgba(37,199,193,.22);
+  border-radius:8px;
+  background:linear-gradient(145deg,rgba(13,19,20,.96),rgba(5,8,9,.98));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+.venue-vote-card{
+  border-radius:11px;
+  box-shadow:0 10px 24px rgba(0,0,0,.36),0 0 15px rgba(255,89,81,.12);
+}
+.grid>.right .panel:first-child{
+  overflow:hidden;
+}
+.grid>.right .panel:first-child .show{
+  position:relative;
+  background:
+    linear-gradient(90deg,rgba(4,9,10,.95),rgba(4,10,11,.77)),
+    url("bt-home-crowd.svg") center 68%/cover no-repeat;
+  border-bottom-color:rgba(37,199,193,.18);
+}
+.grid>.right .panel:first-child .show:nth-of-type(even){
+  background-position:center 82%;
+}
+.grid>.right .show-details-btn,
+.grid>.right .show .btn{
+  border-radius:6px;
+}
+.grid>.right .radio-panel{
+  overflow:hidden;
+  border-color:rgba(37,199,193,.58);
+  box-shadow:
+    0 12px 30px rgba(0,0,0,.42),
+    0 0 21px rgba(37,199,193,.13);
+}
+.grid>.right .radio-panel .radio{
+  background:
+    linear-gradient(180deg,rgba(4,11,12,.78),rgba(3,7,8,.92)),
+    url("bt-home-crowd.svg") center bottom/cover no-repeat;
+}
+.grid>.right .radio-panel .radio-box{
+  border-color:rgba(37,199,193,.32);
+  border-radius:10px;
+  background:rgba(3,8,9,.78);
+  box-shadow:inset 0 0 22px rgba(37,199,193,.045);
+}
+.grid>.right .radio-panel .btn{
+  border-radius:7px;
+}
+.nav{
+  background:linear-gradient(180deg,#0b1112,#070a0b);
+  box-shadow:0 8px 22px rgba(0,0,0,.32);
+}
+.nav a,.nav-coming-soon{
+  transition:background .16s ease,color .16s ease,box-shadow .16s ease;
+}
+.nav a:hover,.nav a:focus-visible{
+  background:rgba(37,199,193,.08);
+  color:#73fff5;
+}
+.top{
+  background:linear-gradient(180deg,#091011,#060808);
+  border-color:rgba(37,199,193,.25);
+}
+.news-scroller-card{
+  border-color:rgba(37,199,193,.28);
+  border-radius:8px;
+}
+@media(max-width:650px){
+  .grid>.left .panel,
+  .grid>.center .panel,
+  .grid>.right .panel{border-radius:7px}
+  .grid>.center .hero{
+    background-position:56% 50%;
+    box-shadow:0 6px 18px rgba(0,0,0,.45),0 0 10px rgba(37,199,193,.10);
+  }
+  .grid>.center .hero .btn{border-radius:5px}
+  .grid>.left .sponsor,.venue-vote-card,.grid>.right .radio-panel .radio-box{border-radius:6px}
+}
+@media(prefers-reduced-motion:reduce){
+  .grid>.center .hero .btn,.grid>.left .menu a,.nav a{transition:none}
+}
+
 </style>
 </head>
 <body>
