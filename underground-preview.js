@@ -30,6 +30,7 @@ let signedInUser=null;
 let signedInProfile=null;
 let dashboardTagProfiles=[];
 let dashboardTaggedProfiles=[];
+const adminAvatarFallback='bt-admin-avatar.svg?v=1';
 
 function syncHeaderLogo(){
   const logo=document.querySelector('.header-logo'),brand=document.querySelector('.brand');
@@ -278,8 +279,14 @@ function renderProfileSummary(user, profile={}){
   const name=profile.displayName||profile.name||profile.bandName||profile.venueName||user?.displayName||'My Profile';
   const type=profile.profileType||profile.type||profile.role||profile.category||'Member';
   const image=profile.avatarUrl||profile.photoURL||profile.imageUrl||profile.profileImage||profile.avatar||user?.photoURL||'';
+  const isAdmin=String(name||'').trim().toLowerCase()==='bandtroductions admin';
+  const effectiveImage=image||(isAdmin?adminAvatarFallback:'');
   summary.href=`profile.html?id=${encodeURIComponent(user.uid)}`;
-  summary.innerHTML=`<span class="dashboard-profile-avatar">${image?`<img src="${safeText(image)}" alt="${safeText(name)}">`:safeText(initialsFor(name))}</span><span><span class="dashboard-profile-name">${safeText(name)}</span><span class="dashboard-profile-type">${safeText(type)}</span><span class="dashboard-profile-view">View profile →</span></span>`;
+  summary.innerHTML=`<span class="dashboard-profile-avatar">${effectiveImage?`<img src="${safeText(effectiveImage)}" alt="${safeText(name)}">`:safeText(initialsFor(name))}</span><span><span class="dashboard-profile-name">${safeText(name)}</span><span class="dashboard-profile-type">${safeText(type)}</span><span class="dashboard-profile-view">View profile →</span></span>`;
+  const avatarImg=summary.querySelector('.dashboard-profile-avatar img');
+  if(avatarImg&&isAdmin){
+    avatarImg.addEventListener('error',()=>{if(!avatarImg.src.endsWith('bt-admin-avatar.svg?v=1'))avatarImg.src=adminAvatarFallback;},{once:true});
+  }
   summary.hidden=false;
 }
 
