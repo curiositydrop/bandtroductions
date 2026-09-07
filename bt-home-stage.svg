@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-label="Stylized live concert stage">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#071215"/><stop offset=".55" stop-color="#081012"/><stop offset="1" stop-color="#030607"/></linearGradient>
+  <radialGradient id="glow" cx="50%" cy="0%" r="78%"><stop stop-color="#20e0d2" stop-opacity=".28"/><stop offset=".5" stop-color="#0aa89d" stop-opacity=".08"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+  <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#78fff7" stop-opacity=".36"/><stop offset="1" stop-color="#31d8cf" stop-opacity="0"/></linearGradient>
+</defs>
+<rect width="1200" height="520" fill="url(#bg)"/><rect width="1200" height="520" fill="url(#glow)"/>
+<g opacity=".72">
+  <path d="M150 0 L300 405 L410 405 L235 0Z" fill="url(#beam)"/>
+  <path d="M420 0 L505 405 L620 405 L505 0Z" fill="url(#beam)"/>
+  <path d="M760 0 L670 405 L790 405 L850 0Z" fill="url(#beam)"/>
+  <path d="M1020 0 L850 405 L970 405 L1100 0Z" fill="url(#beam)"/>
+</g>
+<g fill="#071012" stroke="#1d4d4b" stroke-width="2">
+  <circle cx="600" cy="215" r="38"/><rect x="570" y="250" width="60" height="112" rx="24"/><path d="M600 275 L530 330 M600 275 L685 316" fill="none" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="845" cy="235" r="34"/><rect x="820" y="268" width="52" height="100" rx="22"/><path d="M846 294 L910 250 M845 295 L780 330" fill="none" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="365" cy="238" r="33"/><rect x="340" y="270" width="50" height="96" rx="20"/><path d="M365 295 L295 255 M365 295 L435 325" fill="none" stroke-width="16" stroke-linecap="round"/>
+</g>
+<g opacity=".95" fill="#020404">
+  <path d="M0 470 Q35 430 70 470 Q105 420 145 470 Q180 438 215 470 Q245 423 280 470 Q315 432 350 470 Q385 414 420 470 Q452 438 485 470 Q520 425 555 470 Q590 412 625 470 Q660 435 695 470 Q730 418 765 470 Q800 430 835 470 Q870 410 905 470 Q940 434 975 470 Q1010 420 1045 470 Q1080 432 1115 470 Q1150 418 1200 470 V520 H0Z"/>
+  <path d="M86 455 l-8-72 18 52 10-86 14 80 18-66 8 96zM300 458 l7-88 14 58 19-100 14 92 18-65 2 106zM640 458 l-10-92 23 62 10-110 18 105 16-77 8 112zM960 458 l-7-76 20 48 14-96 17 89 19-73 7 108z"/>
+</g>
+</svg>
