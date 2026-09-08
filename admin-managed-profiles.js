@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { isAdminAccount } from './admin-access.js';
 import { createWelcomePost } from './welcome-profile-post.js?v=2';
 
@@ -88,6 +88,11 @@ function makeCard(profile){
     const view=document.createElement('a');view.className='auth-button auth-button-secondary';view.href=`profile.html?id=${encodeURIComponent(profile.id)}`;view.textContent='View Profile';
     const edit=document.createElement('a');edit.className='auth-button auth-button-secondary';edit.href=`profile-setup.html?adminProfile=${encodeURIComponent(profile.id)}`;edit.textContent='Edit Profile';
     actions.append(view,edit);
+    if(needsLocationUpdate(profile)&&ownerId){
+      const notifyLocation=document.createElement('button');notifyLocation.type='button';notifyLocation.className='auth-button auth-button-secondary';notifyLocation.textContent='Notify Location Update';
+      notifyLocation.addEventListener('click',async()=>{if(!confirm(`Send a profile-location update notification to ${profile.displayName||profile.email||'this member'}?`))return;notifyLocation.disabled=true;try{await addDoc(collection(db,'notifications'),{recipientId:ownerId,actorId:auth.currentUser?.uid||'',actorName:'BANDtroductions Admin',message:'Please update your BANDtroductions profile with your City / Town, State / Province / Region, and Country.',linkUrl:`profile-setup.html?id=${encodeURIComponent(profile.id)}`,read:false,type:'admin-broadcast',emailRequested:true,createdAt:serverTimestamp()});notifyLocation.textContent='Notification Sent'}catch(error){console.error(error);alert('The location update notification could not be sent.');notifyLocation.disabled=false}});
+      actions.append(notifyLocation);
+    }
     if(state!=='published'){
       const approve=document.createElement('button');approve.type='button';approve.className='auth-button managed-approve';approve.textContent='Approve & Publish';
       approve.addEventListener('click',async()=>{if(!confirm(`Approve and publish ${profile.displayName||'this profile'}?`))return;approve.disabled=true;try{await updateDoc(doc(db,'profiles',profile.id),{approvalStatus:'approved',published:true,approvedAt:serverTimestamp(),approvedBy:auth.currentUser?.uid||'',updatedAt:serverTimestamp()});if(!profile.welcomePostCreated)await createWelcomePost({profileId:profile.id,displayName:profile.displayName||'New member',accountType:profile.accountType||'member'})}catch(error){console.error(error);alert('The profile could not be approved.');approve.disabled=false}});
