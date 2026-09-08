@@ -93,7 +93,17 @@
           <input id="display-name" type="text" maxlength="80" required autocomplete="name">
         </label>
 
-        <label>Location<input id="location" type="text" maxlength="100" placeholder="Portland, Maine"></label>
+        <div class="auth-grid">
+          <label>City / Town
+            <input id="city" type="text" maxlength="80" required placeholder="Portland" autocomplete="address-level2">
+          </label>
+          <label>State / Province / Region
+            <input id="region" type="text" maxlength="80" required placeholder="Maine" autocomplete="address-level1">
+          </label>
+        </div>
+        <label>Country
+          <input id="country" type="text" maxlength="80" required placeholder="United States" autocomplete="country-name">
+        </label>
         <label>About<textarea id="bio" maxlength="1000" rows="5" required placeholder="Tell the music community about yourself..."></textarea></label>
 
         <div id="artist-classification-fields" class="signup-fields" hidden>
@@ -218,6 +228,7 @@
       if (!url) return '';
       return /^https?:\/\//i.test(url) ? url : `https://${url}`;
     };
+    const locationValue = () => [value('city'), value('region'), value('country')].filter(Boolean).join(', ');
 
     function friendlyAuthError(error) {
       return ({
@@ -266,7 +277,7 @@
 
     function updateFinalState() {
       if (isClaimReturn) return;
-      const requiredOkay = accountTypeInput.value && displayNameInput.value.trim() && value('bio');
+      const requiredOkay = accountTypeInput.value && displayNameInput.value.trim() && value('city') && value('region') && value('country') && value('bio');
       const checksOkay = document.getElementById('community-rules').checked
         && document.getElementById('adult-content-rules').checked
         && document.getElementById('rights-acknowledgment').checked;
@@ -392,7 +403,7 @@
             profileId: createdUser.uid,
             displayName,
             accountType,
-            location: value('location')
+            location: locationValue()
           }).catch(error => console.warn('Admin account notification could not be created:', error));
         }
 
@@ -400,7 +411,7 @@
           ownerId: createdUser.uid,
           accountType,
           displayName,
-          location: value('location'),
+          location: locationValue(),
           bannerImageUrl: '',
           imageUrl: '',
           bio: value('bio'),
