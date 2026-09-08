@@ -17,54 +17,11 @@ style.textContent=`
   box-shadow:0 0 18px rgba(37,199,193,.15)!important;
   overflow:hidden!important;
   background:
-    radial-gradient(circle at 82% 14%,rgba(39,242,235,.22),transparent 24%),
-    radial-gradient(circle at 18% 18%,rgba(39,242,235,.12),transparent 25%),
-    linear-gradient(180deg,#071415 0%,#02090a 36%,#010606 100%)!important
+    linear-gradient(180deg,rgba(1,7,8,.06),rgba(1,7,8,.18)),
+    url("bt-radio-speaker-crisp.jpg?v=20260907-radio17") center center/cover no-repeat!important
 }
-.bt-radio-panel::before{
-  content:""!important;
-  position:absolute!important;
-  z-index:0!important;
-  top:58px!important;
-  right:-4px!important;
-  width:34%!important;
-  bottom:0!important;
-  pointer-events:none!important;
-  opacity:.92!important;
-  background:
-    repeating-linear-gradient(180deg,
-      rgba(4,9,10,0) 0 9%,
-      rgba(24,226,219,.20) 9% 9.8%,
-      rgba(1,5,6,.98) 9.8% 23%),
-    repeating-linear-gradient(90deg,
-      #030707 0 12%,
-      #0b1718 12% 15%,
-      #020505 15% 31%)!important;
-  border-left:1px solid rgba(55,242,235,.34)!important;
-  box-shadow:
-    inset 14px 0 22px rgba(0,0,0,.72),
-    -18px 0 40px rgba(0,0,0,.55),
-    0 0 28px rgba(37,199,193,.12)!important
-}
-.bt-radio-panel::after{
-  content:""!important;
-  position:absolute!important;
-  z-index:0!important;
-  left:0!important;
-  right:0!important;
-  bottom:0!important;
-  height:18%!important;
-  pointer-events:none!important;
-  background:
-    radial-gradient(ellipse at 8% 100%,#000 0 14%,transparent 15%),
-    radial-gradient(ellipse at 20% 100%,#000 0 16%,transparent 17%),
-    radial-gradient(ellipse at 34% 100%,#000 0 13%,transparent 14%),
-    radial-gradient(ellipse at 49% 100%,#000 0 17%,transparent 18%),
-    radial-gradient(ellipse at 65% 100%,#000 0 14%,transparent 15%),
-    radial-gradient(ellipse at 79% 100%,#000 0 16%,transparent 17%),
-    radial-gradient(ellipse at 93% 100%,#000 0 13%,transparent 14%),
-    linear-gradient(180deg,transparent,rgba(0,0,0,.88))!important
-}
+.bt-radio-panel::before{content:none!important;background:none!important;box-shadow:none!important;border:0!important}
+.bt-radio-panel::after{content:none!important;background:none!important}
 .bt-radio-panel>*{position:relative!important;z-index:1!important}
 .bt-radio-panel>h3{background:var(--teal)!important;color:#fff!important;text-align:center!important;border-bottom:0!important;font-weight:950!important;letter-spacing:.045em!important;text-shadow:0 1px 2px rgba(0,0,0,.45)!important}
 .bt-radio-panel .radio{background:transparent!important}
