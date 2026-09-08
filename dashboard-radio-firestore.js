@@ -18,7 +18,7 @@ style.textContent=`
   overflow:hidden!important;
   background:
     linear-gradient(180deg,rgba(1,7,8,.06),rgba(1,7,8,.18)),
-    url("bt-radio-speaker-crisp.jpg?v=20260907-radio17") center center/cover no-repeat!important
+    url("bt-radio-speaker-crisp.jpg?v=20260907-radio18") right center/cover no-repeat!important
 }
 .bt-radio-panel::before{content:none!important;background:none!important;box-shadow:none!important;border:0!important}
 .bt-radio-panel::after{content:none!important;background:none!important}
