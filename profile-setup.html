@@ -20,7 +20,7 @@
     .profile-image-preview.avatar{width:150px;max-width:100%;border-radius:50%;justify-self:start}
     .profile-image-preview img{width:100%;height:100%;object-fit:cover}
     .profile-image-field input[type=file]{padding:12px;background:#0d0d0d;border:1px solid #3a3a3a;border-radius:12px;color:#ddd}
-    .upload-note{color:#999;font-size:.82rem;line-height:1.4}
+    .upload-note{color:#999;font-size:.82rem;line-height:1.4}.profile-location-fields.location-needed{border:1px solid #8a3d3d;border-radius:14px;padding:12px;background:#160d0d}.profile-location-fields.location-needed .upload-note{display:block!important;color:#ffb4b4}
     @media(max-width:620px){.name-emoji-row,.profile-image-grid{grid-template-columns:1fr}.emoji-select-wrap{grid-template-columns:54px minmax(0,1fr)}}
   </style>
 </head>
@@ -42,7 +42,20 @@
           </label>
         </div>
       </div>
-      <label>Location<input id="location" type="text" maxlength="100" placeholder="Portland, Maine"></label>
+      <div id="location-fields" class="profile-location-fields">
+        <div class="auth-grid">
+          <label>City / Town
+            <input id="city" type="text" maxlength="80" required placeholder="Portland" autocomplete="address-level2">
+          </label>
+          <label>State / Province / Region
+            <input id="region" type="text" maxlength="80" required placeholder="Maine" autocomplete="address-level1">
+          </label>
+        </div>
+        <label>Country
+          <input id="country" type="text" maxlength="80" required placeholder="United States" autocomplete="country-name">
+        </label>
+        <small id="location-update-note" class="upload-note" hidden>Please complete your City / Town, State / Province / Region, and Country.</small>
+      </div>
       <div class="profile-image-grid">
         <div class="profile-image-field">
           <strong>Banner image</strong>
@@ -140,6 +153,23 @@
     let existingProfileExists=false;
     let existingWelcomePostCreated=false;
     const value=(id)=>document.getElementById(id)?.value.trim()||'';
+    const combinedLocation=()=>[value('city'),value('region'),value('country')].filter(Boolean).join(', ');
+    function parseLocation(data={}){
+      if(data.city||data.region||data.country)return {city:data.city||'',region:data.region||'',country:data.country||''};
+      const raw=String(data.location||'').trim();
+      if(!raw)return {city:'',region:'',country:''};
+      const parts=raw.split(',').map(part=>part.trim()).filter(Boolean);
+      if(parts.length>=3)return {city:parts[0],region:parts.slice(1,-1).join(', '),country:parts[parts.length-1]};
+      if(parts.length===2)return {city:parts[0],region:parts[1],country:''};
+      const lower=raw.toLowerCase();
+      if(['united states','usa','u.s.a.','us','u.s.','canada','united kingdom','uk','england','scotland','wales','ireland','australia'].includes(lower))return {city:'',region:'',country:raw};
+      return {city:'',region:raw,country:''};
+    }
+    function syncLocationAttention(){
+      const incomplete=!(value('city')&&value('region')&&value('country'));
+      document.getElementById('location-fields')?.classList.toggle('location-needed',incomplete);
+      const note=document.getElementById('location-update-note');if(note)note.hidden=!incomplete;
+    }
     const normalizeUrl=(raw)=>{const url=raw.trim();if(!url)return '';return /^https?:\/\//i.test(url)?url:`https://${url}`;};
     const safeName=(name)=>String(name||'image').replace(/[^a-z0-9._-]+/gi,'-').replace(/-+/g,'-');
     function profileIdFromReferrer(){try{if(!document.referrer)return '';const referrer=new URL(document.referrer);if(!referrer.pathname.endsWith('/profile.html'))return '';return referrer.searchParams.get('id')||'';}catch(_){return '';}}
@@ -155,10 +185,11 @@
     bannerFile.addEventListener('change',()=>previewFile(bannerFile,bannerPreview,'No banner selected',existingBannerImageUrl));
     avatarFile.addEventListener('change',()=>previewFile(avatarFile,avatarPreview,'Initials will appear',existingImageUrl));
     musicTypeInput.addEventListener('change',syncFeaturedMusicType);
-    function fillProfile(data={}){const ids=['display-name','location','bio','music-type','featured-music-type','genre','year-formed','members','booking-email','instruments','experience','looking-for-band','capacity','venue-type','venue-booking','profile-emoji','favorite-genres','fan-interests','website','media-link'];ids.forEach(id=>{const element=document.getElementById(id);if(!element)return;const key=id.replace(/-([a-z])/g,(_,letter)=>letter.toUpperCase());if(data[key]!==undefined&&data[key]!==null)element.value=data[key];});existingOwnerId=data.ownerId||'';existingBannerImageUrl=data.bannerImageUrl||data.coverImageUrl||data.bannerUrl||'';existingImageUrl=data.imageUrl||data.avatarUrl||data.photoURL||'';document.getElementById('banner-image-url').value=existingBannerImageUrl;document.getElementById('image-url').value=existingImageUrl;setImagePreview(bannerPreview,existingBannerImageUrl,'No banner selected');setImagePreview(avatarPreview,existingImageUrl,'Initials will appear');syncFeaturedMusicType();updateEmojiPreview();growBio();}
+    ['city','region','country'].forEach(id=>document.getElementById(id)?.addEventListener('input',syncLocationAttention));
+    function fillProfile(data={}){const ids=['display-name','bio','music-type','featured-music-type','genre','year-formed','members','booking-email','instruments','experience','looking-for-band','capacity','venue-type','venue-booking','profile-emoji','favorite-genres','fan-interests','website','media-link'];ids.forEach(id=>{const element=document.getElementById(id);if(!element)return;const key=id.replace(/-([a-z])/g,(_,letter)=>letter.toUpperCase());if(data[key]!==undefined&&data[key]!==null)element.value=data[key];});const parsedLocation=parseLocation(data);document.getElementById('city').value=parsedLocation.city;document.getElementById('region').value=parsedLocation.region;document.getElementById('country').value=parsedLocation.country;syncLocationAttention();existingOwnerId=data.ownerId||'';existingBannerImageUrl=data.bannerImageUrl||data.coverImageUrl||data.bannerUrl||'';existingImageUrl=data.imageUrl||data.avatarUrl||data.photoURL||'';document.getElementById('banner-image-url').value=existingBannerImageUrl;document.getElementById('image-url').value=existingImageUrl;setImagePreview(bannerPreview,existingBannerImageUrl,'No banner selected');setImagePreview(avatarPreview,existingImageUrl,'Initials will appear');syncFeaturedMusicType();updateEmojiPreview();growBio();}
     onAuthStateChanged(auth,async(user)=>{if(!user){window.location.href='login.html';return;}currentUser=user;try{const userSnapshot=await getDoc(doc(db,'users',user.uid));const userData=userSnapshot.exists()?userSnapshot.data():{};targetProfileId=new URLSearchParams(location.search).get('id')||profileIdFromReferrer()||user.uid;let existingProfile={displayName:userData.displayName||user.displayName||'',imageUrl:user.photoURL||'',ownerId:user.uid};try{const profileSnapshot=await getDoc(doc(db,'profiles',targetProfileId));existingProfileExists=profileSnapshot.exists();if(profileSnapshot.exists()){existingProfile=profileSnapshot.data();existingWelcomePostCreated=existingProfile.welcomePostCreated===true;}}catch(profileError){if(profileError.code!=='permission-denied')throw profileError;}if(existingProfile.ownerId&&existingProfile.ownerId!==user.uid){status.textContent='You do not have permission to edit this profile.';return;}accountType=existingProfile.accountType||userData.accountType||'fan';message.textContent=`Build and publish your ${accountType} profile. You can return and edit it anytime.`;showFields(accountType);fillProfile(existingProfile);form.hidden=false;status.textContent='';}catch(error){console.error(error);status.textContent='We could not load your account information.';}});
     resetButton.addEventListener('click',async()=>{if(!currentUser?.email)return;resetButton.disabled=true;resetStatus.textContent='Sending reset email…';try{await sendPasswordResetEmail(auth,currentUser.email);resetStatus.textContent=`Password reset email sent to ${currentUser.email}.`;}catch(error){console.error(error);resetStatus.textContent='We could not send the reset email. Please try again.';}finally{resetButton.disabled=false;}});
-    form.addEventListener('submit',async(event)=>{event.preventDefault();if(!currentUser||!targetProfileId)return;saveButton.disabled=true;status.textContent='Saving your profile…';try{let bannerImageUrl=existingBannerImageUrl||value('banner-image-url');let imageUrl=existingImageUrl||value('image-url');if(bannerFile.files?.[0]){status.textContent='Uploading banner image…';bannerImageUrl=await uploadProfileImage(bannerFile.files[0],'Banner');}if(avatarFile.files?.[0]){status.textContent='Uploading avatar image…';imageUrl=await uploadProfileImage(avatarFile.files[0],'Avatar');}existingBannerImageUrl=bannerImageUrl;existingImageUrl=imageUrl;document.getElementById('banner-image-url').value=bannerImageUrl;document.getElementById('image-url').value=imageUrl;status.textContent='Saving your profile…';const profileData={ownerId:existingOwnerId||currentUser.uid,accountType,displayName:value('display-name'),location:value('location'),bannerImageUrl,imageUrl,bio:value('bio'),musicType:value('music-type'),featuredMusicType:value('featured-music-type'),genre:value('genre'),yearFormed:value('year-formed'),members:value('members'),bookingEmail:value('booking-email'),instruments:value('instruments'),experience:value('experience'),lookingForBand:value('looking-for-band'),capacity:value('capacity'),venueType:value('venue-type'),venueBooking:value('venue-booking'),profileEmoji:value('profile-emoji'),favoriteGenres:value('favorite-genres'),fanInterests:value('fan-interests'),website:normalizeUrl(value('website')),mediaLink:normalizeUrl(value('media-link')),published:true,updatedAt:serverTimestamp()};await setDoc(doc(db,'profiles',targetProfileId),profileData,{merge:true});await updateDoc(doc(db,'users',currentUser.uid),{displayName:profileData.displayName,profileComplete:true,updatedAt:serverTimestamp()});await updateProfile(currentUser,{displayName:profileData.displayName,photoURL:imageUrl||currentUser.photoURL||null});if(!existingProfileExists&&!existingWelcomePostCreated){await createWelcomePost({profileId:targetProfileId,displayName:profileData.displayName,accountType});}window.location.href=`profile.html?id=${encodeURIComponent(targetProfileId)}`;}catch(error){console.error(error);status.textContent=error.message||'Your profile could not be saved. Please try again.';saveButton.disabled=false;}});
+    form.addEventListener('submit',async(event)=>{event.preventDefault();if(!currentUser||!targetProfileId)return;saveButton.disabled=true;status.textContent='Saving your profile…';try{let bannerImageUrl=existingBannerImageUrl||value('banner-image-url');let imageUrl=existingImageUrl||value('image-url');if(bannerFile.files?.[0]){status.textContent='Uploading banner image…';bannerImageUrl=await uploadProfileImage(bannerFile.files[0],'Banner');}if(avatarFile.files?.[0]){status.textContent='Uploading avatar image…';imageUrl=await uploadProfileImage(avatarFile.files[0],'Avatar');}existingBannerImageUrl=bannerImageUrl;existingImageUrl=imageUrl;document.getElementById('banner-image-url').value=bannerImageUrl;document.getElementById('image-url').value=imageUrl;status.textContent='Saving your profile…';const profileData={ownerId:existingOwnerId||currentUser.uid,accountType,displayName:value('display-name'),location:combinedLocation(),city:value('city'),region:value('region'),country:value('country'),bannerImageUrl,imageUrl,bio:value('bio'),musicType:value('music-type'),featuredMusicType:value('featured-music-type'),genre:value('genre'),yearFormed:value('year-formed'),members:value('members'),bookingEmail:value('booking-email'),instruments:value('instruments'),experience:value('experience'),lookingForBand:value('looking-for-band'),capacity:value('capacity'),venueType:value('venue-type'),venueBooking:value('venue-booking'),profileEmoji:value('profile-emoji'),favoriteGenres:value('favorite-genres'),fanInterests:value('fan-interests'),website:normalizeUrl(value('website')),mediaLink:normalizeUrl(value('media-link')),published:true,updatedAt:serverTimestamp()};await setDoc(doc(db,'profiles',targetProfileId),profileData,{merge:true});await updateDoc(doc(db,'users',currentUser.uid),{displayName:profileData.displayName,profileComplete:true,updatedAt:serverTimestamp()});await updateProfile(currentUser,{displayName:profileData.displayName,photoURL:imageUrl||currentUser.photoURL||null});if(!existingProfileExists&&!existingWelcomePostCreated){await createWelcomePost({profileId:targetProfileId,displayName:profileData.displayName,accountType});}window.location.href=`profile.html?id=${encodeURIComponent(targetProfileId)}`;}catch(error){console.error(error);status.textContent=error.message||'Your profile could not be saved. Please try again.';saveButton.disabled=false;}});
   </script>
 </body>
 </html>
