@@ -14,6 +14,13 @@ let loadedProfile = null;
 let signedInUser = null;
 let signedInProfile = null;
 
+const profileLocationComplete=profile=>{
+  if(!profile)return false;
+  if(String(profile.city||'').trim()&&String(profile.region||'').trim()&&String(profile.country||'').trim())return true;
+  const parts=String(profile.location||'').split(',').map(x=>x.trim()).filter(Boolean);
+  return parts.length>=3;
+};
+
 const burningTimeMedia = {
   featuredTitle: 'Featured Release: “Hard to Follow”',
   mediaLink: 'https://www.youtube.com/watch?v=RyAK3AAX49g',
