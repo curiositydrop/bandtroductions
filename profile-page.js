@@ -245,7 +245,8 @@ async function loadProfile(user) {
       signedInProfile = profileSnap.exists() ? profileSnap.data() : (userSnap.exists() ? userSnap.data() : {});
       shareButton.hidden = false;
       editButton.href = `profile-setup.html?id=${encodeURIComponent(profileId)}`;
-      editButton.textContent = 'Edit Profile';
+      editButton.textContent = profileLocationComplete(loadedProfile) ? 'Edit Profile' : '● Edit Profile';
+      if(!profileLocationComplete(loadedProfile)){editButton.title='Profile update needed: add City / Town, State / Province / Region, and Country.';editButton.style.borderColor='#8a3d3d';editButton.style.color='#ffb4b4'}
       editButton.hidden = !isOwner;
     }
 
