@@ -3,50 +3,94 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Public profile images. A signed-in user may only write inside
-    // their own Firebase Auth UID folder.
+    /* CURRENT PROFILE MEDIA PATH */
+    match /profile-media/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && (
+                     request.resource == null
+                     || (
+                       request.resource.size < 20 * 1024 * 1024
+                       && request.resource.contentType.matches('image/(jpeg|png|webp|gif)')
+                     )
+                   );
+    }
+
+    /* OLDER PROFILE MEDIA PATH */
     match /users/{userId}/profile-media/{fileName} {
       allow read: if true;
-      allow create, update: if request.auth != null
-                            && request.auth.uid == userId
-                            && request.resource.size < 20 * 1024 * 1024
-                            && request.resource.contentType.matches('image/.*');
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && (
+                     request.resource == null
+                     || (
+                       request.resource.size < 20 * 1024 * 1024
+                       && request.resource.contentType.matches('image/(jpeg|png|webp|gif)')
+                     )
+                   );
     }
 
-    // Existing user image folders remain supported.
+    /* OTHER USER IMAGE FOLDERS */
     match /users/{userId}/{folder}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && (
+                     request.resource == null
+                     || (
+                       request.resource.size < 20 * 1024 * 1024
+                       && request.resource.contentType.matches('image/(jpeg|png|webp|gif)')
+                     )
+                   );
+    }
+
+    /* BANDTRODUCTIONS RADIO SUBMISSIONS */
+    match /radio-submissions/{userId}/{fileName} {
       allow read: if true;
       allow create, update: if request.auth != null
                             && request.auth.uid == userId
-                            && request.resource.size < 20 * 1024 * 1024
-                            && request.resource.contentType.matches('image/.*');
+                            && (
+                              (request.resource.contentType == 'audio/mpeg'
+                               && request.resource.size < 25 * 1024 * 1024)
+                              ||
+                              (request.resource.contentType.matches('image/.*')
+                               && request.resource.size < 10 * 1024 * 1024)
+                            );
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Audition Room video submissions. Members may upload video only
-    // inside their own UID folder. Videos are capped at 150 MB.
+    /* ADMIN SONG / SHOW UPLOADS: MP3 files up to 250 MB */
+    match /radio-admin/{userId}/{fileName} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+                            && request.auth.uid == userId
+                            && 'email' in request.auth.token
+                            && request.auth.token.email == 'mbergeron79@gmail.com'
+                            && request.resource.contentType == 'audio/mpeg'
+                            && request.resource.size > 0
+                            && request.resource.size <= 250 * 1024 * 1024;
+      allow delete: if request.auth != null
+                    && request.auth.uid == userId
+                    && 'email' in request.auth.token
+                    && request.auth.token.email == 'mbergeron79@gmail.com';
+    }
+
+    /* AUDITION ROOM VIDEO SUBMISSIONS */
     match /auditions/{userId}/{fileName} {
       allow read: if true;
       allow create, update: if request.auth != null
                             && request.auth.uid == userId
                             && request.resource.size < 150 * 1024 * 1024
                             && request.resource.contentType.matches('video/.*');
-      allow delete: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // BANDtroductions Radio submissions. Members can upload only inside
-    // their own UID folder. Audio is capped at 25 MB and cover art at 10 MB.
-    match /radio-submissions/{userId}/{fileName} {
-      allow read: if true;
-      allow create, update: if request.auth != null
-                            && request.auth.uid == userId
-                            && (
-                              (request.resource.contentType == 'audio/mpeg' && request.resource.size < 25 * 1024 * 1024)
-                              ||
-                              (request.resource.contentType.matches('image/.*') && request.resource.size < 10 * 1024 * 1024)
-                            );
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null
+                    && (
+                      request.auth.uid == userId
+                      || (
+                        'email' in request.auth.token
+                        && request.auth.token.email == 'mbergeron79@gmail.com'
+                      )
+                    );
     }
   }
 }

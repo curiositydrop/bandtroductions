@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/f
 import { collection, deleteDoc, doc as fsDoc, onSnapshot, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { auth, db as socialDb } from './firebase-dev.js';
 import { isAdminAccount } from './admin-access.js';
+import { installAdminAudioUpload } from './radio-admin-upload.js?v=1';
 import { activePlaylist, playlistPosition, formatMinutes, RADIO_TIMEZONE } from './radio-schedule-engine.js?v=2';
 
 const cfg={apiKey:'AIzaSyApLiiJsKTw1Fp8J3aQatMqiSZoP_6EycE',authDomain:'bandfanwall.firebaseapp.com',databaseURL:'https://bandfanwall-default-rtdb.firebaseio.com',projectId:'bandfanwall',storageBucket:'bandfanwall.firebasestorage.app',messagingSenderId:'619241154826',appId:'1:619241154826:web:25ddc58eef094e3c0732f3'};
@@ -38,6 +39,7 @@ function install(){
   </div></section>
   <section class="crr-panel"><div class="crr-head"><div><h3>Scheduled Playlists</h3><div class="crr-muted">Edit, duplicate, disable, or delete programming.</div></div><span id="crr-playlist-count" class="crr-count">0</span></div><div id="crr-schedules" class="crr-schedules"></div></section></div>`;
   wireUi();
+  installAdminAudioUpload();
 }
 
 function songCard(key,s,mode='pending'){return `<article class="crr-card"><div class="crr-top"><div class="crr-art">${s.coverUrl?`<img src="${esc(s.coverUrl)}">`:'♪'}</div><div><div class="crr-title">${esc(s.title||'Untitled')}</div><div class="crr-artist">${esc(s.artist||'Unknown Artist')}</div><div class="crr-meta">${esc(s.genre||'—')} · ${durationText(s.durationSeconds)} · ${esc(s.contactEmail||'')}</div></div></div>${s.audioUrl?`<audio class="crr-audio" controls preload="none" src="${esc(s.audioUrl)}"></audio>`:''}<div class="crr-actions">${mode==='pending'?`<button class="crr-btn primary" data-action="approve-song" data-key="${esc(key)}">Approve</button><button class="crr-btn danger" data-action="reject-song" data-key="${esc(key)}">Reject</button>`:`<button class="crr-btn gold" data-action="restore-song" data-key="${esc(key)}">Restore</button><button class="crr-btn danger" data-action="delete-rejected-song" data-key="${esc(key)}">Delete</button>`}${s.profileUrl?`<a class="crr-btn" target="_blank" href="${esc(s.profileUrl)}">Profile</a>`:''}</div></article>`;}
