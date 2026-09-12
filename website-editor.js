@@ -1,4 +1,7 @@
 // Website pilot settings and owner editor. No database writes happen during preview.
+// Match admin-access.js without importing its account-normalization side effects.
+export function isWebsiteAdmin(user){return !!user&&['mbergeron79@gmail.com','mbegeron79@gmail.com'].includes(String(user.email||'').trim().toLowerCase());}
+export function canEditWebsite(user,profile,profileId){return !!user&&(user.uid===profileId||profile.ownerId===user.uid||isWebsiteAdmin(user));}
 export const DEFAULTS={background:'#0b100f',text:'#eef4ee',accent:'#c3ec77'};
 const color=v=>/^#[0-9a-f]{6}$/i.test(v||'');
 function luminance(hex){return hex.slice(1).match(/../g).map(x=>parseInt(x,16)/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4).reduce((s,x,i)=>s+x*[.2126,.7152,.0722][i],0);}
@@ -34,9 +37,9 @@ export async function initWebsiteEditor({profileId,profile,render}){
  const link=document.getElementById('website-edit-link');let teardown=null;
  onAuthStateChanged(auth,user=>{
   if(teardown){teardown();teardown=null;}
-  const owns=!!user&&(profile.ownerId?profile.ownerId===user.uid:profileId===user.uid);
-  link.hidden=false;link.textContent=owns?'Edit my website':user?'View current profile ↗':'Log in to edit website';
-  link.href=owns?'#website-editor':user?`profile.html?id=${profileId}`:`login.html?returnTo=${encodeURIComponent(location.pathname+'?edit=1')}`;
+  const owns=canEditWebsite(user,profile,profileId);
+  link.hidden=false;link.textContent=owns?(isWebsiteAdmin(user)?'Edit website · Admin':'Edit my website'):user?'Editing requires the owner or admin account':'Log in to edit website';
+  link.href=owns?'#website-editor':`login.html?returnTo=${encodeURIComponent(location.pathname+'?edit=1')}`;
   if(!owns)return;
   teardown=mount(user);
  });
@@ -44,7 +47,8 @@ export async function initWebsiteEditor({profileId,profile,render}){
   let saved=normalizeSettings(profile.websiteSettings),revision=profile.websiteSettings?.revision||null,dirty=false,busy=false,previewed=false;
   let pending={},urls={},draft=null;
   const panel=document.createElement('section');panel.id='website-editor';panel.className='website-editor';panel.hidden=true;
-  panel.innerHTML=`<div class="wrap"><h2>Edit my website</h2><p>Keep your layout. Make it yours. Preview changes, then publish when you're ready.</p><p><a href="profile-setup.html?id=${profileId}">Edit bio, band details & videos ↗</a></p>
+  const profileEditUrl=isWebsiteAdmin(user)?`profile-setup.html?adminProfile=${profileId}&editor=3`:`profile-setup.html?id=${profileId}`;
+  panel.innerHTML=`<div class="wrap"><h2>Edit my website</h2><p>Keep your layout. Make it yours. Preview changes, then publish when you're ready.</p><p><a href="${profileEditUrl}">Edit bio, band details & videos ↗</a></p>
   <form id="website-form"><fieldset id="website-fields"><legend class="sr-only">Website appearance</legend><div class="editor-grid">
   <section><h3>Images</h3><p>Website images only. Use JPG, PNG, or WebP, up to 12 MB. Images are resized automatically.</p><label>Banner image<input type="file" id="site-banner" accept="image/jpeg,image/png,image/webp"></label><button type="button" id="reset-banner">Use profile banner</button><label>Band image / logo<input type="file" id="site-image" accept="image/jpeg,image/png,image/webp"></label><button type="button" id="reset-image">Use profile image</button></section>
   <section><h3>Colors</h3><label>Page background<input type="color" id="site-background"></label><label>Page text<input type="color" id="site-text"></label><label>Accent & buttons<input type="color" id="site-accent"></label><p>Banner text stays light for readability. Page text and accent colors must contrast with the background.</p><button type="button" id="reset-colors">Restore default colors</button></section>
@@ -85,7 +89,7 @@ export async function initWebsiteEditor({profileId,profile,render}){
     const next=settingsFromForm();status.textContent='Publishing website…';
     for(const [key,blob] of Object.entries(pending)){const imageRef=ref(storage,`profile-media/${user.uid}/website-${key}-${crypto.randomUUID()}.webp`);await uploadBytes(imageRef,blob,{contentType:'image/webp',customMetadata:{ownerId:user.uid,profileImageType:'website'}});uploaded.push(imageRef);next[key]=await getDownloadURL(imageRef);}
     const nextRevision=crypto.randomUUID();
-    await runTransaction(db,async transaction=>{const target=doc(db,'profiles',profileId),snap=await transaction.get(target);if(!snap.exists())throw new Error('This profile is no longer available.');const current=snap.data();const owns=current.ownerId?current.ownerId===user.uid:profileId===user.uid;if(!owns)throw new Error('Only the profile owner can publish this website.');if((current.websiteSettings?.revision||null)!==revision)throw new Error('This website was updated in another session. Reload before editing again.');transaction.update(target,{websiteSettings:{...normalizeSettings(next),revision:nextRevision}});});
+    await runTransaction(db,async transaction=>{const target=doc(db,'profiles',profileId),snap=await transaction.get(target);if(!snap.exists())throw new Error('This profile is no longer available.');const current=snap.data();const owns=canEditWebsite(user,current,profileId);if(!owns)throw new Error('Only the profile owner or site administrator can publish this website.');if((current.websiteSettings?.revision||null)!==revision)throw new Error('This website was updated in another session. Reload before editing again.');transaction.update(target,{websiteSettings:{...normalizeSettings(next),revision:nextRevision}});});
     committed=true;saved=normalizeSettings(next);revision=nextRevision;profile.websiteSettings={...saved,revision};clearImages();fill();dirty=false;previewed=false;$('publish-website').disabled=true;paint(saved);status.textContent='Published! Your website changes are now live.';
    }catch(error){if(!committed)await Promise.allSettled(uploaded.map(imageRef=>deleteObject(imageRef)));status.textContent=error.code==='permission-denied'?'Publishing was denied by your account permissions. Your changes are still here; nothing was published.':error.message||'Publishing failed. Your changes are still here. Try again.';}
    finally{busy=false;fields.disabled=false;}
