@@ -6,7 +6,7 @@ const oldPanel=document.querySelector('.radio-panel');
 if(!oldPanel)throw new Error('Radio panel not found');
 const panel=document.createElement('section');
 panel.className='panel radio-panel bt-radio-panel';
-panel.innerHTML='<h3>BANDtroductions Radio</h3>';
+panel.innerHTML='<h3><span class="bt-radio-heading-brand">BANDtroductions</span> <span class="bt-radio-heading-title">Radio</span></h3>';
 oldPanel.replaceWith(panel);
 
 const style=document.createElement('style');
@@ -50,6 +50,46 @@ style.textContent=`
 .bt-radio-actions{display:grid;grid-template-columns:1fr;gap:5px;margin-top:0}
 .bt-radio-actions .btn{display:block!important;text-align:center!important;margin:0!important;padding:6px 3px!important;font-size:6px!important;line-height:1.05!important}\n.bt-radio-actions .bt-radio-submit{background:#ffd400!important;color:#000!important;border-color:#ffd400!important;box-shadow:0 0 12px rgba(255,212,0,.5)!important;font-family:"Arial Black",Arial,sans-serif!important;font-weight:900!important;-webkit-text-stroke:.25px #000;letter-spacing:.15px}
 @media(min-width:651px){.bt-radio-box{padding:13px!important}.bt-radio-status{font-size:10px}.bt-radio-track{font-size:15px}.bt-radio-band{font-size:12px}.bt-radio-playlist{font-size:10px}.bt-radio-next-label{font-size:8px}.bt-radio-next-name{font-size:10px}.bt-radio-now{font-size:9px}.bt-radio-listen{font-size:10px!important;padding:9px!important}.bt-radio-actions .btn{font-size:9px!important;padding:8px!important}.bt-radio-eq{height:32px}.bt-radio-art-row{gap:10px}}
+
+/* Readable radio card: scoped presentation only. */
+.grid>.right .bt-radio-panel>h3{
+  color:#031211!important;text-shadow:none!important;letter-spacing:0!important;
+  padding:10px 4px!important;line-height:1.05!important;
+}
+.bt-radio-heading-brand,.bt-radio-heading-title{display:block;font-family:Arial,Helvetica,sans-serif;font-weight:900}
+.bt-radio-heading-brand{font-size:clamp(7px,1.6vw,21px);letter-spacing:-.035em}
+.bt-radio-heading-title{font-size:clamp(19px,3.5vw,38px);margin-top:2px}
+.grid>.right .bt-radio-panel .bt-radio-status.off{color:#fff;border-color:#41615e}
+.grid>.right .bt-radio-panel .bt-radio-info,
+.grid>.right .bt-radio-panel .bt-radio-next{
+  background:rgba(2,7,8,.96);border:1px solid #226360;border-radius:9px;
+  padding:10px 6px;line-height:1.3;
+}
+.grid>.right .bt-radio-panel .bt-radio-now{color:#fff;font-size:10px}
+.grid>.right .bt-radio-panel .bt-radio-track{color:#25d8d1;font-size:18px;line-height:1.15;margin-top:6px}
+.grid>.right .bt-radio-panel .bt-radio-band{color:#fff;font-size:13px;line-height:1.3}
+.grid>.right .bt-radio-panel .bt-radio-playlist{color:#d6dddd;font-size:12px;line-height:1.4;margin-top:7px}
+.grid>.right .bt-radio-panel .bt-radio-next-label{color:#25d8d1;font-size:10px;letter-spacing:.025em}
+.grid>.right .bt-radio-panel .bt-radio-next-time{color:#fff;font-size:12px;font-weight:900;line-height:1.3;margin-top:5px}
+.grid>.right .bt-radio-panel .bt-radio-next-name{color:#fff;font-size:16px;line-height:1.2;margin-top:6px}
+.grid>.right .bt-radio-panel .bt-radio-actions .btn{background:#020708;border-radius:9px;padding:10px 3px!important;line-height:1.2!important}
+.grid>.right .bt-radio-panel .bt-radio-actions .bt-radio-submit{
+  background:#ffd400!important;color:#000!important;
+  box-shadow:0 0 0 2px #041413,0 0 10px rgba(255,212,0,.22)!important;
+}
+@media(max-width:650px){
+  .grid>.right .bt-radio-panel>h3{padding:7px 3px!important}
+  .grid>.right .bt-radio-panel .bt-radio-box{padding:7px!important}
+  .grid>.right .bt-radio-panel .bt-radio-info,
+  .grid>.right .bt-radio-panel .bt-radio-next{padding:7px 3px;border-radius:6px}
+  .grid>.right .bt-radio-panel .bt-radio-now{font-size:8px}
+  .grid>.right .bt-radio-panel .bt-radio-track{font-size:12px;margin-top:4px}
+  .grid>.right .bt-radio-panel .bt-radio-band{font-size:9px}
+  .grid>.right .bt-radio-panel .bt-radio-playlist{font-size:8px;margin-top:5px}
+  .grid>.right .bt-radio-panel .bt-radio-next-label{font-size:8px}
+  .grid>.right .bt-radio-panel .bt-radio-next-time{font-size:8px;margin-top:4px}
+  .grid>.right .bt-radio-panel .bt-radio-next-name{font-size:10px;margin-top:4px}
+}
 `;
 document.head.appendChild(style);
 
@@ -95,11 +135,11 @@ function playerMarkup(s){
   return `<div class="radio"><div class="radio-box bt-radio-box">
     <div class="bt-radio-status-row"><span class="bt-radio-status ${live?'live':'off'}">${live?'● ON AIR':'OFF AIR'}</span></div>
     <div class="bt-radio-art-row"><img class="bt-radio-art" src="${esc(item.coverUrl||DEFAULT_COVER)}" alt="${live?'album artwork':'BANDtroductions artwork'}"><img class="bt-radio-logo" src="${RADIO_LOGO}" alt="BANDtroductions Radio"></div>
-    <div class="bt-radio-now">${live?'NOW PLAYING':'RADIO'}</div>
+    <div class="bt-radio-info"><div class="bt-radio-now">${live?'NOW PLAYING':'RADIO'}</div>
     <div class="bt-radio-track">${esc(track)}</div>
     ${band?`<div class="bt-radio-band">${esc(band)}</div>`:''}
-    <div class="bt-radio-playlist">${esc(playlist)}</div>
-    ${next?`<div class="bt-radio-next"><div class="bt-radio-next-label">${esc(upNextLabel)} · ${next.dayOffset===0?'TODAY':next.dayOffset===1?'TOMORROW':String(next.day||'').toUpperCase()} · ${formatMinutes(next.startMinutes)}</div><div class="bt-radio-next-name">${esc(next.upNextDisplayName||next.name||'Scheduled Programming')}</div></div>`:''}
+    <div class="bt-radio-playlist">${esc(playlist)}</div></div>
+    ${next?`<div class="bt-radio-next"><div class="bt-radio-next-label">${esc(upNextLabel)}</div><div class="bt-radio-next-time">${next.dayOffset===0?'TODAY':next.dayOffset===1?'TOMORROW':String(next.day||'').toUpperCase()} · ${formatMinutes(next.startMinutes)}</div><div class="bt-radio-next-name">${esc(next.upNextDisplayName||next.name||'Scheduled Programming')}</div></div>`:''}
     <div class="bt-radio-eq ${live?'':'off'}" aria-hidden="true">${eqBars()}</div>
     <button type="button" class="btn primary bt-radio-listen" ${live?'':'disabled'}>${button}</button>
     ${actions()}
@@ -108,7 +148,7 @@ function playerMarkup(s){
 
 function render(){
   const s=state();
-  panel.innerHTML='<h3>BANDtroductions Radio</h3>'+playerMarkup(s);
+  panel.innerHTML='<h3><span class="bt-radio-heading-brand">BANDtroductions</span> <span class="bt-radio-heading-title">Radio</span></h3>'+playerMarkup(s);
   panel.querySelector('.bt-radio-listen:not([disabled])')?.addEventListener('click',async()=>{
     const latest=state();
     if(!latest)return;
@@ -207,7 +247,7 @@ onSnapshot(collection(devDb,'radioPlaylists'),snap=>{
   synchronize(false);
 },error=>{
   console.error('Radio schedule read failed',error);
-  panel.innerHTML='<h3>BANDtroductions Radio</h3><div class="radio"><div class="radio-box bt-radio-box"><div class="bt-radio-status-row"><span class="bt-radio-status off">OFF AIR</span></div><div style="color:#999;text-align:center">Schedule unavailable. Please refresh and try again.</div></div></div>';
+  panel.innerHTML='<h3><span class="bt-radio-heading-brand">BANDtroductions</span> <span class="bt-radio-heading-title">Radio</span></h3><div class="radio"><div class="radio-box bt-radio-box"><div class="bt-radio-status-row"><span class="bt-radio-status off">OFF AIR</span></div><div style="color:#999;text-align:center">Schedule unavailable. Please refresh and try again.</div></div></div>';
 });
 
 setInterval(()=>{
