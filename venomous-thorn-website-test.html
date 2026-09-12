@@ -9,24 +9,25 @@
 @media(max-width:650px){.wrap{width:calc(100% - 36px)}.header-inner{display:block;padding:18px 0}.wordmark{display:block;font-size:15px;max-width:none}nav{gap:22px;margin-top:15px;overflow-x:auto;white-space:nowrap;font-size:12px}.hero{min-height:560px;padding:70px 0 45px}.hero h1{font-size:clamp(58px,15vw,96px)}.hero:before{background:linear-gradient(0deg,#0b100f,#070c0b55),linear-gradient(90deg,#070c0bcc,transparent)}.about-grid{grid-template-columns:1fr;gap:25px}.section{padding:52px 0}.bio{font-size:19px}.video-grid{grid-template-columns:1fr}.facts{gap:25px}.test-bar{font-size:11px}.contact-grid{display:block}.contact-grid .actions{margin-top:25px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
-<link rel="stylesheet" href="website-editor.css?v=1">
+<link rel="stylesheet" href="website-editor.css?v=3">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <div class="test-bar">WEBSITE PREVIEW <a href="profile.html?id=19MH0ZzVlPVN4ediF4PesZR5TY13">View current profile ↗</a><a id="website-edit-link" hidden>Edit my website</a></div>
-<header><div class="wrap header-inner"><a class="wordmark" href="#home" id="brand">Venomous Thorns</a><nav aria-label="Band website"><a href="#about" id="about-nav">About</a><a href="#music" id="music-nav" hidden>Music</a><a href="#merch" id="merch-nav" hidden>Merch</a><a href="#contact">Contact</a></nav></div></header>
+<header><div class="wrap header-inner"><a class="wordmark" href="#home" id="brand">Venomous Thorns</a><nav aria-label="Band website"><a href="#about" id="about-nav">About</a><a href="#music" id="music-nav" hidden>Music</a><a href="#photos" id="photos-nav" hidden>Photos</a><a href="#merch" id="merch-nav" hidden>Merch</a><a href="#contact">Contact</a></nav></div></header>
 <p id="status" class="status" role="status">Loading band website…</p>
 <main id="main" hidden>
 <section class="hero" id="home"><img class="hero-art" id="cover" src="bt-wide-crowd.jpg" alt="" fetchpriority="high"><div class="wrap"><p class="eyebrow" id="genre">Independent music</p><h1 id="name">Venomous Thorns</h1><p class="location" id="location"></p><div class="actions"><a class="button" href="#music" id="listen" hidden>Watch & listen ↗</a><a class="button secondary" href="#about" id="about-cta">Meet the band ↓</a><a class="button secondary" href="#contact">Get in touch</a></div><div class="actions" id="custom-buttons"></div></div></section>
 <section class="section" id="about"><div class="wrap about-grid"><div><p class="eyebrow">Behind the music</p><h2>Meet the band.</h2><img id="portrait" class="portrait" alt="Band profile image" hidden></div><div><p id="bio" class="bio"></p><dl class="facts" id="facts"></dl></div></div></section>
 <section class="section" id="music" hidden><div class="wrap"><p class="eyebrow">Turn it up</p><h2>Music & videos.</h2><div id="videos" class="video-grid"></div></div></section>
+<section class="section" id="photos" hidden><div class="wrap"><p class="eyebrow">In pictures</p><h2>Photo gallery.</h2><div class="photo-grid" id="photo-grid"></div></div></section>
 <section class="section" id="merch" hidden><div class="wrap contact-grid"><div><p class="eyebrow">Wear your support</p><h2>Band merch.</h2><p class="muted">Explore the band's store on BANDtroductions.</p></div><a id="store-link" class="button">Shop merch ↗</a></div></section>
 <section class="section" id="contact"><div class="wrap contact-grid"><div><p class="eyebrow">Keep in touch</p><h2>Let's connect.</h2><p class="muted">Booking inquiries and more.</p></div><div><div class="actions" id="contact-links"></div><div class="actions"><button id="share" class="button secondary" type="button">Share this website ↗</button></div><p id="share-status" role="status"></p><input id="share-fallback" readonly aria-label="Website link to copy" hidden></div></div></section>
 </main>
 <footer><div class="wrap footer-inner"><span id="footer-name">Venomous Thorns</span><span>Powered by <a href="index.html">BANDtroductions</a> · <a href="profile.html?id=19MH0ZzVlPVN4ediF4PesZR5TY13">Community profile ↗</a></span></div></footer>
 <noscript><p class="status">Enable JavaScript to load this band's profile content.</p></noscript>
 <script type="module">
-import { websiteProfile, applyWebsiteStyle, initWebsiteEditor } from './website-editor.js?v=2';
+import { websiteProfile, applyWebsiteStyle, initWebsiteEditor } from './website-editor.js?v=3';
 // Public rendering reads profile data. Only the owner editor can publish website settings.
 let activeSettings = {};
 const PROFILE_ID='19MH0ZzVlPVN4ediF4PesZR5TY13';
