@@ -9,14 +9,15 @@
 @media(max-width:650px){.wrap{width:calc(100% - 36px)}.header-inner{display:block;padding:18px 0}.wordmark{display:block;font-size:15px;max-width:none}nav{gap:22px;margin-top:15px;overflow-x:auto;white-space:nowrap;font-size:12px}.hero{min-height:560px;padding:70px 0 45px}.hero h1{font-size:clamp(58px,15vw,96px)}.hero:before{background:linear-gradient(0deg,#0b100f,#070c0b55),linear-gradient(90deg,#070c0bcc,transparent)}.about-grid{grid-template-columns:1fr;gap:25px}.section{padding:52px 0}.bio{font-size:19px}.video-grid{grid-template-columns:1fr}.facts{gap:25px}.test-bar{font-size:11px}.contact-grid{display:block}.contact-grid .actions{margin-top:25px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
+<link rel="stylesheet" href="website-editor.css?v=1">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<div class="test-bar">WEBSITE PREVIEW <a href="profile.html?id=19MH0ZzVlPVN4ediF4PesZR5TY13">View current profile ↗</a></div>
-<header><div class="wrap header-inner"><a class="wordmark" href="#home" id="brand">Venomous Thorns</a><nav aria-label="Band website"><a href="#about">About</a><a href="#music" id="music-nav" hidden>Music</a><a href="#merch" id="merch-nav" hidden>Merch</a><a href="#contact">Contact</a></nav></div></header>
+<div class="test-bar">WEBSITE PREVIEW <a href="profile.html?id=19MH0ZzVlPVN4ediF4PesZR5TY13">View current profile ↗</a><a id="website-edit-link" hidden>Edit my website</a></div>
+<header><div class="wrap header-inner"><a class="wordmark" href="#home" id="brand">Venomous Thorns</a><nav aria-label="Band website"><a href="#about" id="about-nav">About</a><a href="#music" id="music-nav" hidden>Music</a><a href="#merch" id="merch-nav" hidden>Merch</a><a href="#contact">Contact</a></nav></div></header>
 <p id="status" class="status" role="status">Loading band website…</p>
 <main id="main" hidden>
-<section class="hero" id="home"><img class="hero-art" id="cover" src="bt-wide-crowd.jpg" alt="" fetchpriority="high"><div class="wrap"><p class="eyebrow" id="genre">Independent music</p><h1 id="name">Venomous Thorns</h1><p class="location" id="location"></p><div class="actions"><a class="button" href="#music" id="listen" hidden>Watch & listen ↗</a><a class="button secondary" href="#about">Meet the band ↓</a><a class="button secondary" href="#contact">Get in touch</a></div></div></section>
+<section class="hero" id="home"><img class="hero-art" id="cover" src="bt-wide-crowd.jpg" alt="" fetchpriority="high"><div class="wrap"><p class="eyebrow" id="genre">Independent music</p><h1 id="name">Venomous Thorns</h1><p class="location" id="location"></p><div class="actions"><a class="button" href="#music" id="listen" hidden>Watch & listen ↗</a><a class="button secondary" href="#about" id="about-cta">Meet the band ↓</a><a class="button secondary" href="#contact">Get in touch</a></div><div class="actions" id="custom-buttons"></div></div></section>
 <section class="section" id="about"><div class="wrap about-grid"><div><p class="eyebrow">Behind the music</p><h2>Meet the band.</h2><img id="portrait" class="portrait" alt="Band profile image" hidden></div><div><p id="bio" class="bio"></p><dl class="facts" id="facts"></dl></div></div></section>
 <section class="section" id="music" hidden><div class="wrap"><p class="eyebrow">Turn it up</p><h2>Music & videos.</h2><div id="videos" class="video-grid"></div></div></section>
 <section class="section" id="merch" hidden><div class="wrap contact-grid"><div><p class="eyebrow">Wear your support</p><h2>Band merch.</h2><p class="muted">Explore the band's store on BANDtroductions.</p></div><a id="store-link" class="button">Shop merch ↗</a></div></section>
@@ -25,14 +26,20 @@
 <footer><div class="wrap footer-inner"><span id="footer-name">Venomous Thorns</span><span>Powered by <a href="index.html">BANDtroductions</a> · <a href="profile.html?id=19MH0ZzVlPVN4ediF4PesZR5TY13">Community profile ↗</a></span></div></footer>
 <noscript><p class="status">Enable JavaScript to load this band's profile content.</p></noscript>
 <script type="module">
-// Isolated, read-only pilot. This page never edits the profile or subscription.
+import { websiteProfile, applyWebsiteStyle, initWebsiteEditor } from './website-editor.js?v=1';
+// Public rendering reads profile data. Only the owner editor can publish website settings.
+let activeSettings = {};
 const PROFILE_ID='19MH0ZzVlPVN4ediF4PesZR5TY13';
 const el=id=>document.getElementById(id);
 const text=(id,value)=>{el(id).textContent=typeof value==='string'?value:String(value||'');};
 function webUrl(value){try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}}
 function videoId(value){try{const u=new URL(value),host=u.hostname.toLowerCase().replace(/^www\./,'');let id='';if(host==='youtu.be')id=u.pathname.split('/')[1];else if(['youtube.com','m.youtube.com','youtube-nocookie.com'].includes(host)){const p=u.pathname.split('/').filter(Boolean);id=u.searchParams.get('v')||(['embed','shorts','live'].includes(p[0])?p[1]:'');}return /^[a-zA-Z0-9_-]{11}$/.test(id)?id:'';}catch{return '';}}
 function addContact(label,url){const a=document.createElement('a');a.className='button';a.textContent=label;a.href=url;el('contact-links').append(a);}
-function renderProfile(p){
+function renderProfile(raw,settings=raw.websiteSettings){
+ activeSettings=settings||{};const p=websiteProfile(raw,activeSettings);
+ for(const id of ['facts','videos','contact-links'])el(id).replaceChildren();
+ el('cover').src='bt-wide-crowd.jpg';el('portrait').hidden=true;
+ ['music','music-nav','listen'].forEach(id=>{el(id).hidden=true;});
  const name=p.displayName||'Venomous Thorns';['brand','name','footer-name'].forEach(id=>text(id,name));document.title=`${name} | Website Preview`;
  text('genre',p.genre||'Independent music');text('location',p.location||[p.city,p.region,p.country].filter(Boolean).join(', '));
  text('bio',p.bio||'More about the band coming soon.');
@@ -45,7 +52,7 @@ function renderProfile(p){
  const email=typeof p.bookingEmail==='string'?p.bookingEmail.trim():'';if(/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email))addContact('Email booking ↗',`mailto:${encodeURIComponent(email)}`);
  const website=webUrl(p.website);if(website)addContact('More from the band ↗',website);
  addContact('Community profile ↗',`profile.html?id=${PROFILE_ID}`);
- el('status').hidden=true;el('main').hidden=false;
+ el('status').hidden=true;el('main').hidden=false;applyWebsiteStyle(activeSettings);
 }
 el('share').addEventListener('click',async()=>{const url=new URL(location.pathname,location.origin).href;try{if(navigator.share){await navigator.share({title:document.title.replace(' | Website Preview',''),url});}else{await navigator.clipboard.writeText(url);text('share-status','Website link copied.');}}catch(error){if(error.name==='AbortError')return;text('share-status','Copy this link to share:');el('share-fallback').value=url;el('share-fallback').hidden=false;el('share-fallback').select();}});
 const slow=setTimeout(()=>text('status','Still loading… You can use the current profile link above while we connect.'),12000);
@@ -53,7 +60,7 @@ try{
  const [{db},{doc,getDoc}]=await Promise.all([import('./firebase-dev.js'),import('https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js')]);
  const snapshot=await getDoc(doc(db,'profiles',PROFILE_ID));clearTimeout(slow);
  if(!snapshot.exists()||snapshot.data().published!==true){text('status','This band website is not currently available.');}
- else{renderProfile(snapshot.data());try{const store=await getDoc(doc(db,'merchStorefronts',PROFILE_ID));if(store.exists()&&store.data().published===true){el('store-link').href=`merch.html?band=${PROFILE_ID}`;el('merch').hidden=false;el('merch-nav').hidden=false;}}catch(error){console.warn('Merch availability could not be checked.',error);}}
+ else{const profile=snapshot.data();renderProfile(profile);void initWebsiteEditor({profileId:PROFILE_ID,profile,render:renderProfile}).catch(error=>console.warn('Website editor unavailable.',error));try{const store=await getDoc(doc(db,'merchStorefronts',PROFILE_ID));if(store.exists()&&store.data().published===true){el('store-link').href=`merch.html?band=${PROFILE_ID}`;el('merch').dataset.available='true';applyWebsiteStyle(activeSettings);}}catch(error){console.warn('Merch availability could not be checked.',error);}}
 }catch(error){clearTimeout(slow);console.error(error);text('status','We could not load the band website. Please refresh or use the current profile link above.');}
 </script>
 </body>
