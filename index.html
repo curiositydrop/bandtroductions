@@ -509,6 +509,41 @@ body #global-header #bt-global-header-component .bt-nav a.bt-active{
   }
 }
 
+/* Homepage radio: high-contrast listening control, including readable off-air state. */
+.grid>.right .bt-radio-panel .bt-radio-listen{
+  background:#ffffff!important;
+  color:#041413!important;
+  border:2px solid #25c7c1!important;
+  font-family:Arial,Helvetica,sans-serif!important;
+  font-size:13px!important;
+  font-weight:900!important;
+  line-height:1.2!important;
+  letter-spacing:.025em!important;
+  padding:12px 4px!important;
+  box-shadow:0 0 0 2px #041413,0 0 16px rgba(37,199,193,.55)!important;
+}
+.grid>.right .bt-radio-panel .bt-radio-listen:disabled{
+  opacity:1!important;
+  background:#e1e8e8!important;
+  color:#445252!important;
+  border-color:#91aaa8!important;
+  box-shadow:0 0 0 2px #041413!important;
+}
+.grid>.right .bt-radio-panel .bt-radio-listen:not(:disabled):hover{
+  background:#d8fffc!important;
+}
+.grid>.right .bt-radio-panel .bt-radio-listen:focus-visible{
+  outline:3px solid #fff!important;
+  outline-offset:4px!important;
+}
+@media(max-width:650px){
+  .grid>.right .bt-radio-panel .bt-radio-listen{
+    font-size:9px!important;
+    padding:10px 2px!important;
+    letter-spacing:0!important;
+  }
+}
+
 </style>
 </head>
 <body>
