@@ -39,7 +39,8 @@ function requestData(input, s, now = new Date()) {
   event.capacity = integer(input.capacity,1,100000,'expected attendance');
   event.price = text(input.price,80);
   event.offeredCents = money(input.offeredPay);
-  event.dates = dates(input.startDate,input.endDate || input.startDate,now,s.timeZone);
+  event.dates = Array.isArray(input.selectedDates) && input.selectedDates.length ? [...new Set(input.selectedDates.map(day))].sort() : dates(input.startDate,input.endDate || input.startDate,now,s.timeZone);
+  if(event.dates.length>7 || event.dates.some(value=>value<today(s.timeZone,now))) fail('Choose available future dates.');
   event.privateEvent = input.privateEvent === true;
   if (input.termsAccepted !== true) fail('Confirm that this is a request, subject to the band’s review.');
   return event;
