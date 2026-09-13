@@ -58,11 +58,13 @@ const server=http.createServer((req,res)=>{
  const browser=await chromium.launch({headless:true});
  try{
   const page=await browser.newPage({viewport:{width:390,height:844}});
+  const memberPhotoFixture=await page.screenshot();
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route('**/*',async route=>{
    const url=route.request().url();
    if(url.includes('/firebase-dev.js')||url.startsWith('https://www.gstatic.com/firebasejs/'))return route.fulfill({contentType:'text/javascript',body:'export * from "'+base+'/mock-firebase.js";',headers:{'access-control-allow-origin':'*'}});
    if(url.startsWith(base))return route.continue();
+   if(url.includes('/profile-media/'))return route.fulfill({contentType:'image/png',body:memberPhotoFixture});
    return route.abort(); // No live Firebase, email, radio or storage writes.
   });
   await page.goto(base+'/website-upgrade-preview.html?id=band-a&edit=1');
@@ -85,10 +87,35 @@ const server=http.createServer((req,res)=>{
   await page.locator('.ws-show-list button').click();await form.locator('[name=age]').selectOption('21+');await form.locator('[type=submit]').click();
   await page.waitForFunction(()=>document.querySelector('.ws-day.has-shows .adults'));
   const postCount=await page.evaluate(async()=>{const {records}=await import('/mock-firebase.js');return [...records.keys()].filter(k=>k.startsWith('posts/')).length;});assert.equal(postCount,1,'editing reuses the Social post');
+
+  // Member image participates in the same draft/publish lifecycle.
+  assert.equal(await page.locator('a').filter({hasText:/^(Community profile|View current profile)/}).count(),0);
+  await page.locator('#member-add').click();
+  await page.locator('[data-member-field=name]').fill('Mike');
+  await page.locator('[data-member-field=instrument]').fill('Vocals');
+  await page.locator('.ws-member-edit-row input[type=file]').setInputFiles({name:'member.png',mimeType:'image/png',buffer:memberPhotoFixture});
+  await page.waitForFunction(()=>document.querySelector('#editor-status').textContent.startsWith('Member photo ready.'));
+  await page.locator('#website-form [type=submit]').click();
+  assert.equal(await page.locator('#band-member-cards h3').innerText(),'Mike');
+  assert.match(await page.locator('#band-member-cards img').getAttribute('src'),/^blob:/);
+  const before=await page.evaluate(async()=>{const {records}=await import('/mock-firebase.js');return records.get('profiles/band-a').websiteSettings.bandMembers;});
+  assert.equal(before,undefined,'preview does not save members');
+  page.once('dialog',d=>d.accept());
+  await page.locator('#discard-website').click();
+  assert.equal(await page.locator('#band-member-cards article').count(),0,'discard removes draft member');
+  await page.locator('#member-add').click();
+  await page.locator('[data-member-field=name]').fill('Mike');
+  await page.locator('[data-member-field=instrument]').fill('Vocals');
+  await page.locator('.ws-member-edit-row input[type=file]').setInputFiles({name:'member.png',mimeType:'image/png',buffer:memberPhotoFixture});
+  await page.waitForFunction(()=>document.querySelector('#editor-status').textContent.startsWith('Member photo ready.'));
   // Appearance preview retains inherited media and new features.
   await page.locator('#site-button-style').selectOption('pill');await page.locator('#website-form [type=submit]').click();
   assert.equal(await page.locator('#photo-grid img').count(),2);assert.equal(await page.locator('#shows').count(),1);assert.equal(await page.locator('#band-player').count(),1);
   await page.locator('#publish-website').click();await page.waitForFunction(()=>document.querySelector('#editor-status').textContent.startsWith('Published!'));
+
+  const savedMembers=await page.evaluate(async()=>{const {records}=await import('/mock-firebase.js');return records.get('profiles/band-a').websiteSettings.bandMembers;});
+  assert.equal(savedMembers[0].name,'Mike');assert.equal(savedMembers[0].instrument,'Vocals');assert.match(savedMembers[0].photoUrl,/profile-media\/band-a\/website-member_/);
+  assert.equal(await page.locator('#band-member-cards img').count(),1);
   // Upload through mocked storage/review queue, then simulate the existing admin approval copy.
   await page.locator('.ws-tool summary').filter({hasText:'Upload songs'}).click();
   const song=page.locator('.ws-song-form');await song.locator('[name=title]').fill('Website test song');
@@ -97,7 +124,7 @@ const server=http.createServer((req,res)=>{
   await song.locator('[type=submit]').click();
   await page.waitForFunction(()=>document.querySelector('.ws-song-form .ws-form-status').textContent.startsWith('Submitted for admin approval!'));
   const submission=await page.evaluate(async()=>{const {records,uploads}=await import('/mock-firebase.js');return {pending:[...records].filter(([k])=>k.startsWith('radioSubmissions/')).map(([,v])=>v),uploads};});
-  assert.equal(submission.pending.length,1);assert.equal(submission.pending[0].approved,false);assert.equal(submission.pending[0].websiteRadioPermission,true);assert.match(submission.uploads[0].path,/^radio-submissions\/band-a\//);
+  assert.equal(submission.pending.length,1);assert.equal(submission.pending[0].approved,false);assert.equal(submission.pending[0].websiteRadioPermission,true);assert.match(submission.uploads.find(u=>u.path.endsWith('.mp3')).path,/^radio-submissions\/band-a\//);
   assert.equal(await page.locator('#band-player audio').isVisible(),false,'pending songs stay off public player');
   await page.evaluate(async()=>{const {records,setDoc}=await import('/mock-firebase.js');const entry=[...records].find(([k])=>k.startsWith('radioSubmissions/'));await setDoc({path:'radioApprovedTracks/approved-test'},{...entry[1],approved:true,reviewStatus:'approved',dateAdded:Date.now()});});
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
@@ -130,6 +157,6 @@ const server=http.createServer((req,res)=>{
   assert.equal(reads.existingShows.ok,true,'existing show read permissions');assert.equal(reads.websiteShows.ok,true,'website show read permissions');
   console.log('Approved library stays private; public website endpoint requires a separate Firebase deployment.');
   await live.close();
-  console.log('PASS: mobile/desktop rendering, media merge, calendar details + editing, appearance publish, pending/approved song flow, upload folder + permissions, band isolation, guest access and login link.');
+  console.log('PASS: member photo preview/discard/publish, removed old-profile links, mobile/desktop rendering, media merge, calendar details + editing, appearance publish, pending/approved song flow, upload folder + permissions, band isolation, guest access and login link.');
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;server.close();});

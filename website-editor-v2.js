@@ -1,3 +1,4 @@
+import { normalizeMembers, renderMembers, createMemberEditor } from './website-members.js?v=1';
 import { mountWebsiteTools } from './website-features.js?v=1';
 import { normalizeMedia, profileVideos, websiteVideos, applyMedia, createMediaEditor } from './website-media-v2.js?v=1';
 // Website pilot settings and owner editor. No database writes happen during preview.
@@ -21,11 +22,11 @@ export function normalizeSettings(input={}){
  const settings={theme,sections:{about:input.sections?.about!==false,music:input.sections?.music!==false,merch:input.sections?.merch!==false},buttons:[]};
  for(const b of (Array.isArray(input.buttons)?input.buttons:[]).slice(0,6)){const url=safeButtonUrl(b?.url),label=String(b?.label||'').trim().slice(0,40);if(url&&label)settings.buttons.push({label,url});}
  for(const k of ['bannerImageUrl','imageUrl']){const v=safeButtonUrl(input[k]);if(v&&/^https?:/.test(v))settings[k]=v;}
- return {...settings,...normalizeMedia(input)};
+ return {...settings,...normalizeMedia(input),bandMembers:normalizeMembers(input.bandMembers)};
 }
 export function websiteProfile(profile,settings){const s=normalizeSettings(settings);return {...profile,mediaLink:'',additionalMedia:websiteVideos(profile,s),mediaItems:(profile.mediaItems||[]).filter(i=>i?.type==='image'),...(s.bannerImageUrl?{bannerImageUrl:s.bannerImageUrl}:{}),...(s.imageUrl?{imageUrl:s.imageUrl}:{})};}
 export function applyWebsiteStyle(input,profile={}){
- const s=normalizeSettings(input),root=document.documentElement,el=id=>document.getElementById(id);applyMedia(s,{},profile);
+ const s=normalizeSettings(input),root=document.documentElement,el=id=>document.getElementById(id);applyMedia(s,{},profile);renderMembers(s);
  for(const [key,value] of Object.entries(s.theme))root.style.setProperty(`--site-${key}`,value);
  root.style.setProperty('--site-button-text',contrast(s.theme.accent,'#000000')>=contrast(s.theme.accent,'#ffffff')?'#000000':'#ffffff');
  for(const id of ['about','music','merch']){const section=el(id);section.hidden=s.sections[id]===false||(id==='music'&&!el('videos').children.length)||(id==='merch'&&section.dataset.available!=='true');const nav=el(`${id}-nav`);if(nav)nav.hidden=section.hidden;}
@@ -63,7 +64,8 @@ export async function initWebsiteEditor({profileId,profile,render}){
   function clearImages(){Object.values(urls).forEach(URL.revokeObjectURL);pending={};urls={};}
   function addRow(button={}){if(rows.children.length>=6)return;const row=document.createElement('div');row.className='button-row';const label=document.createElement('input'),url=document.createElement('input'),remove=document.createElement('button');label.placeholder='Button label';label.setAttribute('aria-label','Button label');label.maxLength=40;label.value=button.label||'';url.placeholder='https://…';url.setAttribute('aria-label','Button destination');url.type='text';url.inputMode='url';url.value=button.url||'';remove.type='button';remove.textContent='Remove';remove.onclick=()=>{row.remove();$('add-button').disabled=rows.children.length>=6;setDirty();};row.append(label,url,remove);rows.append(row);$('add-button').disabled=rows.children.length>=6;}
   const mediaEditor=createMediaEditor({container:panel.querySelector('.editor-grid'),changed:setDirty,getPreviewUrl:id=>urls[id],removePending:id=>{delete pending[id];if(urls[id])URL.revokeObjectURL(urls[id]);delete urls[id];},preparePhoto:async(file,id)=>{if(auth.currentUser?.uid!==user.uid)throw new Error('Please sign in again before adding photos.');const blob=await resizeImage(file,1600);pending[id]=blob;urls[id]=URL.createObjectURL(blob);}});
-  function fill(){mediaEditor.fill(saved,profile);for(const key of Object.keys(DEFAULTS))$(`site-${key}`).value=saved.theme[key];for(const id of ['about','music','merch'])$(`show-${id}`).checked=saved.sections[id];rows.replaceChildren();saved.buttons.forEach(addRow);$('add-button').disabled=rows.children.length>=6;draft=structuredClone(saved);$('site-banner').value='';$('site-image').value='';}
+  const memberEditor=createMemberEditor({container:panel.querySelector('.editor-grid'),changed:setDirty,getPreviewUrl:id=>urls[id],removePending:id=>{delete pending[id];if(urls[id])URL.revokeObjectURL(urls[id]);delete urls[id];},preparePhoto:async(file,id)=>{if(auth.currentUser?.uid!==user.uid)throw new Error('Please sign in again before adding photos.');const blob=await resizeImage(file,1000);if(!panel.isConnected||auth.currentUser?.uid!==user.uid)throw new Error('Your sign-in changed. Reload before editing.');if(urls[id])URL.revokeObjectURL(urls[id]);pending[id]=blob;urls[id]=URL.createObjectURL(blob);}});
+  function fill(){memberEditor.fill(saved);mediaEditor.fill(saved,profile);for(const key of Object.keys(DEFAULTS))$(`site-${key}`).value=saved.theme[key];for(const id of ['about','music','merch'])$(`show-${id}`).checked=saved.sections[id];rows.replaceChildren();saved.buttons.forEach(addRow);$('add-button').disabled=rows.children.length>=6;draft=structuredClone(saved);$('site-banner').value='';$('site-image').value='';}
   fill();
   const cleanupTools=mountWebsiteTools({container:panel.querySelector('.wrap'),profileId,profile,user,canEdit:canEditWebsite});
   function settingsFromForm(){
@@ -72,9 +74,9 @@ export async function initWebsiteEditor({profileId,profile,render}){
    if(contrast(s.theme.background,s.theme.accent)<3)throw new Error('Choose an accent color with more contrast against the page background.');
    s.sections={};for(const id of ['about','music','merch'])s.sections[id]=$(`show-${id}`).checked;
    s.buttons=[];for(const row of rows.children){const [label,url]=row.querySelectorAll('input');if(!label.value.trim()&&!url.value.trim())continue;const destination=safeButtonUrl(url.value);if(!label.value.trim()||!destination)throw new Error('Each button needs a label and a valid https://, http://, or mailto: link.');s.buttons.push({label:label.value.trim(),url:destination});}
-   return Object.assign(s,mediaEditor.read());
+   return Object.assign(s,mediaEditor.read(),{bandMembers:memberEditor.read()});
   }
-  function paint(s,withDraftImages=false){render(profile,s);if(withDraftImages)applyMedia(s,urls,profile);if(withDraftImages){if(urls.bannerImageUrl)document.getElementById('cover').src=urls.bannerImageUrl;if(urls.imageUrl){document.getElementById('portrait').src=urls.imageUrl;document.getElementById('portrait').hidden=false;}}}
+  function paint(s,withDraftImages=false){render(profile,s);if(withDraftImages){applyMedia(s,urls,profile);renderMembers(s,urls);}if(withDraftImages){if(urls.bannerImageUrl)document.getElementById('cover').src=urls.bannerImageUrl;if(urls.imageUrl){document.getElementById('portrait').src=urls.imageUrl;document.getElementById('portrait').hidden=false;}}}
   const editClick=event=>{event.preventDefault();panel.hidden=false;panel.scrollIntoView({behavior:'smooth'});};link.addEventListener('click',editClick);
   form.addEventListener('input',setDirty);
   $('add-button').onclick=()=>{addRow();setDirty();};
@@ -87,18 +89,18 @@ export async function initWebsiteEditor({profileId,profile,render}){
   $('discard-website').onclick=()=>{if(dirty&&!confirm('Discard your unpublished website changes?'))return;clearImages();fill();dirty=false;previewed=false;$('publish-website').disabled=true;paint(saved);status.textContent='Published appearance restored.';};
   $('close-editor').onclick=()=>{if(dirty){status.textContent='Publish or discard your changes before closing the editor.';return;}panel.hidden=true;};
   $('publish-website').onclick=async()=>{
-   if(!previewed||busy||mediaEditor.isProcessing()||!dirty)return;busy=true;fields.disabled=true;const uploaded=[];let committed=false;
+   if(!previewed||busy||(mediaEditor.isProcessing()||memberEditor.isProcessing())||!dirty)return;busy=true;fields.disabled=true;const uploaded=[];let committed=false;
    try{
     if(auth.currentUser?.uid!==user.uid)throw new Error('Your sign-in changed. Please reload before publishing.');
     const next=settingsFromForm();status.textContent='Publishing website…';
-    for(const [key,blob] of Object.entries(pending)){const imageRef=ref(storage,`profile-media/${user.uid}/website-${key}-${crypto.randomUUID()}.webp`);await uploadBytes(imageRef,blob,{contentType:'image/webp',customMetadata:{ownerId:user.uid,profileImageType:'website'}});uploaded.push(imageRef);const downloadUrl=await getDownloadURL(imageRef);if(key.startsWith('photo_')){const photo=next.photos.find(p=>p.id===key);if(!photo)throw new Error('A draft photo could not be found. Please preview again.');photo.url=downloadUrl;}else next[key]=downloadUrl;}
+    for(const [key,blob] of Object.entries(pending)){const imageRef=ref(storage,`profile-media/${user.uid}/website-${key}-${crypto.randomUUID()}.webp`);await uploadBytes(imageRef,blob,{contentType:'image/webp',customMetadata:{ownerId:user.uid,profileImageType:'website'}});uploaded.push(imageRef);const downloadUrl=await getDownloadURL(imageRef);if(key.startsWith('photo_')){const photo=next.photos.find(p=>p.id===key);if(!photo)throw new Error('A draft photo could not be found. Please preview again.');photo.url=downloadUrl;}else if(key.startsWith('member_')){const member=next.bandMembers.find(m=>m.id===key);if(!member)throw new Error('A draft member was removed. Preview again.');member.photoUrl=downloadUrl;}else next[key]=downloadUrl;}
     const nextRevision=crypto.randomUUID();
     await runTransaction(db,async transaction=>{const target=doc(db,'profiles',profileId),snap=await transaction.get(target);if(!snap.exists())throw new Error('This profile is no longer available.');const current=snap.data();const owns=canEditWebsite(user,current,profileId);if(!owns)throw new Error('Only the profile owner or site administrator can publish this website.');if((current.websiteSettings?.revision||null)!==revision)throw new Error('This website was updated in another session. Reload before editing again.');transaction.update(target,{websiteSettings:{...normalizeSettings(next),revision:nextRevision}});});
     committed=true;saved=normalizeSettings(next);revision=nextRevision;profile.websiteSettings={...saved,revision};clearImages();fill();dirty=false;previewed=false;$('publish-website').disabled=true;paint(saved);status.textContent='Published! Your website changes are now live.';
    }catch(error){if(!committed)await Promise.allSettled(uploaded.map(imageRef=>deleteObject(imageRef)));status.textContent=error.code==='permission-denied'?'Publishing was denied by your account permissions. Your changes are still here; nothing was published.':error.message||'Publishing failed. Your changes are still here. Try again.';}
    finally{busy=false;fields.disabled=false;}
   };
-  const unload=event=>{if(dirty||busy||mediaEditor.isProcessing()){event.preventDefault();event.returnValue='';}};window.addEventListener('beforeunload',unload);
+  const unload=event=>{if(dirty||busy||(mediaEditor.isProcessing()||memberEditor.isProcessing())){event.preventDefault();event.returnValue='';}};window.addEventListener('beforeunload',unload);
   if(new URLSearchParams(location.search).get('edit')==='1')panel.hidden=false;
   return ()=>{cleanupTools();clearImages();panel.remove();link.removeEventListener('click',editClick);window.removeEventListener('beforeunload',unload);render(profile,profile.websiteSettings);};
  }

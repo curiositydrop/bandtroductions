@@ -10,25 +10,25 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
 <link rel="stylesheet" href="website-editor.css?v=3">
-<link rel="stylesheet" href="website-features.css?v=1">
+<link rel="stylesheet" href="website-features.css?v=2">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<div class="test-bar">WEBSITE UPGRADE PREVIEW <a href="profile.html?id=19MH0ZzVlPVN4ediF4PesZR5TY13">View current profile ↗</a><a id="website-edit-link" hidden>Edit my website</a></div>
+<div class="test-bar">WEBSITE UPGRADE PREVIEW <a id="website-edit-link" hidden>Edit my website</a></div>
 <header><div class="wrap header-inner"><a class="wordmark" href="#home" id="brand">Venomous Thorns</a><nav aria-label="Band website"><a href="#about" id="about-nav">About</a><a href="#music" id="music-nav" hidden>Videos</a><a href="#band-player">Listen</a><a href="#shows">Shows</a><a href="#photos" id="photos-nav" hidden>Photos</a><a href="#merch" id="merch-nav" hidden>Merch</a><a href="#contact">Contact</a></nav></div></header>
 <p id="status" class="status" role="status">Loading band website…</p>
 <main id="main" hidden>
 <section class="hero" id="home"><img class="hero-art" id="cover" src="bt-wide-crowd.jpg" alt="" fetchpriority="high"><div class="wrap"><p class="eyebrow" id="genre">Independent music</p><h1 id="name">Venomous Thorns</h1><p class="location" id="location"></p><div class="actions"><a class="button" href="#music" id="listen" hidden>Watch & listen ↗</a><a class="button secondary" href="#about" id="about-cta">Meet the band ↓</a><a class="button secondary" href="#contact">Get in touch</a></div><div class="actions" id="custom-buttons"></div></div></section>
-<section class="section" id="about"><div class="wrap about-grid"><div><p class="eyebrow">Behind the music</p><h2>Meet the band.</h2><img id="portrait" class="portrait" alt="Band profile image" hidden></div><div><p id="bio" class="bio"></p><dl class="facts" id="facts"></dl></div></div></section>
+<section class="section" id="about"><div class="wrap about-grid"><div><p class="eyebrow">Behind the music</p><h2>Meet the band.</h2><img id="portrait" class="portrait" alt="Band profile image" hidden></div><div><p id="bio" class="bio"></p><dl class="facts" id="facts"></dl></div></div><div class="wrap"><div id="band-member-cards" class="ws-member-cards" hidden></div></div></section>
 <section class="section" id="music" hidden><div class="wrap"><p class="eyebrow">Turn it up</p><h2>Videos.</h2><div id="videos" class="video-grid"></div></div></section>
 <section class="section" id="photos" hidden><div class="wrap"><p class="eyebrow">In pictures</p><h2>Photo gallery.</h2><div class="photo-grid" id="photo-grid"></div></div></section>
 <section class="section" id="merch" hidden><div class="wrap contact-grid"><div><p class="eyebrow">Wear your support</p><h2>Band merch.</h2><p class="muted">Explore the band's store on BANDtroductions.</p></div><a id="store-link" class="button">Shop merch ↗</a></div></section>
 <section class="section" id="contact"><div class="wrap contact-grid"><div><p class="eyebrow">Keep in touch</p><h2>Let's connect.</h2><p class="muted">Booking inquiries and more.</p></div><div><div class="actions" id="contact-links"></div><div class="actions"><button id="share" class="button secondary" type="button">Share this website ↗</button></div><p id="share-status" role="status"></p><input id="share-fallback" readonly aria-label="Website link to copy" hidden></div></div></section>
 </main>
-<footer><div class="wrap footer-inner"><span id="footer-name">Venomous Thorns</span><span>Powered by <a href="index.html">BANDtroductions</a> · <a href="profile.html?id=19MH0ZzVlPVN4ediF4PesZR5TY13">Community profile ↗</a></span></div></footer>
+<footer><div class="wrap footer-inner"><span id="footer-name">Venomous Thorns</span><span>Powered by <a href="index.html">BANDtroductions</a></span></div></footer>
 <noscript><p class="status">Enable JavaScript to load this band's profile content.</p></noscript>
 <script type="module">
-import { websiteProfile, applyWebsiteStyle, initWebsiteEditor } from './website-editor-v2.js?v=1';
+import { websiteProfile, applyWebsiteStyle, initWebsiteEditor } from './website-editor-v2.js?v=2';
 // Public rendering reads profile data. Only the owner editor can publish website settings.
 let activeSettings = {};
 let activeProfile = {};
@@ -48,26 +48,23 @@ function renderProfile(raw,settings=raw.websiteSettings){
  text('bio',p.bio||'More about the band coming soon.');
  const cover=webUrl(p.bannerImageUrl||p.coverImageUrl);if(cover){el('cover').onerror=()=>{el('cover').onerror=null;el('cover').src='bt-wide-crowd.jpg';};el('cover').src=cover;}
  const avatar=webUrl(p.imageUrl||p.avatarUrl||p.photoURL);if(avatar){el('portrait').src=avatar;el('portrait').hidden=false;el('portrait').onerror=()=>{el('portrait').hidden=true;};}
- for(const [key,label] of [['genre','Sound'],['yearFormed','Formed'],['members','Members']]){if(!p[key])continue;const d=document.createElement('div');d.className='fact';const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=Array.isArray(p[key])?p[key].join(', '):String(p[key]);d.append(dt,dd);el('facts').append(d);}
+ for(const [key,label] of [['genre','Sound'],['yearFormed','Formed'],['members','Members']]){if(!p[key]||(key==='members'&&activeSettings.bandMembers?.some(m=>m.name)))continue;const d=document.createElement('div');d.className='fact';const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=Array.isArray(p[key])?p[key].join(', '):String(p[key]);d.append(dt,dd);el('facts').append(d);}
  const candidates=[{url:p.mediaLink,title:p.featuredTitle},...(Array.isArray(p.additionalMedia)?p.additionalMedia:[]),...(Array.isArray(p.mediaItems)?p.mediaItems.filter(i=>typeof i==='string'||i?.type==='video'):[])];
  const seen=new Set();for(const item of candidates){if(!item)continue;const id=videoId(typeof item==='string'?item:item.url);if(!id||seen.has(id))continue;seen.add(id);const card=document.createElement('article'),frame=document.createElement('iframe'),heading=document.createElement('h3');heading.textContent=item.title||item.caption||`${name} — Video`;frame.src=`https://www.youtube-nocookie.com/embed/${id}`;frame.title=heading.textContent;frame.loading='lazy';frame.allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';frame.allowFullscreen=true;card.append(frame,heading);el('videos').append(card);}
  if(seen.size)['music','music-nav','listen'].forEach(id=>{el(id).hidden=false;});
  const email=typeof p.bookingEmail==='string'?p.bookingEmail.trim():'';if(/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email))addContact('Email booking ↗',`mailto:${encodeURIComponent(email)}`);
  const website=webUrl(p.website);if(website)addContact('More from the band ↗',website);
- addContact('Community profile ↗',`profile.html?id=${PROFILE_ID}`);
  el('status').hidden=true;el('main').hidden=false;applyWebsiteStyle(activeSettings,activeProfile);
 }
 el('share').addEventListener('click',async()=>{const url=new URL(location.pathname+'?id='+encodeURIComponent(PROFILE_ID),location.origin).href;try{if(navigator.share){await navigator.share({title:document.title.replace(' | Website Preview',''),url});}else{await navigator.clipboard.writeText(url);text('share-status','Website link copied.');}}catch(error){if(error.name==='AbortError')return;text('share-status','Copy this link to share:');el('share-fallback').value=url;el('share-fallback').hidden=false;el('share-fallback').select();}});
-const currentLinks=[...document.querySelectorAll('a[href*="profile.html?id="]')];
 if(!PROFILE_ID){text('status','This website link is missing a profile ID.');throw new Error('Missing profile ID');}
-currentLinks.forEach(a=>a.href=`profile.html?id=${encodeURIComponent(PROFILE_ID)}`);
-const slow=setTimeout(()=>text('status','Still loading… You can use the current profile link above while we connect.'),12000);
+const slow=setTimeout(()=>text('status','Still loading… Please wait while we connect.'),12000);
 try{
  const [{db},{doc,getDoc}]=await Promise.all([import('./firebase-dev.js'),import('https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js')]);
  const snapshot=await getDoc(doc(db,'profiles',PROFILE_ID));clearTimeout(slow);
  if(!snapshot.exists()||snapshot.data().published!==true){text('status','This band website is not currently available.');}
  else{const profile=snapshot.data();renderProfile(profile);try{const {initWebsiteFeatures}=await import('./website-features.js?v=1');initWebsiteFeatures({profileId:PROFILE_ID,profile});applyWebsiteStyle(activeSettings,profile);}catch(error){console.error('Website shows/player unavailable.',error);}void initWebsiteEditor({profileId:PROFILE_ID,profile,render:renderProfile}).catch(error=>console.warn('Website editor unavailable.',error));try{const store=await getDoc(doc(db,'merchStorefronts',PROFILE_ID));if(store.exists()&&store.data().published===true){el('store-link').href=`merch.html?band=${PROFILE_ID}`;el('merch').dataset.available='true';applyWebsiteStyle(activeSettings,activeProfile);}}catch(error){console.warn('Merch availability could not be checked.',error);}}
-}catch(error){clearTimeout(slow);console.error(error);text('status','We could not load the band website. Please refresh or use the current profile link above.');}
+}catch(error){clearTimeout(slow);console.error(error);text('status','We could not load the band website. Please refresh to try again.');}
 </script>
 </body>
 </html>
