@@ -111,7 +111,7 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 </style></head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<div class="test-bar">WEBSITE DESIGN PREVIEW · Editing is locked while subscriptions are being set up.</div>
+<div class="test-bar">WEBSITE DESIGN PREVIEW · <a id="website-edit-link" href="#website-editor" hidden>Edit website</a><span id="preview-lock-copy">Editing is locked while subscriptions are being set up.</span></div>
 <header><div class="wrap header-inner"><a class="wordmark" href="#/home" id="brand">BAND WEBSITE</a><nav aria-label="Band website">
 <a href="#/home" id="home-nav">Home</a><a href="#/about" id="about-nav">About</a><a href="#/music" id="music-nav">Videos</a><a href="#/photos" id="photos-nav">Photos</a><a href="#/shows" id="shows-nav">Shows</a><a href="#/merch" id="merch-nav">Merch</a><a href="#/booking" id="booking-nav">Booking</a><a href="#/contact" id="contact-nav">Contact</a>
 </nav></div></header><p id="view-empty" class="status" hidden></p>
@@ -154,7 +154,7 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 })();
 </script>
 <script type="module">
-import { websiteProfile, applyWebsiteStyle } from './website-review-editor.js?v=1';
+import { websiteProfile, applyWebsiteStyle, initWebsiteEditor } from './website-review-editor.js?v=4';
 import { loadWebsiteProfile } from './website-profile-loader.js?v=1';
 import { initialMembers } from './website-review-members.js?v=1';
 import { initWebsiteBooking } from './website-booking.js?v=3';
@@ -187,6 +187,7 @@ function renderProfile(raw,settings=raw.websiteSettings){
 }
 el('share').addEventListener('click',async()=>{const url=new URL(location.pathname+'?id='+encodeURIComponent(PROFILE_ID)+location.hash,location.origin).href;try{if(navigator.share){await navigator.share({title:document.title.replace(' | Website Preview',''),url});}else{await navigator.clipboard.writeText(url);text('share-status','Website link copied.');}}catch(error){if(error.name==='AbortError')return;text('share-status','Copy this link to share:');el('share-fallback').value=url;el('share-fallback').hidden=false;el('share-fallback').select();}});
 if(!PROFILE_ID){text('status','This website link is missing a profile ID.');throw new Error('Missing profile ID');}
+if(PROFILE_ID==='19MH0ZzVlPVN4ediF4PesZR5TY13'){const edit=el('website-edit-link');if(edit){edit.hidden=false;edit.href=`website-upgrade-preview.html?id=${encodeURIComponent(PROFILE_ID)}&edit=1&v=10`;el('preview-lock-copy').textContent='Venomous Thorns pilot · ';}}
 const slow=setTimeout(()=>text('status','Still loading… Please wait while we connect.'),12000);
 try{
  const [{db},{doc,getDoc}]=await Promise.all([import('./firebase-dev.js'),import('https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js')]);
