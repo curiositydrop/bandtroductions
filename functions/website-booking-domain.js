@@ -22,7 +22,9 @@ function settings(input = {}) {
   if (!['show','member'].includes(input.rateBasis)) fail('Choose per show or per member.');
   const blockedDates = [...new Set(Array.isArray(input.blockedDates) ? input.blockedDates.map(day) : [])].sort();
   if (blockedDates.length > 366) fail('Use at most 366 blocked dates.');
-  return {enabled:input.enabled === true, currency:'USD', rateCents:money(input.rate), rateBasis:input.rateBasis, memberCount:integer(input.memberCount,1,30,'member count'), sets:integer(input.sets,1,12,'number of sets'), setMinutes:integer(input.setMinutes,10,240,'set length'), timeZone, travel:text(input.travel,500), terms:text(input.terms,1200), blockedDates};
+  const rateCents=Number.isInteger(input.rateCents)?input.rateCents:money(input.rate);
+  if(rateCents<0||rateCents>10000000) fail('Enter a valid performance rate.');
+  return {enabled:input.enabled === true, currency:'USD', rateCents, rateBasis:input.rateBasis, memberCount:integer(input.memberCount||1,1,30,'member count'), sets:integer(input.sets||1,1,12,'number of sets'), setMinutes:integer(input.setMinutes||60,10,240,'set length'), timeZone, travel:text(input.travel,500), terms:text(input.terms,1200), blockedDates};
 }
 function terms(s) { return {currency:s.currency,rateCents:s.rateCents,rateBasis:s.rateBasis,memberCount:s.memberCount,sets:s.sets,setMinutes:s.setMinutes,timeZone:s.timeZone,travel:s.travel,terms:s.terms,showRateCents:s.rateCents*(s.rateBasis==='member'?s.memberCount:1)}; }
 function requestData(input, s, now = new Date()) {

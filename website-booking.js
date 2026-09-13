@@ -6,7 +6,9 @@ export function initWebsiteBooking({profileId, profile} = {}) {
   if(!form)return;
   const s=profile?.websiteSettings?.booking||{};
   if(s.enabled===true){
-    summary.textContent=s.rateCents!=null?`Typical rate: $${(Number(s.rateCents)/100).toFixed(2)} ${s.rateBasis==='member'?'per member':'per show'}.`: 'Contact the band for booking rates.';
+    const policy={deposit:'Payment policy: 50% deposit online after approval.',full:'Payment policy: full payment online after approval.',in_person:'Payment policy: pay in person at the show.'}[s.paymentPolicy]||'Payment policy: pay in person at the show.';
+    summary.textContent=(s.rateCents!=null?`Performance rate: $${(Number(s.rateCents)/100).toFixed(2)} ${s.rateBasis==='member'?'per member':'per show'}. `:'')+policy;
+    const offered=form.elements.offeredPay;if(offered){offered.closest('label').hidden=true;offered.required=false;offered.value='0';}
   }else{
     summary.textContent='Booking requests are being connected for this website.';
     form.querySelector('#booking-submit').disabled=true;
@@ -17,7 +19,7 @@ export function initWebsiteBooking({profileId, profile} = {}) {
     event.preventDefault();
     const user=auth.currentUser;
     if(!user){status.textContent='Please sign in to send a booking request.';return;}
-    const data=Object.fromEntries(new FormData(form));data.termsAccepted=form.elements.termsAccepted.checked;data.capacity=Number(data.capacity);data.offeredPay=Number(data.offeredPay);
+    const data=Object.fromEntries(new FormData(form));data.termsAccepted=form.elements.termsAccepted.checked;data.capacity=Number(data.capacity);data.offeredPay=0;
     const button=form.querySelector('#booking-submit');button.disabled=true;status.textContent='Sending booking request…';
     try{const result=await httpsCallable(getFunctions(),'createBookingRequest')({...data,profileId});status.textContent=result.data?.message||'Request sent for band review.';form.reset();}
     catch(error){status.textContent=error?.message||'We could not send that request. Please try again.';}
