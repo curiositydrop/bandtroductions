@@ -22,7 +22,10 @@ jobs:
           npm install --prefix /tmp/bt-website-tests playwright@1.55.0
           /tmp/bt-website-tests/node_modules/.bin/playwright install --with-deps chromium
       - name: Generate test audio
-        run: ffmpeg -f lavfi -i anullsrc=r=44100:cl=mono -t 1 -q:a 9 /tmp/bt-test.mp3
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          ffmpeg -f lavfi -i anullsrc=r=44100:cl=mono -t 1 -q:a 9 /tmp/bt-test.mp3
       - name: Test website with isolated Firebase fixtures
         run: node tests/website-smoke.cjs
       - uses: actions/upload-artifact@v4

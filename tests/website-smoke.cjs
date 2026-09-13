@@ -95,6 +95,20 @@ const server=http.createServer((req,res)=>{
   assert.match(decodeURIComponent(await page.locator('#website-edit-link').getAttribute('href')),/id=band-a/);
   assert.equal(await page.locator('.ws-tools').count(),0,'guests cannot edit shows or upload');
   assert.deepEqual(errors,[]);
+  const live=await browser.newPage();
+  await live.goto('https://bandtroductions.com/website.html?id=19MH0ZzVlPVN4ediF4PesZR5TY13',{waitUntil:'domcontentloaded'});
+  const reads=await live.evaluate(async()=>{
+   const {db}=await import('./firebase-dev.js');
+   const {collection,getDocs,query,where}=await import('https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js');
+   const results={};
+   for(const [key,coll,field,val] of [['approvedSongs','radioApprovedTracks','approved',true],['existingShows','posts','authorId','19MH0ZzVlPVN4ediF4PesZR5TY13'],['websiteShows','posts','websiteProfileId','19MH0ZzVlPVN4ediF4PesZR5TY13']]){
+    try{const s=await getDocs(query(collection(db,coll),where(field,'==',val)));results[key]={ok:true,count:s.size};}catch(e){results[key]={ok:false,code:e.code};}
+   }
+   return results;
+  });
+  console.log('Live public read access:',JSON.stringify(reads));
+  for(const result of Object.values(reads))assert.equal(result.ok,true,'live public read permissions');
+  await live.close();
   console.log('PASS: mobile/desktop rendering, media merge, calendar details + editing, appearance publish, pending/approved song flow, upload folder + permissions, band isolation, guest access and login link.');
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;server.close();});
