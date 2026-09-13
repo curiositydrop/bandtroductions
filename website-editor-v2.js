@@ -1,6 +1,6 @@
-import { normalizeMembers, renderMembers, createMemberEditor } from './website-members.js?v=1';
+import { normalizeMembers, renderMembers, createMemberEditor } from './website-members.js?v=grid1';
 import { mountWebsiteTools } from './website-features.js?v=1';
-import { normalizeMedia, profileVideos, websiteVideos, applyMedia, createMediaEditor } from './website-media-v2.js?v=1';
+import { normalizeMedia, profileVideos, websiteVideos, applyMedia, createMediaEditor } from './website-media-v2.js?v=grid1';
 // Website pilot settings and owner editor. No database writes happen during preview.
 // Match admin-access.js without importing its account-normalization side effects.
 export function isWebsiteAdmin(user){return !!user&&['mbergeron79@gmail.com','mbegeron79@gmail.com'].includes(String(user.email||'').trim().toLowerCase());}

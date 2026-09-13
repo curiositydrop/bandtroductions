@@ -10,7 +10,7 @@ export function normalizeMembers(input){
 }
 export function renderMembers(settings={},previewUrls={}){
  const grid=document.getElementById('band-member-cards');if(!grid)return;
- grid.replaceChildren();
+ grid.replaceChildren();const section=document.getElementById('members');if(section)section.hidden=true;
  if(settings.sections?.meetBand===false){grid.hidden=true;return;}
  for(const m of normalizeMembers(settings.bandMembers)){
   if(!m.name)continue;
@@ -23,7 +23,7 @@ export function renderMembers(settings={},previewUrls={}){
   if(m.instrument){const role=document.createElement('p');role.textContent=m.instrument;card.append(role);}
   grid.append(card);
  }
- grid.hidden=!grid.children.length;
+ grid.hidden=!grid.children.length;if(section)section.hidden=grid.hidden;
 }
 export function createMemberEditor({container,changed,preparePhoto,removePending,getPreviewUrl}){
  const section=document.createElement('section');section.className='ws-member-editor';
