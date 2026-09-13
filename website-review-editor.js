@@ -6,6 +6,7 @@ import { normalizeMedia, profileVideos, websiteVideos, applyMedia, createMediaEd
 export function isWebsiteAdmin(user){return !!user&&['mbergeron79@gmail.com','mbegeron79@gmail.com'].includes(String(user.email||'').trim().toLowerCase());}
 export function canEditWebsite(user,profile,profileId){return !!user&&(user.uid===profileId||profile.ownerId===user.uid||isWebsiteAdmin(user));}
 export const DEFAULTS={background:'#0b100f',text:'#eef4ee',accent:'#c3ec77'};
+const BOOKING_PILOT_PROFILE='19MH0ZzVlPVN4ediF4PesZR5TY13';
 const color=v=>/^#[0-9a-f]{6}$/i.test(v||'');
 function luminance(hex){return hex.slice(1).match(/../g).map(x=>parseInt(x,16)/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4).reduce((s,x,i)=>s+x*[.2126,.7152,.0722][i],0);}
 export function contrast(a,b){const x=luminance(a),y=luminance(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);}
@@ -62,6 +63,7 @@ export async function initWebsiteEditor({profileId,profile,render}){
   </div><div class="editor-actions"><button type="submit">Preview changes ↓</button><button type="button" id="publish-website" disabled>Publish website</button><button type="button" id="discard-website">Discard changes</button><button type="button" id="close-editor">Close editor</button></div></fieldset><p id="editor-status" role="status" aria-live="polite"></p></form></div>`;
   document.querySelector('header').after(panel);
   const $=id=>panel.querySelector(`#${id}`),form=$('website-form'),fields=$('website-fields'),status=$('editor-status'),rows=$('button-rows');
+  if(profileId!==BOOKING_PILOT_PROFILE){const section=[...panel.querySelectorAll('section')].find(node=>node.querySelector('h3')?.textContent==='Booking & payment');if(section){section.querySelectorAll('input,select').forEach(control=>control.disabled=true);const note=document.createElement('p');note.textContent='Booking setup is currently in pilot testing with Venomous Thorns.';section.append(note);}}
   function setDirty(){dirty=true;previewed=false;$('publish-website').disabled=true;status.textContent='Unpublished changes. Preview to review them.';}
   function clearImages(){Object.values(urls).forEach(URL.revokeObjectURL);pending={};urls={};}
   function addRow(button={}){if(rows.children.length>=6)return;const row=document.createElement('div');row.className='button-row';const label=document.createElement('input'),url=document.createElement('input'),remove=document.createElement('button');label.placeholder='Button label';label.setAttribute('aria-label','Button label');label.maxLength=40;label.value=button.label||'';url.placeholder='https://…';url.setAttribute('aria-label','Button destination');url.type='text';url.inputMode='url';url.value=button.url||'';remove.type='button';remove.textContent='Remove';remove.onclick=()=>{row.remove();$('add-button').disabled=rows.children.length>=6;setDirty();};row.append(label,url,remove);rows.append(row);$('add-button').disabled=rows.children.length>=6;}
