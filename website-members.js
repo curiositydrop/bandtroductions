@@ -11,6 +11,7 @@ export function normalizeMembers(input){
 export function renderMembers(settings={},previewUrls={}){
  const grid=document.getElementById('band-member-cards');if(!grid)return;
  grid.replaceChildren();
+ if(settings.sections?.meetBand===false){grid.hidden=true;return;}
  for(const m of normalizeMembers(settings.bandMembers)){
   if(!m.name)continue;
   const card=document.createElement('article');card.className='ws-member-card';
