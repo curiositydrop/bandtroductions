@@ -156,7 +156,7 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 import { websiteProfile, applyWebsiteStyle } from './website-review-editor.js?v=1';
 import { loadWebsiteProfile } from './website-profile-loader.js?v=1';
 import { initialMembers } from './website-review-members.js?v=1';
-import { initWebsiteBooking } from './website-booking.js?v=2';
+import { initWebsiteBooking } from './website-booking.js?v=3';
 // Public rendering reads profile data. Only the owner editor can publish website settings.
 let activeSettings = {};
 let activeProfile = {};
@@ -191,7 +191,7 @@ try{
  const [{db},{doc,getDoc}]=await Promise.all([import('./firebase-dev.js'),import('https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js')]);
  const snapshot=await loadWebsiteProfile(()=>getDoc(doc(db,'profiles',PROFILE_ID)),{profileId:PROFILE_ID});clearTimeout(slow);
  if(!snapshot.exists()||snapshot.data().published!==true){text('status','This band website is not currently available.');}
- else{const profile=snapshot.data();renderProfile(profile);try{const {initWebsiteFeatures}=await import('./website-features.js?v=1');initWebsiteFeatures({profileId:PROFILE_ID,profile});applyWebsiteStyle(activeSettings,profile);}catch(error){console.error('Website shows/player unavailable.',error);}initWebsiteBooking({profileId:PROFILE_ID,profile});/* Read-only review: no editor, upload forms or publish handlers are mounted. */try{const store=await getDoc(doc(db,'merchStorefronts',PROFILE_ID));if(store.exists()&&store.data().published===true){el('store-link').href=`merch.html?band=${PROFILE_ID}`;el('merch').dataset.available='true';applyWebsiteStyle(activeSettings,activeProfile);}}catch(error){console.warn('Merch availability could not be checked.',error);}}
+ else{const profile=snapshot.data();renderProfile(profile);try{const {initWebsiteFeatures}=await import('./website-features.js?v=2');initWebsiteFeatures({profileId:PROFILE_ID,profile});applyWebsiteStyle(activeSettings,profile);}catch(error){console.error('Website shows/player unavailable.',error);}initWebsiteBooking({profileId:PROFILE_ID,profile});/* Read-only review: no editor, upload forms or publish handlers are mounted. */try{const store=await getDoc(doc(db,'merchStorefronts',PROFILE_ID));if(store.exists()&&store.data().published===true){el('store-link').href=`merch.html?band=${PROFILE_ID}`;el('merch').dataset.available='true';applyWebsiteStyle(activeSettings,activeProfile);}}catch(error){console.warn('Merch availability could not be checked.',error);}}
 }catch(error){clearTimeout(slow);console.error(error);el('status').hidden=false;text('status','We could not connect to this band website. ');const retry=document.createElement('button');retry.type='button';retry.className='button';retry.textContent='Try again';retry.onclick=()=>location.reload();el('status').append(retry);}
 </script>
 </body>

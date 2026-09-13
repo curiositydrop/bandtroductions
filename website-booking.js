@@ -5,16 +5,9 @@ export function initWebsiteBooking({profileId, profile} = {}) {
   const form=document.getElementById('booking-form'), status=document.getElementById('booking-status'), summary=document.getElementById('booking-rate-summary');
   if(!form)return;
   const s=profile?.websiteSettings?.booking||{};
-  const calendar=document.createElement('div');calendar.className='booking-availability';calendar.setAttribute('aria-label','Select booking dates');form.before(calendar);
-  const blocked=new Set(Array.isArray(s.blockedDates)?s.blockedDates:[]), selected=new Set();
-  function iso(d){return d.toISOString().slice(0,10)}
-  function drawCalendar(){
-    calendar.replaceChildren();const heading=document.createElement('p');heading.className='muted';heading.textContent='Select one or more open dates. Selected dates will be added to your request.';calendar.append(heading);
-    const grid=document.createElement('div');grid.className='booking-date-grid';const start=new Date();start.setHours(12,0,0,0);
-    for(let i=0;i<90;i++){const d=new Date(start);d.setDate(start.getDate()+i);const key=iso(d),button=document.createElement('button');button.type='button';button.className='booking-date';button.textContent=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});button.setAttribute('aria-label',d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}));if(blocked.has(key)){button.disabled=true;button.title='Unavailable';}if(selected.has(key))button.classList.add('is-selected');button.onclick=()=>{if(selected.has(key))selected.delete(key);else selected.add(key);const dates=[...selected].sort();form.elements.startDate.value=dates[0]||'';form.elements.endDate.value=dates.length>1?dates[dates.length-1]:'';drawCalendar();};grid.append(button);}
-    calendar.append(grid);
-  }
-  drawCalendar();
+  const source=document.querySelector('#shows .ws-calendar');const calendar=source?.cloneNode(true)||document.createElement('div');calendar.id='booking-calendar';calendar.setAttribute('aria-label','Select booking dates');const instruction=document.createElement('p');instruction.className='muted';instruction.textContent='Select one or more available dates to book this band.';calendar.prepend(instruction);form.before(calendar);form.hidden=true;const selected=new Set();
+  const sync=()=>{if(!source)return;const days=source.querySelector('#ws-days'),copy=calendar.querySelector('#ws-days');if(days&&copy)copy.innerHTML=days.innerHTML;const month=source.querySelector('#ws-month'),copyMonth=calendar.querySelector('#ws-month');if(month&&copyMonth)copyMonth.textContent=month.textContent;};sync();if(source)new MutationObserver(sync).observe(source,{subtree:true,childList:true});
+  calendar.addEventListener('click',event=>{const nav=event.target.closest('[data-month]');if(nav&&source){source.querySelector(`[data-month="${nav.dataset.month}"]`)?.click();return;}const cell=event.target.closest('.ws-day');if(!cell||cell.classList.contains('has-shows'))return;const key=cell.getAttribute('data-date')||cell.dataset.date;if(!key)return;selected.has(key)?selected.delete(key):selected.add(key);cell.classList.toggle('is-selected',selected.has(key));const dates=[...selected].sort();form.elements.startDate.value=dates[0]||'';form.elements.endDate.value=dates.length>1?dates[dates.length-1]:'';form.hidden=!selected.size;});
   const policy={deposit:'Payment policy: 50% deposit online after approval.',full:'Payment policy: full payment online after approval.',in_person:'Payment policy: pay in person at the show.'}[s.paymentPolicy]||'Payment policy: pay in person at the show.';
   summary.textContent=(s.rateCents>0?`Performance rate: $${(Number(s.rateCents)/100).toFixed(2)} ${s.rateBasis==='member'?'per member':'per show'}. `:'Band performance rate: contact the band for pricing. ')+policy;
   const offered=form.elements.offeredPay;if(offered){offered.closest('label').hidden=true;offered.required=false;offered.value='0';}
@@ -25,7 +18,7 @@ export function initWebsiteBooking({profileId, profile} = {}) {
     if(!user){status.textContent='Please sign in to send a booking request.';return;}
     const data=Object.fromEntries(new FormData(form));data.termsAccepted=form.elements.termsAccepted.checked;data.capacity=Number(data.capacity);data.offeredPay=0;
     const button=form.querySelector('#booking-submit');button.disabled=true;status.textContent='Sending booking request…';
-    try{const result=await httpsCallable(getFunctions(),'createBookingRequest')({...data,selectedDates:[...selected],profileId});status.textContent=result.data?.message||'Request sent for band review.';form.reset();selected.clear();drawCalendar();}
+    try{const result=await httpsCallable(getFunctions(),'createBookingRequest')({...data,selectedDates:[...selected],profileId});status.textContent=result.data?.message||'Request sent for band review.';form.reset();selected.clear();form.hidden=true;}
     catch(error){status.textContent=error?.message||'We could not send that request. Please try again.';}
     finally{button.disabled=false;}
   });

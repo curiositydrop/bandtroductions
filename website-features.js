@@ -51,7 +51,7 @@ export function initWebsiteFeatures({profileId,profile}){
   for(let i=0;i<month.getDay();i++)grid.append(make('span',undefined,'ws-blank'));
   let count=0;
   for(let d=1;d<=days;d++){
-   const key=dayKey(y,m,d),shows=currentShows.filter(p=>eventData(p).date===key),cell=make(shows.length?'button':'div',undefined,'ws-day');
+   const key=dayKey(y,m,d),shows=currentShows.filter(p=>eventData(p).date===key),cell=make(shows.length?'button':'div',undefined,'ws-day');cell.dataset.date=key;
    cell.append(make('span',String(d)));if(key===dayKey(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()))cell.setAttribute('aria-current','date');
    if(shows.length){count+=shows.length;cell.type='button';cell.classList.add('has-shows');cell.setAttribute('aria-label',key+': '+shows.map(p=>{const e=eventData(p);return e.title+', '+(e.age||'ages not specified');}).join('; '));
     const marks=make('span',undefined,'ws-day-marks');
