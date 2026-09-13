@@ -142,6 +142,37 @@ const server=http.createServer((req,res)=>{
   assert.match(decodeURIComponent(await page.locator('#website-edit-link').getAttribute('href')),/id=band-a/);
   assert.equal(await page.locator('.ws-tools').count(),0,'guests cannot edit shows or upload');
   assert.deepEqual(errors,[]);
+
+  await page.goto(base+'/website-navigation-preview.html?id=band-a');
+  await page.waitForFunction(()=>!document.getElementById('main').hidden);
+  await page.locator('#band-player').waitFor();
+  assert.equal(await page.locator('#home').isVisible(),true);
+  assert.equal(await page.locator('#about').isVisible(),false);
+  assert.equal(await page.locator('#website-editor').count(),0);
+  assert.equal(await page.locator('header nav a:visible').count(),7);
+  await page.locator('#about-nav').click();
+  assert.equal(await page.locator('#about').isVisible(),true);
+  assert.equal(await page.locator('#home').isVisible(),false);
+  assert.equal(await page.locator('#band-player').isVisible(),false);
+  await page.locator('#music-nav').click();
+  assert.equal(await page.locator('#music').isVisible(),true);
+  assert.equal(await page.locator('#about').isVisible(),false);
+  await page.goBack();
+  await page.waitForFunction(()=>document.body.dataset.view==='about');
+  await page.locator('#merch-nav').click();
+  assert.equal(await page.locator('#view-empty').isVisible(),true);
+  await page.locator('#shows-nav').click();
+  assert.equal(await page.locator('#shows').isVisible(),true);
+  await page.locator('#home-nav').click();
+  assert.equal(await page.locator('#band-player').isVisible(),true);
+  await page.evaluate(()=>{document.querySelector('#band-player audio').dispatchEvent(new Event('play'));location.hash='/photos';});
+  await page.waitForFunction(()=>document.body.dataset.view==='photos');
+  assert.equal(await page.locator('#band-player').isVisible(),true,'playing controls stay available');
+  await page.setViewportSize({width:390,height:844});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  await page.screenshot({path:'/tmp/bt-website-review/navigation-mobile.png',fullPage:true});
+  assert.deepEqual(errors,[]);
+  console.log('PASS navigation views, browser Back, visible full menu, empty views, persistent player and read-only preview');
   const live=await browser.newPage();
   await live.goto('https://bandtroductions.com/website.html?id=19MH0ZzVlPVN4ediF4PesZR5TY13',{waitUntil:'domcontentloaded'});
   const reads=await live.evaluate(async()=>{
