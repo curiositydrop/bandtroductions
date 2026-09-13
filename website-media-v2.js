@@ -20,7 +20,7 @@ export function profileVideos(profile){
 export function applyMedia(input,previewUrls={},profile={}){
  const settings=normalizeMedia(input),el=id=>document.getElementById(id),main=el('main');
  main.dataset.layout=settings.layout;main.dataset.buttonStyle=settings.buttonStyle;
- const order=settings.layout==='music-first'?['home','band-player','music','shows','about','members',photos','merch','contact']:settings.layout==='photo-first'?['home','photos','about','members',band-player','music','shows','merch','contact']:['home','about','members',band-player','music','photos','shows','merch','contact'];
+ const order=settings.layout==='music-first'?['home','band-player','music','shows','about','members','photos','merch','contact']:settings.layout==='photo-first'?['home','photos','about','members','band-player','music','shows','merch','contact']:['home','about','members','band-player','music','photos','shows','merch','contact'];
  order.forEach(id=>{if(el(id))main.append(el(id));});
  const grid=el('photo-grid');if(!grid)return;grid.replaceChildren();
  for(const p of websitePhotos(profile,settings)){const src=previewUrls[p.id]||p.url;if(!p.visible||!src)continue;const figure=document.createElement('figure'),img=document.createElement('img');img.src=src;img.alt=p.caption||'Band photo';img.loading='lazy';figure.append(img);if(p.caption){const caption=document.createElement('figcaption');caption.textContent=p.caption;figure.append(caption);}grid.append(figure);}
