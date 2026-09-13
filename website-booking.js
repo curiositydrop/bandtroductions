@@ -15,16 +15,10 @@ export function initWebsiteBooking({profileId, profile} = {}) {
     calendar.append(grid);
   }
   drawCalendar();
-  if(s.enabled===true){
-    const policy={deposit:'Payment policy: 50% deposit online after approval.',full:'Payment policy: full payment online after approval.',in_person:'Payment policy: pay in person at the show.'}[s.paymentPolicy]||'Payment policy: pay in person at the show.';
-    summary.textContent=(s.rateCents!=null?`Performance rate: $${(Number(s.rateCents)/100).toFixed(2)} ${s.rateBasis==='member'?'per member':'per show'}. `:'')+policy;
-    const offered=form.elements.offeredPay;if(offered){offered.closest('label').hidden=true;offered.required=false;offered.value='0';}
-  }else{
-    summary.textContent='Booking requests are being connected for this website.';
-    form.querySelector('#booking-submit').disabled=true;
-    status.textContent='This booking form is not live yet.';
-    return;
-  }
+  const policy={deposit:'Payment policy: 50% deposit online after approval.',full:'Payment policy: full payment online after approval.',in_person:'Payment policy: pay in person at the show.'}[s.paymentPolicy]||'Payment policy: pay in person at the show.';
+  summary.textContent=(s.rateCents>0?`Performance rate: $${(Number(s.rateCents)/100).toFixed(2)} ${s.rateBasis==='member'?'per member':'per show'}. `:'Band performance rate: contact the band for pricing. ')+policy;
+  const offered=form.elements.offeredPay;if(offered){offered.closest('label').hidden=true;offered.required=false;offered.value='0';}
+  if(s.enabled!==true){form.querySelector('#booking-submit').disabled=true;status.textContent='Booking requests are not live yet.';return;}
   form.addEventListener('submit',async event=>{
     event.preventDefault();
     const user=auth.currentUser;
