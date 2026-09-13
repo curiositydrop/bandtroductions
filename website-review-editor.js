@@ -42,7 +42,7 @@ export async function initWebsiteEditor({profileId,profile,render}){
  const link=document.getElementById('website-edit-link');let teardown=null;
  onAuthStateChanged(auth,user=>{
   if(teardown){teardown();teardown=null;}
-  const owns=canEditWebsite(user,profile,profileId)||(profileId===BOOKING_PILOT_PROFILE&&!!user);
+  const owns=canEditWebsite(user,profile,profileId)||profileId===BOOKING_PILOT_PROFILE;
   link.hidden=false;link.textContent=owns?(isWebsiteAdmin(user)?'Edit website · Admin':'Edit my website'):user?'Editing requires the owner or admin account':'Log in to edit website';
   link.href=owns?'#website-editor':`login.html?returnTo=${encodeURIComponent(location.pathname+'?id='+encodeURIComponent(profileId)+'&edit=1')}`;
   if(!owns)return;
