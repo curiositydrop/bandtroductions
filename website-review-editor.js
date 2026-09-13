@@ -29,7 +29,7 @@ export function applyWebsiteStyle(input,profile={}){
  const s=normalizeSettings(input),root=document.documentElement,el=id=>document.getElementById(id);applyMedia(s,{},profile);renderMembers(s);
  for(const [key,value] of Object.entries(s.theme))root.style.setProperty(`--site-${key}`,value);
  root.style.setProperty('--site-button-text',contrast(s.theme.accent,'#000000')>=contrast(s.theme.accent,'#ffffff')?'#000000':'#ffffff');
- for(const id of ['about','music','merch']){const section=el(id);section.hidden=s.sections[id]===false||(id==='music'&&!el('videos').children.length)||(id==='merch'&&section.dataset.available!=='true');const nav=el(`${id}-nav`);if(nav)nav.hidden=section.hidden;}
+ for(const id of ['about','music','merch']){const section=el(id);section.hidden=s.sections[id]===false||(id==='music'&&!el('videos').children.length)||(id==='merch'&&section.dataset.available!=='true');const nav=el(`${id}-nav`);if(nav)nav.hidden=section.hidden;}const booking=el('booking');if(booking){booking.hidden=false;const nav=el('booking-nav');if(nav)nav.hidden=false;}
  el('listen').hidden=el('music').hidden;el('about-cta').hidden=el('about').hidden;
  el('custom-buttons').replaceChildren();for(const b of s.buttons){const a=document.createElement('a');a.className='button';a.href=b.url;a.textContent=b.label;el('custom-buttons').append(a);}
 }
@@ -110,3 +110,4 @@ async function resizeImage(file,maxWidth){
  if(file.size>12*1024*1024)throw new Error('Choose an image smaller than 12 MB.');
  const bitmap=await createImageBitmap(file);try{const scale=Math.min(1,maxWidth/Math.max(bitmap.width,bitmap.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('This image could not be resized.')),'image/webp',.86));}finally{bitmap.close();}
 }
+
