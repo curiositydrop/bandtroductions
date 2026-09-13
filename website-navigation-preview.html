@@ -93,6 +93,15 @@ body:not([data-view=home]).music-playing #band-player h3{font-size:14px;margin:0
 body:not([data-view=home]).music-playing{padding-bottom:130px}
 #view-empty{min-height:260px;padding:70px 24px}
 @media(max-width:650px){header .header-inner{padding:16px 0 8px}header nav{gap:0 14px}header nav a{font-size:13px}#main.website-pages .hero{min-height:440px;padding:50px 0}#main.website-pages .hero h1{font-size:clamp(38px,10vw,62px)}}
+</style><style>
+#main.website-pages .ws-member-cards{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x proximity;margin:0 0 40px;padding:0 0 12px}
+#main.website-pages .ws-member-card{flex:0 0 calc((100% - 48px)/4);min-width:150px;max-width:260px;scroll-snap-align:start}
+#main.website-pages .ws-member-portrait{font-size:16px;aspect-ratio:1;border-style:dashed}
+#main.website-pages .ws-member-portrait:has(img){border-style:solid}
+#main.website-pages .ws-member-card h3{font-size:19px;margin:12px 0 4px}
+#main.website-pages .review-biography{border-top:1px solid var(--line);padding-top:40px}
+#main.website-pages .review-biography .about-grid{grid-template-columns:150px 1fr;gap:30px}
+@media(max-width:650px){#main.website-pages .ws-member-card{flex-basis:calc((100% - 16px)/2);min-width:140px}#main.website-pages .review-biography .about-grid{grid-template-columns:1fr;gap:16px}}
 </style></head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -102,8 +111,13 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 </nav></div></header><p id="view-empty" class="status" hidden></p>
 <p id="status" class="status" role="status">Loading band website…</p>
 <main id="main" class="website-stage website-pages" hidden>
-<section class="hero" id="home"><img class="hero-art" id="cover" src="bt-wide-crowd.jpg" alt="" fetchpriority="high"><div class="wrap"><p class="eyebrow" id="genre">Independent music</p><h1 id="name">Venomous Thorns</h1><p class="location" id="location"></p><div class="actions"><a class="button" href="#/music" id="listen" hidden>Watch & listen ↗</a><a class="button secondary" href="#/about" id="about-cta">Meet the band ↓</a><a class="button secondary" href="#/contact">Get in touch</a></div><div class="actions" id="custom-buttons"></div></div></section>
-<section class="section" id="about"><div class="wrap about-grid"><div><p class="eyebrow">Behind the music</p><h2>Meet the band.</h2><img id="portrait" class="portrait" alt="Band profile image" hidden></div><div><p id="bio" class="bio"></p><dl class="facts" id="facts"></dl></div></div><div class="wrap"><div id="band-member-cards" class="ws-member-cards" hidden></div></div></section>
+<section class="hero" id="home"><img class="hero-art" id="cover" src="bt-wide-crowd.jpg" alt="" fetchpriority="high"><div class="wrap"><p class="eyebrow" id="genre">Independent music</p><h1 id="name">Venomous Thorns</h1><p class="location" id="location"></p><div class="actions"><a class="button" href="#/music" id="listen" hidden>Watch & listen ↗</a><a class="button secondary" href="#/about" id="about-cta">Meet the band</a><a class="button secondary" href="#/contact">Get in touch</a></div><div class="actions" id="custom-buttons"></div></div></section>
+<section class="section" id="about"><div class="wrap">
+<div id="member-heading"><p class="eyebrow">The lineup</p><h2>Meet the band.</h2></div>
+<div id="band-member-cards" class="ws-member-cards" hidden></div>
+<div class="review-biography"><p class="eyebrow">Behind the music</p><h2>About the band.</h2>
+<div class="about-grid"><div><img id="portrait" class="portrait" alt="Band profile image" hidden></div><div><p id="bio" class="bio"></p><dl class="facts" id="facts"></dl></div></div></div>
+</div></section>
 <section class="section" id="music" hidden><div class="wrap"><p class="eyebrow">Turn it up</p><h2>Videos.</h2><div id="videos" class="video-grid"></div></div></section>
 <section class="section" id="photos" hidden><div class="wrap"><p class="eyebrow">In pictures</p><h2>Photo gallery.</h2><div class="photo-grid" id="photo-grid"></div></div></section>
 <section class="section" id="merch" hidden><div class="wrap contact-grid"><div><p class="eyebrow">Wear your support</p><h2>Band merch.</h2><p class="muted">Explore the band's store on BANDtroductions.</p></div><a id="store-link" class="button">Shop merch ↗</a></div></section>
@@ -133,8 +147,9 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 })();
 </script>
 <script type="module">
-import { websiteProfile, applyWebsiteStyle } from './website-editor-v2.js?v=stage1';
+import { websiteProfile, applyWebsiteStyle } from './website-review-editor.js?v=1';
 import { loadWebsiteProfile } from './website-profile-loader.js?v=1';
+import { initialMembers } from './website-review-members.js?v=1';
 // Public rendering reads profile data. Only the owner editor can publish website settings.
 let activeSettings = {};
 let activeProfile = {};
@@ -145,7 +160,7 @@ function webUrl(value){try{const u=new URL(value);return ['https:','http:'].incl
 function videoId(value){try{const u=new URL(value),host=u.hostname.toLowerCase().replace(/^www\./,'');let id='';if(host==='youtu.be')id=u.pathname.split('/')[1];else if(['youtube.com','m.youtube.com','youtube-nocookie.com'].includes(host)){const p=u.pathname.split('/').filter(Boolean);id=u.searchParams.get('v')||(['embed','shorts','live'].includes(p[0])?p[1]:'');}return /^[a-zA-Z0-9_-]{11}$/.test(id)?id:'';}catch{return '';}}
 function addContact(label,url){const a=document.createElement('a');a.className='button';a.textContent=label;a.href=url;el('contact-links').append(a);}
 function renderProfile(raw,settings=raw.websiteSettings){
- activeSettings=settings||{};activeProfile=raw;const p=websiteProfile(raw,activeSettings);
+ activeSettings={...(settings||{}),bandMembers:initialMembers(raw,settings||{})};activeProfile=raw;const p=websiteProfile(raw,activeSettings);
  for(const id of ['facts','videos','contact-links'])el(id).replaceChildren();
  el('cover').src='bt-wide-crowd.jpg';el('portrait').hidden=true;
  ['music','music-nav','listen'].forEach(id=>{el(id).hidden=true;});

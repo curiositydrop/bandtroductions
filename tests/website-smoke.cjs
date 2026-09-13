@@ -154,6 +154,20 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#about').isVisible(),true);
   assert.equal(await page.locator('#home').isVisible(),false);
   assert.equal(await page.locator('#band-player').isVisible(),false);
+
+  assert.equal(await page.locator('#about-cta').innerText(),'Meet the band');
+  assert.equal(await page.locator('#band-member-cards .ws-member-card').count(),4);
+  assert.equal(await page.locator('#band-member-cards #portrait').count(),0);
+  assert.equal(await page.evaluate(()=>document.getElementById('band-member-cards').getBoundingClientRect().bottom<=document.querySelector('.review-biography').getBoundingClientRect().top),true);
+  await page.evaluate(async()=>{
+   const {initialMembers,renderMembers,normalizeMembers}=await import('./website-review-members.js?v=1');
+   const ms=initialMembers({members:'Mike singer Kris vocals Dave drums Bob bass'});
+   if(ms.map(m=>m.name).join(',')!=='Mike,Kris,Dave,Bob')throw Error('Legacy names not split correctly');
+   const settings={bandMembers:[{id:'member_test',name:'Mike',instrument:'Guitar',photoUrl:'https://example.com/mike.jpg',showPhoto:false}]};
+   renderMembers(settings);
+   if(!document.querySelector('.ws-member-portrait').hidden)throw Error('Photo visibility setting ignored');
+   if(normalizeMembers(settings.bandMembers)[0].showPhoto!==false)throw Error('Visibility not retained');
+  });
   await page.locator('#music-nav').click();await page.waitForFunction(()=>document.body.dataset.view==='music');
   assert.equal(await page.locator('#music').isVisible(),true);
   assert.equal(await page.locator('#about').isVisible(),false);
