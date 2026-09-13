@@ -1,4 +1,5 @@
-import { auth, db, storage } from './firebase-dev.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-functions.js';
+import { app, auth, db, storage } from './firebase-dev.js';
 import { collection, doc, getDoc, getDocs, onSnapshot, query, where, setDoc, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
 
@@ -97,9 +98,10 @@ function initBandPlayer({main,profileId,profile,stops}){
  audio.addEventListener('ended',()=>{if(selected+1<tracks.length)choose(selected+1,true);});
  audio.addEventListener('error',()=>{status.textContent='This song could not be played. Try another track or refresh.';});
  audio.addEventListener('play',()=>{status.textContent='Playing '+(tracks[selected]?.title||'your selection');});
- stops.push(onSnapshot(query(collection(db,'radioApprovedTracks'),where('approved','==',true)),snap=>{
+ const fetchTracks=httpsCallable(getFunctions(app,'us-central1'),'getWebsiteRadioTracks');let loading=false;
+ async function refreshTracks(){if(loading)return;loading=true;try{const response=await fetchTracks({profileId});
   const previous=tracks[selected]?.id;
-  tracks=snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.approved===true&&belongsToProfile(t,profileId)&&web(t.audioUrl)).sort((a,b)=>(a.dateAdded||a.approvedAt||0)-(b.dateAdded||b.approvedAt||0));
+  tracks=(Array.isArray(response.data?.tracks)?response.data.tracks:[]).filter(t=>web(t.audioUrl)).sort((a,b)=>(a.dateAdded||a.approvedAt||0)-(b.dateAdded||b.approvedAt||0));
   list.replaceChildren();
   tracks.forEach((t,i)=>{const li=make('li'),b=make('button',t.title||'Untitled');b.type='button';b.onclick=()=>choose(i,true);li.append(b);list.append(li);});
   section.querySelectorAll('[data-track]').forEach(b=>b.disabled=!tracks.length);audio.hidden=!tracks.length;
@@ -107,7 +109,10 @@ function initBandPlayer({main,profileId,profile,stops}){
   const retained=tracks.findIndex(t=>t.id===previous);
   if(retained<0)choose(0);else{selected=retained;list.querySelectorAll('button')[selected]?.setAttribute('aria-pressed','true');}
   status.textContent=tracks.length+' approved song'+(tracks.length===1?'':'s')+'. Choose a track to listen.';
- },error=>{console.warn('Band player unavailable',error);section.querySelector('.ws-track-title').textContent='Music unavailable';status.textContent='We could not load the approved songs. Please refresh to try again.';}));
+ }catch(error){console.warn('Band player unavailable',error);section.querySelector('.ws-track-title').textContent='Music coming soon';status.textContent='The band player is being connected. Song submissions still go to admin review.';}finally{loading=false;}}
+ void refreshTracks();window.addEventListener('focus',refreshTracks);
+ const timer=setInterval(()=>{if(!document.hidden)void refreshTracks();},60000);
+ stops.push(()=>{clearInterval(timer);window.removeEventListener('focus',refreshTracks);});
  window.addEventListener('pagehide',()=>audio.pause());
 }
 export function mountWebsiteTools({container,profileId,profile,user,canEdit}){

@@ -4,6 +4,7 @@ on:
     branches: [main, feature/website-calendar-player]
     paths:
       - 'website*'
+      - 'functions/website-radio.js'
       - 'tests/website-smoke.cjs'
       - '.github/workflows/website-checks.yml'
 permissions:

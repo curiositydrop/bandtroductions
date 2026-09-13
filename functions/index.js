@@ -612,3 +612,6 @@ exports.sendActivityPush = onDocumentCreated(
     });
   }
 );
+
+// Public approved music for profile websites; deploy independently of existing functions.
+exports.getWebsiteRadioTracks = require('./website-radio').getWebsiteRadioTracks;

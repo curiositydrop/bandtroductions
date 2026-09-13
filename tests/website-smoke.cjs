@@ -1,7 +1,24 @@
 const { chromium } = require('/tmp/bt-website-tests/node_modules/playwright');
 const fs=require('node:fs'),http=require('node:http'),path=require('node:path'),assert=require('node:assert/strict');
 const root=process.cwd();fs.mkdirSync('/tmp/bt-website-review',{recursive:true});
+
+const vm=require('node:vm');
+const backend={exports:{}};
+vm.runInNewContext(fs.readFileSync(path.join(root,'functions/website-radio.js'),'utf8'),{exports:backend.exports,URL,require:(name)=>{
+ if(name==='firebase-admin/firestore')return {getFirestore:()=>{throw new Error('No database access in serializer test');}};
+ if(name==='firebase-functions/v2/https')return {onCall:(options,handler)=>handler,HttpsError:Error};
+ throw new Error('Unexpected dependency');
+}});
+const rawTrack={approved:true,websiteProfileId:'band-a',title:'Approved',audioUrl:'https://example.com/song.mp3',contactEmail:'private@example.com',notes:'private notes',permissionConfirmed:true};
+const publicResult=backend.exports.publicTrack('song',rawTrack,'band-a');
+assert(publicResult);assert.equal('contactEmail' in publicResult,false);assert.equal('notes' in publicResult,false);assert.equal('permissionConfirmed' in publicResult,false);
+assert.equal(backend.exports.publicTrack('song',{...rawTrack,approved:false},'band-a'),null);
+assert.equal(backend.exports.publicTrack('song',rawTrack,'band-b'),null);
+assert.equal(backend.exports.publicTrack('song',{...rawTrack,audioUrl:'javascript:alert(1)'},'band-a'),null);
+console.log('PASS: public song endpoint excludes pending songs, other bands and all private submission fields.');
+
 const mock=String.raw`
+export const app={};
 export const auth={currentUser:{uid:'band-a',email:'artist@example.com',displayName:'Test Artist'}},db={},storage={};
 export const records=new Map([
  ['profiles/band-a',{displayName:'Test Artist',published:true,ownerId:'band-a',genre:'Metal',bookingEmail:'booking@example.com',location:'Portland, Maine',mediaLink:'https://youtu.be/abcdefghijk',mediaItems:[{type:'image',url:'https://example.com/original.jpg',caption:'Original profile photo'},{type:'video',url:'https://youtu.be/lmnopqrstuv',caption:'Original profile video'}],websiteSettings:{photos:[{id:'photo_saved',url:'https://example.com/extra.jpg',caption:'Website photo'}],videos:[{url:'https://youtu.be/12345678901',title:'Website video',visible:true}]}}],
@@ -24,6 +41,8 @@ export function serverTimestamp(){const now=Date.now();return {toMillis:()=>now,
 export async function setDoc(target,data){records.set(target.path,data);emit();}
 export async function runTransaction(db,fn){const writes=[];await fn({get:getDoc,set:(t,d)=>writes.push([t.path,d]),update:(t,d)=>writes.push([t.path,{...records.get(t.path),...d}])});writes.forEach(([k,v])=>records.set(k,v));emit();}
 export function ref(storage,path){return {path};}
+export function getFunctions(){return {};}
+export function httpsCallable(){return async ({profileId})=>({data:{tracks:[...records].filter(([k,v])=>k.startsWith('radioApprovedTracks/')&&v.approved===true&&v.websiteProfileId===profileId).map(([k,v])=>({id:k.split('/').pop(),title:v.title,artist:v.artist,album:v.album,audioUrl:v.audioUrl,coverUrl:v.coverUrl,dateAdded:v.dateAdded}))}});}
 export const uploads=[];
 export async function uploadBytes(r,file,metadata){uploads.push({path:r.path,metadata,size:file.size});}
 export async function getDownloadURL(r){return 'https://example.com/'+r.path;}
@@ -46,7 +65,7 @@ const server=http.createServer((req,res)=>{
    if(url.startsWith(base))return route.continue();
    return route.abort(); // No live Firebase, email, radio or storage writes.
   });
-  await page.goto(base+'/website.html?id=band-a&edit=1');
+  await page.goto(base+'/website-upgrade-preview.html?id=band-a&edit=1');
   await page.locator('#website-editor').waitFor({state:'visible'});
   assert.equal(await page.locator('#photo-grid img').count(),2,'profile and extra website photos');
   assert.equal(await page.locator('#videos iframe').count(),3,'profile and extra website videos');
@@ -81,6 +100,7 @@ const server=http.createServer((req,res)=>{
   assert.equal(submission.pending.length,1);assert.equal(submission.pending[0].approved,false);assert.equal(submission.pending[0].websiteRadioPermission,true);assert.match(submission.uploads[0].path,/^radio-submissions\/band-a\//);
   assert.equal(await page.locator('#band-player audio').isVisible(),false,'pending songs stay off public player');
   await page.evaluate(async()=>{const {records,setDoc}=await import('/mock-firebase.js');const entry=[...records].find(([k])=>k.startsWith('radioSubmissions/'));await setDoc({path:'radioApprovedTracks/approved-test'},{...entry[1],approved:true,reviewStatus:'approved',dateAdded:Date.now()});});
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await page.locator('.ws-tracks button').filter({hasText:'Website test song'}).waitFor();
   assert.equal(await page.locator('.ws-tracks button').count(),1);assert.equal(await page.locator('#band-player audio').isVisible(),true);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'mobile has no horizontal overflow');
@@ -107,7 +127,8 @@ const server=http.createServer((req,res)=>{
    return results;
   });
   console.log('Live public read access:',JSON.stringify(reads));
-  for(const result of Object.values(reads))assert.equal(result.ok,true,'live public read permissions');
+  assert.equal(reads.existingShows.ok,true,'existing show read permissions');assert.equal(reads.websiteShows.ok,true,'website show read permissions');
+  console.log('Approved library stays private; public website endpoint requires a separate Firebase deployment.');
   await live.close();
   console.log('PASS: mobile/desktop rendering, media merge, calendar details + editing, appearance publish, pending/approved song flow, upload folder + permissions, band isolation, guest access and login link.');
  }finally{await browser.close();server.close();}
