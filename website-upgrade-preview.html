@@ -12,72 +12,47 @@
 <link rel="stylesheet" href="website-editor.css?v=3">
 <link rel="stylesheet" href="website-features.css?v=2">
 <style>
-/* Compact website grid. Editor forms retain their own layout. */
-/* Show compact cards before wide blocks, including Music First profiles. */
-#main.website-card-grid #home{order:-4}
-#main.website-card-grid #about,#main.website-card-grid #members{order:-3}
-#main.website-card-grid #photos,#main.website-card-grid #music{order:-2}
-
-#main.website-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:min(1180px,calc(100% - 24px));margin:18px auto;align-items:start}
-#main.website-card-grid>section{min-width:0;margin:0;border:1px solid color-mix(in srgb,var(--site-accent,#c3ec77) 32%,transparent);border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#ffffff08,#ffffff02);padding:22px}
-#main.website-card-grid>section>.wrap{width:100%;min-width:0}
-#main.website-card-grid #home,#main.website-card-grid #band-player,#main.website-card-grid #shows{grid-column:1/-1}
-#main.website-card-grid #home{min-height:300px;padding:36px 26px;background:#15201b}
-#main.website-card-grid .hero h1{font-size:clamp(42px,8vw,88px);max-width:780px;margin:0 0 14px}
-#main.website-card-grid .hero .eyebrow{margin-bottom:14px}
-#main.website-card-grid .location{margin:10px 0;font-size:16px}
-#main.website-card-grid .section h2{font-size:clamp(19px,3vw,30px);line-height:1.2;letter-spacing:-.025em;margin:0 0 16px}
-#main.website-card-grid .section .eyebrow{font-size:10px;letter-spacing:.12em;margin:0 0 8px}
-#main.website-card-grid .about-grid{display:block}
-#main.website-card-grid .portrait{width:64px;height:64px;margin:0 0 12px}
-#main.website-card-grid .bio{font-size:15px;line-height:1.6}
-#main.website-card-grid .facts{gap:12px;margin:16px 0 0;padding-top:12px}
-#main.website-card-grid .fact{min-width:0;font-size:14px}
-#main.website-card-grid .fact dd{margin-top:3px}
-#main.website-card-grid .ws-member-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
-#main.website-card-grid .ws-member-card h3{font-size:15px;margin:8px 0 2px}
-#main.website-card-grid .ws-member-card p{font-size:13px}
-#main.website-card-grid .ws-member-portrait{border-radius:8px;font-size:24px}
-#main.website-card-grid .photo-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-#main.website-card-grid .photo-grid figure:first-child{grid-column:auto}
-#main.website-card-grid .photo-grid figure:first-child img{aspect-ratio:4/3}
-#main.website-card-grid .photo-grid figcaption{font-size:12px;margin-top:5px}
-#main.website-card-grid .video-grid{grid-template-columns:1fr;gap:12px}
-#main.website-card-grid .video-grid h3{font-size:14px;margin:6px 0}
-#main.website-card-grid .contact-grid{display:block}
-#main.website-card-grid .muted{font-size:14px;line-height:1.5}
-#main.website-card-grid .actions{gap:8px;margin-top:14px}
-#main.website-card-grid .button{min-height:44px;padding:10px 13px;font-size:13px;text-align:center;overflow-wrap:anywhere;max-width:100%}
-#main.website-card-grid .ws-player{max-width:none;border:0;padding:0;background:transparent;display:flow-root}
-#main.website-card-grid .ws-art{float:left;width:180px;margin:0 22px 12px 0;gap:8px}
-#main.website-card-grid .ws-player h3{font-size:20px;text-align:left;margin:0 0 6px}
-#main.website-card-grid .ws-track-artist{text-align:left;font-size:14px;margin:0 0 10px}
-#main.website-card-grid .ws-player audio{display:block;width:100%;clear:both}
-#main.website-card-grid .ws-tracks{clear:both;max-height:180px}
-#main.website-card-grid .ws-player-status{clear:both}
-#main.website-card-grid .ws-calendar{max-width:none;border:0;padding:0;background:transparent}
-#main.website-card-grid .ws-day{min-height:52px}
-#main.website-card-grid .ws-month-nav h3{font-size:20px}
-#main.website-card-grid .ws-legend{margin:12px 0;gap:18px}
+/* Full-width artist website: bold hero, restrained section treatment. */
+header{border-bottom:1px solid color-mix(in srgb,var(--site-accent,#c3ec77) 25%,transparent)}
+.header-inner{min-height:84px}
+.wordmark{letter-spacing:.1em;font-weight:900}
+nav a{display:inline-flex;align-items:center;min-height:44px}
+#main.website-stage{display:flex;flex-direction:column}
+#main.website-stage #home{order:-2}
+#main.website-stage #about{order:-1}
+#main.website-stage .hero{min-height:620px;padding:100px 0 76px;border-bottom:0}
+#main.website-stage .hero h1{font-size:clamp(64px,10vw,140px);max-width:900px;line-height:.94;letter-spacing:-.025em;text-shadow:0 4px 32px #0008}
+#main.website-stage .hero:before{background:linear-gradient(90deg,#030706c9,#03070650),linear-gradient(0deg,var(--site-background,#0b100f),transparent 80%)}
+#main.website-stage .hero:after{background:linear-gradient(180deg,#0002,transparent 40%)}
+#main.website-stage .hero .actions{gap:14px;margin-top:32px}
+#main.website-stage .button{min-height:48px;padding:14px 24px;font-weight:800;box-shadow:0 4px 16px #0002}
+#main.website-stage .button.secondary{border-width:2px}
+#main.website-stage .section{padding:72px 0;border-bottom:1px solid color-mix(in srgb,var(--site-accent,#c3ec77) 18%,transparent)}
+#main.website-stage .section h2{font-weight:850;letter-spacing:-.04em;font-size:clamp(34px,5vw,58px)}
+#main.website-stage .eyebrow{letter-spacing:.2em;font-weight:850}
+#main.website-stage .section .eyebrow:before{content:"";display:inline-block;width:24px;height:3px;background:currentColor;margin-right:12px;vertical-align:middle}
+#main.website-stage .portrait{width:132px;height:132px;border-radius:14px;box-shadow:0 10px 30px #0003}
+#main.website-stage .bio{font-size:20px;line-height:1.75}
+#main.website-stage .facts{gap:24px}
+#main.website-stage .ws-member-card{padding:14px;border:1px solid color-mix(in srgb,var(--site-accent,#c3ec77) 25%,transparent);border-radius:16px;background:#ffffff04}
+#main.website-stage .ws-member-portrait{border-radius:10px}
+#main.website-stage .ws-player,#main.website-stage .ws-calendar{max-width:800px;border-color:color-mix(in srgb,var(--site-accent,#c3ec77) 30%,transparent);background:linear-gradient(145deg,#ffffff08,#ffffff02);box-shadow:0 12px 40px #0002}
+#main.website-stage .video-grid iframe,#main.website-stage .photo-grid img{border-radius:14px}
+#main.website-stage #contact{background:linear-gradient(135deg,#ffffff06,transparent)}
 @media(max-width:650px){
-.header-inner{padding:12px 0}nav{gap:18px;margin-top:10px}nav a{display:inline-flex;align-items:center;min-height:36px}
-#main.website-card-grid{gap:10px;width:calc(100% - 16px);margin:10px auto}
-#main.website-card-grid>section{padding:12px;border-radius:12px}
-#main.website-card-grid #home{min-height:220px;padding:20px 16px}
-#main.website-card-grid .section h2{font-size:19px;margin-bottom:12px}
-#main.website-card-grid .bio{font-size:14px}
-#main.website-card-grid .ws-member-cards{grid-template-columns:1fr}
-#main.website-card-grid .ws-member-card{max-width:none}
-#main.website-card-grid .ws-member-portrait{max-height:180px}
-#main.website-card-grid .ws-art{width:128px;margin-right:12px}
-#main.website-card-grid .ws-player h3{font-size:18px}
-#main.website-card-grid .ws-player-controls{gap:8px;flex-wrap:wrap}
-#main.website-card-grid .ws-day{min-height:48px}
-#main.website-card-grid .ws-weekdays,#main.website-card-grid .ws-days{gap:3px}
-#main.website-card-grid .ws-month-nav h3{font-size:18px}
-#main.website-card-grid .section .button{padding:9px 8px;font-size:12px}
+.header-inner{padding:16px 0;min-height:0}nav{margin-top:10px;gap:20px}
+#main.website-stage .hero{min-height:500px;padding:76px 0 52px}
+#main.website-stage .hero h1{font-size:clamp(56px,15vw,96px);max-width:560px}
+#main.website-stage .hero .actions{margin-top:28px;gap:10px}
+#main.website-stage .button{padding:12px 17px;font-size:13px}
+#main.website-stage .section{padding:50px 0}
+#main.website-stage .section h2{font-size:36px;margin-bottom:24px}
+#main.website-stage .bio{font-size:18px;line-height:1.7}
+#main.website-stage .ws-member-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#main.website-stage .ws-member-card{padding:10px}
+#main.website-stage .ws-member-card h3{font-size:18px}
+#main.website-stage .ws-member-card p{font-size:14px}
 }
-@media(min-width:480px) and (max-width:650px){#main.website-card-grid .ws-member-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -85,10 +60,9 @@
 <div class="test-bar">WEBSITE UPGRADE PREVIEW <a id="website-edit-link" hidden>Edit my website</a></div>
 <header><div class="wrap header-inner"><a class="wordmark" href="#home" id="brand">Venomous Thorns</a><nav aria-label="Band website"><a href="#about" id="about-nav">About</a><a href="#music" id="music-nav" hidden>Videos</a><a href="#band-player">Listen</a><a href="#shows">Shows</a><a href="#photos" id="photos-nav" hidden>Photos</a><a href="#merch" id="merch-nav" hidden>Merch</a><a href="#contact">Contact</a></nav></div></header>
 <p id="status" class="status" role="status">Loading band website…</p>
-<main id="main" class="website-card-grid" hidden>
+<main id="main" class="website-stage" hidden>
 <section class="hero" id="home"><img class="hero-art" id="cover" src="bt-wide-crowd.jpg" alt="" fetchpriority="high"><div class="wrap"><p class="eyebrow" id="genre">Independent music</p><h1 id="name">Venomous Thorns</h1><p class="location" id="location"></p><div class="actions"><a class="button" href="#music" id="listen" hidden>Watch & listen ↗</a><a class="button secondary" href="#about" id="about-cta">Meet the band ↓</a><a class="button secondary" href="#contact">Get in touch</a></div><div class="actions" id="custom-buttons"></div></div></section>
-<section class="section" id="about"><div class="wrap about-grid"><div><p class="eyebrow">Behind the music</p><h2>About the band.</h2><img id="portrait" class="portrait" alt="Band profile image" hidden></div><div><p id="bio" class="bio"></p><dl class="facts" id="facts"></dl></div></div></section>
-<section class="section" id="members" hidden><div class="wrap"><h2>Meet the band.</h2><div id="band-member-cards" class="ws-member-cards" hidden></div></div></section>
+<section class="section" id="about"><div class="wrap about-grid"><div><p class="eyebrow">Behind the music</p><h2>Meet the band.</h2><img id="portrait" class="portrait" alt="Band profile image" hidden></div><div><p id="bio" class="bio"></p><dl class="facts" id="facts"></dl></div></div><div class="wrap"><div id="band-member-cards" class="ws-member-cards" hidden></div></div></section>
 <section class="section" id="music" hidden><div class="wrap"><p class="eyebrow">Turn it up</p><h2>Videos.</h2><div id="videos" class="video-grid"></div></div></section>
 <section class="section" id="photos" hidden><div class="wrap"><p class="eyebrow">In pictures</p><h2>Photo gallery.</h2><div class="photo-grid" id="photo-grid"></div></div></section>
 <section class="section" id="merch" hidden><div class="wrap contact-grid"><div><p class="eyebrow">Wear your support</p><h2>Band merch.</h2><p class="muted">Explore the band's store on BANDtroductions.</p></div><a id="store-link" class="button">Shop merch ↗</a></div></section>
@@ -97,7 +71,7 @@
 <footer><div class="wrap footer-inner"><span id="footer-name">Venomous Thorns</span><span>Powered by <a href="index.html">BANDtroductions</a></span></div></footer>
 <noscript><p class="status">Enable JavaScript to load this band's profile content.</p></noscript>
 <script type="module">
-import { websiteProfile, applyWebsiteStyle, initWebsiteEditor } from './website-editor-v2.js?v=grid1';
+import { websiteProfile, applyWebsiteStyle, initWebsiteEditor } from './website-editor-v2.js?v=stage1';
 // Public rendering reads profile data. Only the owner editor can publish website settings.
 let activeSettings = {};
 let activeProfile = {};

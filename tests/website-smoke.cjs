@@ -131,7 +131,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('.ws-tracks button').filter({hasText:'Website test song'}).waitFor();
   assert.equal(await page.locator('.ws-tracks button').count(),1);assert.equal(await page.locator('#band-player audio').isVisible(),true);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'mobile has no horizontal overflow');
-  await page.locator('#close-editor').click();await page.evaluate(()=>{const a=document.getElementById('about').getBoundingClientRect(),m=document.getElementById('members').getBoundingClientRect();if(Math.abs(a.y-m.y)>1||m.x<=a.x)throw Error('Grid cards must share a row');});await page.screenshot({path:'/tmp/bt-website-review/mobile.png',fullPage:true});
+  await page.locator('#close-editor').click();await page.evaluate(()=>{const main=document.getElementById('main'),hero=document.getElementById('home').getBoundingClientRect(),about=document.getElementById('about').getBoundingClientRect();if(main.classList.contains('website-card-grid')||about.width<innerWidth-2||about.y<hero.bottom-1)throw Error('Expected full-width sections below hero');});await page.screenshot({path:'/tmp/bt-website-review/mobile.png',fullPage:true});
   await page.setViewportSize({width:1280,height:900});await page.screenshot({path:'/tmp/bt-website-review/desktop.png',fullPage:true});
   // Guests keep the target profile ID through login.
   await page.evaluate(async()=>{const {auth}=await import('/mock-firebase.js');auth.currentUser=null;});
