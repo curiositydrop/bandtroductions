@@ -9,7 +9,8 @@ const editButton = document.getElementById('edit-profile');
 const shareButton = document.getElementById('share-profile');
 const sharePanel = document.getElementById('share-panel');
 const shareStatus = document.getElementById('share-status');
-const shopMerchButton = document.getElementById('shop-merch');\nconst websitePreviewLink = document.getElementById('website-preview-link');
+const shopMerchButton = document.getElementById('shop-merch');
+const websitePreviewLink = document.getElementById('website-preview-link');
 let loadedProfile = null;
 let signedInUser = null;
 let signedInProfile = null;
@@ -246,7 +247,9 @@ async function loadProfile(user) {
     if (loadedProfile.bookingEmail && addLink('Email Booking', `mailto:${loadedProfile.bookingEmail}`)) linkCount += 1;
     document.getElementById('empty-links').hidden = linkCount > 0;
 
-    if (websitePreviewLink) { websitePreviewLink.href = `website.html?id=${encodeURIComponent(profileId)}`; websitePreviewLink.hidden = false; }\n\n    if (user) {
+    if (websitePreviewLink) { websitePreviewLink.href = `website.html?id=${encodeURIComponent(profileId)}`; websitePreviewLink.hidden = false; }
+
+    if (user) {
       const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
       const userSnap = await getDoc(doc(db, 'users', user.uid));
       signedInProfile = profileSnap.exists() ? profileSnap.data() : (userSnap.exists() ? userSnap.data() : {});
