@@ -13,6 +13,11 @@
 <link rel="stylesheet" href="website-features.css?v=2">
 <style>
 /* Compact website grid. Editor forms retain their own layout. */
+/* Show compact cards before wide blocks, including Music First profiles. */
+#main.website-card-grid #home{order:-4}
+#main.website-card-grid #about,#main.website-card-grid #members{order:-3}
+#main.website-card-grid #photos,#main.website-card-grid #music{order:-2}
+
 #main.website-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:min(1180px,calc(100% - 24px));margin:18px auto;align-items:start}
 #main.website-card-grid>section{min-width:0;margin:0;border:1px solid color-mix(in srgb,var(--site-accent,#c3ec77) 32%,transparent);border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#ffffff08,#ffffff02);padding:22px}
 #main.website-card-grid>section>.wrap{width:100%;min-width:0}
@@ -58,7 +63,7 @@
 .header-inner{padding:12px 0}nav{gap:18px;margin-top:10px}nav a{display:inline-flex;align-items:center;min-height:36px}
 #main.website-card-grid{gap:10px;width:calc(100% - 16px);margin:10px auto}
 #main.website-card-grid>section{padding:12px;border-radius:12px}
-#main.website-card-grid #home{min-height:260px;padding:24px 16px}
+#main.website-card-grid #home{min-height:220px;padding:20px 16px}
 #main.website-card-grid .section h2{font-size:19px;margin-bottom:12px}
 #main.website-card-grid .bio{font-size:14px}
 #main.website-card-grid .ws-member-cards{grid-template-columns:1fr}
