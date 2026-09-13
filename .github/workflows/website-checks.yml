@@ -1,0 +1,32 @@
+name: Website media calendar and player checks
+on:
+  push:
+    branches: [main, feature/website-calendar-player]
+    paths:
+      - 'website*'
+      - 'tests/website-smoke.cjs'
+      - '.github/workflows/website-checks.yml'
+permissions:
+  contents: read
+jobs:
+  website:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser test dependencies
+        run: |
+          npm install --prefix /tmp/bt-website-tests playwright@1.55.0
+          /tmp/bt-website-tests/node_modules/.bin/playwright install --with-deps chromium
+      - name: Generate test audio
+        run: ffmpeg -f lavfi -i anullsrc=r=44100:cl=mono -t 1 -q:a 9 /tmp/bt-test.mp3
+      - name: Test website with isolated Firebase fixtures
+        run: node tests/website-smoke.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: website-browser-review
+          path: /tmp/bt-website-review/

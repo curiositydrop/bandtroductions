@@ -1,0 +1,32 @@
+
+/* Website-only shows, band player and editing tools. */
+.ws-calendar{max-width:680px;margin:0 auto;border:1px solid var(--line);border-radius:16px;padding:clamp(12px,3vw,24px);background:rgba(127,127,127,.06)}
+.ws-month-nav{display:flex;align-items:center;justify-content:space-between;gap:12px}.ws-month-nav h3{margin:0;text-align:center;font-size:clamp(18px,4vw,26px)}
+.ws-month-nav .button{padding:8px 16px;font-size:24px}
+.ws-legend{display:flex;flex-wrap:wrap;gap:22px;margin:18px 0 10px}.ws-legend span{display:flex;align-items:center;gap:8px}
+.ws-legend i,.ws-day-marks i{display:inline-block;width:14px;height:14px;border:1px solid #ffffff80;border-radius:3px;flex-shrink:0}
+.all-ages{background:#57c987}.adults{background:#ff9d52}.other-age{background:#aaa}
+.ws-weekdays,.ws-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.ws-weekdays{text-align:center;font-size:12px;margin-bottom:8px}
+.ws-day{min-width:0;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:1px solid var(--line);border-radius:7px;background:transparent;color:inherit;font:inherit;padding:5px 2px}
+.ws-day.has-shows{cursor:pointer;background:rgba(127,127,127,.15);border-color:var(--site-accent,var(--accent));font-weight:800}.ws-day.has-shows:hover{background:rgba(127,127,127,.3)}
+.ws-day[aria-current=date]{outline:2px solid var(--site-accent,var(--accent));outline-offset:-3px}
+.ws-day small{font-size:10px}.ws-day-marks{display:flex;gap:3px;flex-wrap:wrap;justify-content:center}
+.ws-dialog{width:min(640px,calc(100% - 24px));max-height:85vh;overflow:auto;border:1px solid #666;border-radius:16px;padding:24px;background:var(--site-background,#0b100f);color:var(--site-text,#eef4ee)}
+.ws-dialog::backdrop{background:#000c}.ws-dialog h2{font-size:28px}.ws-show-detail{padding:10px 0 24px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.ws-show-detail img{display:block;width:100%;max-height:420px;object-fit:contain;margin:16px 0}.ws-show-detail .button{margin:5px}.ws-prewrap{white-space:pre-wrap;overflow-wrap:anywhere}
+.ws-player{max-width:650px;margin:0 auto;padding:24px;border:1px solid var(--line);border-radius:16px;background:rgba(127,127,127,.06)}
+.ws-art{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:380px;margin:0 auto}.ws-art img{display:block;width:100%;aspect-ratio:1;object-fit:contain;background:#080b0b;border:1px solid #44514a;border-radius:8px}.ws-art .ws-cover{object-fit:cover}
+.ws-player h3{text-align:center;font-size:25px;margin:22px 0 6px}.ws-track-artist{text-align:center}.ws-player audio{width:100%;margin:12px 0}.ws-player-controls{display:flex;justify-content:center;gap:12px}
+.ws-tracks{padding-left:26px;max-height:320px;overflow:auto}.ws-tracks li{padding:4px 0}.ws-tracks button{width:100%;padding:12px;text-align:left;color:inherit;border:1px solid var(--line);border-radius:6px;background:transparent;cursor:pointer;font:inherit}
+.ws-tracks button[aria-pressed=true]{border-color:var(--site-accent,var(--accent));font-weight:800;background:rgba(127,127,127,.15)}
+.ws-player-status{font-size:14px}
+.ws-tools{margin:40px 0 20px;border-top:1px solid #52635b;padding-top:24px}.ws-tool{border:1px solid #52635b;border-radius:10px;padding:16px;margin:16px 0}
+.ws-tool>summary{cursor:pointer;font-weight:800;font-size:20px}.ws-tool form{margin-top:20px}.ws-tool fieldset{border:0;padding:0;min-width:0}.ws-tool legend{font-weight:800;margin-bottom:12px}
+.ws-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.ws-tools label{display:grid;gap:7px;margin:12px 0}.ws-tools input,.ws-tools select,.ws-tools textarea{box-sizing:border-box;width:100%;max-width:100%;padding:11px;border:1px solid #64756c;border-radius:6px;background:#0b100f;color:#eef4ee;font:inherit}
+.ws-tools textarea{min-height:100px}.ws-tools .ws-check{display:flex;align-items:flex-start;gap:12px;line-height:1.6}.ws-check input[type=checkbox]{width:20px;min-width:20px;height:20px;margin-top:4px}
+.ws-agreement{font-size:14px;line-height:1.6;padding:12px}.ws-permissions details{margin:16px 0}.ws-permissions summary{cursor:pointer;text-decoration:underline}
+.ws-show-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}.ws-show-list button{text-align:left}.ws-form-status{white-space:pre-wrap;overflow-wrap:anywhere}
+.ws-tools :disabled{opacity:.6;cursor:wait}.ws-tools [hidden]{display:none!important}
+@media(max-width:600px){.ws-form-grid{grid-template-columns:1fr}.ws-day{min-height:62px}.ws-day small{font-size:9px}.ws-day-marks i{width:10px;height:10px}.ws-player{padding:16px}.ws-tool{padding:12px}.ws-legend{font-size:13px}}
