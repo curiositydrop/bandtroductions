@@ -78,6 +78,7 @@ body[data-view=music] #main>#music:not([hidden]),
 body[data-view=photos] #main>#photos:not([hidden]),
 body[data-view=shows] #main>#shows:not([hidden]),
 body[data-view=merch] #main>#merch:not([hidden]),
+body[data-view=booking] #main>#booking:not([hidden]),
 body[data-view=contact] #main>#contact{display:block!important}
 body[data-view=home] #main>#home{display:flex!important}
 body:not([data-view=home]).music-playing #main>#band-player{display:block!important;position:fixed;bottom:0;left:0;right:0;z-index:25;background:var(--site-background,#0b100f);padding:10px 18px;border-top:1px solid var(--site-accent,#c3ec77)}
@@ -102,12 +103,15 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 #main.website-pages .review-biography{border-top:1px solid var(--line);padding-top:40px}
 #main.website-pages .review-biography .about-grid{grid-template-columns:150px 1fr;gap:30px}
 @media(max-width:650px){#main.website-pages .ws-member-card{flex-basis:calc((100% - 16px)/2);min-width:140px}#main.website-pages .review-biography .about-grid{grid-template-columns:1fr;gap:16px}}
+ #main.website-pages .ws-booking-card{max-width:900px;padding:24px;border:1px solid color-mix(in srgb,var(--site-accent,#c3ec77) 30%,transparent);border-radius:18px;background:#ffffff05}
+ .booking-form label{display:flex;flex-direction:column;gap:6px;font-weight:700;margin:0 0 14px}.booking-form input,.booking-form select,.booking-form textarea{font:inherit;color:inherit;background:#0b100f;border:1px solid #687568;border-radius:8px;padding:11px}.booking-form textarea{min-height:100px}.booking-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.booking-check{display:block!important;font-weight:500!important}.booking-check input{width:auto;margin-right:8px}.booking-rate-summary{font-size:20px;font-weight:800;color:var(--site-accent,#c3ec77);margin-bottom:12px}
+ @media(max-width:650px){.booking-grid{grid-template-columns:1fr}}
 </style></head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <div class="test-bar">WEBSITE DESIGN PREVIEW · Editing is locked while subscriptions are being set up.</div>
 <header><div class="wrap header-inner"><a class="wordmark" href="#/home" id="brand">BAND WEBSITE</a><nav aria-label="Band website">
-<a href="#/home" id="home-nav">Home</a><a href="#/about" id="about-nav">About</a><a href="#/music" id="music-nav">Videos</a><a href="#/photos" id="photos-nav">Photos</a><a href="#/shows" id="shows-nav">Shows</a><a href="#/merch" id="merch-nav">Merch</a><a href="#/contact" id="contact-nav">Contact</a>
+<a href="#/home" id="home-nav">Home</a><a href="#/about" id="about-nav">About</a><a href="#/music" id="music-nav">Videos</a><a href="#/photos" id="photos-nav">Photos</a><a href="#/shows" id="shows-nav">Shows</a><a href="#/merch" id="merch-nav">Merch</a><a href="#/booking" id="booking-nav">Booking</a><a href="#/contact" id="contact-nav">Contact</a>
 </nav></div></header><p id="view-empty" class="status" hidden></p>
 <p id="status" class="status" role="status">Loading band website…</p>
 <main id="main" class="website-stage website-pages" hidden>
@@ -121,6 +125,7 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 <section class="section" id="music" hidden><div class="wrap"><p class="eyebrow">Turn it up</p><h2>Videos.</h2><div id="videos" class="video-grid"></div></div></section>
 <section class="section" id="photos" hidden><div class="wrap"><p class="eyebrow">In pictures</p><h2>Photo gallery.</h2><div class="photo-grid" id="photo-grid"></div></div></section>
 <section class="section" id="merch" hidden><div class="wrap contact-grid"><div><p class="eyebrow">Wear your support</p><h2>Band merch.</h2><p class="muted">Explore the band's store on BANDtroductions.</p></div><a id="store-link" class="button">Shop merch ↗</a></div></section>
+<section class="section" id="booking" hidden><div class="wrap"><p class="eyebrow">Work with the band</p><h2>Booking.</h2><p class="muted">Booking requests are reviewed by the band before anything is added to the public calendar.</p><div class="ws-booking-card"><div id="booking-rate-summary" class="booking-rate-summary"></div><p class="muted">Choose an available date, then send the venue and event details. A request is not a confirmed booking.</p><form id="booking-form" class="booking-form"><div class="booking-grid"><label>Venue<input name="venue" required maxlength="140"></label><label>Contact name<input name="contactName" required maxlength="100"></label><label>Email<input name="email" type="email" required maxlength="200"></label><label>Phone<input name="phone" required maxlength="50"></label><label>Start date<input name="startDate" type="date" required></label><label>End date<input name="endDate" type="date"></label><label>Show time<input name="time" type="time" required></label><label>Load-in time<input name="loadIn" type="time" required></label><label>Location<input name="location" required maxlength="140"></label><label>Age policy<select name="age" required><option value="">Choose…</option><option>All ages</option><option>21+</option></select></label><label>Expected attendance<input name="capacity" type="number" min="1" max="100000" required></label><label>Offered pay ($)<input name="offeredPay" type="number" min="0" step="0.01" required></label></div><label>Event details<textarea name="details" maxlength="1500"></textarea></label><label class="booking-check"><input name="termsAccepted" type="checkbox" required> I understand this is a booking request and the band must approve it.</label><button class="button" type="submit" id="booking-submit">Submit for booking review</button><p id="booking-status" role="status" aria-live="polite"></p></form></div></div></section>
 <section class="section" id="contact"><div class="wrap contact-grid"><div><p class="eyebrow">Keep in touch</p><h2>Let's connect.</h2><p class="muted">Booking inquiries and more.</p></div><div><div class="actions" id="contact-links"></div><div class="actions"><button id="share" class="button secondary" type="button">Share this website ↗</button></div><p id="share-status" role="status"></p><input id="share-fallback" readonly aria-label="Website link to copy" hidden></div></div></section>
 </main>
 <footer><div class="wrap footer-inner"><span id="footer-name">Venomous Thorns</span><span><a href="index.html">Explore BANDtroductions ↗</a></span></div></footer>
@@ -128,7 +133,7 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 
 <script>
 (()=>{
- const views={home:'Home',about:'About',music:'Videos',photos:'Photos',shows:'Shows',merch:'Merch',contact:'Contact'};
+ const views={home:'Home',about:'About',music:'Videos',photos:'Photos',shows:'Shows',merch:'Merch',booking:'Booking',contact:'Contact'};
  const main=document.getElementById('main'),empty=document.getElementById('view-empty');
  function update(){
   let view=location.hash.replace(/^#\//,'')||'home';if(!views[view])view='home';
@@ -150,6 +155,7 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 import { websiteProfile, applyWebsiteStyle } from './website-review-editor.js?v=1';
 import { loadWebsiteProfile } from './website-profile-loader.js?v=1';
 import { initialMembers } from './website-review-members.js?v=1';
+import { initWebsiteBooking } from './website-booking.js?v=1';
 // Public rendering reads profile data. Only the owner editor can publish website settings.
 let activeSettings = {};
 let activeProfile = {};
@@ -184,7 +190,7 @@ try{
  const [{db},{doc,getDoc}]=await Promise.all([import('./firebase-dev.js'),import('https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js')]);
  const snapshot=await loadWebsiteProfile(()=>getDoc(doc(db,'profiles',PROFILE_ID)),{profileId:PROFILE_ID});clearTimeout(slow);
  if(!snapshot.exists()||snapshot.data().published!==true){text('status','This band website is not currently available.');}
- else{const profile=snapshot.data();renderProfile(profile);try{const {initWebsiteFeatures}=await import('./website-features.js?v=1');initWebsiteFeatures({profileId:PROFILE_ID,profile});applyWebsiteStyle(activeSettings,profile);}catch(error){console.error('Website shows/player unavailable.',error);}/* Read-only review: no editor, upload forms or publish handlers are mounted. */try{const store=await getDoc(doc(db,'merchStorefronts',PROFILE_ID));if(store.exists()&&store.data().published===true){el('store-link').href=`merch.html?band=${PROFILE_ID}`;el('merch').dataset.available='true';applyWebsiteStyle(activeSettings,activeProfile);}}catch(error){console.warn('Merch availability could not be checked.',error);}}
+ else{const profile=snapshot.data();renderProfile(profile);try{const {initWebsiteFeatures}=await import('./website-features.js?v=1');initWebsiteFeatures({profileId:PROFILE_ID,profile});applyWebsiteStyle(activeSettings,profile);}catch(error){console.error('Website shows/player unavailable.',error);}initWebsiteBooking({profileId:PROFILE_ID,profile});/* Read-only review: no editor, upload forms or publish handlers are mounted. */try{const store=await getDoc(doc(db,'merchStorefronts',PROFILE_ID));if(store.exists()&&store.data().published===true){el('store-link').href=`merch.html?band=${PROFILE_ID}`;el('merch').dataset.available='true';applyWebsiteStyle(activeSettings,activeProfile);}}catch(error){console.warn('Merch availability could not be checked.',error);}}
 }catch(error){clearTimeout(slow);console.error(error);el('status').hidden=false;text('status','We could not connect to this band website. ');const retry=document.createElement('button');retry.type='button';retry.className='button';retry.textContent='Try again';retry.onclick=()=>location.reload();el('status').append(retry);}
 </script>
 </body>
