@@ -231,7 +231,7 @@ const server=http.createServer((req,res)=>{
 
   // Navigation must bring the selected section below the sticky header even with editor open.
   await page.goto(base+'/website.html?id=19MH0ZzVlPVN4ediF4PesZR5TY13&edit=1#/home');
-  await page.waitForURL(url=>url.pathname==='/website-pilot.html');
+  await page.waitForFunction(()=>location.pathname.endsWith('/website-pilot.html'));
   await page.locator('#website-editor').waitFor({state:'visible'});
   for(const view of ['about','music','photos','shows','booking','contact','home']){
    await page.locator('#'+view+'-nav').click();
