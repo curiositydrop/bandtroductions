@@ -26,7 +26,7 @@ export function initWebsiteBooking({profileId, profile} = {}) {
       `Requested date(s): ${dates.join(', ')||data.startDate||''}`,`Show time: ${data.time||''}`,`Load-in time: ${data.loadIn||''}`,
       `Location: ${data.location||''}`,`Age policy: ${data.age||''}`,`Expected attendance: ${data.capacity||''}`,
       '',`Event details: ${data.details||''}`,'','This request was sent from the BANDtroductions band website.'
-    ].join('\\n');
+    ].join('\n');
     status.textContent='Opening your email app…';
     window.location.href=`mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   });
