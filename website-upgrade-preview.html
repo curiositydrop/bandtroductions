@@ -145,7 +145,19 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
   const missing=!main.hidden&&view!=='home'&&(!section||section.hidden);
   empty.hidden=!missing;empty.textContent=missing?views[view]+' updates coming soon.':'';
  }
- addEventListener('hashchange',()=>{update();window.scrollTo({top:0,behavior:'instant'});});
+ function showView(){
+  update();
+  // The owner editor sits above the page content. Scroll past it to the selected view.
+  const header=document.querySelector('header');
+  const target=empty.hidden?main:empty;
+  const top=target.getBoundingClientRect().top+window.scrollY-(header?header.getBoundingClientRect().height:0);
+  window.scrollTo({top:Math.max(0,top),behavior:'instant'});
+ }
+ addEventListener('hashchange',showView);
+ document.querySelector('header nav').addEventListener('click',event=>{
+  const link=event.target.closest('a');
+  if(link&&link.hash===location.hash){event.preventDefault();showView();}
+ });
  new MutationObserver(update).observe(main,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
  document.addEventListener('play',e=>{if(e.target.matches('#band-player audio'))document.body.classList.add('music-playing');},true);
  document.addEventListener('pause',e=>{if(e.target.matches('#band-player audio'))document.body.classList.remove('music-playing');},true);

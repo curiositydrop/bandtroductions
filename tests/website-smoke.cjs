@@ -228,6 +228,33 @@ const server=http.createServer((req,res)=>{
    await page.locator('#website-editor').waitFor({state:'visible'});
    await page.unroute(base+'/mock-firebase.js');
   }
+
+  // Navigation must bring the selected section below the sticky header even with editor open.
+  await page.goto(base+'/website.html?id=19MH0ZzVlPVN4ediF4PesZR5TY13&edit=1#/home');
+  await page.waitForURL('**/website-pilot.html?**');
+  await page.locator('#website-editor').waitFor({state:'visible'});
+  for(const view of ['about','music','photos','shows','booking','contact','home']){
+   await page.locator('#'+view+'-nav').click();
+   await page.waitForFunction(v=>document.body.dataset.view===v,view);
+   assert.equal(await page.locator('#'+view).isVisible(),true);
+   const position=await page.evaluate(v=>({
+    header:document.querySelector('header').getBoundingClientRect().top,
+    section:document.getElementById(v).getBoundingClientRect().top
+   }),view);
+   assert(Math.abs(position.header)<3,'navigation keeps header at viewport top: '+view);
+   assert(position.section<844,'selected page is on screen: '+view);
+  }
+  await page.goBack();await page.waitForFunction(()=>document.body.dataset.view==='contact');
+  assert.equal(await page.locator('#contact').isVisible(),true);
+  assert.match(await page.locator('.test-bar').textContent(),/BANDtroductions.*presents/);
+  await page.evaluate(async()=>{const {changeUser}=await import('/mock-firebase.js');changeUser(null);});
+  assert.equal(await page.locator('#website-editor').count(),0);
+  await page.locator('#about-nav').click();
+  assert.equal(await page.locator('#about').isVisible(),true);
+  await page.goto(base+'/website.html?id=other-band');
+  assert.match(page.url(),/website\.html\?id=other-band$/);
+  console.log('PASS pilot live routing, owner tab viewport, Back, guest navigation and non-pilot route isolation.');
+
   // A signed-in owner of any non-pilot band is still locked on both routes.
   await page.route(base+'/mock-firebase.js',route=>route.fulfill({contentType:'text/javascript',body:mock.replaceAll('19MH0ZzVlPVN4ediF4PesZR5TY13','other-band')}));
   for(const routeName of ['website-upgrade-preview.html','website-navigation-preview.html']){

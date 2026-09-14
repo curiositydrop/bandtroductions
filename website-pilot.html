@@ -111,7 +111,7 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 </style></head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<div class="test-bar">WEBSITE DESIGN PREVIEW · <a id="website-edit-link" href="#website-editor" hidden>Edit website</a><span id="preview-lock-copy">Editing is locked while subscriptions are being set up.</span></div>
+<div class="test-bar"><a href="index.html">BANDtroductions</a> presents… <span id="presented-name"></span> · <a id="website-edit-link" href="#website-editor" hidden>Edit website</a><span id="preview-lock-copy">Editing is locked while subscriptions are being set up.</span></div>
 <header><div class="wrap header-inner"><a class="wordmark" href="#/home" id="brand">BAND WEBSITE</a><nav aria-label="Band website">
 <a href="#/home" id="home-nav">Home</a><a href="#/about" id="about-nav">About</a><a href="#/music" id="music-nav">Videos</a><a href="#/photos" id="photos-nav">Photos</a><a href="#/shows" id="shows-nav">Shows</a><a href="#/merch" id="merch-nav">Merch</a><a href="#/booking" id="booking-nav">Booking</a><a href="#/contact" id="contact-nav">Contact</a>
 </nav></div></header><p id="view-empty" class="status" hidden></p>
@@ -184,7 +184,7 @@ function renderProfile(raw,settings=raw.websiteSettings){
  for(const id of ['facts','videos','contact-links'])el(id).replaceChildren();
  el('cover').src='bt-wide-crowd.jpg';el('portrait').hidden=true;
  ['music','music-nav','listen'].forEach(id=>{el(id).hidden=true;});
- const name=p.displayName||'Venomous Thorns';['brand','name','footer-name'].forEach(id=>text(id,name));document.title=`${name} | Website Preview`;
+ const name=p.displayName||'Venomous Thorns';['brand','name','footer-name'].forEach(id=>text(id,name));document.title=`${name} | BANDtroductions`;const presented=el('presented-name');if(presented)presented.textContent=name;
  text('genre',p.genre||'Independent music');text('location',p.location||[p.city,p.region,p.country].filter(Boolean).join(', '));
  text('bio',p.bio||'More about the band coming soon.');
  const cover=webUrl(p.bannerImageUrl||p.coverImageUrl);if(cover){el('cover').onerror=()=>{el('cover').onerror=null;el('cover').src='bt-wide-crowd.jpg';};el('cover').src=cover;}
