@@ -1,10 +1,10 @@
-import { normalizeMembers, renderMembers, createMemberEditor } from './website-review-members.js?v=1';
-import { mountWebsiteTools } from './website-features.js?v=1';
+import { normalizeMembers, renderMembers, createMemberEditor, initialMembers } from './website-review-members.js?v=2';
+import { mountWebsiteTools } from './website-features.js?v=2';
 import { normalizeMedia, profileVideos, websiteVideos, applyMedia, createMediaEditor } from './website-media-v2.js?v=grid1';
 // Website pilot settings and owner editor. No database writes happen during preview.
 // Match admin-access.js without importing its account-normalization side effects.
 export function isWebsiteAdmin(user){return !!user&&['mbergeron79@gmail.com','mbegeron79@gmail.com'].includes(String(user.email||'').trim().toLowerCase());}
-export function canEditWebsite(user,profile,profileId){return !!user&&(user.uid===profileId||profile.ownerId===user.uid||isWebsiteAdmin(user));}
+export function canEditWebsite(user,profile,profileId){return profileId===BOOKING_PILOT_PROFILE&&!!user&&(user.uid===profileId||profile.ownerId===user.uid||isWebsiteAdmin(user));}
 export const DEFAULTS={background:'#0b100f',text:'#eef4ee',accent:'#c3ec77'};
 const BOOKING_PILOT_PROFILE='19MH0ZzVlPVN4ediF4PesZR5TY13';
 const color=v=>/^#[0-9a-f]{6}$/i.test(v||'');
@@ -21,7 +21,7 @@ export function normalizeSettings(input={}){
  const theme={...DEFAULTS};for(const k of Object.keys(theme))if(color(input.theme?.[k]))theme[k]=input.theme[k];
  if(contrast(theme.background,theme.text)<4.5||contrast(theme.background,theme.accent)<3)Object.assign(theme,DEFAULTS);
  const bookingInput=input.booking||{},paymentPolicy=['deposit','full','in_person'].includes(bookingInput.paymentPolicy)?bookingInput.paymentPolicy:'in_person';
- const settings={theme,sections:{about:input.sections?.about!==false,music:input.sections?.music!==false,merch:input.sections?.merch!==false,meetBand:input.sections?.meetBand!==false},booking:{enabled:bookingInput.enabled===true,rateCents:Number.isFinite(Number(bookingInput.rateCents))?Math.max(0,Math.round(Number(bookingInput.rateCents))):0,rateBasis:bookingInput.rateBasis==='member'?'member':'show',paymentPolicy,depositPercent:paymentPolicy==='deposit'?50:0},buttons:[]};
+ const settings={theme,sections:{about:input.sections?.about!==false,music:input.sections?.music!==false,merch:input.sections?.merch!==false,meetBand:input.sections?.meetBand!==false},booking:{...bookingInput,enabled:bookingInput.enabled===true,rateCents:Number.isFinite(Number(bookingInput.rateCents))?Math.max(0,Math.round(Number(bookingInput.rateCents))):0,rateBasis:bookingInput.rateBasis==='member'?'member':'show',paymentPolicy,depositPercent:paymentPolicy==='deposit'?50:0},buttons:[]};
  for(const b of (Array.isArray(input.buttons)?input.buttons:[]).slice(0,6)){const url=safeButtonUrl(b?.url),label=String(b?.label||'').trim().slice(0,40);if(url&&label)settings.buttons.push({label,url});}
  for(const k of ['bannerImageUrl','imageUrl']){const v=safeButtonUrl(input[k]);if(v&&/^https?:/.test(v))settings[k]=v;}
  return {...settings,...normalizeMedia(input),bandMembers:normalizeMembers(input.bandMembers)};
@@ -39,21 +39,33 @@ export function applyWebsiteStyle(input,profile={}){
 export async function initWebsiteEditor({profileId,profile,render}){
  const [{auth,db,storage},{onAuthStateChanged},{doc,runTransaction},{ref,uploadBytes,getDownloadURL,deleteObject}]=await Promise.all([
  import('./firebase-dev.js'),import('https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js'),import('https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js')]);
- const link=document.getElementById('website-edit-link');let teardown=null;
+ const link=document.getElementById('website-edit-link'),copy=document.getElementById('preview-lock-copy');
+ if(!link)throw new Error('The website editor entry is missing. Please reload this page.');
+ if(profileId!==BOOKING_PILOT_PROFILE){
+  link.hidden=true;
+  if(copy)copy.textContent='Editing is locked while subscriptions are being set up.';
+  return;
+ }
+ let teardown=null;
  onAuthStateChanged(auth,user=>{
   if(teardown){teardown();teardown=null;}
-  const owns=canEditWebsite(user,profile,profileId)||profileId===BOOKING_PILOT_PROFILE;
-  link.hidden=false;link.textContent=owns?(isWebsiteAdmin(user)?'Edit website · Admin':'Edit my website'):user?'Editing requires the owner or admin account':'Log in to edit website';
+  const owns=canEditWebsite(user,profile,profileId);
+  if(copy)copy.textContent=owns?'Venomous Thorns pilot · ':user?'This website can only be edited by its owner or an administrator. ':'Sign in as the Venomous Thorns owner to edit this pilot. ';
+  link.hidden=!!user&&!owns;link.textContent=owns?(isWebsiteAdmin(user)?'Edit website · Admin':'Edit my website'):user?'Editing requires the owner or admin account':'Log in to edit website';
   link.href=owns?'#website-editor':`login.html?returnTo=${encodeURIComponent(location.pathname+'?id='+encodeURIComponent(profileId)+'&edit=1')}`;
   if(!owns)return;
-  teardown=mount(user);
+  try{teardown=mount(user);}catch(error){
+   console.error('Website editor could not open.',error);
+   document.getElementById('website-editor')?.remove();
+   if(copy)copy.textContent='The editor could not open. Please refresh to try again.';
+  }
  });
  function mount(user){
-  let saved=normalizeSettings(profile.websiteSettings),revision=profile.websiteSettings?.revision||null,dirty=false,busy=false,previewed=false;
+  let saved=normalizeSettings({...profile.websiteSettings,bandMembers:initialMembers(profile,profile.websiteSettings||{})}),revision=profile.websiteSettings?.revision||null,dirty=false,busy=false,previewed=false;
   let pending={},urls={},draft=null;
   const panel=document.createElement('section');panel.id='website-editor';panel.className='website-editor';panel.hidden=true;
   const profileEditUrl=isWebsiteAdmin(user)?`profile-setup.html?adminProfile=${profileId}&editor=3`:`profile-setup.html?id=${profileId}`;
-  panel.innerHTML=`<div class="wrap"><h2>Edit my website</h2><p>Keep your layout. Make it yours. Preview changes, then publish when you're ready.</p><p><a href="${profileEditUrl}">Edit bio, band details & videos ↗</a></p>
+  panel.innerHTML=`<div class="wrap"><h2>Edit my website</h2><p>Keep your layout. Make it yours. Preview changes, then publish when you're ready.</p><p><a href="${profileEditUrl}">Edit free-profile bio & basic details ↗</a></p>
   <form id="website-form"><fieldset id="website-fields"><legend class="sr-only">Website appearance</legend><div class="editor-grid">
   <section><h3>Images</h3><p>Website images only. Use JPG, PNG, or WebP, up to 12 MB. Images are resized automatically.</p><label>Banner image<input type="file" id="site-banner" accept="image/jpeg,image/png,image/webp"></label><button type="button" id="reset-banner">Use profile banner</button><label>Band image / logo<input type="file" id="site-image" accept="image/jpeg,image/png,image/webp"></label><button type="button" id="reset-image">Use profile image</button></section>
   <section><h3>Colors</h3><label>Page background<input type="color" id="site-background"></label><label>Page text<input type="color" id="site-text"></label><label>Accent & buttons<input type="color" id="site-accent"></label><p>Banner text stays light for readability. Page text and accent colors must contrast with the background.</p><button type="button" id="reset-colors">Restore default colors</button></section>
@@ -76,7 +88,7 @@ export async function initWebsiteEditor({profileId,profile,render}){
    const s=structuredClone(draft);s.theme={};for(const key of Object.keys(DEFAULTS))s.theme[key]=$(`site-${key}`).value;
    if(contrast(s.theme.background,s.theme.text)<4.5)throw new Error('Choose a lighter or darker text color so it is readable against the page background.');
    if(contrast(s.theme.background,s.theme.accent)<3)throw new Error('Choose an accent color with more contrast against the page background.');
-   s.sections={};for(const id of ['about','music','merch'])s.sections[id]=$(`show-${id}`).checked;s.sections.meetBand=$('show-meet-band').checked;const paymentPolicy=panel.querySelector('[name="booking-payment"]:checked')?.value||'in_person';s.booking={enabled:$('booking-enabled').checked,rateCents:Math.round(Number($('booking-rate').value||0)*100),rateBasis:$('booking-rate-basis').value,paymentPolicy,depositPercent:paymentPolicy==='deposit'?50:0};
+   s.sections={};for(const id of ['about','music','merch'])s.sections[id]=$(`show-${id}`).checked;s.sections.meetBand=$('show-meet-band').checked;const paymentPolicy=panel.querySelector('[name="booking-payment"]:checked')?.value||'in_person';s.booking={...draft.booking,enabled:$('booking-enabled').checked,rateCents:Math.round(Number($('booking-rate').value||0)*100),rateBasis:$('booking-rate-basis').value,paymentPolicy,depositPercent:paymentPolicy==='deposit'?50:0};
    s.buttons=[];for(const row of rows.children){const [label,url]=row.querySelectorAll('input');if(!label.value.trim()&&!url.value.trim())continue;const destination=safeButtonUrl(url.value);if(!label.value.trim()||!destination)throw new Error('Each button needs a label and a valid https://, http://, or mailto: link.');s.buttons.push({label:label.value.trim(),url:destination});}
    return Object.assign(s,mediaEditor.read(),{bandMembers:memberEditor.read()});
   }
@@ -96,6 +108,7 @@ export async function initWebsiteEditor({profileId,profile,render}){
    if(!previewed||busy||(mediaEditor.isProcessing()||memberEditor.isProcessing())||!dirty)return;busy=true;fields.disabled=true;const uploaded=[];let committed=false;
    try{
     if(auth.currentUser?.uid!==user.uid)throw new Error('Your sign-in changed. Please reload before publishing.');
+    if(!canEditWebsite(auth.currentUser,profile,profileId))throw new Error('Website editing is restricted to the Venomous Thorns pilot owner or administrator.');
     const next=settingsFromForm();status.textContent='Publishing website…';
     for(const [key,blob] of Object.entries(pending)){const imageRef=ref(storage,`profile-media/${user.uid}/website-${key}-${crypto.randomUUID()}.webp`);await uploadBytes(imageRef,blob,{contentType:'image/webp',customMetadata:{ownerId:user.uid,profileImageType:'website'}});uploaded.push(imageRef);const downloadUrl=await getDownloadURL(imageRef);if(key.startsWith('photo_')){const photo=next.photos.find(p=>p.id===key);if(!photo)throw new Error('A draft photo could not be found. Please preview again.');photo.url=downloadUrl;}else if(key.startsWith('member_')){const member=next.bandMembers.find(m=>m.id===key);if(!member)throw new Error('A draft member was removed. Preview again.');member.photoUrl=downloadUrl;}else next[key]=downloadUrl;}
     const nextRevision=crypto.randomUUID();

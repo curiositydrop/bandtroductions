@@ -57,11 +57,11 @@ export function createMemberEditor({container,changed,preparePhoto,removePending
   }
  }
  add.onclick=()=>{if(members.length>=16)return;members.push({id:'member_'+crypto.randomUUID(),name:'',instrument:'',photoUrl:''});draw();changed();list.lastElementChild.querySelector('input').focus();};
- return {fill(settings){members=normalizeMembers(settings.bandMembers);draw();},read(){if(members.some(m=>!m.name.trim()||!m.instrument.trim()))throw new Error('Add a name and instrument / role for each member, or remove the empty member.');return normalizeMembers(members);},isProcessing(){return processing;}};
+ return {fill(settings){members=normalizeMembers(settings.bandMembers);draw();},read(){const filled=members.filter(m=>m.name.trim()||m.instrument.trim()||m.photoUrl||getPreviewUrl(m.id));if(filled.some(m=>!m.name.trim()||!m.instrument.trim()))throw new Error('Add a name and instrument / role for each member, or remove the empty member.');return normalizeMembers(filled);},isProcessing(){return processing;}};
 }
 
 export function initialMembers(profile,settings={}){
- if(Array.isArray(settings.bandMembers)&&settings.bandMembers.length)return normalizeMembers(settings.bandMembers);
+ if(Array.isArray(settings.bandMembers))return normalizeMembers(settings.bandMembers);
  const text=Array.isArray(profile.members)?profile.members.join(', '):String(profile.members||'');
  const pattern=/([^,;\n]+?)\s+(singer|vocals|drums|bass|guitar|keys|keyboard|keyboards)(?=\s|[,;]|$)/gi;
  const matches=[...text.matchAll(pattern)];
