@@ -625,47 +625,98 @@ function bookingAdmin(request, profile) {
   return uid;
 }
 
-exports.createBookingRequest = onCall({ region: REGION }, async request => {
+function bookingCall(handler) {
+  return onCall({ region: REGION }, async request => {
+    try { return await handler(request); }
+    catch (error) {
+      if (error instanceof booking.BookingError) throw new HttpsError(error.code, error.message);
+      throw error;
+    }
+  });
+}
+exports.createBookingRequest = bookingCall(async request => {
   const profileId = booking.id(request.data?.profileId);
-  const profileSnap = await db.collection('profiles').doc(profileId).get();
-  if (!profileSnap.exists) throw new HttpsError('not-found', 'That band website is no longer available.');
-  const profile = profileSnap.data() || {};
-  const config = booking.settings(profile.websiteSettings?.booking || {});
-  if (config.enabled !== true) throw new HttpsError('failed-precondition', 'Booking is not enabled for this website yet.');
-  const event = booking.requestData(request.data || {}, config);
-  const uid = request.auth?.uid || '';
-  const email = cleanString(request.data?.email, 200).toLowerCase();
-  if (!isValidEmail(email)) throw new HttpsError('invalid-argument', 'Add a valid contact email.');
-  const ref = db.collection('bookingRequests').doc();
-  const now = FieldValue.serverTimestamp();
-  await ref.set({ id: ref.id, profileId, ownerId: cleanString(profile.ownerId || profile.userId || profile.uid, 200), bandName: cleanString(profile.displayName, 120), requesterUid: uid, requesterEmail: email, event, terms: booking.terms(config), status: 'pending', createdAt: now, updatedAt: now });
-  const ownerId = cleanString(profile.ownerId || profile.userId || profile.uid, 200);
-  if (ownerId) await db.collection('notifications').doc(`booking_${ref.id}`).set({ recipientId: ownerId, actorId: uid || email, actorName: event.contactName, type: 'booking_request', message: `New booking request from ${event.venue}.`, linkUrl: `/notifications.html?booking=${encodeURIComponent(ref.id)}`, relatedBookingId: ref.id, read: false, createdAt: now });
-  return { ok: true, requestId: ref.id, message: 'Request sent for band review.' };
-});
-
-exports.respondToBookingRequest = onCall({ region: REGION }, async request => {
   const requestId = booking.id(request.data?.requestId);
-  const snap = await db.collection('bookingRequests').doc(requestId).get();
-  if (!snap.exists) throw new HttpsError('not-found', 'Booking request not found.');
-  const data = snap.data() || {};
-  const profileSnap = await db.collection('profiles').doc(data.profileId).get();
-  if (!profileSnap.exists) throw new HttpsError('not-found', 'Band profile not found.');
-  bookingAdmin(request, profileSnap.data() || {});
-  const action = cleanString(request.data?.action, 20);
-  booking.assertTransition(data.status, action);
-  const responseNote = cleanString(request.data?.note, 1200);
-  const now = FieldValue.serverTimestamp();
-  if (action !== 'accept') { await snap.ref.update({ status: action === 'decline' ? 'declined' : 'changes_requested', responseNote, updatedAt: now }); return { ok: true, status: action === 'decline' ? 'declined' : 'changes_requested' }; }
-  const selected = Array.isArray(data.event?.dates) ? data.event.dates : [];
-  const existing = await db.collection('posts').where('websiteProfileId', '==', data.profileId).get();
-  const unavailable = new Set(existing.docs.flatMap(docSnap => { const e=docSnap.data()?.event || {}; const d=e.date || docSnap.data()?.eventDate || docSnap.data()?.showDate; return d ? [d] : []; }));
-  booking.assertAvailable(selected, unavailable);
-  const batch = db.batch();
-  for (const date of selected) batch.set(db.collection('posts').doc(), booking.showPost({ ...data, id: requestId }, date, now));
-  batch.update(snap.ref, { status: 'accepted', responseNote, confirmedDates: selected, updatedAt: now });
-  await batch.commit();
-  const requester = data.requesterUid;
-  if (requester) await db.collection('notifications').doc(`booking_${requestId}_accepted`).set({ recipientId: requester, actorId: data.profileId, actorName: data.bandName, type: 'booking_decision', message: `${data.bandName} accepted your booking request.`, linkUrl: `/website-navigation-preview.html?id=${encodeURIComponent(data.profileId)}#/shows`, relatedBookingId: requestId, read: false, createdAt: now });
-  return { ok: true, status: 'accepted', dates: selected };
+  const profileRef = db.collection('profiles').doc(profileId);
+  const ref = db.collection('bookingRequests').doc(requestId);
+  return db.runTransaction(async tx => {
+    const profileSnap = await tx.get(profileRef);
+    if (!profileSnap.exists) throw new HttpsError('not-found', 'Band profile not found.');
+    const profile = profileSnap.data();
+    const config = booking.settings(profile.websiteSettings?.booking || {});
+    if (!config.enabled) throw new HttpsError('failed-precondition', 'The band must enable booking requests in Edit website first.');
+    const email = cleanString(request.data?.email, 200).toLowerCase();
+    if (!isValidEmail(email)) throw new HttpsError('invalid-argument', 'Add a valid contact email.');
+    const recipient = cleanString(profile.websiteSettings?.booking?.email || profile.bookingEmail || profile.email, 200);
+    if (!isValidEmail(recipient)) throw new HttpsError('failed-precondition', 'The band must set its booking email first.');
+    const event = booking.requestData(request.data || {}, config);
+    const existing = await tx.get(ref);
+    const ownerId = cleanString(profile.ownerId || profile.userId || profile.uid || profileId, 200);
+    if (existing.exists) {
+      if (existing.data().profileId !== profileId || existing.data().requesterEmail !== email)
+        throw new HttpsError('already-exists', 'Please reload before submitting another request.');
+      return {ok:true,requestId,recipient};
+    }
+    const now = FieldValue.serverTimestamp();
+    tx.create(ref, {id:requestId,profileId,ownerId,bandName:cleanString(profile.displayName,120),
+      requesterUid:request.auth?.uid || '',requesterEmail:email,event,terms:booking.terms(config),
+      status:'pending',createdAt:now,updatedAt:now});
+    return {ok:true,requestId,recipient};
+  });
+});
+exports.listWebsiteBookingRequests = bookingCall(async request => {
+  const profileId = booking.id(request.data?.profileId);
+  const profile = await db.collection('profiles').doc(profileId).get();
+  if (!profile.exists) throw new HttpsError('not-found', 'Band profile not found.');
+  bookingAdmin(request, profile.data(), profileId);
+  const rows = await db.collection('bookingRequests').where('profileId','==',profileId).get();
+  return {requests:rows.docs.map(s => ({...s.data(),id:s.id,createdAt:s.data().createdAt?.toMillis?.() || 0}))
+    .sort((a,b)=>b.createdAt-a.createdAt)};
+});
+exports.respondToBookingRequest = bookingCall(async request => {
+  const requestId = booking.id(request.data?.requestId);
+  const action = cleanString(request.data?.action,20);
+  return db.runTransaction(async tx => {
+    const ref = db.collection('bookingRequests').doc(requestId);
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new HttpsError('not-found','Booking request not found.');
+    const data = snap.data();
+    const profileRef = db.collection('profiles').doc(data.profileId);
+    const profileSnap = await tx.get(profileRef);
+    if (!profileSnap.exists) throw new HttpsError('not-found','Band profile not found.');
+    bookingAdmin(request,profileSnap.data(),data.profileId);
+    const status = action === 'accept' ? 'accepted' : action === 'decline' ? 'declined' : '';
+    if (!status) throw new HttpsError('invalid-argument','Choose Approve or Deny.');
+    if (data.status === status) return {ok:true,status};
+    booking.assertTransition(data.status,action);
+    const now = FieldValue.serverTimestamp();
+    if (action === 'accept') {
+      const ownerId = cleanString(profileSnap.data().ownerId || profileSnap.data().userId || profileSnap.data().uid || data.profileId,200);
+      const queries = [
+        db.collection('posts').where('websiteProfileId','==',data.profileId),
+        ...[...new Set([data.profileId,ownerId])].map(id=>db.collection('posts').where('authorId','==',id))
+      ];
+      const rows = [];
+      for (const query of queries) rows.push(...(await tx.get(query)).docs);
+      const unavailable = new Set(profileSnap.data().websiteSettings?.booking?.blockedDates || []);
+      for (const row of rows) {
+        const p = row.data();
+        if (p.category === 'show' && p.published !== false && booking.ownsPost(p,data.profileId,ownerId))
+          unavailable.add(p.event?.date || p.eventDate || p.showDate);
+      }
+      const dates = data.event.dates;
+      if (!dates?.length) throw new HttpsError('failed-precondition','This request has no performance dates.');
+      booking.assertAvailable(dates,unavailable);
+      for (const date of dates) {
+        const post = booking.showPost({...data,id:requestId,ownerId},date,now);
+        // Free-form booking notes are private. Owners can add public details in Manage shows.
+        post.event.details = '';
+        tx.create(db.collection('posts').doc('booking_'+requestId+'_'+date),post);
+      }
+      // Serialize approval against other approvals for this band.
+      tx.update(profileRef,{'websiteBookingUpdatedAt':now});
+    }
+    tx.update(ref,{status,updatedAt:now,confirmedDates:action === 'accept' ? data.event.dates : []});
+    return {ok:true,status};
+  });
 });

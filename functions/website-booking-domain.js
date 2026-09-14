@@ -38,9 +38,9 @@ function requestData(input, s, now = new Date()) {
   event.title = event.title || 'Live show'; event.age = text(input.age,30); if (!['All ages','21+'].includes(event.age)) fail('Choose All ages or 21+.');
   event.capacity = integer(input.capacity,1,100000,'expected attendance');
   event.price = text(input.price,80);
-  event.offeredCents = money(input.offeredPay);
+  event.offeredCents = money(input.offeredPay ?? 0);
   event.dates = Array.isArray(input.selectedDates) && input.selectedDates.length ? [...new Set(input.selectedDates.map(day))].sort() : dates(input.startDate,input.endDate || input.startDate,now,s.timeZone);
-  if(event.dates.length>7 || event.dates.some(value=>value<today(s.timeZone,now))) fail('Choose available future dates.');
+  if(event.dates.length>7 || event.dates.some(value=>value<today(s.timeZone,now) || Date.parse(value)>now.getTime()+730*86400000)) fail('Choose available future dates.');
   event.privateEvent = input.privateEvent === true;
   if (input.termsAccepted !== true) fail('Confirm that this is a request, subject to the band’s review.');
   return event;
