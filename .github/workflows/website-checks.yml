@@ -1,7 +1,7 @@
 name: Website media calendar and player checks
 on:
   push:
-    branches: [main, feature/website-calendar-player]
+    branches: [main, feature/website-calendar-player, fix/website-navigation-20260914]
     paths:
       - 'website*'
       - 'functions/website-radio.js'

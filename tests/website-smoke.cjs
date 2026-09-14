@@ -228,6 +228,7 @@ const server=http.createServer((req,res)=>{
    await page.locator('#website-editor').waitFor({state:'visible'});
    await page.unroute(base+'/mock-firebase.js');
   }
+
   // A signed-in owner of any non-pilot band is still locked on both routes.
   await page.route(base+'/mock-firebase.js',route=>route.fulfill({contentType:'text/javascript',body:mock.replaceAll('19MH0ZzVlPVN4ediF4PesZR5TY13','other-band')}));
   for(const routeName of ['website-upgrade-preview.html','website-navigation-preview.html']){
