@@ -217,7 +217,7 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 })();
 </script>
 <script type="module">
-import { websiteProfile, applyWebsiteStyle, initWebsiteEditor } from './website-review-editor.js?v=8';
+import { websiteProfile, applyWebsiteStyle, initWebsiteEditor, DEFAULT_TAGLINE } from './website-review-editor.js?v=9';
 import { loadWebsiteProfile } from './website-profile-loader.js?v=1';
 import { initialMembers } from './website-review-members.js?v=2';
 import { initWebsiteBooking, renderBookingSummary } from './website-booking.js?v=5';
@@ -236,7 +236,7 @@ function renderProfile(raw,settings=raw.websiteSettings){
  el('cover').src='bt-wide-crowd.jpg';el('portrait').hidden=true;
  ['music','music-nav','listen'].forEach(id=>{el(id).hidden=true;});
  const name=p.displayName||'Venomous Thorns';['brand','name','footer-name'].forEach(id=>text(id,name));document.title=`${name} | BANDtroductions`;const presented=el('presented-name');if(presented)presented.textContent=name;
- text('genre',p.genre||'Independent music');text('location',p.location||[p.city,p.region,p.country].filter(Boolean).join(', '));
+ text('genre',p.genre||'Independent music');text('location',p.location||[p.city,p.region,p.country].filter(Boolean).join(', '));text('hero-tagline',p.tagline===undefined?DEFAULT_TAGLINE:p.tagline);
  text('bio',p.bio||'More about the band coming soon.');
  const homeBio=el('home-bio');if(homeBio)homeBio.textContent=p.bio||'Independent music with something to say.';
  const cover=webUrl(p.bannerImageUrl||p.coverImageUrl);if(cover){el('cover').onerror=()=>{el('cover').onerror=null;el('cover').src='bt-wide-crowd.jpg';};el('cover').src=cover;}
