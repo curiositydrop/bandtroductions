@@ -111,7 +111,38 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 </style><style>
 .home-landing-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;margin-top:58px;max-width:980px}.home-card{padding:26px;border:1px solid color-mix(in srgb,var(--site-accent,#c3ec77) 28%,transparent);border-radius:16px;background:linear-gradient(145deg,#0c1712e8,#0c1210c9);box-shadow:0 16px 40px #0005;backdrop-filter:blur(8px)}.home-card h2{font-size:clamp(27px,3.2vw,42px);line-height:1.05;letter-spacing:-.04em;margin:0 0 12px}.home-card p:not(.eyebrow){color:#d4ded5;margin:0 0 18px;line-height:1.55}.home-card-story{grid-row:span 2}.home-card-story #home-bio{font-size:20px;white-space:pre-wrap}.home-card-live{grid-column:2}.home-link{display:inline-block;color:var(--site-accent,#c3ec77);font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.08em}.home-card-video iframe{width:100%;aspect-ratio:16/9;border:1px solid var(--line);border-radius:10px;background:#000;margin:2px 0 14px}.home-card .actions{margin-top:20px}.home-card .button{min-height:42px;padding:10px 15px}.home-card-video .eyebrow{margin-bottom:14px}
 @media(max-width:760px){.home-landing-grid{grid-template-columns:1fr;margin-top:42px}.home-card-story,.home-card-live{grid-row:auto;grid-column:auto}.home-card{padding:22px}.home-card-story #home-bio{font-size:18px}}
-</style></head>
+</style><style>
+/* Mobile hero polish: keep the artwork atmospheric while making the band name readable. */
+@media(max-width:650px){
+  #main.website-pages .hero{
+    min-height:420px;
+    padding:92px 0 34px;
+    align-items:center;
+  }
+  #main.website-pages .hero-art{
+    object-position:center center;
+    transform:scale(.9);
+    transform-origin:center center;
+    opacity:.78;
+  }
+  #main.website-pages .hero:before{
+    background:linear-gradient(180deg,#050907f2 0%,#0509079c 42%,#050907ee 100%);
+  }
+  #main.website-pages .hero .wrap{
+    position:relative;
+    z-index:1;
+  }
+  #main.website-pages .hero h1{
+    max-width:100%;
+    font-size:clamp(38px,10.5vw,62px);
+    line-height:.98;
+    text-shadow:0 3px 18px #000;
+  }
+  #main.website-pages .hero .eyebrow,
+  #main.website-pages .hero .location{ text-shadow:0 2px 12px #000; }
+}
+</style>
+</head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <div class="test-bar"><a href="index.html">BANDtroductions</a> presents… <span id="presented-name"></span> · <a id="website-edit-link" href="#website-editor" hidden>Edit website</a><span id="preview-lock-copy">Editing is locked while subscriptions are being set up.</span></div>
