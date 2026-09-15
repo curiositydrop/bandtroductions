@@ -123,10 +123,10 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
     object-position:center center;
     transform:scale(.9);
     transform-origin:center center;
-    opacity:.78;
+    opacity:.9;
   }
   #main.website-pages .hero:before{
-    background:linear-gradient(180deg,#050907f2 0%,#0509079c 42%,#050907ee 100%);
+    background:linear-gradient(180deg,#050907c9 0%,#05090752 42%,#050907c9 100%);
   }
   #main.website-pages .hero .wrap{
     position:relative;
@@ -142,6 +142,23 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
   #main.website-pages .hero .location{ text-shadow:0 2px 12px #000; }
 }
 </style>
+<style>
+/* Give the premium homepage a real band-site hero identity. */
+#main.website-pages .hero-tagline{
+  margin:0;
+  color:#e3ece3;
+  font-size:clamp(17px,2.2vw,24px);
+  font-weight:750;
+  letter-spacing:.02em;
+  text-shadow:0 2px 16px #000;
+}
+@media(max-width:650px){
+  #main.website-pages .hero-tagline{
+    font-size:18px;
+    margin-top:2px;
+  }
+}
+</style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -151,7 +168,7 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 </nav></div></header><p id="view-empty" class="status" hidden></p>
 <p id="status" class="status" role="status">Loading band website…</p>
 <main id="main" class="website-stage website-pages" hidden>
-<section class="hero" id="home"><img class="hero-art" id="cover" src="bt-wide-crowd.jpg" alt="" fetchpriority="high"><div class="wrap"><p class="eyebrow" id="genre">Independent music</p><h1 id="name">Venomous Thorns</h1><p class="location" id="location"></p><div class="actions"><a class="button" href="#/music" id="listen" hidden>Watch & listen ↗</a><a class="button secondary" href="#/about" id="about-cta">Meet the band</a><a class="button secondary" href="#/contact">Get in touch</a></div><div class="actions" id="custom-buttons"></div><div class="home-landing-grid" aria-label="Band highlights"><article class="home-card home-card-story"><p class="eyebrow">The sound</p><h2>Built for the stage.</h2><p id="home-bio">Independent music with something to say.</p><a href="#/about" class="home-link">Read the story ↗</a></article><article class="home-card home-card-video" id="home-video-card" hidden><p class="eyebrow">Featured listen</p><div id="home-featured-video"></div><a href="#/music" class="home-link">See all videos ↗</a></article><article class="home-card home-card-live"><p class="eyebrow">Live & loud</p><h2>Catch us in the wild.</h2><p>See upcoming dates, venues, and show details in the calendar.</p><div class="actions"><a href="#/shows" class="button secondary">View shows</a><a href="#/booking" class="button">Book the band</a></div></article></div></div></section>
+<section class="hero" id="home"><img class="hero-art" id="cover" src="bt-wide-crowd.jpg" alt="" fetchpriority="high"><div class="wrap"><p class="eyebrow" id="genre">Independent music</p><h1 id="name">Venomous Thorns</h1><p class="location" id="location"></p><p class="hero-tagline" id="hero-tagline">Heavy music. No apologies.</p><div class="actions"><a class="button" href="#/music" id="listen" hidden>Watch & listen ↗</a><a class="button secondary" href="#/about" id="about-cta">Meet the band</a><a class="button secondary" href="#/contact">Get in touch</a></div><div class="actions" id="custom-buttons"></div><div class="home-landing-grid" aria-label="Band highlights"><article class="home-card home-card-story"><p class="eyebrow">The sound</p><h2>Built for the stage.</h2><p id="home-bio">Independent music with something to say.</p><a href="#/about" class="home-link">Read the story ↗</a></article><article class="home-card home-card-video" id="home-video-card" hidden><p class="eyebrow">Featured listen</p><div id="home-featured-video"></div><a href="#/music" class="home-link">See all videos ↗</a></article><article class="home-card home-card-live"><p class="eyebrow">Live & loud</p><h2>Catch us in the wild.</h2><p>See upcoming dates, venues, and show details in the calendar.</p><div class="actions"><a href="#/shows" class="button secondary">View shows</a><a href="#/booking" class="button">Book the band</a></div></article></div></div></section>
 <section class="section" id="about"><div class="wrap">
 <div id="member-heading"><p class="eyebrow">The lineup</p><h2>Meet the band.</h2></div>
 <div id="band-member-cards" class="ws-member-cards" hidden></div>
