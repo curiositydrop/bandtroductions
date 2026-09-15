@@ -170,12 +170,12 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 /* Reposition the complete hero artwork upward on mobile so its focal detail is visible. */
 @media(max-width:650px){
   #main.website-pages .hero-art{
-    object-position:center 25%;
+    object-position:var(--site-hero-position-x,50%) var(--site-hero-position-y,25%);
     transform:none;
   }
 }
 </style>
-<style>@media(max-width:650px){#main.website-pages .hero-art{filter:brightness(var(--site-hero-brightness,1.16));}}</style></head>
+<style>@media(max-width:650px){#main.website-pages .hero-art{filter:brightness(var(--site-hero-brightness,1.16));object-position:var(--site-hero-position-x,50%) var(--site-hero-position-y,25%);}}</style></head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <div class="test-bar"><a href="index.html">BANDtroductions</a> presents… <span id="presented-name"></span> · <a id="website-edit-link" href="#website-editor" hidden>Edit website</a><span id="preview-lock-copy">Editing is locked while subscriptions are being set up.</span></div>
