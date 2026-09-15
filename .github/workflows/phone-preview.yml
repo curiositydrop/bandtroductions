@@ -1,0 +1,24 @@
+name: BANDtroductions phone previews
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this design
+        uses: actions/checkout@v4
+
+      - name: Deploy temporary Firebase preview
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BANDTRODUCTIONS_DEV }}
+          projectId: bandtroductions-dev
+          channelId: pr-${{ github.event.pull_request.number }}
