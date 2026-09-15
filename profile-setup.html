@@ -45,14 +45,14 @@
       <div id="location-fields" class="profile-location-fields">
         <div class="auth-grid">
           <label>City / Town
-            <input id="city" type="text" maxlength="80" required placeholder="Portland" autocomplete="address-level2">
+            <input id="city" type="text" maxlength="80" required placeholder="Enter city or town" autocomplete="address-level2">
           </label>
           <label>State / Province / Region
-            <input id="region" type="text" maxlength="80" required placeholder="Maine" autocomplete="address-level1">
+            <input id="region" type="text" maxlength="80" required placeholder="Enter state or region" autocomplete="address-level1">
           </label>
         </div>
         <label>Country
-          <input id="country" type="text" maxlength="80" required placeholder="United States" autocomplete="country-name">
+          <input id="country" type="text" maxlength="80" required placeholder="Enter country" autocomplete="country-name">
         </label>
         <small id="location-update-note" class="upload-note" hidden>Please complete your City / Town, State / Province / Region, and Country.</small>
       </div>
@@ -155,7 +155,7 @@
     const value=(id)=>document.getElementById(id)?.value.trim()||'';
     const combinedLocation=()=>[value('city'),value('region'),value('country')].filter(Boolean).join(', ');
     function parseLocation(data={}){
-      if(data.city||data.region||data.country)return {city:data.city||'',region:data.region||'',country:data.country||''};
+      const city=data.city||data.town||data.cityTown||'';const region=data.region||data.state||data.province||'';const country=data.country||data.countryName||'';if(city||region||country)return {city,region,country};
       const raw=String(data.location||'').trim();
       if(!raw)return {city:'',region:'',country:''};
       const parts=raw.split(',').map(part=>part.trim()).filter(Boolean);
