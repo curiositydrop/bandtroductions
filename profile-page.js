@@ -175,6 +175,13 @@ async function loadProfile(user) {
     }
 
     loadedProfile = rawProfile;
+    // Published website profiles are the primary public destination. Add ?classic=1 to view the legacy profile.
+    const params = new URLSearchParams(location.search);
+    if (loadedProfile.websiteSettings?.revision && params.get('classic') !== '1') {
+      const websiteUrl = `website.html?id=${encodeURIComponent(profileId)}`;
+      location.replace(websiteUrl);
+      return;
+    }
     if (loadedProfile.legacyPage === 'burning-time.html') {
       loadedProfile = {
         ...burningTimeMedia,
