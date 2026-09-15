@@ -166,6 +166,15 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
   background:#0b100f;
 }
 </style>
+<style>
+/* Reposition the complete hero artwork upward on mobile so its focal detail is visible. */
+@media(max-width:650px){
+  #main.website-pages .hero-art{
+    object-position:center 25%;
+    transform:none;
+  }
+}
+</style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
