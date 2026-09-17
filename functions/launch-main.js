@@ -4,6 +4,7 @@
 // launch-partner grant for the two artists grandfathered into the $15 plan.
 const existing = require('./main');
 const crypto = require('crypto');
+const { getAuth } = require('firebase-admin/auth');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { HttpsError, onCall } = require('firebase-functions/v2/https');
 
@@ -16,10 +17,25 @@ function cleanString(value, max = 2000) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
 }
 
-function requireAdmin(request) {
-  if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in as a BANDtroductions administrator.');
-  const email = cleanString(request.auth.token?.email, 200).toLowerCase();
+async function requireAdmin(request) {
+  const uid = cleanString(request.auth?.uid, 200);
+  if (!uid) throw new HttpsError('unauthenticated', 'Sign in as a BANDtroductions administrator.');
+
+  // Resolve the canonical email from Firebase Auth instead of relying on an
+  // optional/stale email claim in the callable ID token. This matches the
+  // account identity the BANDtroductions admin UI recognizes while keeping
+  // authorization entirely server-side.
+  let email = '';
+  try {
+    const userRecord = await getAuth().getUser(uid);
+    email = cleanString(userRecord.email, 200).toLowerCase();
+  } catch (error) {
+    console.error('Could not resolve administrator Firebase Auth record.', uid, error?.message || error);
+    throw new HttpsError('permission-denied', 'Administrator access could not be verified.');
+  }
+
   if (!ADMIN_EMAILS.has(email)) throw new HttpsError('permission-denied', 'Administrator access is required.');
+  return uid;
 }
 
 function defaultWebsiteSettings(profile = {}) {
@@ -149,7 +165,7 @@ async function grantPartner(profileSnapshot) {
 }
 
 const grantLaunchPartnerAccess = onCall({ region: REGION }, async request => {
-  requireAdmin(request);
+  await requireAdmin(request);
   const activated = [];
   const missing = [];
   for (const name of LAUNCH_PARTNER_NAMES) {
