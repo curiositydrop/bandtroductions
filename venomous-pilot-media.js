@@ -33,6 +33,35 @@ export function seedVenomousPilotMedia(profile={},profileId=''){
   return seeded;
 }
 
+export function installVenomousPilotEditorHints(profileId=''){
+  if(profileId!==VENOMOUS_PILOT_PROFILE||typeof MutationObserver==='undefined')return;
+  const improve=()=>{
+    const panel=document.querySelector('.media-editor-panel');
+    if(!panel||panel.dataset.pilotPhotoHint==='true')return false;
+    panel.dataset.pilotPhotoHint='true';
+    const heading=panel.querySelector('h3');
+    if(heading)heading.childNodes[0].textContent='Photos & videos ';
+    const photoInput=panel.querySelector('#library-photos');
+    if(photoInput){
+      const label=photoInput.closest('label');
+      if(label){
+        const labelText=[...label.childNodes].find(node=>node.nodeType===Node.TEXT_NODE);
+        if(labelText)labelText.textContent='Upload photos to gallery ';
+      }
+    }
+    const intro=document.createElement('p');
+    intro.className='muted';
+    intro.textContent='Add gallery photos and YouTube videos here. These are separate from the banner and band image above.';
+    const firstParagraph=panel.querySelector('p');
+    if(firstParagraph)firstParagraph.before(intro);else panel.prepend(intro);
+    return true;
+  };
+  if(improve())return;
+  const observer=new MutationObserver(()=>{if(improve())observer.disconnect();});
+  observer.observe(document.documentElement,{subtree:true,childList:true});
+  window.addEventListener('pagehide',()=>observer.disconnect(),{once:true});
+}
+
 export function installVenomousPilotPlayer(profileId=''){
   if(profileId!==VENOMOUS_PILOT_PROFILE||typeof MutationObserver==='undefined')return;
   let timer=0,done=false;
