@@ -36,25 +36,39 @@ export function seedVenomousPilotMedia(profile={},profileId=''){
 export function installVenomousPilotEditorHints(profileId=''){
   if(profileId!==VENOMOUS_PILOT_PROFILE||typeof MutationObserver==='undefined')return;
   const improve=()=>{
+    const editor=document.getElementById('website-editor');
+    if(!editor)return false;
+
+    const baseCards=[...editor.querySelectorAll('.editor-grid > section')];
+    const headings=baseCards.map(card=>card.querySelector('h3')).filter(Boolean);
+    const imageHeading=headings.find(h=>h.textContent.trim().replace(/[＋−]$/,'').trim()==='Images');
+    if(imageHeading)imageHeading.childNodes[0].textContent='Profile & banner images ';
+
+    const heroHeadings=headings.filter(h=>h.textContent.trim().replace(/[＋−]$/,'').trim()==='Hero');
+    if(heroHeadings[0])heroHeadings[0].childNodes[0].textContent='Homepage buttons & tagline ';
+    if(heroHeadings[1])heroHeadings[1].childNodes[0].textContent='Main banner position & brightness ';
+
     const panel=document.querySelector('.media-editor-panel');
-    if(!panel||panel.dataset.pilotPhotoHint==='true')return false;
-    panel.dataset.pilotPhotoHint='true';
-    const heading=panel.querySelector('h3');
-    if(heading)heading.childNodes[0].textContent='Photos & videos ';
-    const photoInput=panel.querySelector('#library-photos');
-    if(photoInput){
-      const label=photoInput.closest('label');
-      if(label){
-        const labelText=[...label.childNodes].find(node=>node.nodeType===Node.TEXT_NODE);
-        if(labelText)labelText.textContent='Upload photos to gallery ';
+    if(panel&&!panel.dataset.pilotPhotoHint){
+      panel.dataset.pilotPhotoHint='true';
+      const heading=panel.querySelector('h3');
+      if(heading)heading.childNodes[0].textContent='Photos & videos ';
+      const photoInput=panel.querySelector('#library-photos');
+      if(photoInput){
+        const label=photoInput.closest('label');
+        if(label){
+          const labelText=[...label.childNodes].find(node=>node.nodeType===Node.TEXT_NODE);
+          if(labelText)labelText.textContent='Upload photos to gallery ';
+        }
       }
+      const intro=document.createElement('p');
+      intro.className='muted';
+      intro.textContent='Add gallery photos and YouTube videos here. These are separate from the banner and band image above.';
+      const firstParagraph=panel.querySelector('p');
+      if(firstParagraph)firstParagraph.before(intro);else panel.prepend(intro);
     }
-    const intro=document.createElement('p');
-    intro.className='muted';
-    intro.textContent='Add gallery photos and YouTube videos here. These are separate from the banner and band image above.';
-    const firstParagraph=panel.querySelector('p');
-    if(firstParagraph)firstParagraph.before(intro);else panel.prepend(intro);
-    return true;
+
+    return Boolean(imageHeading&&heroHeadings.length>=2&&panel);
   };
   if(improve())return;
   const observer=new MutationObserver(()=>{if(improve())observer.disconnect();});
