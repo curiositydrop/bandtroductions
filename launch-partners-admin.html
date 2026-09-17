@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Launch Partners | BANDtroductions</title>
+  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="auth.css?v=13">
+  <style>
+    .partner-shell{width:min(100% - 24px,720px);margin:32px auto;padding:22px;border:1px solid #343a3a;border-radius:14px;background:#111414;color:#f2f4f4}.partner-shell h1{margin-top:0}.partner-list{display:grid;gap:8px;margin:18px 0}.partner-card{padding:13px;border:1px solid #3a4443;border-radius:10px;background:#090c0c}.partner-note{color:#aab4b4}.partner-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.partner-status{min-height:1.5em;margin-top:14px;color:#73fff5;font-weight:800}.partner-status.error{color:#ff9ba6}
+  </style>
+</head>
+<body class="auth-page">
+  <div id="global-header"></div>
+  <main class="partner-shell">
+    <p class="profile-kicker">ADMIN · WEBSITE + MERCH</p>
+    <h1>Launch Partner Access</h1>
+    <p class="partner-note">This one-time tool grants the full Website + Merch plan at no charge to the two grandfathered launch partners below. It does not create a Stripe charge.</p>
+    <div class="partner-list">
+      <div class="partner-card"><strong>Angel Down</strong><br><span class="partner-note">Permanent launch-partner access · Website + Merch</span></div>
+      <div class="partner-card"><strong>Ascent To Power</strong><br><span class="partner-note">Permanent launch-partner access · Website + Merch</span></div>
+    </div>
+    <div class="partner-actions">
+      <button id="grant-partners" class="auth-button" type="button" disabled>Grant Launch Partner Access</button>
+      <a class="auth-button auth-button-secondary" href="admin.html">Back to Admin</a>
+    </div>
+    <p id="partner-status" class="partner-status" role="status" aria-live="polite">Checking administrator access…</p>
+  </main>
+  <div id="global-footer"></div>
+  <script src="global.js?v=23"></script>
+  <script type="module" src="launch-partners-admin.js?v=1"></script>
+</body>
+</html>
