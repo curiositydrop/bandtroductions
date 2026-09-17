@@ -1,19 +1,4 @@
 (async function loadBandtroductionsGlobalHeader(){
-  // Website + Merch launch checkout bridge. merch.js still contains the legacy
-  // Stripe Payment Link, so transparently swap only that exact URL on merch.html.
-  // All other URL construction keeps native behavior.
-  const currentPage=(location.pathname.split('/').pop()||'index.html').toLowerCase();
-  if(currentPage==='merch.html'&&!window.__btWebsiteMerchCheckoutBridge){
-    const NativeURL=window.URL;
-    const OLD_CHECKOUT='https://buy.stripe.com/4gM8wI94qccabjzaOL6oo0e';
-    const NEW_CHECKOUT='https://buy.stripe.com/dRmbIU1BYekifzP2if6oo0f';
-    class BandtroductionsURL extends NativeURL{
-      constructor(input,base){super(String(input)===OLD_CHECKOUT?NEW_CHECKOUT:input,base)}
-    }
-    window.URL=BandtroductionsURL;
-    window.__btWebsiteMerchCheckoutBridge=true;
-  }
-
   const target=document.getElementById('global-header');
   if(!target)return;
 
@@ -29,7 +14,7 @@
     const response=await fetch('global-header-v2.html?v=2');
     if(!response.ok)throw new Error(`Header request failed: ${response.status}`);
     target.innerHTML=await response.text();
-    const current=currentPage;
+    const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
     const aliases={
       '':'index.html',
       'submit-audition.html':'auditions.html',
