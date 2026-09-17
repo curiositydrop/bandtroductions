@@ -60,7 +60,9 @@ function launchSite(edit=false){
  const target=new URL('website-pilot.html',location.href);
  target.searchParams.set('id',profileId);
  if(edit||params.get('edit')==='1')target.searchParams.set('edit','1');
- location.replace(target.pathname+target.search+location.hash);
+ const area=params.get('area');if(area)target.searchParams.set('area',area);
+ target.hash=area==='merch'?'website-editor':location.hash;
+ location.replace(target.pathname+target.search+target.hash);
 }
 
 if(!profileId){loading.textContent='This website link is missing an artist profile.';}
@@ -88,6 +90,7 @@ else onAuthStateChanged(auth,async user=>{
     checkout.searchParams.set('client_reference_id',profileId);
     const email=result.data?.contactEmail||user.email||'';
     if(email)checkout.searchParams.set('prefilled_email',email);
+    try{localStorage.setItem('btWebsiteMerchUpgradeProfileId',profileId);}catch{}
     location.href=checkout.toString();
    }catch(error){
     console.error(error);button.disabled=false;status.className='status error';status.textContent=String(error?.message||'The upgrade could not be started. Please try again.').replace(/^Firebase(?:Error)?:\s*/i,'').replace(/\s*\([^)]*\)\.?$/,'');
