@@ -50,10 +50,36 @@ function defaultWebsiteSettings(profile = {}) {
 }
 
 async function findProfileByName(name) {
-  const matches = await db.collection('profiles').where('displayName', '==', name).limit(2).get();
-  if (matches.empty) return null;
-  if (matches.size > 1) throw new HttpsError('failed-precondition', `More than one profile is named ${name}.`);
-  return matches.docs[0];
+  const direct = await db.collection('profiles').where('displayName', '==', name).limit(2).get();
+  if (direct.size > 1) throw new HttpsError('failed-precondition', `More than one profile is named ${name}.`);
+  if (!direct.empty) return direct.docs[0];
+
+  // Existing launch partners already have merch records. Use those records as a
+  // stable fallback when the profile display name differs slightly from the
+  // storefront name, then resolve the canonical profile by its stored id.
+  const storeMatches = await db.collection('merchStores').where('bandName', '==', name).limit(2).get();
+  if (storeMatches.size > 1) throw new HttpsError('failed-precondition', `More than one merch store is named ${name}.`);
+  if (!storeMatches.empty) {
+    const store = storeMatches.docs[0];
+    const profileId = cleanString(store.data()?.profileId || store.id, 200);
+    if (profileId) {
+      const profile = await db.collection('profiles').doc(profileId).get();
+      if (profile.exists) return profile;
+    }
+  }
+
+  const storefrontMatches = await db.collection('merchStorefronts').where('bandName', '==', name).limit(2).get();
+  if (storefrontMatches.size > 1) throw new HttpsError('failed-precondition', `More than one merch storefront is named ${name}.`);
+  if (!storefrontMatches.empty) {
+    const storefront = storefrontMatches.docs[0];
+    const profileId = cleanString(storefront.data()?.profileId || storefront.id, 200);
+    if (profileId) {
+      const profile = await db.collection('profiles').doc(profileId).get();
+      if (profile.exists) return profile;
+    }
+  }
+
+  return null;
 }
 
 async function grantPartner(profileSnapshot) {
