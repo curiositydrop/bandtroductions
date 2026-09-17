@@ -35,20 +35,21 @@ export function seedVenomousPilotMedia(profile={},profileId=''){
 
 export function installVenomousPilotEditorHints(profileId=''){
   if(profileId!==VENOMOUS_PILOT_PROFILE||typeof MutationObserver==='undefined')return;
+  const cleanHeading=heading=>heading?.textContent.trim().replace(/[＋−]$/,'').trim()||'';
   const improve=()=>{
     const editor=document.getElementById('website-editor');
     if(!editor)return false;
 
     const baseCards=[...editor.querySelectorAll('.editor-grid > section')];
     const headings=baseCards.map(card=>card.querySelector('h3')).filter(Boolean);
-    const imageHeading=headings.find(h=>h.textContent.trim().replace(/[＋−]$/,'').trim()==='Images');
+    const imageHeading=headings.find(h=>cleanHeading(h)==='Images');
     if(imageHeading)imageHeading.childNodes[0].textContent='Profile & banner images ';
 
-    const heroHeadings=headings.filter(h=>h.textContent.trim().replace(/[＋−]$/,'').trim()==='Hero');
+    const heroHeadings=headings.filter(h=>cleanHeading(h)==='Hero');
     if(heroHeadings[0])heroHeadings[0].childNodes[0].textContent='Homepage buttons & tagline ';
     if(heroHeadings[1])heroHeadings[1].childNodes[0].textContent='Main banner position & brightness ';
 
-    const panel=document.querySelector('.media-editor-panel');
+    const panel=editor.querySelector('.media-editor-panel');
     if(panel&&!panel.dataset.pilotPhotoHint){
       panel.dataset.pilotPhotoHint='true';
       const heading=panel.querySelector('h3');
@@ -68,7 +69,66 @@ export function installVenomousPilotEditorHints(profileId=''){
       if(firstParagraph)firstParagraph.before(intro);else panel.prepend(intro);
     }
 
-    return Boolean(imageHeading&&heroHeadings.length>=2&&panel);
+    const wrap=editor.querySelector('.wrap');
+    const form=editor.querySelector('#website-form');
+    const tools=editor.querySelector('.ws-tools');
+    const bookingRequests=wrap?[...wrap.children].find(node=>node.tagName==='SECTION'&&node.querySelector(':scope > h2')?.textContent.trim()==='Booking requests'):null;
+    const memberPanel=editor.querySelector('.ws-member-editor');
+    if(!wrap||!form||!panel||!memberPanel||!tools||!bookingRequests)return false;
+
+    if(!editor.querySelector('.editor-flow-nav')){
+      const style=document.createElement('style');
+      style.id='venomous-editor-flow-style';
+      style.textContent='.editor-flow-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:22px 0 10px}.website-editor .editor-flow-nav button{background:transparent;color:#eef4ee;border:1px solid #788079;text-align:left;padding:13px 14px}.website-editor .editor-flow-nav button[aria-pressed="true"]{background:#c3ec77;color:#132007;border-color:#c3ec77}.editor-flow-help{margin:0 0 20px!important}.editor-area-tools-note{margin:18px 0 0!important}@media(min-width:760px){.editor-flow-nav{grid-template-columns:repeat(5,minmax(0,1fr))}}';
+      document.head.append(style);
+
+      const nav=document.createElement('div');
+      nav.className='editor-flow-nav';
+      nav.setAttribute('role','group');
+      nav.setAttribute('aria-label','Choose what to edit');
+      const help=document.createElement('p');
+      help.className='editor-flow-help';
+      const areas=[
+        ['appearance','Appearance','Images, colors, banner and homepage look.'],
+        ['pages','Pages & buttons','Menu pages and custom link buttons.'],
+        ['booking','Booking','Rates, payment setup and booking requests.'],
+        ['media','Media & members','Band members, photos and videos.'],
+        ['tools','Shows & songs','Manage shows and upload songs to the player.']
+      ];
+      const cards=()=>[...editor.querySelectorAll('.editor-grid > section')];
+      const areaForCard=card=>{
+        if(card.classList.contains('media-editor-panel')||card.classList.contains('ws-member-editor'))return 'media';
+        const heading=cleanHeading(card.querySelector('h3'));
+        if(['Website pages','Custom buttons'].includes(heading))return 'pages';
+        if(heading==='Booking & payment')return 'booking';
+        return 'appearance';
+      };
+      const showArea=area=>{
+        for(const card of cards())card.hidden=areaForCard(card)!==area;
+        form.hidden=area==='tools';
+        bookingRequests.hidden=area!=='booking';
+        tools.hidden=area!=='tools';
+        nav.querySelectorAll('button[data-editor-area]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.editorArea===area)));
+        help.textContent=areas.find(item=>item[0]===area)?.[2]||'';
+      };
+      for(const [area,label] of areas){
+        const button=document.createElement('button');
+        button.type='button';
+        button.dataset.editorArea=area;
+        button.textContent=label;
+        button.onclick=()=>showArea(area);
+        nav.append(button);
+      }
+      const introLink=wrap.querySelector('p a[href*="profile-setup.html"]')?.closest('p');
+      if(introLink)introLink.after(nav,help);else form.before(nav,help);
+      const note=document.createElement('p');
+      note.className='editor-area-tools-note muted';
+      note.textContent='Shows and song uploads save through their own tools below; website appearance changes still use Preview changes, then Publish website.';
+      tools.prepend(note);
+      showArea('appearance');
+    }
+
+    return true;
   };
   if(improve())return;
   const observer=new MutationObserver(()=>{if(improve())observer.disconnect();});
