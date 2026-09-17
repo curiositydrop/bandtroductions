@@ -1,4 +1,4 @@
-import { seedVenomousPilotMedia, installVenomousPilotPlayer, installVenomousPilotEditorHints } from './venomous-pilot-media.js?v=2';
+import { seedVenomousPilotMedia, installVenomousPilotPlayer, installVenomousPilotEditorHints } from './venomous-pilot-media.js?v=3';
 
 // Public website reads only. Uses existing Firestore rules; no credentials or writes.
 function decode(value){
