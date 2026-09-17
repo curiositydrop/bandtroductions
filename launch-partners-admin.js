@@ -2,7 +2,6 @@ import { app, auth } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-functions.js';
 
-const ADMIN_EMAILS = new Set(['mbergeron79@gmail.com', 'mbegeron79@gmail.com']);
 const functions = getFunctions(app, 'us-central1');
 const grantLaunchPartnerAccess = httpsCallable(functions, 'grantLaunchPartnerAccess');
 const button = document.getElementById('grant-partners');
@@ -16,12 +15,9 @@ function setStatus(message, isError = false) {
 
 onAuthStateChanged(auth, user => {
   currentUser = user;
-  const email = String(user?.email || '').trim().toLowerCase();
-  const allowed = Boolean(user && ADMIN_EMAILS.has(email));
-  button.disabled = !allowed;
+  button.disabled = !user;
   if (!user) setStatus('Sign in with the BANDtroductions administrator account to use this tool.', true);
-  else if (!allowed) setStatus('This account does not have administrator access.', true);
-  else setStatus('Ready. This action is safe to run more than once.');
+  else setStatus('Ready. Administrator access will be verified securely when you continue.');
 });
 
 button.addEventListener('click', async () => {
@@ -44,7 +40,6 @@ button.addEventListener('click', async () => {
     const message = String(error?.message || '').replace(/^Firebase(?:Error)?:\s*/i, '').replace(/\s*\([^)]*\)\.?$/, '').trim();
     setStatus(message || 'Launch-partner access could not be granted. Nothing was charged.', true);
   } finally {
-    const email = String(auth.currentUser?.email || '').trim().toLowerCase();
-    button.disabled = !ADMIN_EMAILS.has(email);
+    button.disabled = !auth.currentUser;
   }
 });
