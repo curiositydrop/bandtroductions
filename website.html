@@ -17,7 +17,8 @@
   <p class="eyebrow">Artist upgrade</p>
   <h1>Website + Merch</h1>
   <p id="artist-copy">Turn your free artist profile into a full band website and merch storefront.</p>
-  <p class="price"><strong>$15</strong> / month</p>
+  <p class="price"><strong>$15</strong> today</p>
+  <p>Includes your first month. Your next 2 months are free, then $15/month. Cancel anytime.</p>
   <ul class="features">
     <li>Full customizable artist website</li>
     <li>Merch storefront listed in the Merch Hub</li>
@@ -41,7 +42,7 @@ import { doc,getDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-
 import { getFunctions,httpsCallable } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-functions.js';
 
 const PILOT='19MH0ZzVlPVN4ediF4PesZR5TY13';
-const CHECKOUT='https://buy.stripe.com/4gM8wI94qccabjzaOL6oo0e';
+const CHECKOUT='https://buy.stripe.com/dRmbIU1BYekifzP2if6oo0f';
 const ACTIVE=new Set(['active','trialing','comped']);
 const params=new URLSearchParams(location.search);
 const profileId=params.get('id')||'';
