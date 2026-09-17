@@ -4,7 +4,7 @@
   "engines": {
     "node": "22"
   },
-  "main": "main.js",
+  "main": "launch-main.js",
   "scripts": {
     "generate-vapid": "node generate-vapid.js",
     "test": "node --test stripe-webhook-utils.test.js"
