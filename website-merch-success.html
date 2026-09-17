@@ -20,22 +20,43 @@
 <p id="status" class="status">Loading your artist tools…</p>
 <div class="actions">
 <a id="edit-site" class="button" href="profile.html">Edit My Website</a>
-<a id="manage-merch" class="button" href="merch.html">Manage My Merch</a>
+<a id="manage-merch" class="button" href="profile.html">Manage My Merch</a>
 <a id="view-profile" class="button secondary full" href="profile.html">View My Profile</a>
 </div>
 </section>
 </main>
 <script type="module">
-import { auth } from './firebase-dev.js';
+import { auth,db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+import { doc,getDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 const status=document.getElementById('status');
 const edit=document.getElementById('edit-site');
+const merch=document.getElementById('manage-merch');
 const profile=document.getElementById('view-profile');
-onAuthStateChanged(auth,user=>{
- if(!user){status.textContent='Your upgrade is complete. Sign in to manage your artist tools.';edit.href='login.html';profile.href='login.html';return;}
- const id=encodeURIComponent(user.uid);
+const params=new URLSearchParams(location.search);
+let stored='';try{stored=localStorage.getItem('btWebsiteMerchUpgradeProfileId')||'';}catch{}
+const requested=params.get('profileId')||stored;
+
+function setLinks(profileId){
+ const id=encodeURIComponent(profileId);
  edit.href=`website.html?id=${id}&edit=1`;
+ merch.href=`website.html?id=${id}&edit=1&area=merch#website-editor`;
  profile.href=`profile.html?id=${id}`;
+}
+
+onAuthStateChanged(auth,async user=>{
+ let target=requested;
+ if(target){
+  try{const snap=await getDoc(doc(db,'profiles',target));if(!snap.exists())target='';}catch{target='';}
+ }
+ if(!target&&user){
+  try{const own=await getDoc(doc(db,'profiles',user.uid));if(own.exists())target=user.uid;}catch{}
+ }
+ if(!target){
+  status.textContent='Your upgrade is complete. Open your artist profile to manage Website + Merch.';
+  edit.href='profile.html';merch.href='profile.html';profile.href='profile.html';return;
+ }
+ setLinks(target);
  status.textContent='You’re all set. Choose where you want to go next.';
 });
 </script>
