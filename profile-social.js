@@ -3,6 +3,8 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/f
 import { collection, deleteDoc, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const profileId = new URLSearchParams(location.search).get('id');
+const PILOT_PROFILE = '19MH0ZzVlPVN4ediF4PesZR5TY13';
+const ACTIVE_WEBSITE_STATUSES = new Set(['active','trialing','comped']);
 let currentUser = null;
 let loadedProfile = null;
 
@@ -14,6 +16,7 @@ style.textContent = `
   .profile-posts-list{display:grid;gap:12px}.profile-post-card{padding:14px;border:1px solid #333;border-radius:13px;background:#0d0d0d}
   .profile-post-card p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55;margin:8px 0 0}.profile-post-meta{color:#888;font-size:.8rem}
   .profile-collection-links{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+  #website-preview-link.profile-upgrade-cta{background:#0ccfbd!important;border-color:#0ccfbd!important;color:#05110f!important;font-weight:950!important}
 `;
 document.head.appendChild(style);
 
@@ -21,7 +24,32 @@ const normalizeType = type => type === 'fan' ? 'Scene Supporter' : (type || 'mem
 const formatDate = timestamp => !timestamp?.toDate ? 'Just now' : new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}).format(timestamp.toDate());
 const followId = (followerId, targetId) => `${followerId}_${targetId}`;
 const favoriteId = (userId, targetId) => `${userId}_${targetId}`;
-const ownsLoadedProfile = () => Boolean(currentUser && loadedProfile && (currentUser.uid === profileId || loadedProfile.ownerId === currentUser.uid));
+const ownsLoadedProfile = () => Boolean(currentUser && loadedProfile && (currentUser.uid === profileId || loadedProfile.ownerId === currentUser.uid || loadedProfile.userId === currentUser.uid || loadedProfile.uid === currentUser.uid));
+const websiteActive = () => {
+  if (!loadedProfile) return false;
+  if (profileId === PILOT_PROFILE) return true;
+  const status = String(loadedProfile.websitePlanStatus || loadedProfile.artistPlan?.status || '').toLowerCase();
+  return loadedProfile.websiteEnabled === true && ACTIVE_WEBSITE_STATUSES.has(status);
+};
+
+function updateWebsiteAction() {
+  const link = document.getElementById('website-preview-link');
+  if (!link || !loadedProfile || !profileId) return;
+  const artist = ['band','musician'].includes(String(loadedProfile.accountType || '').toLowerCase());
+  if (!artist) { link.hidden = true; return; }
+  link.href = `website.html?id=${encodeURIComponent(profileId)}`;
+  if (ownsLoadedProfile()) {
+    const active = websiteActive();
+    link.hidden = false;
+    link.textContent = active ? 'View Website' : 'Upgrade: Website + Merch';
+    link.classList.toggle('profile-upgrade-cta', !active);
+    link.title = active ? 'Open your artist website' : 'Unlock your website and merch storefront';
+  } else {
+    link.hidden = !websiteActive();
+    link.textContent = 'View Website';
+    link.classList.remove('profile-upgrade-cta');
+  }
+}
 
 async function waitForProfile() {
   if (!profileId) return;
@@ -33,6 +61,7 @@ async function waitForProfile() {
   const snap = await getDoc(doc(db,'profiles',profileId));
   if (!snap.exists()) return;
   loadedProfile = { id: snap.id, ...snap.data() };
+  updateWebsiteAction();
   installActions();
   installPosts();
 }
