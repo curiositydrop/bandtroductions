@@ -431,7 +431,9 @@ function populateStoreForm() {
 }
 
 function renderStoreApplication(status) {
-  storeForm.hidden = false;
+  // Existing stores stay collapsed by default so artists don't think these
+  // details must be re-saved every time they manage merchandise.
+  storeForm.hidden = Boolean(ownedStore);
   requestStoreButton.textContent = ownedStore ? 'SAVE STORE DETAILS' : 'SUBMIT STORE';
   populateStoreForm();
 
@@ -478,7 +480,10 @@ async function requestStore(event) {
     await loadOwnerState(currentUser);
     const checkoutUrl = storeSubscriptionCheckoutUrl();
     if (checkoutUrl && !ACTIVE_STATUSES.has(status)) location.href = checkoutUrl;
-    else setOwnerMessage(ACTIVE_STATUSES.has(status) ? 'Store details saved.' : 'Store submitted. Add your merchandise below while it awaits approval.');
+    else {
+      if (ownedStore) storeForm.hidden = true;
+      setOwnerMessage(ACTIVE_STATUSES.has(status) ? 'Store details saved.' : 'Store submitted. Add your merchandise below while it awaits approval.');
+    }
   } catch (error) {
     console.error(error);
     const callableMessage = String(error?.message || '').replace(/^Firebase(?:Error)?:\s*/i, '').replace(/\s*\([^)]*\)\.?$/, '').trim();
@@ -680,6 +685,15 @@ async function loadOwnerState(user) {
     const status = ownedStore?.subscriptionStatus || 'not_started';
 
     renderStoreApplication(status);
+
+    if (ownedStore) {
+      ownerActions.appendChild(createActionButton('EDIT STORE DETAILS', () => {
+        storeForm.hidden = false;
+        populateStoreForm();
+        setOwnerMessage('Edit your store details, then save when you are finished.');
+        storeForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 'button secondary'));
+    }
 
     if (ACTIVE_STATUSES.has(status)) {
       const viewStore = document.createElement('a');
