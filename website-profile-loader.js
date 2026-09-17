@@ -30,6 +30,54 @@ function withPilotMedia(snapshot,profileId){
  if(profile===original)return snapshot;
  return {...snapshot,exists:()=>true,data:()=>profile};
 }
+
+// The merch editor is the same storefront manager used by the public Merch Hub,
+// but when it is embedded inside an artist's website editor it should look like
+// part of that editor — not like a second BANDtroductions page inside the site.
+function cleanEmbeddedMerchFrame(frame){
+ if(!frame)return;
+ const apply=()=>{
+  try{
+   const doc=frame.contentDocument;
+   if(!doc?.head)return;
+   if(!doc.getElementById('bt-embedded-merch-style')){
+    const style=doc.createElement('style');
+    style.id='bt-embedded-merch-style';
+    style.textContent=`
+      .market-header,.platform-hero,#band-marketplace,#selected-store,.seller-intro,.market-disclaimer,footer{display:none!important}
+      html,body{background:#0b100f!important}
+      .merch-shell{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
+      main{padding:0!important}
+      #sell-merch{margin:0!important;padding:10px 8px 24px!important;border:0!important;background:transparent!important;box-shadow:none!important}
+      #owner-panel{margin:0!important;padding:0!important;border-top:0!important}
+      #owner-panel>h3{margin-top:0!important}
+      .store-form,.product-editor{background:#090c0c!important}
+    `;
+    doc.head.appendChild(style);
+   }
+   frame.style.background='#0b100f';
+  }catch(error){
+   console.warn('Could not simplify embedded merch manager:',error);
+  }
+ };
+ if(frame.dataset.btMerchClean!=='1'){
+  frame.dataset.btMerchClean='1';
+  frame.addEventListener('load',apply);
+ }
+ apply();
+}
+function watchEmbeddedMerchManager(){
+ const scan=()=>document.querySelectorAll('.editor-merch-frame').forEach(cleanEmbeddedMerchFrame);
+ scan();
+ const observer=new MutationObserver(scan);
+ observer.observe(document.documentElement,{childList:true,subtree:true});
+ window.addEventListener('pagehide',()=>observer.disconnect(),{once:true});
+}
+if(typeof document!=='undefined'){
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watchEmbeddedMerchManager,{once:true});
+ else watchEmbeddedMerchManager();
+}
+
 export async function loadWebsiteProfile(read,{sdkTimeout=4500,fetchTimeout=12000,profileId,fetcher=fetch}={}){
  try{
   const snapshot=await deadline(Promise.resolve().then(read),sdkTimeout);
