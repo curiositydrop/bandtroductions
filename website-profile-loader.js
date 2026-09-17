@@ -1,4 +1,4 @@
-import { seedVenomousPilotMedia, installVenomousPilotPlayer, installVenomousPilotEditorHints } from './venomous-pilot-media.js?v=2';
+import { seedVenomousPilotMedia, installVenomousPilotPlayer, installVenomousPilotEditorHints, installVenomousPilotPageVisibility } from './venomous-pilot-media.js?v=3';
 
 // Public website reads only. Uses existing Firestore rules; no credentials or writes.
 function decode(value){
@@ -18,7 +18,8 @@ function withPilotMedia(snapshot,profileId){
  const original=snapshot.data();
  const profile=seedVenomousPilotMedia(original,profileId);
  installVenomousPilotPlayer(profileId);
- installVenomousPilotEditorHints(profileId);
+ installVenomousPilotEditorHints(profileId,profile);
+ installVenomousPilotPageVisibility(profileId,profile);
  if(profile===original)return snapshot;
  return {...snapshot,exists:()=>true,data:()=>profile};
 }
@@ -39,7 +40,8 @@ export async function loadWebsiteProfile(read,{sdkTimeout=4500,fetchTimeout=1200
    if(profile.published!==true)return {exists:()=>false};
    const seeded=seedVenomousPilotMedia(profile,profileId);
    installVenomousPilotPlayer(profileId);
-   installVenomousPilotEditorHints(profileId);
+   installVenomousPilotEditorHints(profileId,seeded);
+   installVenomousPilotPageVisibility(profileId,seeded);
    return {exists:()=>true,data:()=>seeded};
   }finally{clearTimeout(timer);controller.abort();}
  }
