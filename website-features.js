@@ -124,19 +124,21 @@ export function mountWebsiteTools({container,profileId,profile,user,canEdit}){
  function input(form,key,label,type='text',required=false,initial=''){
   const wrap=make('label',label),field=make('input');field.name=key;field.type=type;field.required=required;field.value=initial;if(type==='text'||type==='url'||type==='email')field.maxLength=1000;wrap.append(field);form.querySelector('.ws-form-grid').append(wrap);return field;
  }
- for(const [key,label,type,req] of [['title','Show title','text',true],['date','Date','date',true],['time','Time (venue local)','time',true],['venue','Venue','text',true],['location','City / state','text',true],['price','Admission price','text',false],['ticketUrl','Ticket link','url',false],['donateUrl','Support link','url',false],['imageUrl','Flyer image URL','url',false]])input(showForm,key,label,type,req);
+ for(const [key,label,type,req] of [['title','Show title','text',true],['date','Date','date',true],['time','Time (venue local)','time',true],['venue','Venue','text',true],['location','City / state','text',true],['price','Admission price','text',false],['ticketUrl','Ticket link','url',false],['donateUrl','Support link','url',false]])input(showForm,key,label,type,req);
+ const flyerInput=input(showForm,'flyerFile','Flyer image (JPG, PNG, WebP; under 10 MB)','file',false);flyerInput.accept='image/jpeg,image/png,image/webp';
  const ageWrap=make('label','Age restriction'),age=make('select');age.name='age';age.required=true;
  for(const text of ['All ages','21+']){const option=make('option',text);option.value=text;age.append(option);}ageWrap.append(age);showForm.querySelector('.ws-form-grid').append(ageWrap);
  let editing=null,editRevision=null,showBusy=false,songBusy=false,disposed=false;
  const showStatus=showForm.querySelector('.ws-form-status');
  async function verify(){if(disposed||auth.currentUser?.uid!==user.uid)throw new Error('Your sign-in changed. Reload before saving.');const s=await getDoc(doc(db,'profiles',profileId));if(!s.exists()||!canEdit(user,s.data(),profileId))throw new Error('Only this profile’s owner or an administrator can save.');return s.data();}
  const revision=p=>p.updatedAt?.toMillis?.()||p.createdAt?.toMillis?.()||0;
- function clearShow(){showForm.reset();editing=null;editRevision=null;showForm.querySelector('[type=submit]').textContent='Publish show';showForm.querySelector('.ws-remove-show').hidden=true;}
+ function clearShow(){showForm.reset();editing=null;editRevision=null;showForm.dataset.existingImageUrl='';showForm.querySelector('[type=submit]').textContent='Publish show';showForm.querySelector('.ws-remove-show').hidden=true;}
  function drawList(){
   const list=tools.querySelector('.ws-show-list');list.replaceChildren();
   currentShows.forEach(p=>{const e=eventData(p),b=make('button',e.date+' · '+e.title,'button secondary');b.type='button';b.disabled=showBusy;b.onclick=()=>{
    if(showBusy)return;clearShow();editing=p;editRevision=revision(p);
-   for(const key of ['title','date','time','venue','location','price','ticketUrl','donateUrl','imageUrl','details'])value(showForm,key).value=e[key]||'';
+   for(const key of ['title','date','time','venue','location','price','ticketUrl','donateUrl','details'])value(showForm,key).value=e[key]||'';
+   showForm.dataset.existingImageUrl=e.imageUrl||'';
    if(!['All ages','21+'].includes(e.age)){age.value='';showStatus.textContent='Choose All ages or 21+ before saving this existing show.';}else{age.value=e.age;showStatus.textContent='Editing this show updates Social and Upcoming Shows too.';}
    showForm.querySelector('[type=submit]').textContent='Save show changes';showForm.querySelector('.ws-remove-show').hidden=false;
   };list.append(b);});
@@ -150,9 +152,21 @@ export function mountWebsiteTools({container,profileId,profile,user,canEdit}){
   showBusy=true;showForm.querySelector('fieldset').disabled=true;drawList();
   try{
    await verify();const id=editing?.id||doc(collection(db,'posts')).id;
-   const e={};for(const key of ['title','date','time','venue','location','price','ticketUrl','donateUrl','imageUrl','details','age'])e[key]=value(showForm,key).value.trim();
+   const e={};for(const key of ['title','date','time','venue','location','price','ticketUrl','donateUrl','details','age'])e[key]=value(showForm,key).value.trim();
    if(!unpublish&&(!validDay(e.date)||!['All ages','21+'].includes(e.age)))throw new Error('Choose a valid show date and age restriction.');
-   for(const key of ['ticketUrl','donateUrl','imageUrl'])if(e[key]&&!web(e[key]))throw new Error('Use a full https:// or http:// link.');
+   for(const key of ['ticketUrl','donateUrl'])if(e[key]&&!web(e[key]))throw new Error('Use a full https:// or http:// link.');
+   e.imageUrl=showForm.dataset.existingImageUrl||'';
+   if(!unpublish){
+    const flyer=value(showForm,'flyerFile').files?.[0];
+    if(flyer){
+     if(!['image/jpeg','image/png','image/webp'].includes(flyer.type)||flyer.size<=0||flyer.size>=10*1024*1024)throw new Error('Choose a JPG, PNG or WebP flyer smaller than 10 MB.');
+     showStatus.textContent='Uploading show flyer…';
+     const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[flyer.type];
+     const flyerRef=ref(storage,'show-flyers/'+user.uid+'/'+profileId+'-'+id+'-'+crypto.randomUUID()+'.'+ext);
+     await uploadBytes(flyerRef,flyer,{contentType:flyer.type,customMetadata:{ownerId:user.uid,websiteProfileId:profileId,showId:id}});
+     e.imageUrl=await getDownloadURL(flyerRef);
+    }
+   }
    e.profileUrl=new URL('profile.html?id='+encodeURIComponent(profileId),location.href).href;
    const summary=[e.title,e.venue&&'at '+e.venue,e.location&&'in '+e.location].filter(Boolean).join(' ');
    const update={event:e,eventDate:e.date,showDate:e.date,content:summary+(e.details?'\n\n'+e.details:''),linkUrl:e.ticketUrl,imageUrl:e.imageUrl,websiteProfileId:profileId,published:!unpublish,updatedAt:serverTimestamp()};
