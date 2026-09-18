@@ -35,7 +35,7 @@ export function normalizeSettings(input={}){
  for(const k of ['bannerImageUrl','imageUrl','backgroundImageUrl']){const v=safeButtonUrl(input[k]);if(v&&/^https?:/.test(v))settings[k]=v;}
  return {...settings,...normalizeMedia(input),bandMembers:normalizeMembers(input.bandMembers)};
 }
-export function websiteProfile(profile,settings){const s=normalizeSettings(settings);return {...profile,mediaLink:'',additionalMedia:websiteVideos(profile,s),mediaItems:(profile.mediaItems||[]).filter(i=>i?.type==='image'),...(s.bannerImageUrl?{bannerImageUrl:s.bannerImageUrl}:{}),...(s.imageUrl?{imageUrl:s.imageUrl}:{})};}
+export function websiteProfile(profile,settings){const s=normalizeSettings(settings);return {...profile,tagline:s.tagline,mediaLink:'',additionalMedia:websiteVideos(profile,s),mediaItems:(profile.mediaItems||[]).filter(i=>i?.type==='image'),...(s.bannerImageUrl?{bannerImageUrl:s.bannerImageUrl}:{}),...(s.imageUrl?{imageUrl:s.imageUrl}:{})};}
 export function applyWebsiteStyle(input,profile={}){
  const s=normalizeSettings(input),root=document.documentElement,el=id=>document.getElementById(id);applyMedia(s,{},profile);renderMembers(s);
  for(const [key,value] of Object.entries(s.theme))root.style.setProperty(`--site-${key}`,value);root.style.setProperty('--site-page-bg-image',s.backgroundImageUrl?`url("${s.backgroundImageUrl}")`:'none');root.style.setProperty('--site-hero-brightness',String(s.heroBrightness));root.style.setProperty('--site-hero-position-x',s.heroPosition.x+'%');root.style.setProperty('--site-hero-position-y',s.heroPosition.y+'%');
