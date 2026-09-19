@@ -21,6 +21,8 @@ const MAX_PRODUCTS = 20;
 const ACTIVE_STATUSES = new Set(['active', 'trialing', 'comped']);
 const PRODUCT_EDIT_STATUSES = new Set(['pending', 'active', 'trialing', 'comped', 'past_due', 'paused']);
 const MERCH_PROFILE_TYPES = new Set(['band', 'musician']);
+// Keep the old testing storefront available in Firestore, but hide it from the public marketplace.
+const HIDDEN_PUBLIC_STORE_NAMES = new Set(['test band.']);
 const functions = getFunctions(app, 'us-central1');
 const saveMerchStoreRequest = httpsCallable(functions, 'saveMerchStoreRequest');
 // Website + Merch uses the same live checkout as the artist upgrade flow.
@@ -340,7 +342,7 @@ function renderAdminStorePreview() {
 
 onSnapshot(query(collection(db, 'merchStorefronts'), where('published', '==', true)), snapshot => {
   const liveStores = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
-    .filter(store => store.published === true && store.storeKind !== 'business')
+    .filter(store => store.published === true && store.storeKind !== 'business' && !HIDDEN_PUBLIC_STORE_NAMES.has(String(store.bandName || '').trim().toLowerCase()))
     .sort((a, b) => (a.bandName || '').localeCompare(b.bandName || ''));
   publicStores = fillStoreRow(liveStores);
   renderBandStores();
