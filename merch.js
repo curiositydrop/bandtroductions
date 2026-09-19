@@ -23,9 +23,9 @@ const PRODUCT_EDIT_STATUSES = new Set(['pending', 'active', 'trialing', 'comped'
 const MERCH_PROFILE_TYPES = new Set(['band', 'musician']);
 const functions = getFunctions(app, 'us-central1');
 const saveMerchStoreRequest = httpsCallable(functions, 'saveMerchStoreRequest');
-// Replace these three placeholders when the live recurring checkout,
-// platform-product checkout, and customer billing portal links are ready.
-const STORE_SUBSCRIPTION_CHECKOUT_URL = 'https://buy.stripe.com/4gM8wI94qccabjzaOL6oo0e';
+// Website + Merch uses the same live checkout as the artist upgrade flow.
+// Platform-product checkout and the customer billing portal are still separate.
+const STORE_SUBSCRIPTION_CHECKOUT_URL = 'https://buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g';
 const PLATFORM_HOODIE_CHECKOUT_URL = '';
 const BILLING_PORTAL_URL = '';
 
@@ -434,7 +434,7 @@ function renderStoreApplication(status) {
   // Existing stores stay collapsed by default so artists don't think these
   // details must be re-saved every time they manage merchandise.
   storeForm.hidden = Boolean(ownedStore);
-  requestStoreButton.textContent = ownedStore ? 'SAVE STORE DETAILS' : 'SUBMIT STORE';
+  requestStoreButton.textContent = ownedStore ? 'SAVE STORE DETAILS' : 'UPGRADE WEBSITE + MERCH';
   populateStoreForm();
 
   if (isAdminManagingStore()) {
