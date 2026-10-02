@@ -27,7 +27,7 @@
   <script type="module">
     import { auth, db } from './firebase-dev.js';
     import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-    import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+    import { doc, getDoc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
     const params = new URLSearchParams(location.search);
     const requestedReturn = params.get('returnTo') || '';
@@ -77,6 +77,19 @@
           emailInput.value.trim(),
           document.getElementById('password').value
         );
+
+        try {
+          if (localStorage.getItem('btWelcomeV2Presented') === '2') {
+            await setDoc(doc(db, 'users', credential.user.uid), {
+              welcomeIntroVersion: 2,
+              welcomeIntroSeenAt: serverTimestamp()
+            }, { merge: true });
+            localStorage.setItem('btWelcomeV2MemberSeen', '2');
+            localStorage.removeItem('btWelcomeV2Presented');
+          }
+        } catch (welcomeStateError) {
+          console.warn('Could not save welcome state after login.', welcomeStateError);
+        }
 
         // If the member created an account but never finished their public profile,
         // always resume onboarding before sending them into the rest of the site.
