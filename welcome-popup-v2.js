@@ -33,8 +33,8 @@ function styles(){
   style.textContent=`
   :root{--btw2-teal:#2bded8;--btw2-teal2:#6feee8}
   .bt-w2-overlay{position:fixed;inset:0;z-index:120000;display:grid;place-items:center;padding:8px;background:rgba(0,0,0,.46);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-  .bt-w2-card{position:relative;width:min(calc(100vw - 14px),calc((100dvh - 14px)*.60));aspect-ratio:795/1325;max-height:calc(100dvh - 14px);border:2px solid rgba(43,222,216,.78);border-radius:24px;overflow:hidden;background:linear-gradient(180deg,rgba(1,7,8,.03) 0%,rgba(1,7,8,.04) 30%,rgba(1,7,8,.5) 48%,rgba(1,7,8,.91) 68%,rgba(1,7,8,.97) 100%),url("bt-wide-crowd.jpg?v=20260907b") center 15%/cover no-repeat;box-shadow:0 18px 60px rgba(0,0,0,.72),0 0 22px rgba(43,222,216,.13)}
-  .bt-w2-card:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 0 33%,rgba(0,0,0,.02) 39%,rgba(0,0,0,.32) 49%,rgba(0,0,0,.82) 63%,rgba(0,0,0,.95) 100%)}
+  .bt-w2-card{position:relative;width:min(calc(100vw - 14px),calc((100dvh - 14px)*.60));aspect-ratio:795/1325;max-height:calc(100dvh - 14px);border:2px solid rgba(43,222,216,.78);border-radius:24px;overflow:hidden;background:linear-gradient(180deg,rgba(1,7,8,.00) 0%,rgba(1,7,8,.02) 29%,rgba(1,7,8,.18) 42%,rgba(1,7,8,.62) 55%,rgba(1,7,8,.91) 69%,rgba(1,7,8,.97) 100%),url("bt-hero-concert.jpg") center 20%/cover no-repeat;box-shadow:0 18px 60px rgba(0,0,0,.72),0 0 22px rgba(43,222,216,.13)}
+  .bt-w2-card:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 0 38%,rgba(0,0,0,.04) 43%,rgba(0,0,0,.28) 51%,rgba(0,0,0,.74) 64%,rgba(0,0,0,.94) 100%)}
   .bt-w2-close{position:absolute;right:2%;top:1.7%;z-index:5;width:49px;height:49px;border-radius:50%;border:2px solid var(--btw2-teal);background:rgba(0,7,8,.38);color:#fff;font:700 32px/1 Arial;cursor:pointer}
   .bt-w2-inner{position:absolute;inset:0;z-index:2;padding:4.3% 4.4% 2.6%;display:flex;flex-direction:column}
   .bt-w2-brandrow{display:flex;align-items:center;justify-content:center;gap:10px}
