@@ -31,44 +31,47 @@ function styles(){
   const style=document.createElement('style');
   style.id='bt-welcome-v2-style';
   style.textContent=`
-  .bt-w2-overlay{position:fixed;inset:0;z-index:120000;display:grid;place-items:center;padding:10px;background:rgba(0,0,0,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-  .bt-w2-card{position:relative;width:min(680px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow:hidden;border:1.5px solid #25c7c1;border-radius:22px;background:#041011;box-shadow:0 22px 70px #000d,0 0 24px #25c7c12e}
-  .bt-w2-close{position:absolute;right:12px;top:10px;z-index:4;width:38px;height:38px;border-radius:50%;border:1px solid #25c7c1;background:#071516;color:#fff;font:700 25px/1 Arial;cursor:pointer}
-  .bt-w2-hero{padding:20px 20px 14px;text-align:center;background:linear-gradient(180deg,rgba(1,8,9,.24),rgba(1,8,9,.92)),url("bt-hero-horns-user.jpg?v=20260907c") center/cover no-repeat}
-  .bt-w2-logo{width:70px;height:70px;object-fit:contain;display:block;margin:0 auto 4px}
-  .bt-w2-brand{margin:0;color:#fff;font-size:clamp(31px,7vw,54px);font-weight:1000;letter-spacing:-.045em;line-height:.98}.bt-w2-brand span{color:#25c7c1}
-  .bt-w2-tag{margin:7px 0 0;color:#78fff8;font-weight:900;font-size:clamp(11px,2.7vw,15px)}
-  .bt-w2-copy{max-width:590px;margin:14px auto 0;color:#eef5f4;font-size:clamp(12px,2.6vw,16px);line-height:1.45}.bt-w2-copy strong{color:#4ce1da}
-  .bt-w2-actions{display:grid;gap:8px;margin:15px auto 0;max-width:470px}
-  .bt-w2-btn{display:flex;align-items:center;justify-content:center;min-height:43px;padding:9px 14px;border:1px solid #25c7c1;border-radius:8px;background:#071213;color:#fff;text-decoration:none;font:900 clamp(11px,2.7vw,14px)/1.1 Arial;cursor:pointer}
-  .bt-w2-btn.primary{background:#25c7c1;color:#031110}.bt-w2-btn:hover{filter:brightness(1.08)}
-  .bt-w2-upgrade{margin:9px auto 0;min-height:36px;width:min(330px,88%);border-radius:999px;color:#dffffd}
-  .bt-w2-swipe-label{margin:10px 0 7px;text-align:center;color:#6ce8e2;font-size:10px;font-weight:900;letter-spacing:.04em}
-  .bt-w2-cards{display:flex;gap:9px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 14px 15px}.bt-w2-cards::-webkit-scrollbar{display:none}
-  .bt-w2-feature{flex:0 0 min(31%,175px);min-width:142px;scroll-snap-align:start;border:1px solid #25c7c17a;border-radius:13px;overflow:hidden;background:#071111;pointer-events:none}
-  .bt-w2-feature-art{height:78px;background:linear-gradient(180deg,#0001,#0008),url("bt-wide-crowd.jpg?v=20260907b") center/cover no-repeat}
-  .bt-w2-feature:nth-child(2) .bt-w2-feature-art{background-image:linear-gradient(180deg,#0001,#0008),url("bt-hero-concert.jpg")}
-  .bt-w2-feature:nth-child(3) .bt-w2-feature-art{background-image:linear-gradient(180deg,#0001,#0008),url("bt-shows-crowd.jpg?v=20260907b")}
-  .bt-w2-feature:nth-child(4) .bt-w2-feature-art{background-image:linear-gradient(180deg,#0001,#0008),url("bt-header-stage-clean.webp?v=20260907-header11")}
-  .bt-w2-feature:nth-child(5) .bt-w2-feature-art{background-image:linear-gradient(180deg,#0001,#0008),url("bt-radio-speaker-frame.webp?v=20260907-radio2")}
-  .bt-w2-feature:nth-child(6) .bt-w2-feature-art{background-image:linear-gradient(180deg,#0001,#0008),url("bt-wide-crowd.jpg?v=20260907b")}
-  .bt-w2-feature-body{padding:8px 8px 10px}.bt-w2-feature b{display:block;color:#fff;font-size:12px;margin-bottom:3px}.bt-w2-feature span{display:block;color:#aebbbb;font-size:9px;line-height:1.3}
+  :root{--btw2-teal:#2bded8;--btw2-teal2:#6feee8}
+  .bt-w2-overlay{position:fixed;inset:0;z-index:120000;display:grid;place-items:center;padding:8px;background:rgba(0,0,0,.46);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .bt-w2-card{position:relative;width:min(calc(100vw - 14px),calc((100dvh - 14px)*.60));aspect-ratio:795/1325;max-height:calc(100dvh - 14px);border:2px solid rgba(43,222,216,.78);border-radius:24px;overflow:hidden;background:linear-gradient(180deg,rgba(1,7,8,.03) 0%,rgba(1,7,8,.04) 30%,rgba(1,7,8,.5) 48%,rgba(1,7,8,.91) 68%,rgba(1,7,8,.97) 100%),url("bt-wide-crowd.jpg?v=20260907b") center 15%/cover no-repeat;box-shadow:0 18px 60px rgba(0,0,0,.72),0 0 22px rgba(43,222,216,.13)}
+  .bt-w2-card:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 0 33%,rgba(0,0,0,.02) 39%,rgba(0,0,0,.32) 49%,rgba(0,0,0,.82) 63%,rgba(0,0,0,.95) 100%)}
+  .bt-w2-close{position:absolute;right:2%;top:1.7%;z-index:5;width:49px;height:49px;border-radius:50%;border:2px solid var(--btw2-teal);background:rgba(0,7,8,.38);color:#fff;font:700 32px/1 Arial;cursor:pointer}
+  .bt-w2-inner{position:absolute;inset:0;z-index:2;padding:4.3% 4.4% 2.6%;display:flex;flex-direction:column}
+  .bt-w2-brandrow{display:flex;align-items:center;justify-content:center;gap:10px}
+  .bt-w2-logo{width:11.5%;max-width:86px;object-fit:contain}
+  .bt-w2-brand{margin:0;color:#fff;font-size:clamp(30px,7vw,73px);font-weight:900;letter-spacing:-3px;white-space:nowrap;line-height:.95}.bt-w2-brand span{color:var(--btw2-teal)}
+  .bt-w2-tag{margin:.65% 0 0;text-align:center;color:#61e8e2;font-weight:800;font-size:clamp(11px,2.45vw,24px)}
+  .bt-w2-hero-gap{flex:0 0 20.5%}
+  .bt-w2-copy{max-width:84%;margin:0 auto;text-align:center;color:#f3f6f6;font-size:clamp(12px,2.35vw,26px);line-height:1.46;text-shadow:0 2px 8px #000}.bt-w2-copy strong{color:var(--btw2-teal2)}
+  .bt-w2-actions{width:82%;margin:3% auto 0;display:grid;gap:10px}
+  .bt-w2-btn{min-height:57px;border-radius:17px;border:2px solid rgba(43,222,216,.82);background:rgba(1,8,9,.74);color:#fff;display:grid;grid-template-columns:42px 1fr 20px;align-items:center;padding:0 18px;font:900 clamp(14px,2.5vw,26px)/1.1 Arial;text-decoration:none;cursor:pointer;text-align:center}
+  .bt-w2-btn.primary{background:linear-gradient(180deg,#58eeea,#27d8d2);color:#031111;border-color:#7cf4ef}.bt-w2-btn:hover{filter:brightness(1.06)}
+  .bt-w2-btn-icon{font-size:1.05em}.bt-w2-btn-arrow{font-size:1.3em}
+  .bt-w2-upgrade{display:block;margin:.8% auto 0;padding:5px 14px;border:1.5px solid rgba(43,222,216,.82);border-radius:999px;background:rgba(1,8,9,.55);color:#fff;font:900 clamp(10px,1.8vw,16px)/1.1 Arial;cursor:pointer}
+  .bt-w2-eq{display:flex;align-items:center;justify-content:center;gap:5px;margin:1.4% 0 .4%}.bt-w2-eq:before,.bt-w2-eq:after{content:"";height:1px;width:31%;background:rgba(255,255,255,.25)}.bt-w2-eq i{display:block;width:4px;background:var(--btw2-teal);border-radius:3px}.bt-w2-eq i:nth-child(1){height:13px}.bt-w2-eq i:nth-child(2){height:22px}.bt-w2-eq i:nth-child(3){height:11px}
+  .bt-w2-swipe-label{text-align:center;font-size:clamp(10px,1.8vw,17px);color:#dbe7e6;margin-bottom:1.2%}.bt-w2-swipe-label span{color:var(--btw2-teal);padding:0 5%;font-size:1.4em}
+  .bt-w2-cards{display:flex;gap:10px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-top:auto;padding:0 1px 1px}.bt-w2-cards::-webkit-scrollbar{display:none}
+  .bt-w2-feature{flex:0 0 31.5%;min-width:138px;scroll-snap-align:start;border:1.5px solid rgba(43,222,216,.8);border-radius:16px;overflow:hidden;background:rgba(2,9,10,.89);pointer-events:none}
+  .bt-w2-feature-art{height:43%;min-height:78px;background-size:cover;background-position:center}
+  .bt-w2-feature:nth-child(1) .bt-w2-feature-art{background-image:url("bt-hero-concert.jpg")}
+  .bt-w2-feature:nth-child(2) .bt-w2-feature-art{background-image:url("bt-radio-stage.jpg")}
+  .bt-w2-feature:nth-child(3) .bt-w2-feature-art{background-image:url("bt-shows-crowd.jpg?v=20260907b")}
+  .bt-w2-feature:nth-child(4) .bt-w2-feature-art{background-image:url("bt-header-stage-clean.webp?v=20260907-header11")}
+  .bt-w2-feature:nth-child(5) .bt-w2-feature-art{background-image:url("bt-radio-speaker-frame.webp?v=20260907-radio2")}
+  .bt-w2-feature:nth-child(6) .bt-w2-feature-art{background-image:url("bt-wide-crowd.jpg?v=20260907b")}
+  .bt-w2-feature-body{position:relative;padding:0 8% 8%}.bt-w2-feature-icon{width:42px;height:42px;margin-top:-21px;margin-bottom:6px;border:2px solid var(--btw2-teal);border-radius:50%;display:grid;place-items:center;background:#061011;color:#fff;font-size:20px}.bt-w2-feature b{display:block;color:#fff;font-size:clamp(11px,2.3vw,21px);margin:0 0 6px}.bt-w2-feature span{display:block;color:#e0e9e8;font-size:clamp(8px,1.5vw,14px);line-height:1.35}
+  .bt-w2-dots{display:flex;justify-content:center;gap:9px;padding-top:1.3%}.bt-w2-dot{width:10px;height:10px;border-radius:50%;background:#5f6a69}.bt-w2-dot.active{background:var(--btw2-teal)}
   .bt-w2-info{position:fixed;inset:0;z-index:120010;display:none;place-items:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
   .bt-w2-info.is-open{display:grid}.bt-w2-info-card{width:min(440px,94vw);max-height:90dvh;overflow:auto;border:1.5px solid #25c7c1;border-radius:20px;background:#061112;box-shadow:0 18px 60px #000b;padding:21px}
   .bt-w2-info-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.bt-w2-info h2{margin:0;color:#67e8e2;font-size:23px}.bt-w2-info-x{width:36px;height:36px;border-radius:50%;border:1px solid #25c7c1;background:#061112;color:#fff;font-size:23px;cursor:pointer}
-  .bt-w2-info-copy{color:#d8e2e1;font-size:13px;line-height:1.48}
-  .bt-w2-info-list{display:grid;gap:7px}.bt-w2-info-item{padding:9px 10px;border:1px solid #25c7c138;border-radius:10px;background:#0b1919}.bt-w2-info-item b{display:block;font-size:12px}.bt-w2-info-item span{display:block;margin-top:2px;color:#9fb0ae;font-size:11px;line-height:1.35}
-  .bt-w2-info-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:13px;border-top:1px solid #25c7c136}.bt-w2-price{font-size:20px;font-weight:1000}.bt-w2-price small{display:block;color:#91a3a1;font-size:9px;font-weight:700}
-  .bt-w2-info-actions{display:flex;gap:7px}.bt-w2-mini{white-space:nowrap;border:1px solid #25c7c1;border-radius:999px;padding:9px 12px;font-size:11px;font-weight:900;cursor:pointer}.bt-w2-mini.secondary{background:transparent;color:#dffffd}.bt-w2-mini.primary{background:#25c7c1;color:#031110}
-  @media(max-height:760px){.bt-w2-hero{padding:12px 16px 8px}.bt-w2-logo{width:48px;height:48px}.bt-w2-copy{margin-top:8px}.bt-w2-actions{margin-top:9px;gap:5px}.bt-w2-btn{min-height:34px;padding:6px 10px}.bt-w2-upgrade{min-height:30px;margin-top:6px}.bt-w2-swipe-label{margin:6px 0 4px}.bt-w2-feature-art{height:58px}.bt-w2-cards{padding-bottom:9px}}
-  @media(max-width:520px){.bt-w2-feature{flex-basis:31%;min-width:126px}.bt-w2-info-footer{align-items:flex-end}.bt-w2-info-actions{gap:5px}.bt-w2-mini{padding:8px 10px;font-size:10px}}
+  .bt-w2-info-copy{color:#d8e2e1;font-size:13px;line-height:1.48}.bt-w2-info-list{display:grid;gap:7px}.bt-w2-info-item{padding:9px 10px;border:1px solid #25c7c138;border-radius:10px;background:#0b1919}.bt-w2-info-item b{display:block;font-size:12px}.bt-w2-info-item span{display:block;margin-top:2px;color:#9fb0ae;font-size:11px;line-height:1.35}
+  .bt-w2-info-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:13px;border-top:1px solid #25c7c136}.bt-w2-price{font-size:20px;font-weight:1000}.bt-w2-price small{display:block;color:#91a3a1;font-size:9px;font-weight:700}.bt-w2-info-actions{display:flex;gap:7px}.bt-w2-mini{white-space:nowrap;border:1px solid #25c7c1;border-radius:999px;padding:9px 12px;font-size:11px;font-weight:900;cursor:pointer}.bt-w2-mini.secondary{background:transparent;color:#dffffd}.bt-w2-mini.primary{background:#25c7c1;color:#031110}
+  @media(max-width:650px){.bt-w2-card{width:min(calc(100vw - 10px),calc((100dvh - 10px)*.60));max-height:calc(100dvh - 10px)}.bt-w2-close{width:42px;height:42px;font-size:28px}.bt-w2-inner{padding:4.7% 3.4% 2.4%}.bt-w2-brand{font-size:clamp(27px,6.9vw,43px);letter-spacing:-2px}.bt-w2-tag{font-size:clamp(10px,3vw,16px)}.bt-w2-hero-gap{flex-basis:20%}.bt-w2-copy{max-width:90%;font-size:clamp(11px,3vw,16px)}.bt-w2-actions{width:84%;gap:8px}.bt-w2-btn{min-height:49px;border-radius:14px;font-size:clamp(13px,3.5vw,18px);grid-template-columns:31px 1fr 16px;padding:0 13px}.bt-w2-upgrade{font-size:10px}.bt-w2-feature{flex-basis:31%;min-width:120px}.bt-w2-feature-icon{width:38px;height:38px;margin-top:-19px;font-size:18px}.bt-w2-feature b{font-size:clamp(11px,3vw,16px)}.bt-w2-feature span{font-size:clamp(8px,2.2vw,11px)}}
   `;
   document.head.appendChild(style);
   return style;
 }
-
-function feature(title,copy){return `<article class="bt-w2-feature"><div class="bt-w2-feature-art"></div><div class="bt-w2-feature-body"><b>${title}</b><span>${copy}</span></div></article>`; }
-
+function feature(title,copy,icon){return `<article class="bt-w2-feature"><div class="bt-w2-feature-art"></div><div class="bt-w2-feature-body"><div class="bt-w2-feature-icon">${icon}</div><b>${title}</b><span>${copy}</span></div></article>`; }
 function mount(user){
   markPresented();
   document.body.style.overflow='hidden';
@@ -81,28 +84,33 @@ function mount(user){
   overlay.innerHTML=`
     <section class="bt-w2-card">
       <button class="bt-w2-close" type="button" aria-label="Close welcome">×</button>
-      <div class="bt-w2-hero">
-        <img class="bt-w2-logo" src="IMG_9367.png" alt="">
-        <h1 class="bt-w2-brand">BAND<span>troductions</span></h1>
+      <div class="bt-w2-inner">
+        <div class="bt-w2-brandrow">
+          <img class="bt-w2-logo" src="IMG_9367.png" alt="">
+          <h1 class="bt-w2-brand">BAND<span>troductions</span></h1>
+        </div>
         <p class="bt-w2-tag">The Social Platform for Local Music. Everywhere.</p>
+        <div class="bt-w2-hero-gap"></div>
         <p class="bt-w2-copy">Discover independent bands, musicians, venues, music videos, shows, merch, community, radio and band websites — <strong>all in one place.</strong></p>
         <div class="bt-w2-actions">
-          <a class="bt-w2-btn primary" href="signup.html?returnTo=index.html">JOIN THE SCENE — FREE</a>
-          <a class="bt-w2-btn" href="login.html?returnTo=index.html">LOG IN</a>
-          <button class="bt-w2-btn" type="button" data-explore>EXPLORE BANDTRODUCTIONS</button>
+          <a class="bt-w2-btn primary" href="signup.html?returnTo=index.html"><span class="bt-w2-btn-icon">👤+</span><span>JOIN THE SCENE — FREE</span><span class="bt-w2-btn-arrow">›</span></a>
+          <a class="bt-w2-btn" href="login.html?returnTo=index.html"><span class="bt-w2-btn-icon">⇥</span><span>LOG IN</span><span class="bt-w2-btn-arrow">›</span></a>
+          <button class="bt-w2-btn" type="button" data-explore><span class="bt-w2-btn-icon">⌖</span><span>EXPLORE BANDTRODUCTIONS</span><span class="bt-w2-btn-arrow">›</span></button>
         </div>
-        <button class="bt-w2-btn bt-w2-upgrade" type="button" data-upgrade>UPGRADE PROFILE · LEARN MORE</button>
-        <div class="bt-w2-swipe-label">← Swipe to explore features →</div>
+        <button class="bt-w2-upgrade" type="button" data-upgrade>UPGRADE PROFILE · LEARN MORE</button>
+        <div class="bt-w2-eq"><i></i><i></i><i></i></div>
+        <div class="bt-w2-swipe-label"><span>←</span>Swipe to explore features<span>→</span></div>
+        <div class="bt-w2-cards" aria-label="BANDtroductions features">
+          ${feature('Discover Bands','Find new music, follow your favorites and support local talent.','👥')}
+          ${feature('Music Videos','Watch and share local music videos from emerging artists.','▶')}
+          ${feature('Live Shows','Find upcoming shows near you and never miss a performance.','▣')}
+          ${feature('Community','Join the conversation with the local music scene.','💬')}
+          ${feature('BANDtroductions Radio','Hear independent artists while you browse.','♫')}
+          ${feature('Artist Tools','Booking, merch, domains and website tools.','⚙')}
+        </div>
+        <div class="bt-w2-dots"><i class="bt-w2-dot active"></i><i class="bt-w2-dot"></i><i class="bt-w2-dot"></i></div>
       </div>
-      <div class="bt-w2-cards" aria-label="BANDtroductions features">
-        ${feature('Discover Bands','Find independent artists and new music.')}
-        ${feature('Music Videos','Watch performances and artist videos.')}
-        ${feature('Live Shows','See upcoming shows and events.')}
-        ${feature('Community','Join the conversation with the scene.')}
-        ${feature('BANDtroductions Radio','Hear independent artists while you browse.')}
-        ${feature('Artist Tools','Booking, merch, domains and website tools.')}
-      </div>
-    </section>`;
+    </section>`
 
   const info=document.createElement('div');
   info.className='bt-w2-info';
