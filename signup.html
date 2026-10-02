@@ -230,6 +230,25 @@
     };
     const locationValue = () => [value('city'), value('region'), value('country')].filter(Boolean).join(', ');
 
+    function welcomeSeenPatch() {
+      try {
+        return localStorage.getItem('btWelcomeV2Presented') === '2'
+          ? { welcomeIntroVersion: 2, welcomeIntroSeenAt: serverTimestamp() }
+          : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function finishWelcomeLocalState() {
+      try {
+        if (localStorage.getItem('btWelcomeV2Presented') === '2') {
+          localStorage.setItem('btWelcomeV2MemberSeen', '2');
+          localStorage.removeItem('btWelcomeV2Presented');
+        }
+      } catch {}
+    }
+
     function friendlyAuthError(error) {
       return ({
         'auth/email-already-in-use': 'That email already has an account. Log in instead, or change the email above.',
@@ -319,8 +338,10 @@
           adultContentRulesAccepted: true,
           age18Confirmed: true,
           rightsAcknowledgmentAccepted: true,
+          ...welcomeSeenPatch(),
           createdAt: serverTimestamp()
         });
+        finishWelcomeLocalState();
         await createAdminAccountNotification({
           userId: credential.user.uid,
           profileId: credential.user.uid,
@@ -396,8 +417,10 @@
             adultContentRulesAccepted: true,
             age18Confirmed: true,
             rightsAcknowledgmentAccepted: true,
+            ...welcomeSeenPatch(),
             createdAt: serverTimestamp()
           });
+          finishWelcomeLocalState();
           await createAdminAccountNotification({
             userId: createdUser.uid,
             profileId: createdUser.uid,
