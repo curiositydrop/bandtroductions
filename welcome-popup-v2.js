@@ -3,6 +3,11 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/f
 import { doc, getDoc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const WELCOME_VERSION = 2;
+const LEGACY_WELCOME_KEY = 'bandtroductions-welcome-v1';
+
+// v2 permanently replaces the original one-time welcome popup.
+try { localStorage.setItem(LEGACY_WELCOME_KEY, 'seen'); } catch {}
+
 const PRESENTED_KEY = 'btWelcomeV2Presented';
 const MEMBER_DEVICE_KEY = 'btWelcomeV2MemberSeen';
 const params = new URLSearchParams(location.search);
