@@ -106,6 +106,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
   font-size:clamp(12px,2.95vw,18px);line-height:1.42;text-shadow:0 2px 8px #000;
 }
 .desc strong{color:var(--teal2)}
+.desc-tail{white-space:nowrap}
 
 .actions{
   position:absolute;z-index:12;left:10.2%;right:10.2%;top:35.1%;height:18.4%;
@@ -234,7 +235,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;font-family
     </div>
 
     <div class="desc">
-      Discover independent bands, musicians, venues, music videos, shows, merch, community, radio and band websites — <strong>&nbsp;all in one place.</strong>
+      Discover independent bands, musicians, venues, music videos, shows, merch, community, radio and band websites <span class="desc-tail">— <strong>all in one place.</strong></span>
     </div>
 
     <div class="actions">
