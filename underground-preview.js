@@ -28,6 +28,8 @@ const messagesLink = document.getElementById('messages-link') || linkByText('Mes
 const logoutLink = linkByText('Log Out');
 let signedInUser=null;
 let signedInProfile=null;
+let authResolved=false;
+let latestDashboardPosts=[];
 let dashboardTagProfiles=[];
 let dashboardTaggedProfiles=[];
 const adminAvatarFallback='bt-admin-avatar.svg?v=1';
@@ -335,6 +337,64 @@ async function renderOnline(users){
   });
 }
 
+
+function ensureGuestCommunityStyle(){
+  if(document.getElementById('bt-home-community-gate-style'))return;
+  const style=document.createElement('style');
+  style.id='bt-home-community-gate-style';
+  style.textContent=`
+    .feed.bt-community-locked{position:relative;min-height:430px;overflow:hidden}
+    .bt-community-preview{position:relative;min-height:390px;padding:9px}
+    .bt-community-preview-cards{display:grid;gap:9px;filter:blur(5px);opacity:.48;pointer-events:none;user-select:none}
+    .bt-community-preview-card{min-height:105px;border:1px solid #315a57;background:linear-gradient(160deg,#12201f,#090d0d);padding:12px}
+    .bt-community-preview-line{height:9px;margin:8px 0;border-radius:999px;background:#46615f}.bt-community-preview-line.short{width:31%}.bt-community-preview-line.medium{width:67%}.bt-community-preview-line.long{width:92%}
+    .bt-community-gate{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:linear-gradient(180deg,rgba(4,10,11,.24),rgba(4,10,11,.76))}
+    .bt-community-gate-card{width:min(430px,92%);padding:22px 18px;border:1px solid rgba(37,199,193,.78);border-radius:16px;background:rgba(5,14,15,.95);box-shadow:0 16px 45px #0009,0 0 20px rgba(37,199,193,.12);text-align:center}
+    .bt-community-gate-card h4{margin:0 0 8px;color:#57ebe4;font-size:clamp(17px,3vw,24px)}.bt-community-gate-card p{margin:0;color:#d4dfde;font-size:13px;line-height:1.45}
+    .bt-community-gate-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}.bt-community-gate-actions a{padding:9px 13px;border:1px solid #25c7c1;color:#eaffff;text-decoration:none;font-size:11px;font-weight:900}.bt-community-gate-actions a.primary{background:#25c7c1;color:#041111}
+    .bt-hero-guest-note{margin:8px auto 0;color:#e7f8f7;font-size:12px;font-weight:800}.bt-hero-guest-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:10px}.bt-hero-guest-actions .btn{min-width:120px}
+    @media(max-width:650px){.feed.bt-community-locked{min-height:300px}.bt-community-preview{min-height:270px;padding:4px}.bt-community-preview-card{min-height:72px;padding:6px}.bt-community-gate{padding:6px}.bt-community-gate-card{padding:12px 8px}.bt-community-gate-card h4{font-size:11px}.bt-community-gate-card p{font-size:7px}.bt-community-gate-actions{gap:4px;margin-top:8px}.bt-community-gate-actions a{font-size:6px;padding:5px 6px}.bt-hero-guest-note{font-size:7px}.bt-hero-guest-actions{gap:4px;margin-top:6px}.bt-hero-guest-actions .btn{min-width:0}}
+  `;
+  document.head.appendChild(style);
+}
+function renderGuestCommunity(){
+  if(!feed)return;
+  ensureGuestCommunityStyle();
+  feed.classList.add('bt-community-locked');
+  feed.replaceChildren();
+  const heading=document.createElement('h3');heading.textContent='Community Feed';feed.appendChild(heading);
+  const preview=document.createElement('div');preview.className='bt-community-preview';
+  preview.innerHTML=`<div class="bt-community-preview-cards" aria-hidden="true">
+    <div class="bt-community-preview-card"><div class="bt-community-preview-line short"></div><div class="bt-community-preview-line long"></div><div class="bt-community-preview-line medium"></div></div>
+    <div class="bt-community-preview-card"><div class="bt-community-preview-line medium"></div><div class="bt-community-preview-line long"></div><div class="bt-community-preview-line short"></div></div>
+    <div class="bt-community-preview-card"><div class="bt-community-preview-line short"></div><div class="bt-community-preview-line medium"></div><div class="bt-community-preview-line long"></div></div>
+  </div><div class="bt-community-gate"><div class="bt-community-gate-card"><h4>Join the BANDtroductions Community</h4><p>Log in or join the scene free to view posts, react, comment, follow, message and connect with the people behind the music.</p><div class="bt-community-gate-actions"><a href="login.html?returnTo=index.html">LOG IN</a><a class="primary" href="signup.html?returnTo=index.html">JOIN THE SCENE — FREE</a></div></div></div>`;
+  feed.appendChild(preview);
+}
+function renderMemberCommunity(){
+  feed?.classList.remove('bt-community-locked');
+  renderFeed(latestDashboardPosts);
+}
+function syncHeroCommunityState(user){
+  if(!heroPanel)return;
+  let guest=heroPanel.querySelector('.bt-hero-guest');
+  const normal=heroPanel.querySelector('.btns');
+  const copy=heroPanel.querySelector('p');
+  if(user){
+    if(guest)guest.remove();
+    if(normal)normal.hidden=false;
+    if(copy)copy.innerHTML='No algorithms. No politics. No bullshit.<br>Just people connecting through music.';
+    return;
+  }
+  if(normal)normal.hidden=true;
+  if(copy)copy.innerHTML='Discover the scene freely.<br><strong style="color:#eaffff">Log in or join free to enter the Community.</strong>';
+  if(!guest){
+    guest=document.createElement('div');guest.className='bt-hero-guest';
+    guest.innerHTML='<div class="bt-hero-guest-actions"><a class="btn" href="login.html?returnTo=index.html">LOG IN</a><a class="btn primary" href="signup.html?returnTo=index.html">JOIN THE SCENE — FREE</a></div>';
+    heroPanel.appendChild(guest);
+  }
+}
+
 function renderFeed(posts){
   if(!feed)return;const heading=feed.querySelector('h3');feed.replaceChildren();if(heading)feed.appendChild(heading);
   const visible=posts.filter(p=>p.published!==false);
@@ -379,7 +439,10 @@ if(logoutLink){
 }
 
 onAuthStateChanged(auth,async user=>{
+  authResolved=true;
   signedInUser=user||null;signedInProfile=null;
+  syncHeroCommunityState(user);
+  if(user)renderMemberCommunity();else renderGuestCommunity();
   if(!profilePanel)return;
   const title=profilePanel.querySelector('h3');
   if(!user){
@@ -409,7 +472,8 @@ onAuthStateChanged(auth,async user=>{
 
 onSnapshot(collection(db,'posts'),snapshot=>{
   const posts=snapshot.docs.map(docSnap=>({id:docSnap.id,...docSnap.data()})).sort((a,b)=>{const diff=postMs(b)-postMs(a);return diff||String(a.id).localeCompare(String(b.id));});
-  renderFeed(posts);
+  latestDashboardPosts=posts;
+  if(authResolved&&signedInUser)renderFeed(posts);else renderGuestCommunity();
   renderShows(posts);
 },error=>{
   console.error('Could not load live posts into dashboard.',error);
