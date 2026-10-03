@@ -364,6 +364,13 @@ onAuthStateChanged(auth,async user=>{
   }
 
   if(user){
+    // A successful login/signup on this browser is enough to suppress v2 immediately.
+    // Firestore remains the cross-device source of truth when available.
+    if(Number(safeGet(MEMBER_DEVICE_KEY))>=WELCOME_VERSION){
+      safeRemove(PRESENTED_KEY);
+      markMemberSeen(user);
+      return;
+    }
     try{
       const snap=await getDoc(doc(db,'users',user.uid));
       const version=Number(snap.exists()?snap.data()?.welcomeIntroVersion:0)||0;
