@@ -80,15 +80,21 @@
 
         try {
           if (localStorage.getItem('btWelcomeV2Presented') === '2') {
-            await setDoc(doc(db, 'users', credential.user.uid), {
-              welcomeIntroVersion: 2,
-              welcomeIntroSeenAt: serverTimestamp()
-            }, { merge: true });
+            // Mark this browser immediately so the returning homepage never re-opens v2
+            // if the account-level Firestore write is slow or unavailable.
             localStorage.setItem('btWelcomeV2MemberSeen', '2');
             localStorage.removeItem('btWelcomeV2Presented');
+            try {
+              await setDoc(doc(db, 'users', credential.user.uid), {
+                welcomeIntroVersion: 2,
+                welcomeIntroSeenAt: serverTimestamp()
+              }, { merge: true });
+            } catch (welcomeStateError) {
+              console.warn('Could not sync welcome state after login.', welcomeStateError);
+            }
           }
-        } catch (welcomeStateError) {
-          console.warn('Could not save welcome state after login.', welcomeStateError);
+        } catch (welcomeLocalStateError) {
+          console.warn('Could not save local welcome state after login.', welcomeLocalStateError);
         }
 
         // If the member created an account but never finished their public profile,
