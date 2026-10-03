@@ -377,22 +377,18 @@ function renderMemberCommunity(){
 }
 function syncHeroCommunityState(user){
   if(!heroPanel)return;
-  let guest=heroPanel.querySelector('.bt-hero-guest');
+  const guest=heroPanel.querySelector('.bt-hero-guest');
   const normal=heroPanel.querySelector('.btns');
   const copy=heroPanel.querySelector('p');
   if(user){
-    if(guest)guest.remove();
+    guest?.remove();
     if(normal)normal.hidden=false;
     if(copy)copy.innerHTML='No algorithms. No politics. No bullshit.<br>Just people connecting through music.';
     return;
   }
+  guest?.remove();
   if(normal)normal.hidden=true;
-  if(copy)copy.innerHTML='Discover the scene freely.<br><strong style="color:#eaffff">Log in or join free to enter the Community.</strong>';
-  if(!guest){
-    guest=document.createElement('div');guest.className='bt-hero-guest';
-    guest.innerHTML='<div class="bt-hero-guest-actions"><a class="btn" href="login.html?returnTo=index.html">LOG IN</a><a class="btn primary" href="signup.html?returnTo=index.html">JOIN THE SCENE — FREE</a></div>';
-    heroPanel.appendChild(guest);
-  }
+  if(copy)copy.innerHTML='Discover the scene freely.<br><strong style="color:#eaffff">Community is available to members.</strong>';
 }
 
 function renderFeed(posts){
