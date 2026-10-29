@@ -255,7 +255,7 @@ function ensureProfileSummary(){
   if(!profilePanel)return null;
   let summary=profilePanel.querySelector('.dashboard-profile-summary');
   if(summary)return summary;
-  summary=document.createElement('a');
+  summary=document.createElement('div');
   summary.className='dashboard-profile-summary';
   summary.hidden=true;
   const heading=profilePanel.querySelector('h3');
@@ -264,6 +264,9 @@ function ensureProfileSummary(){
   style.textContent=`
     .dashboard-profile-summary{display:grid;grid-template-columns:54px minmax(0,1fr);gap:9px;align-items:center;padding:10px 12px;border-bottom:1px solid #333;color:#eee;text-decoration:none;background:#0c0e0e}
     .dashboard-profile-summary[hidden]{display:none}
+    .dashboard-profile-main{display:contents;color:inherit;text-decoration:none}
+    .dashboard-profile-upgrade{display:inline-block;margin-top:5px;color:#25c7c1;font-weight:800;font-size:11px;text-decoration:underline;text-underline-offset:2px}
+    @media(max-width:650px){.dashboard-profile-upgrade{font-size:8px;margin-top:3px}}
     .dashboard-profile-avatar{width:54px;height:54px;border:1px solid #466;border-radius:4px;overflow:hidden;background:#171a1a;display:grid;place-items:center;color:var(--teal);font-weight:900}
     .dashboard-profile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
     .dashboard-profile-name{font-weight:900;color:var(--teal);font-size:13px;line-height:1.2;overflow-wrap:anywhere}
@@ -283,8 +286,12 @@ function renderProfileSummary(user, profile={}){
   const image=profile.avatarUrl||profile.photoURL||profile.imageUrl||profile.profileImage||profile.avatar||user?.photoURL||'';
   const isAdmin=String(name||'').trim().toLowerCase()==='bandtroductions admin';
   const effectiveImage=image||(isAdmin?adminAvatarFallback:'');
-  summary.href=`profile.html?id=${encodeURIComponent(user.uid)}`;
-  summary.innerHTML=`<span class="dashboard-profile-avatar">${effectiveImage?`<img src="${safeText(effectiveImage)}" alt="${safeText(name)}">`:safeText(initialsFor(name))}</span><span><span class="dashboard-profile-name">${safeText(name)}</span><span class="dashboard-profile-type">${safeText(type)}</span><span class="dashboard-profile-view">View profile →</span></span>`;
+  const profileUrl=`profile.html?id=${encodeURIComponent(user.uid)}`;
+  const accountType=String(profile.accountType||profile.profileType||profile.type||'').toLowerCase();
+  const planStatus=String(profile.websitePlanStatus||profile.artistPlan?.status||'').toLowerCase();
+  const isUpgraded=profile.websiteEnabled===true&&['active','trialing','comped'].includes(planStatus);
+  const showUpgrade=accountType==='band'&&!isUpgraded&&user.uid!=='19MH0ZzVlPVN4ediF4PesZR5TY13';
+  summary.innerHTML=`<a class="dashboard-profile-main" href="${profileUrl}"><span class="dashboard-profile-avatar">${effectiveImage?`<img src="${safeText(effectiveImage)}" alt="${safeText(name)}">`:safeText(initialsFor(name))}</span></a><span><a href="${profileUrl}" style="text-decoration:none"><span class="dashboard-profile-name">${safeText(name)}</span></a><span class="dashboard-profile-type">${safeText(type)}</span>${showUpgrade?'<a class="dashboard-profile-upgrade" href="plans.html">(Upgrade profile)</a>':'<span class="dashboard-profile-view">View profile →</span>'}</span>`;
   const avatarImg=summary.querySelector('.dashboard-profile-avatar img');
   if(avatarImg&&isAdmin){
     avatarImg.addEventListener('error',()=>{if(!avatarImg.src.endsWith('bt-admin-avatar.svg?v=1'))avatarImg.src=adminAvatarFallback;},{once:true});
