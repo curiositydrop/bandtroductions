@@ -390,7 +390,7 @@ function syncHeroCommunityState(user){
   if(user){
     guest?.remove();
     if(normal)normal.hidden=false;
-    if(copy)copy.innerHTML='No algorithms. No politics. No bullshit.<br>Just people connecting through music.';
+    if(copy){copy.innerHTML='No algorithms. No politics. No bullshit.<br>Just people connecting through music.';copy.style.fontSize='clamp(11px,1.2vw,14px)';copy.style.fontWeight='400';copy.style.lineHeight='1.35';}
     return;
   }
   guest?.remove();
