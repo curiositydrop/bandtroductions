@@ -265,6 +265,8 @@ async function loadProfile(user) {
       editButton.textContent = profileLocationComplete(loadedProfile) ? 'Edit Profile' : '● Edit Profile';
       if(!profileLocationComplete(loadedProfile)){editButton.title='Profile update needed: add City / Town, State / Province / Region, and Country.';editButton.style.borderColor='#8a3d3d';editButton.style.color='#ffb4b4'}
       editButton.hidden = !isOwner;
+      const planLink = document.getElementById('profile-plan-link');
+      if (planLink) planLink.hidden = !isOwner;
     }
 
     content.dataset.assetsReady = 'true';
