@@ -152,7 +152,7 @@ function parseCardsFromPage(html) {
       .map(p => p.textContent.trim())
       .filter(Boolean);
 
-    const meta = metaLines.join(" • ") || "Maine Music";
+    const meta = metaLines.join(" • ") || "Independent Music";
 
     const id =
       card.getAttribute("data-band-id") ||
@@ -252,7 +252,7 @@ function renderBOTW() {
     currentWinnerImage.src = FALLBACK_IMAGE;
   };
 
-  currentWinnerMeta.textContent = winner.info.meta || "Maine Music";
+  currentWinnerMeta.textContent = winner.info.meta || "Independent Music";
   currentWinnerVotes.textContent =
     `${winner.votes} votes • ${winner.likes} likes • ${winner.views} views • Score: ${Math.round(winner.score)}`;
   currentWinnerLink.href = winner.info.profileUrl || "#";
@@ -278,7 +278,7 @@ function renderBOTW() {
     title.textContent = `#${index + 1} ${band.info.title}`;
 
     const meta = document.createElement("p");
-    meta.textContent = band.info.meta || "Maine Music";
+    meta.textContent = band.info.meta || "Independent Music";
 
     const stats = document.createElement("p");
     stats.textContent = `${band.votes} votes • ${band.likes} likes • ${band.views} views`;
