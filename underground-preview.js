@@ -406,6 +406,7 @@ function renderFeed(posts){
     const article=document.createElement('article');article.className='post';const name=safeText(post.authorName||'BANDtroductions Member');
     article.innerHTML=`<div class="post-head"><div class="post-avatar">${safeText(initialsFor(post.authorName))}</div><div><div class="post-name">${name}</div><div class="post-meta">${safeText(formatDate(post.createdAt))}${post.category?` · ${safeText(post.category)}`:''}</div></div></div>${renderPostContent(post)}${post.imageUrl?`<img src="${safeText(post.imageUrl)}" alt="" style="display:block;width:100%;margin-top:12px;border:1px solid #333;max-height:420px;object-fit:cover">`:''}${renderVideo(post)}<div class="post-actions"><span>ROCK ON</span><span>COMMENT</span><span>SHARE</span></div>`;
     feed.appendChild(article);
+    window.btApplyCachedAvatar?.(article,post);
   });
 }
 
