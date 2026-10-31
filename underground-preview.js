@@ -399,15 +399,28 @@ function syncHeroCommunityState(user){
 }
 
 function renderFeed(posts){
-  if(!feed)return;const heading=feed.querySelector('h3');feed.replaceChildren();if(heading)feed.appendChild(heading);
+  if(!feed)return;const heading=feed.querySelector(':scope > h3');
   const visible=posts.filter(p=>p.published!==false);
-  if(!visible.length){const empty=document.createElement('div');empty.className='post';empty.innerHTML='<p>No community posts yet.</p>';feed.appendChild(empty);return;}
-  visible.forEach(post=>{
-    const article=document.createElement('article');article.className='post';const name=safeText(post.authorName||'BANDtroductions Member');
-    article.innerHTML=`<div class="post-head"><div class="post-avatar">${safeText(initialsFor(post.authorName))}</div><div><div class="post-name">${name}</div><div class="post-meta">${safeText(formatDate(post.createdAt))}${post.category?` · ${safeText(post.category)}`:''}</div></div></div>${renderPostContent(post)}${post.imageUrl?`<img src="${safeText(post.imageUrl)}" alt="" style="display:block;width:100%;margin-top:12px;border:1px solid #333;max-height:420px;object-fit:cover">`:''}${renderVideo(post)}<div class="post-actions"><span>ROCK ON</span><span>COMMENT</span><span>SHARE</span></div>`;
-    feed.appendChild(article);
+  if(!visible.length){feed.replaceChildren();if(heading)feed.appendChild(heading);const empty=document.createElement('div');empty.className='post';empty.innerHTML='<p>No community posts yet.</p>';feed.appendChild(empty);return;}
+  // Keep existing post cards (keyed by post id) and rebuild only cards whose content changed,
+  // so Rock On / Comment rows and open comments are not wiped on every Firestore update.
+  const existing=new Map();
+  [...feed.children].forEach(el=>{if(el._btFeedPostId)existing.set(el._btFeedPostId,el);});
+  const wanted=visible.map(post=>{
+    const name=safeText(post.authorName||'BANDtroductions Member');
+    const html=`<div class="post-head"><div class="post-avatar">${safeText(initialsFor(post.authorName))}</div><div><div class="post-name">${name}</div><div class="post-meta">${safeText(formatDate(post.createdAt))}${post.category?` · ${safeText(post.category)}`:''}</div></div></div>${renderPostContent(post)}${post.imageUrl?`<img src="${safeText(post.imageUrl)}" alt="" style="display:block;width:100%;margin-top:12px;border:1px solid #333;max-height:420px;object-fit:cover">`:''}${renderVideo(post)}<div class="post-actions"><span>ROCK ON</span><span>COMMENT</span><span>SHARE</span></div>`;
+    const kept=existing.get(post.id);
+    if(kept&&kept._btFeedSig===html)return kept;
+    const article=document.createElement('article');article.className='post';
+    article.innerHTML=html;article._btFeedSig=html;article._btFeedPostId=post.id;article.dataset.postId=post.id;
     window.btApplyCachedAvatar?.(article,post);
+    return article;
   });
+  const keep=new Set(wanted);
+  [...feed.children].forEach(el=>{if(el!==heading&&!keep.has(el))el.remove();});
+  if(heading&&feed.firstElementChild!==heading)feed.prepend(heading);
+  let prev=heading||null;
+  wanted.forEach(article=>{const at=prev?prev.nextElementSibling:feed.firstElementChild;if(at!==article){if(prev)prev.after(article);else feed.prepend(article);}prev=article;});
 }
 
 function renderShows(posts){
