@@ -94,7 +94,7 @@ style.textContent=`
 document.head.appendChild(style);
 
 const DEFAULT_COVER='IMG_9367.png';
-const RADIO_LOGO='5C9409EE-59F6-4151-9624-2998D7DDF2D0.png';
+const RADIO_LOGO='bt-radio-logo-280.webp';
 const STATION_CONTROL_ID='__stationControl';
 let playlists={};
 let stationEnabled=true;
