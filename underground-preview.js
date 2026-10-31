@@ -395,7 +395,7 @@ function syncHeroCommunityState(user){
   }
   guest?.remove();
   if(normal)normal.hidden=true;
-  if(copy)copy.innerHTML='Discover the scene freely.<br><strong style="color:#eaffff">Community is available to members.</strong>';
+  if(copy)copy.innerHTML='Discover independent music.<br><strong style="color:#eaffff">Join the scene for free.</strong>';
 }
 
 function renderFeed(posts){
