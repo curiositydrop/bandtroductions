@@ -146,9 +146,20 @@ function playerMarkup(s){
   </div></div>`;
 }
 
+let lastRenderedMarkup='';
 function render(){
   const s=state();
-  panel.innerHTML='<h3><span class="bt-radio-heading-brand">BANDtroductions</span> <span class="bt-radio-heading-title">Radio</span></h3>'+playerMarkup(s);
+  const markup='<h3><span class="bt-radio-heading-brand">BANDtroductions</span> <span class="bt-radio-heading-title">Radio</span></h3>'+playerMarkup(s);
+  // Skip the 1s rebuild when nothing changed so the artwork/logo <img> nodes stay stable (iOS Safari repaints them on every replacement).
+  if(markup===lastRenderedMarkup&&panel.querySelector('.bt-radio-listen'))return;
+  lastRenderedMarkup=markup;
+  const previousImages=[...panel.querySelectorAll('img.bt-radio-art,img.bt-radio-logo')];
+  panel.innerHTML=markup;
+  // On real changes (e.g. next track), reuse the existing <img> nodes whose class and src are unchanged.
+  panel.querySelectorAll('img.bt-radio-art,img.bt-radio-logo').forEach(img=>{
+    const keep=previousImages.find(old=>old.className===img.className&&old.getAttribute('src')===img.getAttribute('src'));
+    if(keep){keep.alt=img.alt;img.replaceWith(keep);}
+  });
   panel.querySelector('.bt-radio-listen:not([disabled])')?.addEventListener('click',async()=>{
     const latest=state();
     if(!latest)return;
@@ -247,6 +258,7 @@ onSnapshot(collection(devDb,'radioPlaylists'),snap=>{
   synchronize(false);
 },error=>{
   console.error('Radio schedule read failed',error);
+  lastRenderedMarkup='';
   panel.innerHTML='<h3><span class="bt-radio-heading-brand">BANDtroductions</span> <span class="bt-radio-heading-title">Radio</span></h3><div class="radio"><div class="radio-box bt-radio-box"><div class="bt-radio-status-row"><span class="bt-radio-status off">OFF AIR</span></div><div style="color:#999;text-align:center">Schedule unavailable. Please refresh and try again.</div></div></div>';
 });
 
