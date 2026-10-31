@@ -67,18 +67,40 @@ function findCard(post,index){
   return document.querySelectorAll('.feed .post')[index]||null;
 }
 
-function setImage(avatar,src,alt,profileId,fallback=''){
+// Remembers each author's photo once it has loaded, so feed re-renders show it right away instead of initials.
+const photoCache=window.__btAvatarPhotos||(window.__btAvatarPhotos=new Map());
+const photoKey=post=>isWelcomePost(post)?'admin':(authorId(post)?`uid:${authorId(post)}`:(post?.authorName?`name:${normalized(post.authorName)}`:''));
+function showPhoto(avatar,img,profileId){
+  avatar.replaceChildren(img);
+  avatar.style.padding='0';
+  avatar.style.overflow='hidden';
+  avatar.dataset.avatarDone='1';
+  if(profileId){avatar.style.cursor='pointer';avatar.onclick=()=>location.href=`profile.html?id=${encodeURIComponent(profileId)}`;}
+}
+function applyCachedAvatar(card,post){
+  const avatar=card?.querySelector('.post-avatar');const key=photoKey(post);const hit=key&&photoCache.get(key);
+  if(!avatar||!hit||avatar.dataset.avatarDone==='1')return false;
+  const initials=avatar.textContent;
+  const img=new Image();
+  img.alt=hit.alt;
+  img.loading='eager';
+  img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;border-radius:50%';
+  img.onerror=()=>{photoCache.delete(key);if(img.parentNode===avatar){avatar.textContent=initials;delete avatar.dataset.avatarDone;}};
+  img.src=hit.src;
+  showPhoto(avatar,img,hit.profileId);
+  return true;
+}
+window.btApplyCachedAvatar=applyCachedAvatar;
+
+function setImage(avatar,src,alt,profileId,fallback='',key=''){
   if(!avatar||!src||avatar.dataset.avatarDone==='1')return;
   const img=new Image();
   img.alt=alt||'Profile avatar';
   img.loading='eager';
   img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;border-radius:50%';
   img.onload=()=>{
-    avatar.replaceChildren(img);
-    avatar.style.padding='0';
-    avatar.style.overflow='hidden';
-    avatar.dataset.avatarDone='1';
-    if(profileId){avatar.style.cursor='pointer';avatar.onclick=()=>location.href=`profile.html?id=${encodeURIComponent(profileId)}`;}
+    if(key)photoCache.set(key,{src:img.src,alt:img.alt,profileId});
+    showPhoto(avatar,img,profileId);
   };
   img.onerror=()=>{
     if(fallback&&img.src!==new URL(fallback,location.href).href){img.onerror=null;img.src=fallback;return;}
@@ -129,13 +151,14 @@ function ensureYouTube(card,post){
 async function decorateCard(post,index){
   const card=findCard(post,index);if(!card||card.dataset.profileDecorated==='1')return false;
   ensureYouTube(card,post);
+  applyCachedAvatar(card,post);
   const avatar=card.querySelector('.post-avatar');const nameEl=card.querySelector('.post-name');if(!avatar)return false;
   if(isWelcomePost(post)){
     if(nameEl)nameEl.textContent='BANDtroductions Admin';
     const admin=await adminProfile();
     const src=imageFor(admin)||post.adminAvatarUrl||'';
-    if(src)setImage(avatar,src,'BANDtroductions Admin',admin?.id||'',adminAvatarFallback);
-    else setImage(avatar,adminAvatarFallback,'BANDtroductions Admin',admin?.id||'');
+    if(src)setImage(avatar,src,'BANDtroductions Admin',admin?.id||'',adminAvatarFallback,'admin');
+    else setImage(avatar,adminAvatarFallback,'BANDtroductions Admin',admin?.id||'','','admin');
     if(!src&&!avatar.querySelector('img'))avatar.textContent='BT';
     setProfileLink(nameEl,admin?.id||'');
     card.dataset.profileDecorated='1';
@@ -145,8 +168,8 @@ async function decorateCard(post,index){
   const profileId=data?.id||uid;
   const src=imageFor(data)||post.authorAvatarUrl||post.authorImageUrl||post.authorPhotoUrl||post.authorPhotoURL||post.avatarUrl||post.imageUrlAuthor||'';
   const fallback=String(post.authorName||'').trim().toLowerCase()==='bandtroductions admin'?adminAvatarFallback:'';
-  if(src)setImage(avatar,src,post.authorName||'Profile avatar',profileId,fallback);
-  else if(fallback)setImage(avatar,fallback,post.authorName||'Profile avatar',profileId);
+  if(src)setImage(avatar,src,post.authorName||'Profile avatar',profileId,fallback,photoKey(post));
+  else if(fallback)setImage(avatar,fallback,post.authorName||'Profile avatar',profileId,'',photoKey(post));
   setProfileLink(nameEl,profileId);
   card.dataset.profileDecorated='1';
   return true;
