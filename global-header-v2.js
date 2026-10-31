@@ -18,7 +18,10 @@
     document.head.appendChild(style);
   }else{
     // Reserve the final header footprint before injection so the dashboard is not shoved down.
-    if(window.matchMedia('(max-width:650px)').matches) target.style.minHeight='124px';
+    // Pages that already reserve the header in their own first-paint CSS (the homepage does, per breakpoint)
+    // keep that value; other pages fall back to these defaults.
+    if(parseFloat(getComputedStyle(target).minHeight)>0){}
+    else if(window.matchMedia('(max-width:650px)').matches) target.style.minHeight='124px';
     else if(window.matchMedia('(max-width:1000px)').matches) target.style.minHeight='170px';
     else target.style.minHeight='150px';
 
