@@ -1,8 +1,11 @@
 User-agent: *
 Allow: /
+# Unused legacy header fragment (not loaded by any page).
+Disallow: /globalold.html
 
 # Allow OpenAI's search crawler to discover and cite public pages.
 User-agent: OAI-SearchBot
 Allow: /
+Disallow: /globalold.html
 
 Sitemap: https://bandtroductions.com/sitemap.xml
