@@ -85,6 +85,8 @@ function linkifyText(value='',mentions=[]){
   return html+safeText(source.slice(cursor));
 }
 function normalizeDate(value){if(!value)return null;const d=new Date(`${value}T12:00:00`);return Number.isNaN(d.getTime())?null:d;}
+function safeHttpUrl(value){const t=String(value||'').trim();if(!t||/\s/.test(t))return'';try{const u=new URL(t);if(!/^https?:$/.test(u.protocol))return'';const h=u.hostname;if(!/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(h))return'';return u.href;}catch{return'';}}
+function nyToday(){const p=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const g=t=>p.find(x=>x.type===t).value;return new Date(`${g('year')}-${g('month')}-${g('day')}T00:00:00`);}
 function normalizeUrl(value=''){const t=String(value||'').trim();if(!t)return'';return /^https?:\/\//i.test(t)?t:`https://${t}`;}
 function profileHref(post){
   const direct=post.profileUrl||post.authorProfileUrl||post.authorUrl;
@@ -433,15 +435,15 @@ function renderFeed(posts){
 function renderShows(posts){
   if(!showsPanel)return;const heading=showsPanel.querySelector('h3');showsPanel.replaceChildren();if(heading)showsPanel.appendChild(heading);
   const create=document.createElement('a');create.href='show-event.html';create.className='btn primary';create.textContent='POST A SHOW';create.style.cssText='display:block;text-align:center;margin:8px';showsPanel.appendChild(create);
-  const now=new Date();now.setHours(0,0,0,0);
-  const shows=posts.filter(p=>p.published!==false&&p.category==='show').filter(p=>{const d=normalizeDate(p.event?.date);return !d||d>=now;}).sort((a,b)=>{const ad=normalizeDate(a.event?.date),bd=normalizeDate(b.event?.date);if(ad&&bd)return ad-bd;if(ad)return-1;if(bd)return 1;return 0;}).slice(0,5);
+  const now=nyToday();const showDateOf=p=>p.event?.date||p.eventDate||p.showDate;
+  const shows=posts.filter(p=>p.published!==false&&p.category==='show').filter(p=>{const d=normalizeDate(showDateOf(p));return !d||d>=now;}).sort((a,b)=>{const ad=normalizeDate(showDateOf(a)),bd=normalizeDate(showDateOf(b));if(ad&&bd)return ad-bd;if(ad)return-1;if(bd)return 1;return 0;}).slice(0,5);
   if(!shows.length){const empty=document.createElement('div');empty.style.padding='12px';empty.style.color='#9ca3a3';empty.textContent='Show/Event posts will appear here automatically.';showsPanel.appendChild(empty);return;}
   shows.forEach(post=>{
-    const e=post.event||{};const eventDate=normalizeDate(e.date);const d=eventDate||(post.createdAt?.toDate?post.createdAt.toDate():new Date());
+    const e=post.event||{};const eventDate=normalizeDate(showDateOf(post));const d=eventDate||(post.createdAt?.toDate?post.createdAt.toDate():new Date());
     const artist=post.authorName||e.artist||e.band||e.title||'Upcoming Show';const venue=e.venue||'';const time=e.time||'';
     const row=document.createElement('div');row.className='show';
     const detailBits=[];if(e.title&&e.title!==artist)detailBits.push(`<div><b>Event:</b> ${safeText(e.title)}</div>`);if(e.location)detailBits.push(`<div><b>Location:</b> ${safeText(e.location)}</div>`);if(e.price)detailBits.push(`<div><b>Price:</b> ${safeText(e.price)}</div>`);if(e.age)detailBits.push(`<div><b>Age:</b> ${safeText(e.age)}</div>`);if(e.details)detailBits.push(`<div style="margin-top:5px">${safeText(e.details)}</div>`);else if(post.content)detailBits.push(`<div style="margin-top:5px">${safeText(post.content)}</div>`);
-    const links=[];if(e.ticketUrl)links.push(`<a class="btn primary" href="${safeText(e.ticketUrl)}" target="_blank" rel="noopener">TICKETS</a>`);if(e.donateUrl)links.push(`<a class="btn" href="${safeText(e.donateUrl)}" target="_blank" rel="noopener">SUPPORT</a>`);links.push(`<a class="btn" href="${safeText(profileHref(post))}">PROFILE</a>`);
+    const links=[];const ticketHref=safeHttpUrl(e.ticketUrl),donateHref=safeHttpUrl(e.donateUrl);if(ticketHref)links.push(`<a class="btn primary" href="${safeText(ticketHref)}" target="_blank" rel="noopener">TICKETS</a>`);if(donateHref)links.push(`<a class="btn" href="${safeText(donateHref)}" target="_blank" rel="noopener">SUPPORT</a>`);links.push(`<a class="btn" href="${safeText(profileHref(post))}">PROFILE</a>`);
     row.innerHTML=`<div class="date">${d.toLocaleString('en-US',{month:'short'}).toUpperCase()}<span>${d.getDate()}</span></div><div class="show-summary"><b>${safeText(artist)}</b>${venue?`<div class="show-venue">${safeText(venue)}</div>`:''}${time?`<div class="show-time">${safeText(time)}</div>`:''}<button type="button" class="show-details-btn">DETAILS +</button><div class="show-extra">${detailBits.join('')}${links.join('')}</div></div>`;
     const toggle=row.querySelector('.show-details-btn');toggle.addEventListener('click',()=>{const open=row.classList.toggle('is-open');toggle.textContent=open?'DETAILS −':'DETAILS +';});showsPanel.appendChild(row);
   });
