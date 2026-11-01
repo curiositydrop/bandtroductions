@@ -1,6 +1,7 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { injectShowEvents } from './show-events-jsonld.js?v=1';
 
 const ADMIN_EMAIL='mbergeron79@gmail.com';
 const showsPanel=[...document.querySelectorAll('.right .panel')].find(panel=>panel.querySelector('h3')?.textContent.trim()==='Upcoming Shows');
@@ -93,6 +94,7 @@ function renderShows(){
   const create=document.createElement('a');create.href='show-event.html';create.className='btn primary';create.textContent='POST A SHOW';create.style.cssText='display:block;text-align:center;margin:8px';showsPanel.appendChild(create);
   const today=nyToday();
   const shows=latestPosts.filter(p=>p.published!==false&&p.category==='show').map(p=>({post:p,e:eventData(p)})).filter(({e})=>{const d=normalizeDate(e.date);return d&&d>=today;}).sort((a,b)=>normalizeDate(a.e.date)-normalizeDate(b.e.date)).slice(0,5);
+  injectShowEvents(shows.map(({post,e})=>({band:first(post.authorName,e.title),title:e.title,date:e.date,time:e.time,venue:e.venue,location:e.location,ticketUrl:e.ticketUrl,profileUrl:profileHref(post,e),image:e.imageUrl})));
   if(!shows.length){const empty=document.createElement('div');empty.style.padding='12px';empty.style.color='#9ca3a3';empty.textContent='Show/Event posts will appear here automatically.';showsPanel.appendChild(empty);return;}
   shows.forEach(({post,e})=>{
     const d=normalizeDate(e.date);

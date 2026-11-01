@@ -4,6 +4,7 @@ import { addDoc, collection, doc, getDoc, getDocs, onSnapshot, query, serverTime
 
 // Keep the dashboard user's Online Now heartbeat active while they remain on the homepage.
 import('./presence.js').catch(error=>console.warn('Presence heartbeat unavailable.',error));
+import { injectShowEvents } from './show-events-jsonld.js?v=1';
 
 // Slightly increase the ticker height without making the fixed header bulky.
 const tickerPolish=document.createElement('style');
@@ -437,6 +438,7 @@ function renderShows(posts){
   const create=document.createElement('a');create.href='show-event.html';create.className='btn primary';create.textContent='POST A SHOW';create.style.cssText='display:block;text-align:center;margin:8px';showsPanel.appendChild(create);
   const now=nyToday();const showDateOf=p=>p.event?.date||p.eventDate||p.showDate;
   const shows=posts.filter(p=>p.published!==false&&p.category==='show').filter(p=>{const d=normalizeDate(showDateOf(p));return !d||d>=now;}).sort((a,b)=>{const ad=normalizeDate(showDateOf(a)),bd=normalizeDate(showDateOf(b));if(ad&&bd)return ad-bd;if(ad)return-1;if(bd)return 1;return 0;}).slice(0,5);
+  injectShowEvents(shows.filter(p=>normalizeDate(showDateOf(p))).map(p=>{const e=p.event||{};return{band:p.authorName||e.artist||e.band||e.title,title:e.title,date:showDateOf(p),time:e.time,venue:e.venue,location:e.location,ticketUrl:e.ticketUrl,profileUrl:profileHref(p),image:e.imageUrl||p.imageUrl};}));
   if(!shows.length){const empty=document.createElement('div');empty.style.padding='12px';empty.style.color='#9ca3a3';empty.textContent='Show/Event posts will appear here automatically.';showsPanel.appendChild(empty);return;}
   shows.forEach(post=>{
     const e=post.event||{};const eventDate=normalizeDate(showDateOf(post));const d=eventDate||(post.createdAt?.toDate?post.createdAt.toDate():new Date());
