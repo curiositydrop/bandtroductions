@@ -1,0 +1,38 @@
+# BANDtroductions
+
+> BANDtroductions is a free, music-first community and independent music hub connecting bands, musicians, venues, fans, photographers, promoters and the businesses that support the scene, worldwide. Built in Maine. Expanding globally.
+
+BANDtroductions was founded by Mike Bergeron in March 2026. Unlike a general social network, it is dedicated to music: members build profiles, share music, videos and show announcements, connect directly, discover bands, musicians and venues, listen to independent artists on BANDtroductions Radio, watch performance videos, and buy, sell or trade gear through the Gear Exchange. The site's mascot is Riff.
+
+## Key pages
+
+- [Home](https://bandtroductions.com/): community feed, upcoming shows and featured bands
+- [Bands](https://bandtroductions.com/bands.html): discover independent bands and browse by genre
+- [Musicians](https://bandtroductions.com/musicians.html): find singers, guitarists, drummers, bassists, keyboard players and more by genre and instrument
+- [Venues](https://bandtroductions.com/venues.html): discover live music venues
+- [Radio](https://bandtroductions.com/radio.html): BANDtroductions Radio, an independent music discovery station featuring local bands, underground artists, venue spotlights, interviews and fan requests
+- [Plans](https://bandtroductions.com/plans.html): free membership and the Band Website Upgrade
+- [Sign up](https://bandtroductions.com/signup.html): create a free account
+- [Sponsors](https://bandtroductions.com/sponsors.html): sponsorship tiers for businesses
+- [FAQ](https://bandtroductions.com/faq.html): answers about profiles, claiming a profile, radio, band websites and booking bands
+- [About](https://bandtroductions.com/about.html): the story and mission of BANDtroductions
+
+## How to join (free)
+
+Create an account at https://bandtroductions.com/signup.html. A Free Community Profile costs $0 forever and includes a band or musician profile, discovery of other bands, venues and fans, community posts and connections, and sharing music and videos. Venues and fans can also join. Existing profiles can be claimed by their owners.
+
+## Paid plan
+
+- **Band Website Upgrade: $15 per month.** Everything in the free community, plus a customizable band website template, booking tools and show promotion, music and video presentation, and merch and custom-domain connection options. Intended for band profiles; start free and upgrade from your account. Details: https://bandtroductions.com/plans.html
+
+## Sponsor tiers
+
+- **Supporter: $15 per month**
+- **Featured: $35 per month**
+- **Headline: $75 per month**
+
+Pay yearly and get 2 months free. Details: https://bandtroductions.com/sponsors.html
+
+## Contact
+
+Email: info@bandtroductions.com
