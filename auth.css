@@ -152,6 +152,11 @@ body.auth-page {
   .community-sort-note { padding-bottom: 0; }
 }
 
+@media (max-width: 780px) {
+  /* keep padding+border inside the width so the card never overflows phones */
+  .auth-shell { box-sizing: border-box; }
+}
+
 @media (max-width: 600px) {
   .auth-shell { margin-top: 24px; padding: 22px 18px; }
   .community-shell { padding: 0; }

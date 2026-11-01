@@ -2248,7 +2248,8 @@ padding:8px 12px;
     color:#aaa;
     font-size:8.5px;
     text-align:center;
-    white-space:nowrap;
+    white-space:normal;
+    min-width:0;
   }
 
   .profile-action-card h1{
