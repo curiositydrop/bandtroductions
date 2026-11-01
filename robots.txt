@@ -5,4 +5,4 @@ Allow: /
 User-agent: OAI-SearchBot
 Allow: /
 
-Sitemap: https://www.bandtroductions.com/sitemap.xml
+Sitemap: https://bandtroductions.com/sitemap.xml

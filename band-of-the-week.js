@@ -63,7 +63,7 @@ function cleanImagePath(src) {
   if (!src) return FALLBACK_IMAGE;
 
   return String(src)
-    .replace(/^https?:\/\/(www\.)?curiositydrop\.com\/bandtroductions\//i, "https://www.bandtroductions.com/")
+    .replace(/^https?:\/\/(www\.)?curiositydrop\.com\/bandtroductions\//i, "https://bandtroductions.com/")
     .trim();
 }
 
