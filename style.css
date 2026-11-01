@@ -1,3 +1,4 @@
+h1.page-title{font-size:1.5em;margin-block:0.83em;}
 body{
 font-family: Arial, sans-serif;
 margin:0;
@@ -42,7 +43,7 @@ text-align:center;
 padding:70px 20px;
 }
 
-.hero h2{
+.hero h2,.hero h1.page-title{
 font-size:44px;
 margin-bottom:15px;
 }
@@ -69,11 +70,11 @@ padding:70px 20px;
 text-align:center;
 }
 
-.featured h2,
-.local-scene h2,
-.how-it-works h2,
-.cta h2,
-.page-hero h2,
+.featured h2,.featured h1.page-title,
+.local-scene h2,.local-scene h1.page-title,
+.how-it-works h2,.how-it-works h1.page-title,
+.cta h2,.cta h1.page-title,
+.page-hero h2,.page-hero h1.page-title,
 .profile-bio h3,
 .profile-videos h3{
 font-size:42px;
@@ -293,7 +294,7 @@ border-radius:8px;
 max-width:500px;
 }
 
-.profile-info h2{
+.profile-info h2,.profile-info h1.page-title{
 margin-top:0;
 font-size:42px;
 }
@@ -339,7 +340,7 @@ color:#00e5ff;
 text-decoration:none;
 }
 
-.form-page h2{
+.form-page h2,.form-page h1.page-title{
 font-size:42px;
 }
 
@@ -459,7 +460,7 @@ flex:1 1 420px;
 max-width:560px;
 }
 
-.band-info h2{
+.band-info h2,.band-info h1.page-title{
 font-size:36px;
 margin-top:0;
 }
@@ -848,7 +849,7 @@ margin:4px 6px;
 padding:10px 20px 20px;
 }
 
-.hero h2{
+.hero h2,.hero h1.page-title{
 font-size:30px;
 }
 
@@ -861,14 +862,14 @@ font-size:16px;
 padding:12px 20px;
 }
 
-.featured h2,
-.local-scene h2,
-.how-it-works h2,
-.cta h2,
-.page-hero h2,
+.featured h2,.featured h1.page-title,
+.local-scene h2,.local-scene h1.page-title,
+.how-it-works h2,.how-it-works h1.page-title,
+.cta h2,.cta h1.page-title,
+.page-hero h2,.page-hero h1.page-title,
 .profile-bio h3,
 .profile-videos h3,
-.form-page h2{
+.form-page h2,.form-page h1.page-title{
 font-size:34px;
 }
 
@@ -947,7 +948,7 @@ font-size:16px;
 padding:12px 18px;
 }
 
-.profile-info h2{
+.profile-info h2,.profile-info h1.page-title{
 font-size:34px;
 }
 
@@ -986,7 +987,7 @@ gap:30px;
 height:220px;
 }
 
-.band-info h2{
+.band-info h2,.band-info h1.page-title{
 font-size:28px;
 }
 
@@ -1154,7 +1155,7 @@ padding:8px 12px;
   padding:50px 20px 30px;
 }
 
-.gear-hero h2{
+.gear-hero h2,.gear-hero h1.page-title{
   font-size:48px;
   margin-bottom:12px;
 }
@@ -1200,7 +1201,7 @@ padding:8px 12px;
   margin-bottom:25px;
 }
 
-.section-intro h2{
+.section-intro h2,.section-intro h1.page-title{
   font-size:42px;
   margin-bottom:10px;
 }
@@ -1219,7 +1220,7 @@ padding:8px 12px;
   padding:30px 20px 70px;
 }
 
-.gear-rules h2{
+.gear-rules h2,.gear-rules h1.page-title{
   font-size:42px;
   margin-bottom:25px;
 }
@@ -1258,7 +1259,7 @@ padding:8px 12px;
   text-align:center;
 }
 
-.payment-page h2{
+.payment-page h2,.payment-page h1.page-title{
   font-size:42px;
   margin-bottom:20px;
 }
@@ -1304,7 +1305,7 @@ padding:8px 12px;
 
 @media (max-width:768px){
 
-  .gear-hero h2{
+  .gear-hero h2,  .gear-hero h1.page-title{
     font-size:36px;
   }
 
@@ -1325,8 +1326,8 @@ padding:8px 12px;
     font-size:18px;
   }
 
-  .section-intro h2,
-  .gear-rules h2{
+  .section-intro h2,  .section-intro h1.page-title,
+  .gear-rules h2,  .gear-rules h1.page-title{
     font-size:34px;
   }
 
@@ -1349,7 +1350,7 @@ padding:8px 12px;
     padding:35px 20px 60px;
   }
 
-  .payment-page h2{
+  .payment-page h2,  .payment-page h1.page-title{
     font-size:34px;
   }
 
@@ -1400,7 +1401,7 @@ padding:8px 12px;
   text-align:center;
 }
 
-.path-section h2{
+.path-section h2,.path-section h1.page-title{
   font-size:42px;
   margin-bottom:25px;
 }
@@ -1438,7 +1439,7 @@ padding:8px 12px;
     padding:20px 20px 40px;
   }
 
-  .path-section h2{
+  .path-section h2,  .path-section h1.page-title{
     font-size:34px;
   }
 
@@ -1489,7 +1490,7 @@ padding:8px 12px;
   text-align:center;
 }
 
-.home-page .hero h2{
+.home-page .hero h2,.home-page .hero h1.page-title{
   margin:0 0 8px;
 }
 
@@ -1508,7 +1509,7 @@ padding:8px 12px;
   margin-bottom:14px;
 }
 
-.bt-home-intro h2{
+.bt-home-intro h2,.bt-home-intro h1.page-title{
   font-size:clamp(2rem, 4vw, 3.2rem);
   margin:0 0 8px;
   color:#fff;
@@ -1577,7 +1578,7 @@ padding:8px 12px;
   text-align:center;
 }
 
-.home-page .featured h2{
+.home-page .featured h2,.home-page .featured h1.page-title{
   margin:0 0 14px;
 }
 
@@ -1619,7 +1620,7 @@ padding:8px 12px;
     padding:16px 18px 8px;
   }
 
-  .home-page .hero h2{
+  .home-page .hero h2,  .home-page .hero h1.page-title{
     font-size:26px;
   }
 
@@ -1694,8 +1695,8 @@ padding:8px 12px;
   text-align:center;
 }
 
-.botw-current h2,
-.botw-previous h2{
+.botw-current h2,.botw-current h1.page-title,
+.botw-previous h2,.botw-previous h1.page-title{
   font-size:34px;
   margin-bottom:18px;
 }
@@ -1713,7 +1714,7 @@ padding:8px 12px;
   box-sizing:border-box;
 }
 
-.botw-hero h2{
+.botw-hero h2,.botw-hero h1.page-title{
   font-size:22px;
   margin-bottom:6px;
 }
@@ -2000,10 +2001,10 @@ padding:8px 12px;
   margin-bottom:18px;
 }
 
-.section-title-row h2,
-.profile-main-card h2,
-.more-videos-section h2,
-.comments-section h2{
+.section-title-row h2,.section-title-row h1.page-title,
+.profile-main-card h2,.profile-main-card h1.page-title,
+.more-videos-section h2,.more-videos-section h1.page-title,
+.comments-section h2,.comments-section h1.page-title{
   font-size:30px;
   margin:0 0 8px;
 }
