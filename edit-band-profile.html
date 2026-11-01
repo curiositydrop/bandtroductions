@@ -86,7 +86,8 @@
     import { doc, getDoc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
     const BAND_ID='burning-time';
-    const AUTHORIZED_EMAIL='newleafpaintingcompany@gmail.com';
+    const ADMIN_UID='PJXufsvdCCgRpfKcLtxPH3jEQN83';
+    let existingOwnerId='';
     const form=document.getElementById('band-editor-form');
     const message=document.getElementById('editor-message');
     const status=document.getElementById('save-status');
@@ -123,20 +124,21 @@
     onAuthStateChanged(auth,async(user)=>{
       if(!user){location.href='login.html';return;}
       currentUser=user;
-      const signedInEmail=String(user.email||'').toLowerCase();
-      if(signedInEmail!==AUTHORIZED_EMAIL){message.textContent='This account is not authorized to edit Burning Time.';return;}
+      let existing=null;
+      try{
+        const snapshot=await getDoc(doc(db,'bandProfiles',BAND_ID));
+        if(snapshot.exists()) existing=snapshot.data();
+      }catch(error){console.error(error);}
+      existingOwnerId=existing?.ownerId||'';
+      const isAdmin=user.uid===ADMIN_UID;
+      if(!isAdmin&&(!existingOwnerId||existingOwnerId!==user.uid)){message.textContent='This account is not authorized to edit Burning Time.';return;}
 
       fill(defaults);
       form.hidden=false;
       message.textContent=`Signed in as ${user.email}.`;
 
-      try{
-        const snapshot=await getDoc(doc(db,'bandProfiles',BAND_ID));
-        if(snapshot.exists()) fill({...defaults,...snapshot.data()});
-      }catch(error){
-        console.error(error);
-        message.textContent=`Signed in as ${user.email}. Existing profile data could not be loaded yet, so the original page details are shown.`;
-      }
+      if(existing) fill({...defaults,...existing});
+      else message.textContent=`Signed in as ${user.email}. Existing profile data could not be loaded yet, so the original page details are shown.`;
     });
 
     form.addEventListener('submit',async(event)=>{
@@ -144,7 +146,8 @@
       if(!currentUser)return;
       saveButton.disabled=true;
       status.textContent='Saving Burning Time…';
-      const data={ownerId:currentUser.uid,authorizedEmail:AUTHORIZED_EMAIL,displayName:value('display-name'),genre:value('genre'),location:value('location'),status:value('status'),bio:value('bio'),members:value('members'),bannerImageUrl:value('banner-image-url'),imageUrl:value('image-url'),featuredTitle:value('featured-title'),featuredCopy:value('featured-copy'),featuredVideoUrl:value('featured-video-url'),spotify:value('spotify'),youtube:value('youtube'),instagram:value('instagram'),facebook:value('facebook'),website:value('website'),bookingEmail:value('booking-email'),bookingCopy:value('booking-copy'),published:true,updatedAt:serverTimestamp()};
+      const data={displayName:value('display-name'),genre:value('genre'),location:value('location'),status:value('status'),bio:value('bio'),members:value('members'),bannerImageUrl:value('banner-image-url'),imageUrl:value('image-url'),featuredTitle:value('featured-title'),featuredCopy:value('featured-copy'),featuredVideoUrl:value('featured-video-url'),spotify:value('spotify'),youtube:value('youtube'),instagram:value('instagram'),facebook:value('facebook'),website:value('website'),bookingEmail:value('booking-email'),bookingCopy:value('booking-copy'),published:true,updatedAt:serverTimestamp()};
+      if(existingOwnerId===currentUser.uid) data.ownerId=currentUser.uid; // never reassign ownership (admin edits keep the band's owner)
       try{
         await setDoc(doc(db,'bandProfiles',BAND_ID),data,{merge:true});
         location.href='burning-time.html?updated=1';
