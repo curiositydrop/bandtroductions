@@ -370,7 +370,7 @@ claimButton.addEventListener('click', async () => {
   try {
     const profileData = buildProfileData();
     const batch = writeBatch(db);
-    batch.set(doc(db, 'profiles', currentUser.uid), profileData);
+    batch.set(doc(db, 'profiles', currentUser.uid), profileData, { merge: true });
     batch.set(doc(db, 'users', currentUser.uid), {
       accountType: profileData.accountType,
       displayName: profileData.displayName,
