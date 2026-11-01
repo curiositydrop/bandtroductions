@@ -21,7 +21,7 @@ if(!params.has('adminProfile')){
   form?.addEventListener('submit',async event=>{event.preventDefault();event.stopImmediatePropagation();if(!currentUser||!targetProfileId)return;saveButton.disabled=true;status.textContent='Saving your profile…';try{let bannerImageUrl=value('banner-image-url')||existingProfile?.bannerImageUrl||existingProfile?.coverImageUrl||'';let imageUrl=value('image-url')||existingProfile?.imageUrl||existingProfile?.avatarUrl||currentUser.photoURL||'';if(bannerFile.files?.[0]){status.textContent='Uploading optimized banner…';bannerImageUrl=await upload(bannerFile.files[0],'banner')}if(avatarFile.files?.[0]){status.textContent='Uploading optimized avatar…';imageUrl=await upload(avatarFile.files[0],'avatar')}
     const city=value('city'),region=value('region'),country=value('country');
     if(!city||!region||!country)throw new Error('Please complete your City / Town, State / Province / Region, and Country.');
-    const needsApproval=accountType!=='fan';
+    const needsApproval=accountType!=='fan'&&!!existingProfile; // brand-new profiles go live; existing pending/rejected profiles keep their status
     const wasApproved=existingProfile?.approvalStatus==='approved'&&existingProfile?.published===true;
     const approvalStatus=needsApproval&&!wasApproved?'pending':'approved';
     const published=needsApproval&&!wasApproved?false:true;
@@ -33,6 +33,7 @@ if(!params.has('adminProfile')){
     if(saved.city!==city||saved.region!==region||saved.country!==country)throw new Error('Your location did not save correctly. Please try again.');
     if(profileData.ownerId===currentUser.uid){await setDoc(doc(db,'users',currentUser.uid),{displayName:profileData.displayName,profileComplete:true,location:profileData.location,city,region,country,updatedAt:serverTimestamp()},{merge:true});}
     await updateProfile(currentUser,{displayName:profileData.displayName,photoURL:imageUrl||currentUser.photoURL||null});
+    if(!existingProfile&&accountType!=='fan'){await sendAdminApprovalEmail({kind:'signup',name:profileData.displayName||'New profile',accountType,submittedBy:currentUser.email||'',details:'New profile saved and is now live (auto-approved).'}).catch(()=>{});}
     if(needsApproval&&!wasApproved){
       await sendAdminApprovalEmail({kind:'profile',name:profileData.displayName||'New profile',accountType,submittedBy:currentUser.email||'',details:'Profile saved and waiting in the Control Room approval queue.'});
       location.href='profile-pending.html';

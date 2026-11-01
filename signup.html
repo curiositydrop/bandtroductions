@@ -417,7 +417,9 @@
       const password = passwordInput.value;
       const accountType = accountTypeInput.value;
       const displayName = displayNameInput.value.trim();
-      const needsApproval = accountType !== 'fan';
+      // New non-claim signups go live immediately (no approval queue).
+      // Legacy profile claims use the separate claim-profile.js flow.
+      const needsApproval = false;
 
       try {
         if (!createdUser) {
@@ -497,20 +499,9 @@
           name: displayName,
           accountType,
           submittedBy: email,
-          details: `New ${accountType || 'member'} account and profile created. User ID: ${createdUser.uid}`
+          details: `New ${accountType || 'member'} account and profile created and now live (auto-approved). User ID: ${createdUser.uid}`
         });
 
-        if (needsApproval) {
-          await sendAdminApprovalEmail({
-            kind: 'profile',
-            name: displayName || 'New profile',
-            accountType,
-            submittedBy: email,
-            details: 'Profile was completed during account creation and is waiting in the Control Room approval queue.'
-          });
-          window.location.href = 'profile-pending.html';
-          return;
-        }
 
         await createWelcomePost({ profileId: createdUser.uid, displayName, accountType });
         window.location.href = `profile.html?id=${encodeURIComponent(createdUser.uid)}&fresh=${Date.now()}`;
