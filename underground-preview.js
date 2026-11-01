@@ -176,7 +176,7 @@ function ensureComposer(){
 }
 function openComposer(event){
   if(event)event.preventDefault();
-  if(!signedInUser){location.href='login.html?returnTo=index.html';return;}
+  if(!auth.currentUser){location.href='login.html?returnTo=index.html';return;}
   const composer=ensureComposer();if(!composer)return;
   composer.classList.add('is-open');composer.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>composer.querySelector('#dash-post-text')?.focus(),250);
 }
@@ -245,7 +245,7 @@ async function publishDashboardPost(){
 function wireCommunityActions(){
   document.querySelectorAll('a').forEach(a=>{
     const text=a.textContent.trim().toLowerCase();
-    if(text==='create post'||text==='create a post'){a.href='#create-post';a.addEventListener('click',openComposer);}
+    if((text==='create post'||text==='create a post')&&!a.closest('.hero')){a.href='#create-post';a.addEventListener('click',openComposer);}
     if(text==='community'&&a.closest('.nav')){a.href='index.html';}
   });
 }
@@ -382,7 +382,15 @@ function renderMemberCommunity(){
   feed?.classList.remove('bt-community-locked');
   renderFeed(latestDashboardPosts);
 }
+function setHeroButtons(user){
+  const links=[...(heroPanel?.querySelectorAll('.btns a')||[])];if(links.length<2)return;
+  const labels=user?[['CREATE POST','#create-post'],['MY PROFILE','profile.html']]:[['JOIN FREE','signup.html'],['EXPLORE BANDS','bands.html']];
+  labels.forEach(([t,h],i)=>{links[i].textContent=t;links[i].setAttribute('href',h);});
+  if(user)links[0].addEventListener('click',openComposer);else links[0].removeEventListener('click',openComposer);
+  try{if(user)localStorage.setItem('bt_member','1');else localStorage.removeItem('bt_member');}catch(e){}
+}
 function syncHeroCommunityState(user){
+  setHeroButtons(user);
   if(!heroPanel)return;
   const guest=heroPanel.querySelector('.bt-hero-guest');
   const normal=heroPanel.querySelector('.btns');
@@ -394,8 +402,7 @@ function syncHeroCommunityState(user){
     return;
   }
   guest?.remove();
-  if(normal)normal.hidden=true;
-  if(copy)copy.innerHTML='Discover independent music.<br><strong style="color:#eaffff">Join the scene for free.</strong>';
+  if(copy){copy.innerHTML='Discover independent music.<br><strong style="color:#eaffff">Join the scene for free.</strong>';copy.style.fontSize='clamp(13px,1.5vw,17px)';copy.style.fontWeight='900';copy.style.lineHeight='1.3';}
 }
 
 function renderFeed(posts){
@@ -451,7 +458,7 @@ if(messagesLink){
 if(logoutLink){
   logoutLink.addEventListener('click',async event=>{
     event.preventDefault();
-    try{await signOut(auth);location.reload();}catch(error){console.warn('Could not log out.',error);}
+    try{try{localStorage.removeItem('bt_member');}catch(e){}await signOut(auth);location.reload();}catch(error){console.warn('Could not log out.',error);}
   });
 }
 
