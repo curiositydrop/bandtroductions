@@ -385,6 +385,35 @@ claimButton.addEventListener('click', async () => {
     setTimeout(() => { window.location.href = `profile.html?id=${encodeURIComponent(currentUser.uid)}`; }, 800);
   } catch (error) {
     console.error('Profile claim failed:', error);
+    if (error?.code === 'permission-denied') {
+      // Instant claim needs a server-side email record for this page.
+      // Without one, queue the claim for admin review instead.
+      try {
+        await addDoc(collection(db, 'profileClaims'), {
+          claimantId: currentUser.uid,
+          claimantEmail: currentUser.email || '',
+          profileName,
+          accountType,
+          legacyPage,
+          imageUrl: legacySeed.imageUrl || imageUrl,
+          location: legacySeed.location || locationText,
+          genre: legacySeed.genre || genre,
+          instruments: legacySeed.instruments || instruments,
+          venueType: legacySeed.venueType || venueType,
+          legacySeed,
+          role: 'Email match (not verified on server)',
+          proof: 'Account email matched the email shown to the browser. Please confirm ownership before approving.',
+          status: 'pending',
+          submittedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        controls.hidden = true;
+        status.innerHTML = '<strong>Claim submitted.</strong><br>Your request is waiting for BANDtroductions review. The existing profile has not been changed.';
+        return;
+      } catch (queueError) {
+        console.error('Claim queue fallback failed:', queueError);
+      }
+    }
     const code = error?.code ? ` (${error.code})` : '';
     status.textContent = `The profile could not be connected${code}. Please try again.`;
     claimButton.disabled = false;
