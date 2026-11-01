@@ -1,4 +1,3 @@
-import './account-onboarding-repair.js?v=2';
 import './pwa-notifications.js?v=1';
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
