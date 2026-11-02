@@ -74,3 +74,5 @@
 .bw-admin{border:1px dashed #18c7b6;border-radius:14px;padding:14px;background:#081312}
 .bw-admin h2{color:#5cf5df}
 @media(min-width:700px){.bw-howto{grid-template-columns:repeat(3,1fr)}.bw-band{grid-template-columns:34px 72px 1fr 300px}.bw-band img{width:72px;height:72px}.bw-acts{grid-column:auto}}
+.bw-modal[hidden],.bw-toast[hidden],.bw-feature[hidden],.bw-block[hidden]{display:none!important}
+.bw-btn[disabled]{opacity:.45;cursor:default}
