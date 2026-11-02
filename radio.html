@@ -50,7 +50,10 @@ html,body{max-width:100%;overflow-x:hidden}
 .rp-status{display:inline-block;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:900;letter-spacing:.08em}
 .rp-status.live{background:#b0002f;color:#fff;border:1px solid #ff4d7d}
 .rp-status.off{background:#1a1f1f;color:#cfd6d6;border:1px solid #3b4443}
-#rpCover{display:block;width:min(260px,72vw);aspect-ratio:1;object-fit:cover;margin:14px auto;border-radius:12px;border:1px solid #33504e;background:#090b0b}
+#rpCover,#rpAd{display:block;width:min(260px,72vw);aspect-ratio:1;object-fit:cover;margin:14px auto;border-radius:12px;border:1px solid #33504e;background:#090b0b}
+#rpAd{background:#000}
+#rpAd[hidden],#rpCover[hidden]{display:none}
+.rp-ad-link{color:#ffd400;font-weight:900}
 .rp-label{font-size:11px;font-weight:900;letter-spacing:.1em;color:var(--muted)}
 #rpTrack{margin:4px 0 2px;font-size:24px;line-height:1.15;color:#fff;overflow-wrap:anywhere}
 #rpArtist{font-size:17px;font-weight:800;color:var(--teal)}
@@ -109,6 +112,7 @@ html,body{max-width:100%;overflow-x:hidden}
     <section class="rp-card" id="rpPlayer" aria-live="polite">
       <span id="rpStatus" class="rp-status off">TUNING IN…</span>
       <img id="rpCover" src="bt-radio-logo-280.webp" alt="BANDtroductions Radio" width="260" height="260">
+      <video id="rpAd" muted playsinline webkit-playsinline preload="auto" hidden></video>
       <div id="rpLabel" class="rp-label">BANDTRODUCTIONS RADIO</div>
       <h2 id="rpTrack" style="color:#fff">Loading the station…</h2>
       <div id="rpArtist"></div>
@@ -161,7 +165,7 @@ html,body{max-width:100%;overflow-x:hidden}
 <div id="global-footer"></div>
 
 <script src="global.js?v=4"></script>
-<script type="module" src="radio-page.js?v=20261102-1"></script>
+<script type="module" src="radio-page.js?v=20261102-sponsor"></script>
 <script>
 const sponsorSlides = [
   {

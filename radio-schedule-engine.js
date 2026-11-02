@@ -88,3 +88,57 @@ export function formatMinutes(value){
   const display=h%12||12;
   return `${display}:${String(m).padStart(2,'0')} ${suffix}`;
 }
+
+// ---- Sponsor break (between-shows ad) ----
+// Config lives on radioPlaylists/__stationControl as a `sponsorBreak` map:
+//   { active:true, sponsorName, clickUrl, videoUrl (mp4 with voice-over), posterUrl, durationSeconds }
+// A "break minute" is a 1-minute gap where one scheduled show has just ended and the next
+// scheduled show starts the following minute. Full-day filler playlists (e.g. the Rotation) do
+// not count as shows. If the config is missing, inactive, or has no videoUrl, this returns null
+// and the players behave exactly as before.
+function isFiller(p){
+  const start=Number(p.startMinutes||0),end=Number(p.endMinutes??1440);
+  const len=end>start?end-start:1440-start+end;
+  return len>=1439;
+}
+function dayList(p){return Array.isArray(p.days)&&p.days.length?p.days:['every'];}
+export function sponsorBreak(playlists,config,date=new Date()){
+  if(!config||config.active!==true||!config.videoUrl)return null;
+  const now=easternClock(date);
+  const day=now.weekday.toLowerCase().slice(0,3);
+  const shows=Object.entries(playlists||{}).map(([id,p])=>({id,...p}))
+    .filter(p=>p.active!==false&&Array.isArray(p.items)&&p.items.length&&!isFiller(p));
+  const m=now.minutes;
+  const ended=shows.find(p=>{
+    const start=Number(p.startMinutes||0),end=Number(p.endMinutes??1440)%1440;
+    if(end!==m)return false;
+    const d=dayList(p);
+    const wraps=Number(p.endMinutes??1440)<=start;
+    const showDay=wraps&&m<start?previousDay(day):day;
+    return d.includes('every')||d.includes(showDay);
+  });
+  if(!ended)return null;
+  const nextMin=(m+1)%1440;
+  const nextDay=nextMin===0?DAYS[(DAYS.indexOf(day)+1)%7]:day;
+  const next=shows.find(p=>{
+    if(((Number(p.startMinutes||0)%1440)+1440)%1440!==nextMin)return false;
+    const d=dayList(p);return d.includes('every')||d.includes(nextDay);
+  });
+  if(!next)return null;
+  const offsetSeconds=now.second;
+  const durationSeconds=Math.max(1,Math.min(60,Number(config.durationSeconds)||40));
+  return {
+    type:'sponsorBreak',
+    key:`break|${ended.id}|${next.id}|${day}|${m}`,
+    sponsorName:String(config.sponsorName||'Our Sponsor'),
+    clickUrl:String(config.clickUrl||'radio-sponsor.html'),
+    videoUrl:String(config.videoUrl),
+    posterUrl:String(config.posterUrl||''),
+    durationSeconds,
+    offsetSeconds,
+    clipPlaying:offsetSeconds<durationSeconds,
+    endedShow:ended.upNextDisplayName||ended.name||'',
+    nextShow:next.upNextDisplayName||next.name||'',
+    nextStartMinutes:nextMin
+  };
+}

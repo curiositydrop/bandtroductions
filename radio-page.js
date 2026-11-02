@@ -2,7 +2,7 @@
 // schedule engine as the homepage player. Read-only: never writes to Firestore.
 import { db as devDb } from './firebase-dev.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock } from './radio-schedule-engine.js?v=3';
+import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock, sponsorBreak } from './radio-schedule-engine.js?v=4';
 
 const STATION_CONTROL_ID='__stationControl';
 const DEFAULT_COVER='bt-radio-logo-280.webp';
@@ -12,11 +12,12 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const safeUrl=u=>{try{const x=new URL(u,location.href);return /^https?:$/.test(x.protocol)?x.href:'';}catch{return '';}};
 
-let playlists={},stationEnabled=true,loaded=false;
+let playlists={},stationEnabled=true,stationSettings={},loaded=false;
 let audio=null,listening=false,currentKey='',selectedDay='';
 
+function currentBreak(){return stationEnabled?sponsorBreak(playlists,stationSettings.sponsorBreak):null;}
 function state(){
-  if(!stationEnabled)return null;
+  if(!stationEnabled||currentBreak())return null;
   const p=activePlaylist(playlists);if(!p)return null;
   const pos=playlistPosition(p);if(!pos)return null;
   const item=p.items?.[pos.index];if(!item?.audioUrl)return null;
@@ -25,7 +26,31 @@ function state(){
 function showName(p){return (p&&(p.upNextDisplayName||p.name)||'Scheduled Show').toString().trim().replace(/\.$/,'');}
 function fmtTime(s){s=Math.max(0,Math.floor(s));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
 
+function renderBreak(b){
+  const card=$('rpPlayer');card.classList.add('is-live');
+  $('rpStatus').textContent='● ON AIR';$('rpStatus').className='rp-status live';
+  $('rpCover').hidden=true;
+  const v=$('rpAd');v.hidden=false;
+  if(v.getAttribute('src')!==b.videoUrl){v.src=b.videoUrl;if(b.posterUrl)v.poster=b.posterUrl;}
+  v.setAttribute('aria-label',`${b.sponsorName} sponsor clip`);
+  v.muted=!listening;
+  if(b.clipPlaying){
+    if(v.readyState>0&&Math.abs((v.currentTime||0)-b.offsetSeconds)>1.5){try{v.currentTime=b.offsetSeconds;}catch{}}
+    if(v.paused)v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});});
+  }else if(!v.paused)v.pause();
+  $('rpLabel').textContent='A WORD FROM OUR SPONSOR';
+  $('rpTrack').textContent=b.sponsorName;
+  $('rpArtist').innerHTML=`<a class="rp-ad-link" href="${esc(safeUrl(b.clickUrl)||'radio-sponsor.html')}" target="_blank" rel="noopener sponsored">Visit ${esc(b.sponsorName)} ›</a>`;
+  $('rpShow').textContent=`Up next: ${b.nextShow} at ${formatMinutes(b.nextStartMinutes)} ET`;
+  $('rpProfile').hidden=true;
+  $('rpListen').disabled=false;$('rpListen').textContent=listening?'❚❚ PAUSE':'▶ LISTEN LIVE';
+  $('rpProgress').hidden=true;$('rpUpNext').innerHTML='';$('rpOff').hidden=true;
+}
+function hideBreak(){const v=$('rpAd');if(v&&!v.hidden){v.pause();v.hidden=true;$('rpCover').hidden=false;}}
 function renderPlayer(){
+  const b=currentBreak();
+  if(b){renderBreak(b);return;}
+  hideBreak();
   const s=state();
   const card=$('rpPlayer');
   card.classList.toggle('is-live',!!s);
@@ -95,6 +120,7 @@ function ensureAudio(){
   return audio;
 }
 async function sync(){
+  if(currentBreak()){if(audio&&!audio.paused)audio.pause();currentKey='';return;}
   const s=state();
   if(!s){if(audio&&!audio.paused){audio.pause();}currentKey='';return;}
   if(!listening)return;
@@ -110,13 +136,14 @@ async function sync(){
   if(audio.paused){try{await audio.play();}catch{}}
 }
 $('rpListen').addEventListener('click',async()=>{
+  if(currentBreak()){listening=!listening;const v=$('rpAd');v.muted=!listening;if(listening)v.play().catch(()=>{});else audio?.pause();renderPlayer();return;}
   if(listening){listening=false;audio?.pause();renderPlayer();return;}
   listening=true;ensureAudio();currentKey='';await sync();renderPlayer();
 });
 
 onSnapshot(collection(devDb,'radioPlaylists'),snap=>{
-  playlists={};stationEnabled=true;
-  snap.forEach(d=>{if(d.id===STATION_CONTROL_ID){stationEnabled=(d.data()||{}).stationOnAir!==false;return;}playlists[d.id]={id:d.id,...d.data()};});
+  playlists={};stationEnabled=true;stationSettings={};
+  snap.forEach(d=>{if(d.id===STATION_CONTROL_ID){stationSettings=d.data()||{};stationEnabled=stationSettings.stationOnAir!==false;return;}playlists[d.id]={id:d.id,...d.data()};});
   loaded=true;renderPlayer();renderSchedule();sync();
 },err=>{
   console.error('Radio schedule read failed',err);loaded=true;

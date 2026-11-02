@@ -1,6 +1,6 @@
 import { db as devDb } from './firebase-dev.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes } from './radio-schedule-engine.js?v=3';
+import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, sponsorBreak } from './radio-schedule-engine.js?v=4';
 
 const oldPanel=document.querySelector('.radio-panel');
 if(!oldPanel)throw new Error('Radio panel not found');
@@ -33,6 +33,8 @@ style.textContent=`
 .bt-radio-art-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center;margin:0 auto 8px}
 .bt-radio-art,.bt-radio-logo{width:100%;aspect-ratio:1;min-width:0;object-fit:contain;background:#090b0b;border:1px solid #334947;border-radius:3px;padding:2px}
 .bt-radio-art{object-fit:cover;padding:0}
+.bt-radio-ad{display:block;background:#000}
+.bt-radio-ad-link{color:#ffd400!important;font-weight:900;text-decoration:underline}
 .bt-radio-now{font-size:6px;color:#899493;font-weight:850;letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
 .bt-radio-track{color:var(--teal);font-size:10px;font-weight:950;line-height:1.15;margin-top:3px;overflow-wrap:anywhere}
 .bt-radio-band{color:#fff;font-size:8px;font-weight:900;line-height:1.2;margin-top:4px;overflow-wrap:anywhere}
@@ -107,8 +109,14 @@ let autoplayAttemptedKey='';
 const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]));
 const eqBars=()=>Array.from({length:13},()=>'<span></span>').join('');
 
+function currentBreak(){
+  if(!stationEnabled)return null;
+  return sponsorBreak(playlists,stationSettings.sponsorBreak);
+}
+
 function state(){
   if(!stationEnabled)return null;
+  if(currentBreak())return null;
   const p=activePlaylist(playlists);
   if(!p)return null;
   const pos=playlistPosition(p);
@@ -120,6 +128,30 @@ function state(){
 
 function actions(){
   return '<div class="bt-radio-actions"><a class="btn bt-radio-submit" href="radio-submit.html">SUBMIT YOUR MUSIC</a><a class="btn" href="radio-sponsor.html">SPONSOR RADIO HERE</a><a class="btn bt-radio-schedule" href="radio.html">FULL SCHEDULE</a></div>';
+}
+
+function breakMarkup(b){
+  const next=`${formatMinutes(b.nextStartMinutes)} · ${b.nextShow}`;
+  return `<div class="radio"><div class="radio-box bt-radio-box bt-radio-on-break">
+    <div class="bt-radio-status-row"><span class="bt-radio-status live">● ON AIR</span></div>
+    <div class="bt-radio-art-row"><video class="bt-radio-art bt-radio-ad" src="${esc(b.videoUrl)}" ${b.posterUrl?`poster="${esc(b.posterUrl)}"`:''} muted playsinline webkit-playsinline preload="auto" aria-label="${esc(b.sponsorName)} sponsor clip"></video><img class="bt-radio-logo" src="${RADIO_LOGO}" alt="BANDtroductions Radio"></div>
+    <div class="bt-radio-info"><div class="bt-radio-now">A WORD FROM OUR SPONSOR</div>
+    <div class="bt-radio-track">${esc(b.sponsorName)}</div>
+    <div class="bt-radio-playlist"><a class="bt-radio-ad-link" href="${esc(b.clickUrl)}" target="_blank" rel="noopener sponsored">Visit ${esc(b.sponsorName)} ›</a></div></div>
+    <div class="bt-radio-next"><div class="bt-radio-next-label">UP NEXT</div><div class="bt-radio-next-name">${esc(next)}</div></div>
+    <div class="bt-radio-eq" aria-hidden="true">${eqBars()}</div>
+    <button type="button" class="btn primary bt-radio-listen">${userUnmuted?'🔇 MUTE':'🔊 LISTEN NOW'}</button>
+    ${actions()}
+  </div></div>`;
+}
+
+function syncBreakVideo(b){
+  const v=panel.querySelector('video.bt-radio-ad');
+  if(!v)return;
+  v.muted=!userUnmuted;
+  if(!b.clipPlaying){if(!v.paused)v.pause();return;}
+  if(v.readyState>0&&Math.abs((v.currentTime||0)-b.offsetSeconds)>1.5){try{v.currentTime=b.offsetSeconds;}catch{}}
+  if(v.paused){v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});});}
 }
 
 function playerMarkup(s){
@@ -148,8 +180,10 @@ function playerMarkup(s){
 
 let lastRenderedMarkup='';
 function render(){
-  const s=state();
-  const markup='<h3><span class="bt-radio-heading-brand">BANDtroductions</span> <span class="bt-radio-heading-title">Radio</span></h3>'+playerMarkup(s);
+  const b=currentBreak();
+  const s=b?null:state();
+  const markup='<h3><span class="bt-radio-heading-brand">BANDtroductions</span> <span class="bt-radio-heading-title">Radio</span></h3>'+(b?breakMarkup(b):playerMarkup(s));
+  if(b&&markup===lastRenderedMarkup&&panel.querySelector('.bt-radio-listen')){syncBreakVideo(b);return;}
   // Skip the 1s rebuild when nothing changed so the artwork/logo <img> nodes stay stable (iOS Safari repaints them on every replacement).
   if(markup===lastRenderedMarkup&&panel.querySelector('.bt-radio-listen'))return;
   lastRenderedMarkup=markup;
@@ -160,6 +194,16 @@ function render(){
     const keep=previousImages.find(old=>old.className===img.className&&old.getAttribute('src')===img.getAttribute('src'));
     if(keep){keep.alt=img.alt;img.replaceWith(keep);}
   });
+  if(b){
+    panel.querySelector('.bt-radio-listen')?.addEventListener('click',()=>{
+      userUnmuted=!userUnmuted;
+      const v=panel.querySelector('video.bt-radio-ad');
+      if(v){v.muted=!userUnmuted;if(userUnmuted&&currentBreak()?.clipPlaying)v.play().catch(()=>{});}
+      lastRenderedMarkup='';render();
+    });
+    syncBreakVideo(b);
+    return;
+  }
   panel.querySelector('.bt-radio-listen:not([disabled])')?.addEventListener('click',async()=>{
     const latest=state();
     if(!latest)return;
@@ -199,6 +243,12 @@ async function tryMutedAutoplay(key){
 }
 
 async function synchronize(forcePlay=false){
+  if(currentBreak()){
+    // Sponsor break: music pauses; the clip's own audio plays (if the listener tapped LISTEN).
+    if(audio&&!audio.paused)audio.pause();
+    currentKey='';autoplayAttemptedKey='';
+    return;
+  }
   const s=state();
   if(!s){
     if(audio){audio.pause();audio.removeAttribute('src');audio.load();}
