@@ -53,7 +53,7 @@ function renderFeature() {
     id = seed.winners[0]; tag = '👑 Reigning Champ'; line = `Pre-revamp leader with ${seed.results[0].votes} votes. Can anyone dethrone them?`;
   } else { el.hidden = true; return; }
   const b = info(id);
-  el.innerHTML = `<img class="ft-img" src="${esc(b.image)}" alt="${esc(b.name)}"><div class="ft-body"><div class="ft-tag">${esc(tag)}</div><h2>${esc(b.name)}</h2><p>${esc(line)}</p><a class="bw-btn gold" href="${esc(b.url)}">View ${esc(b.name)} →</a></div>`;
+  el.innerHTML = `<img class="ft-img" src="${esc(b.image)}" alt="${esc(b.name)}" onerror="this.onerror=null;this.src='${FALLBACK}'"><div class="ft-body"><div class="ft-tag">${esc(tag)}</div><h2>${esc(b.name)}</h2><p>${esc(line)}</p><a class="bw-btn gold" href="${esc(b.url)}">View ${esc(b.name)} →</a></div>`;
   el.hidden = false;
 }
 
@@ -84,7 +84,7 @@ function renderList() {
       : mine ? (mine.bandId === id ? `<button class="bw-btn voted" disabled>✓ Your vote</button>` : `<button class="bw-btn vote" disabled>Voted this week</button>`)
       : `<button class="bw-btn vote" data-vote="${esc(id)}">🤘 Vote</button>`;
     return `<article class="bw-band${lead ? ' lead' : ''}${id === focusBand ? ' focus' : ''}${mine?.bandId === id ? ' mine' : ''}" id="band-${esc(id)}">
-      <div class="bw-rank">${rank}</div><img src="${esc(b.image)}" alt="" loading="lazy">
+      <div class="bw-rank">${rank}</div><img src="${esc(b.image)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK}'">
       <div class="bw-info"><a class="nm" href="${esc(b.url)}">${esc(b.name)}</a><small>${esc(b.meta)}</small>
         <div class="bw-bar"><i style="width:${pct}%"></i></div>
         <div class="bw-stats"><span><b>${v}</b> vote${v === 1 ? '' : 's'}</span><span>🔥 <b>${cheers[id] || 0}</b> cheers</span>${open && v && behind > 0 ? `<span class="bw-behind">${behind} behind #1</span>` : lead ? '<span class="bw-behind">Leading</span>' : ''}</div></div>
@@ -96,7 +96,7 @@ function renderHof() {
   const items = rounds.filter(r => r.winners?.length).flatMap(r => r.winners.map(w => ({ r, w })));
   $('bwHof').innerHTML = items.length ? items.map(({ r, w }) => {
     const b = info(w), res = (r.results || []).find(x => x.bandId === w);
-    return `<a href="${esc(b.url)}"><img src="${esc(b.image)}" alt="${esc(b.name)}" loading="lazy"><div><small>${esc(r.title || (r.winners.length > 1 ? 'Co-winner' : 'Champion'))}</small><b>${esc(b.name)}</b><em>${esc(r.label)}${res ? ` · ${res.votes} votes` : ''}</em></div></a>`;
+    return `<a href="${esc(b.url)}"><img src="${esc(b.image)}" alt="${esc(b.name)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK}'"><div><small>${esc(r.title || (r.winners.length > 1 ? 'Co-winner' : 'Champion'))}</small><b>${esc(b.name)}</b><em>${esc(r.label)}${res ? ` · ${res.votes} votes` : ''}</em></div></a>`;
   }).join('') : '<p class="bw-empty">The first champion will be crowned Sunday, Nov 15.</p>';
 }
 
