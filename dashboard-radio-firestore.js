@@ -119,7 +119,7 @@ function state(){
 }
 
 function actions(){
-  return '<div class="bt-radio-actions"><a class="btn bt-radio-submit" href="radio-submit.html">SUBMIT YOUR MUSIC</a><a class="btn" href="radio-sponsor.html">SPONSOR RADIO HERE</a></div>';
+  return '<div class="bt-radio-actions"><a class="btn bt-radio-submit" href="radio-submit.html">SUBMIT YOUR MUSIC</a><a class="btn" href="radio-sponsor.html">SPONSOR RADIO HERE</a><a class="btn bt-radio-schedule" href="radio.html">FULL SCHEDULE</a></div>';
 }
 
 function playerMarkup(s){
