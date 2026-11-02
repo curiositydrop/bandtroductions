@@ -2,7 +2,7 @@
 // schedule engine as the homepage player. Read-only: never writes to Firestore.
 import { db as devDb } from './firebase-dev.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock, sponsorBreak } from './radio-schedule-engine.js?v=4';
+import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak } from './radio-schedule-engine.js?v=5';
 
 const STATION_CONTROL_ID='__stationControl';
 const DEFAULT_COVER='bt-radio-logo-280.webp';
@@ -15,7 +15,7 @@ const safeUrl=u=>{try{const x=new URL(u,location.href);return /^https?:$/.test(x
 let playlists={},stationEnabled=true,stationSettings={},loaded=false;
 let audio=null,listening=false,currentKey='',selectedDay='';
 
-function currentBreak(){return stationEnabled?sponsorBreak(playlists,stationSettings.sponsorBreak):null;}
+function currentBreak(){return stationEnabled?sponsorBreak(playlists,effectiveSponsorBreak(stationSettings)):null;}
 function state(){
   if(!stationEnabled||currentBreak())return null;
   const p=activePlaylist(playlists);if(!p)return null;
@@ -141,6 +141,7 @@ $('rpListen').addEventListener('click',async()=>{
   listening=true;ensureAudio();currentKey='';await sync();renderPlayer();
 });
 
+loadStaticSponsorBreak();setInterval(()=>loadStaticSponsorBreak(),60000);
 onSnapshot(collection(devDb,'radioPlaylists'),snap=>{
   playlists={};stationEnabled=true;stationSettings={};
   snap.forEach(d=>{if(d.id===STATION_CONTROL_ID){stationSettings=d.data()||{};stationEnabled=stationSettings.stationOnAir!==false;return;}playlists[d.id]={id:d.id,...d.data()};});

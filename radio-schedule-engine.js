@@ -142,3 +142,17 @@ export function sponsorBreak(playlists,config,date=new Date()){
     nextStartMinutes:nextMin
   };
 }
+
+// Static fallback config (site-root sponsor-break.json). Firestore __stationControl.sponsorBreak
+// wins whenever that field exists (so the Control Room can override or switch it off).
+let staticBreakConfig=null,staticBreakLoaded=0;
+export function loadStaticSponsorBreak(url='/sponsor-break.json'){
+  if(Date.now()-staticBreakLoaded<300000)return;
+  staticBreakLoaded=Date.now();
+  fetch(url,{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(j=>{staticBreakConfig=j&&typeof j==='object'?j:null;}).catch(()=>{staticBreakConfig=null;});
+}
+export function effectiveSponsorBreak(stationSettings){
+  const fs=stationSettings&&stationSettings.sponsorBreak;
+  if(fs&&typeof fs==='object')return fs;
+  return staticBreakConfig;
+}

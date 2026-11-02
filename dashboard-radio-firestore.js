@@ -1,6 +1,6 @@
 import { db as devDb } from './firebase-dev.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, sponsorBreak } from './radio-schedule-engine.js?v=4';
+import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak } from './radio-schedule-engine.js?v=5';
 
 const oldPanel=document.querySelector('.radio-panel');
 if(!oldPanel)throw new Error('Radio panel not found');
@@ -111,7 +111,7 @@ const eqBars=()=>Array.from({length:13},()=>'<span></span>').join('');
 
 function currentBreak(){
   if(!stationEnabled)return null;
-  return sponsorBreak(playlists,stationSettings.sponsorBreak);
+  return sponsorBreak(playlists,effectiveSponsorBreak(stationSettings));
 }
 
 function state(){
@@ -292,6 +292,7 @@ async function synchronize(forcePlay=false){
   }
 }
 
+loadStaticSponsorBreak();setInterval(()=>loadStaticSponsorBreak(),60000);
 onSnapshot(collection(devDb,'radioPlaylists'),snap=>{
   playlists={};
   stationSettings={};
