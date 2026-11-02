@@ -504,6 +504,8 @@
 
 
         await createWelcomePost({ profileId: createdUser.uid, displayName, accountType });
+        // Band of the Week: return voters to the band they wanted to vote for.
+        if (/^band-of-the-week\.html(?:\?|$)/i.test(safeReturn)) { window.location.href = safeReturn; return; }
         window.location.href = `profile.html?id=${encodeURIComponent(createdUser.uid)}&fresh=${Date.now()}`;
       } catch (error) {
         console.error(error);

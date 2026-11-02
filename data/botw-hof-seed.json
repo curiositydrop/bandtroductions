@@ -1,0 +1,6 @@
+{
+  "_note": "Display-only seed for the Hall of Fame. Not written to the database. Pre-revamp all-time leader, read from RTDB Bands/ascent-to-power on 2026-11-01.",
+  "rounds": [
+    { "seed": true, "weekId": "2026-11-02", "label": "Pre-revamp era (through Nov 8, 2026)", "title": "Reigning Champ", "winners": ["ascent-to-power"], "results": [{ "bandId": "ascent-to-power", "votes": 9, "likes": 12 }], "totalVotes": 12 }
+  ]
+}

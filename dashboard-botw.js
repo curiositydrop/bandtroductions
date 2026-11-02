@@ -1,43 +1,32 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js';
-import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js';
+// Homepage Band of the Week card (revamp): pre-launch champ / voting week + leader / Sunday winner.
+import { currentRound, roundFor, rankRound, loadVotes, loadRounds, loadDirectory, slugify } from './botw-core.js?v=1';
 
-const firebaseConfig={apiKey:'AIzaSyApLiiJsKTw1Fp8J3aQatMqiSZoP_6EycE',authDomain:'bandfanwall.firebaseapp.com',databaseURL:'https://bandfanwall-default-rtdb.firebaseio.com',projectId:'bandfanwall',storageBucket:'bandfanwall.firebasestorage.app',messagingSenderId:'619241154826',appId:'1:619241154826:web:25ddc58eef094e3c0732f3'};
-const app=getApps().find(a=>a.options?.projectId==='bandfanwall')||initializeApp(firebaseConfig,'botw-dashboard');
-const db=getDatabase(app);
-const panel=[...document.querySelectorAll('.right .panel')].find(p=>p.querySelector('h3')?.textContent.trim()==='Band of the Week');
-const slugify=s=>String(s||'').toLowerCase().trim().replace(/&/g,'and').replace(/['’]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-const safeNumber=v=>Number(v||0);
-const scoreFor=b=>(safeNumber(b.votes)*5)+(safeNumber(b.likes)*2)+(safeNumber(b.analytics?.supportClicks)*10)+(safeNumber(b.analytics?.shareClicks)*4)+(safeNumber(b.analytics?.views)*.25);
-const nameFor=(id,b)=>b.name||b.bandName||b.title||b.displayName||id.replace(/-/g,' ');
-const urlFor=(id,b)=>b.profileUrl||b.url||b.link||`bands.html#${encodeURIComponent(slugify(nameFor(id,b)))}`;
-let directoryMap=new Map();
+const panel = [...document.querySelectorAll('.right .panel')].find(p => p.querySelector('h3')?.textContent.trim() === 'Band of the Week');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-async function loadDirectory(){
-  try{
-    const html=await fetch('bands.html').then(r=>r.text());
-    const doc=new DOMParser().parseFromString(html,'text/html');
-    [...doc.querySelectorAll('.profile-card')].forEach(card=>{
-      const name=card.querySelector('h3')?.textContent?.trim();
-      const img=card.querySelector('img')?.getAttribute('src');
-      const link=card.querySelector('a.button')?.getAttribute('href');
-      if(name)directoryMap.set(slugify(name),{img,link});
-    });
-  }catch(e){console.warn('Could not load band directory artwork',e);}
-}
-
-if(panel){
-  const body=panel.querySelector('div');
-  loadDirectory().finally(()=>{
-    onValue(ref(db,'Bands'),snap=>{
-      const data=snap.val()||{};
-      const ranked=Object.entries(data).filter(([id])=>!id.startsWith('__')).map(([id,b])=>({id,b,score:scoreFor(b)})).sort((a,b)=>b.score-a.score);
-      if(!ranked.length){body.innerHTML='<p style="color:#888">No leaderboard activity yet.</p><a class="btn" href="band-of-the-week.html">VIEW LEADERBOARD</a>';return;}
-      const winner=ranked[0];
-      const name=nameFor(winner.id,winner.b);
-      const directory=directoryMap.get(slugify(name));
-      const img=directory?.img||winner.b.image||winner.b.profileImage||winner.b.photo||winner.b.logo||winner.b.avatar||winner.b.banner||'IMG_9383.jpeg';
-      const url=directory?.link||urlFor(winner.id,winner.b);
-      body.innerHTML=`<a href="${url}" style="display:block;text-decoration:none;color:inherit"><img src="${img}" alt="${name}" style="width:100%;aspect-ratio:16/10;object-fit:cover;border:1px solid #333;margin-bottom:8px"><b style="display:block;color:var(--teal);font-size:1.05em;line-height:1.15">${name}</b><p style="color:var(--muted);margin:5px 0">${safeNumber(winner.b.votes)} votes · ${safeNumber(winner.b.likes)} likes</p></a><a class="btn" href="band-of-the-week.html">VIEW LEADERBOARD</a>`;
-    },()=>{body.innerHTML='<p style="color:#888">Band of the Week unavailable.</p><a class="btn" href="band-of-the-week.html">VIEW LEADERBOARD</a>';});
-  });
-}
+if (panel) (async () => {
+  const body = panel.querySelector('div');
+  try {
+    const round = currentRound();
+    const [dir, rounds, votes] = await Promise.all([loadDirectory(), loadRounds(), round.state === 'prelaunch' ? [] : loadVotes(round.weekId).catch(() => [])]);
+    const info = id => dir.get(id) || { name: id.replace(/-/g, ' '), image: 'IMG_9367.png', url: `${id}.html` };
+    const ranked = rankRound(votes);
+    const card = (id, tag, line, btn, href) => { const b = info(id); return `<a href="${esc(b.url)}" style="display:block;text-decoration:none;color:inherit"><img src="${esc(b.image)}" alt="${esc(b.name)}" style="width:100%;aspect-ratio:16/10;object-fit:cover;border:1px solid #333;margin-bottom:8px"><small style="display:block;color:#ffcc33;font-weight:900;letter-spacing:.08em;font-size:.7em">${esc(tag)}</small><b style="display:block;color:var(--teal);font-size:1.05em;line-height:1.15">${esc(b.name)}</b><p style="color:var(--muted);margin:5px 0">${esc(line)}</p></a><a class="btn${btn === 'VOTE NOW' ? ' primary' : ''}" href="${href}">${btn}</a>`; };
+    let html;
+    if (round.state === 'voting') {
+      const lead = ranked.list[0];
+      const head = `<small style="display:block;color:#ff004c;font-weight:900;letter-spacing:.08em;font-size:.7em">● VOTING LIVE · ${esc(round.label.toUpperCase())}</small><p style="color:var(--muted);margin:4px 0 8px">Closes Sat 11:59 PM ET</p>`;
+      html = lead ? head + card(lead.bandId, 'CURRENT LEADER', `${lead.votes} vote${lead.votes === 1 ? '' : 's'}`, 'VOTE NOW', 'band-of-the-week.html')
+                  : head + '<p style="color:var(--muted)">No votes yet. Be the first!</p><a class="btn primary" href="band-of-the-week.html">VOTE NOW</a>';
+    } else if (round.state === 'results') {
+      const fin = rounds.find(r => r.weekId === round.weekId && !r.seed);
+      const w = (fin?.winners || ranked.winners)[0];
+      html = w ? card(w, `🏆 BAND OF THE WEEK · ${round.shortLabel.toUpperCase()}`, `WINNER · ${(fin?.results || ranked.list).find(x => x.bandId === w)?.votes || 0} votes`, 'VIEW PROFILE', esc(info(w).url)) + '<a class="btn" style="margin-top:6px" href="band-of-the-week.html">HALL OF FAME</a>'
+               : '<p style="color:var(--muted)">New round opens Monday.</p><a class="btn" href="band-of-the-week.html">VIEW PAGE</a>';
+    } else {
+      const seed = rounds.find(r => r.seed);
+      html = (seed ? card(seed.winners[0], '👑 REIGNING CHAMP', 'All-new Band of the Week returns Mon Nov 9', 'SEE WHAT’S COMING', 'band-of-the-week.html') : '<p style="color:var(--muted)">All-new Band of the Week returns Mon Nov 9.</p><a class="btn" href="band-of-the-week.html">LEARN MORE</a>');
+    }
+    body.style.padding = '12px'; body.innerHTML = html;
+  } catch (e) { console.warn('BOTW card', e); body.innerHTML = '<p style="color:#888">Band of the Week</p><a class="btn" href="band-of-the-week.html">VIEW</a>'; }
+})();

@@ -2,74 +2,69 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Band of the Week | BANDtroductions</title>
 <link rel="canonical" href="https://bandtroductions.com/band-of-the-week.html">
-<meta name="description" content="Vote for the BANDtroductions Band of the Week and see the live leaderboard and previous winners from the independent music scene.">
-
+<meta name="description" content="Vote for the BANDtroductions Band of the Week. New round every Monday, voting closes Saturday 11:59 PM ET, winner crowned Sunday.">
+<meta property="og:title" content="Band of the Week | BANDtroductions">
+<meta property="og:description" content="Vote for your favorite independent band. New round every Monday, winner crowned Sunday.">
+<meta property="og:url" content="https://bandtroductions.com/band-of-the-week.html">
 <link rel="stylesheet" href="style.css?v=29">
+<link rel="stylesheet" href="botw.css?v=1">
 </head>
-
-<body class="botw-page">
-
+<body class="botw-page botw2">
 <div id="global-header"></div>
 
-<section class="botw-current botw-hero">
-
-  <h1 class="page-title">🏆 Band of the Week</h1>
-
-  <div class="botw-sponsor">
-    <a href="#" class="botw-sponsor-link">
-      <span>Sponsored by: <strong>New Leaf Painting Co.</strong></span>
-      <img src="E25C1BF6-8B68-40AD-BC11-2427F37BC179.png" alt="New Leaf Painting Co. logo" class="botw-sponsor-logo">
-    </a>
-  </div>
-
-  <div class="botw-winner" id="currentWinnerCard">
-
-    <h3 id="currentWinnerName">Loading...</h3>
-
-    <img id="currentWinnerImage" src="IMG_9383.jpeg" alt="Band of the Week">
-
-    <p id="currentWinnerMeta">Loading band info...</p>
-    <p id="currentWinnerVotes">Loading live stats...</p>
-
-    <div class="band-links">
-      <a class="button" id="currentWinnerLink" href="#">View Band</a>
-      <a class="button" href="bandfeed1.html">Vote 🤘</a>
+<main class="bw">
+  <section class="bw-hero" id="bwHero">
+    <div class="bw-kicker"><span class="bw-live" id="bwStateBadge">LOADING</span><span id="bwWeekLabel"></span></div>
+    <h1 class="bw-title">Band <em>of the</em> Week</h1>
+    <p class="bw-sub" id="bwSub">Fans vote Monday–Saturday. Winner crowned Sunday.</p>
+    <div class="bw-count" id="bwCountdown" aria-live="polite">
+      <div><b id="cdD">0</b><small>days</small></div><div><b id="cdH">0</b><small>hrs</small></div><div><b id="cdM">0</b><small>min</small></div><div><b id="cdS">0</b><small>sec</small></div>
     </div>
+    <p class="bw-count-label" id="bwCountLabel"></p>
+    <a href="#" class="bw-sponsor" id="bwSponsor"><span>Presented by</span><img src="E25C1BF6-8B68-40AD-BC11-2427F37BC179.png" alt="New Leaf Painting Co." loading="lazy"><strong>New Leaf Painting Co.</strong></a>
+  </section>
 
-  </div>
+  <section class="bw-feature" id="bwFeature" hidden></section>
 
-</section>
+  <section class="bw-howto" id="bwHowto">
+    <div><b>1</b><span><strong>Cheer</strong> any band. No account needed.</span></div>
+    <div><b>2</b><span><strong>Vote</strong> once per week with a free account. Votes decide the winner.</span></div>
+    <div><b>3</b><span><strong>Share</strong> your band's vote link. Most votes by Sat 11:59 PM ET wins.</span></div>
+  </section>
 
-<section class="botw-description">
-  <p>
-    Vote for your favorite local band across the site. Each week, the top voted band earns the spotlight and gets added to the archive.
-  </p>
-</section>
+  <section class="bw-block">
+    <div class="bw-head"><h2 id="bwListTitle">This Week's Battle</h2><input id="bwSearch" type="search" placeholder="Find a band…" aria-label="Find a band"></div>
+    <div class="bw-list" id="bwList"><p class="bw-empty">Loading bands…</p></div>
+  </section>
 
-<section class="botw-previous">
-  <h2>Live Vote Leaderboard</h2>
-  <div class="botw-archive" id="botwLeaderboard">
-    <p class="botw-empty">Loading leaderboard...</p>
-  </div>
-</section>
+  <section class="bw-block" id="bwAdmin" hidden></section>
 
-<section class="botw-previous">
-  <h2>Previous Winners</h2>
+  <section class="bw-block">
+    <div class="bw-head"><h2>🏆 Hall of Fame</h2></div>
+    <div class="bw-hof" id="bwHof"><p class="bw-empty">Loading champions…</p></div>
+  </section>
 
-  <div class="botw-archive" id="previousWinners">
-    <p class="botw-empty">Previous winners will appear here once voting rounds begin.</p>
-  </div>
-</section>
+  <section class="bw-block bw-rules">
+    <h2>Official Rules</h2>
+    <ul>
+      <li>Voting opens Monday 12:00 AM ET and closes Saturday 11:59 PM ET. Winner announced Sunday.</li>
+      <li>One official vote per free BANDtroductions account per week. Cheers show love but don't count toward the win.</li>
+      <li>Winner = most votes. Tie → band that reached that total first → most likes → co-winners.</li>
+      <li>Each Monday starts a fresh round. Past results are kept in the Hall of Fame.</li>
+    </ul>
+  </section>
+</main>
+
+<div class="bw-modal" id="bwModal" hidden role="dialog" aria-modal="true" aria-labelledby="bwModalTitle">
+  <div class="bw-sheet" id="bwSheet"></div>
+</div>
+<div class="bw-toast" id="bwToast" hidden></div>
 
 <div id="global-footer"></div>
-
 <script src="global.js"></script>
-<script type="module" src="band-of-the-week.js?v=6"></script>
-<script type="module" src="botw-profile-image-sync.js?v=1"></script>
-
+<script type="module" src="band-of-the-week.js?v=7"></script>
 </body>
 </html>
