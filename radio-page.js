@@ -2,7 +2,7 @@
 // schedule engine as the homepage player. Read-only: never writes to Firestore.
 import { db as devDb } from './firebase-dev.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak } from './radio-schedule-engine.js?v=5';
+import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak, withPreviewTestBreak } from './radio-schedule-engine.js?v=6';
 
 const STATION_CONTROL_ID='__stationControl';
 const DEFAULT_COVER='bt-radio-logo-280.webp';
@@ -15,7 +15,18 @@ const safeUrl=u=>{try{const x=new URL(u,location.href);return /^https?:$/.test(x
 let playlists={},stationEnabled=true,stationSettings={},loaded=false;
 let audio=null,listening=false,currentKey='',selectedDay='';
 
-function currentBreak(){return stationEnabled?sponsorBreak(playlists,effectiveSponsorBreak(stationSettings)):null;}
+function currentBreak(){if(!stationEnabled)return null;const c=effectiveSponsorBreak(stationSettings);return withPreviewTestBreak(sponsorBreak(playlists,c),c);}
+// Sponsor audio through the same (already tap-unlocked) <audio> element as the music, so iPhone plays it with no extra tap.
+function breakAudio(b){return !!(b&&b.audioUrl&&listening);}
+function playBreakAudio(b){
+  ensureAudio();
+  if(currentKey!==b.key){currentKey=b.key;audio.src=b.audioUrl;audio.load();
+    audio.addEventListener('loadedmetadata',()=>{const f=currentBreak();if(f&&f.key===b.key){try{audio.currentTime=f.offsetSeconds;}catch{}if(f.clipPlaying)audio.play().catch(()=>{});}},{once:true});
+    audio.play().catch(()=>{});return;}
+  if(!b.clipPlaying){if(!audio.paused)audio.pause();return;}
+  if(audio.readyState>0&&Math.abs((audio.currentTime||0)-b.offsetSeconds)>1.5){try{audio.currentTime=b.offsetSeconds;}catch{}}
+  if(audio.paused&&audio.readyState>0&&(audio.currentTime||0)<(audio.duration||99)-.3)audio.play().catch(()=>{});
+}
 function state(){
   if(!stationEnabled||currentBreak())return null;
   const p=activePlaylist(playlists);if(!p)return null;
@@ -33,9 +44,12 @@ function renderBreak(b){
   const v=$('rpAd');v.hidden=false;
   if(v.getAttribute('src')!==b.videoUrl){v.src=b.videoUrl;if(b.posterUrl)v.poster=b.posterUrl;}
   v.setAttribute('aria-label',`${b.sponsorName} sponsor clip`);
-  v.muted=!listening;
+  const viaAudio=breakAudio(b);
+  if(viaAudio)playBreakAudio(b);
+  v.muted=viaAudio||!listening;
+  const target=viaAudio&&audio&&audio.readyState>0&&!audio.paused?audio.currentTime:b.offsetSeconds;
   if(b.clipPlaying){
-    if(v.readyState>0&&Math.abs((v.currentTime||0)-b.offsetSeconds)>1.5){try{v.currentTime=b.offsetSeconds;}catch{}}
+    if(v.readyState>0&&Math.abs((v.currentTime||0)-target)>(viaAudio?.5:1.5)){try{v.currentTime=target;}catch{}}
     if(v.paused)v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});});
   }else if(!v.paused)v.pause();
   $('rpLabel').textContent='A WORD FROM OUR SPONSOR';
@@ -120,7 +134,8 @@ function ensureAudio(){
   return audio;
 }
 async function sync(){
-  if(currentBreak()){if(audio&&!audio.paused)audio.pause();currentKey='';return;}
+  const br=currentBreak();
+  if(br){if(breakAudio(br))return;if(audio&&!audio.paused)audio.pause();currentKey='';return;}
   const s=state();
   if(!s){if(audio&&!audio.paused){audio.pause();}currentKey='';return;}
   if(!listening)return;
@@ -136,7 +151,8 @@ async function sync(){
   if(audio.paused){try{await audio.play();}catch{}}
 }
 $('rpListen').addEventListener('click',async()=>{
-  if(currentBreak()){listening=!listening;const v=$('rpAd');v.muted=!listening;if(listening)v.play().catch(()=>{});else audio?.pause();renderPlayer();return;}
+  const br=currentBreak();
+  if(br){listening=!listening;const v=$('rpAd');if(br.audioUrl){if(listening)playBreakAudio(br);else audio?.pause();v.muted=true;if(br.clipPlaying)v.play().catch(()=>{});}else{v.muted=!listening;if(listening)v.play().catch(()=>{});else audio?.pause();}renderPlayer();return;}
   if(listening){listening=false;audio?.pause();renderPlayer();return;}
   listening=true;ensureAudio();currentKey='';await sync();renderPlayer();
 });

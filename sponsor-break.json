@@ -3,5 +3,6 @@
   "sponsorName": "New Leaf Painting Co.",
   "clickUrl": "https://newleafpaintingco.com",
   "videoUrl": "/assets/ads/new-leaf-ad.mp4",
-  "durationSeconds": 18
+  "durationSeconds": 18,
+  "audioUrl": "/assets/ads/new-leaf-ad.m4a"
 }

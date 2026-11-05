@@ -1,6 +1,6 @@
 import { db as devDb } from './firebase-dev.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak } from './radio-schedule-engine.js?v=5';
+import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak, withPreviewTestBreak } from './radio-schedule-engine.js?v=6';
 
 const oldPanel=document.querySelector('.radio-panel');
 if(!oldPanel)throw new Error('Radio panel not found');
@@ -111,7 +111,8 @@ const eqBars=()=>Array.from({length:13},()=>'<span></span>').join('');
 
 function currentBreak(){
   if(!stationEnabled)return null;
-  return sponsorBreak(playlists,effectiveSponsorBreak(stationSettings));
+  const c=effectiveSponsorBreak(stationSettings);
+  return withPreviewTestBreak(sponsorBreak(playlists,c),c);
 }
 
 function state(){
@@ -145,12 +146,27 @@ function breakMarkup(b){
   </div></div>`;
 }
 
+// Sponsor audio plays through the same <audio> element as the music (already unlocked by the
+// LISTEN tap), so iPhone plays it with no extra tap. The video stays muted for visuals only.
+function playBreakAudio(b){
+  ensureAudio();
+  audio.muted=!userUnmuted;
+  if(currentKey!==b.key){currentKey=b.key;autoplayAttemptedKey='';audio.src=b.audioUrl;audio.load();
+    audio.addEventListener('loadedmetadata',()=>{const f=currentBreak();if(f&&f.key===b.key){try{audio.currentTime=f.offsetSeconds;}catch{}if(f.clipPlaying)audio.play().catch(()=>{});}},{once:true});
+    audio.play().catch(()=>{});return;}
+  if(!b.clipPlaying){if(!audio.paused)audio.pause();return;}
+  if(audio.readyState>0&&Math.abs((audio.currentTime||0)-b.offsetSeconds)>1.5){try{audio.currentTime=b.offsetSeconds;}catch{}}
+  if(audio.paused&&audio.readyState>0&&(audio.currentTime||0)<(audio.duration||99)-.3)audio.play().catch(()=>{});
+}
 function syncBreakVideo(b){
   const v=panel.querySelector('video.bt-radio-ad');
+  const viaAudio=!!b.audioUrl;
+  if(viaAudio)playBreakAudio(b);
   if(!v)return;
-  v.muted=!userUnmuted;
+  v.muted=viaAudio||!userUnmuted;
   if(!b.clipPlaying){if(!v.paused)v.pause();return;}
-  if(v.readyState>0&&Math.abs((v.currentTime||0)-b.offsetSeconds)>1.5){try{v.currentTime=b.offsetSeconds;}catch{}}
+  const target=viaAudio&&audio&&audio.readyState>0&&!audio.paused?audio.currentTime:b.offsetSeconds;
+  if(v.readyState>0&&Math.abs((v.currentTime||0)-target)>(viaAudio?.5:1.5)){try{v.currentTime=target;}catch{}}
   if(v.paused){v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});});}
 }
 
@@ -198,7 +214,9 @@ function render(){
     panel.querySelector('.bt-radio-listen')?.addEventListener('click',()=>{
       userUnmuted=!userUnmuted;
       const v=panel.querySelector('video.bt-radio-ad');
-      if(v){v.muted=!userUnmuted;if(userUnmuted&&currentBreak()?.clipPlaying)v.play().catch(()=>{});}
+      const cb=currentBreak();
+      if(cb&&cb.audioUrl){ensureAudio();audio.muted=!userUnmuted;if(userUnmuted&&cb.clipPlaying)audio.play().catch(()=>{});}
+      else if(v){v.muted=!userUnmuted;if(userUnmuted&&cb?.clipPlaying)v.play().catch(()=>{});}
       lastRenderedMarkup='';render();
     });
     syncBreakVideo(b);
@@ -243,8 +261,11 @@ async function tryMutedAutoplay(key){
 }
 
 async function synchronize(forcePlay=false){
-  if(currentBreak()){
-    // Sponsor break: music pauses; the clip's own audio plays (if the listener tapped LISTEN).
+  const br=currentBreak();
+  if(br){
+    // Sponsor break with audioUrl: syncBreakVideo plays the ad sound on this same audio element.
+    if(br.audioUrl)return;
+    // Otherwise: music pauses; the clip's own audio plays (if the listener tapped LISTEN).
     if(audio&&!audio.paused)audio.pause();
     currentKey='';autoplayAttemptedKey='';
     return;

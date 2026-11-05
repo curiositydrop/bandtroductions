@@ -133,6 +133,7 @@ export function sponsorBreak(playlists,config,date=new Date()){
     sponsorName:String(config.sponsorName||'Our Sponsor'),
     clickUrl:String(config.clickUrl||'radio-sponsor.html'),
     videoUrl:String(config.videoUrl),
+    audioUrl:String(config.audioUrl||''),
     posterUrl:String(config.posterUrl||''),
     durationSeconds,
     offsetSeconds,
@@ -155,4 +156,19 @@ export function effectiveSponsorBreak(stationSettings){
   const fs=stationSettings&&stationSettings.sponsorBreak;
   if(fs&&typeof fs==='object')return fs;
   return staticBreakConfig;
+}
+
+// PREVIEW-ONLY test break. Active only on a Firebase Hosting preview channel host
+// (<site>--<channel>-<hash>.web.app) AND with ?testBreak=1 in the URL. It never runs on
+// bandtroductions.com or the default web.app site and never reads or writes Firestore.
+const PREVIEW_TEST_BREAK=(()=>{try{return /--[a-z0-9-]+\.web\.app$/i.test(location.hostname)&&new URLSearchParams(location.search).get('testBreak')==='1';}catch{return false;}})();
+const TEST_BREAK_START=Date.now()+20000;
+export function withPreviewTestBreak(real,config){
+  if(real||!PREVIEW_TEST_BREAK)return real;
+  const c=config||{};if(!c.videoUrl)return null;
+  const durationSeconds=Math.max(1,Math.min(60,Number(c.durationSeconds)||40));
+  const offsetSeconds=(Date.now()-TEST_BREAK_START)/1000;
+  if(offsetSeconds<0||offsetSeconds>=durationSeconds+3)return null;
+  const now=easternClock();
+  return {type:'sponsorBreak',key:'break|preview-test',sponsorName:String(c.sponsorName||'Our Sponsor'),clickUrl:String(c.clickUrl||'radio-sponsor.html'),videoUrl:String(c.videoUrl),audioUrl:String(c.audioUrl||''),posterUrl:String(c.posterUrl||''),durationSeconds,offsetSeconds,clipPlaying:offsetSeconds<durationSeconds,endedShow:'Test',nextShow:'Back to the music',nextStartMinutes:(now.minutes+1)%1440};
 }
