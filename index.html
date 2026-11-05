@@ -559,7 +559,7 @@ body #global-header #bt-global-header-component .bt-nav a.bt-active{
 }
 
 /* Phase 1 layout-shift fix: reserve final footprints at first paint (min-height only, never clips).
-   Values = smallest final rendered height measured in each width range (Oct 31 2026), so nothing gets taller. */
+   Header min-heights remeasured 2026-11-05 for the 7-column nav so the bar does not grow after inject. */
 #global-header{min-height:201px}
 .grid>.right>.panel:nth-child(1){min-height:284px}
 .grid>.right>.radio-panel{min-height:654px}
@@ -571,8 +571,9 @@ body #global-header #bt-global-header-component .bt-nav a.bt-active{
 @media(min-width:1440px){#global-header{min-height:218px}}
 @media(max-width:1000px){#global-header{min-height:262px}.grid>.right>.panel:nth-child(1){min-height:268px}.grid>.right>.radio-panel{min-height:630px}.grid>.right>.panel:nth-child(3){min-height:244px}.grid>.left>.panel:last-child{min-height:257px}}
 @media(max-width:650px){#global-header{min-height:162px}.grid>.right>.panel:nth-child(1){min-height:183px}.grid>.right>.radio-panel{min-height:454px}.grid>.right>.panel:nth-child(3){min-height:200px}.grid>.center>.feed{min-height:300px}.grid>.left>.panel:last-child{min-height:368px}}
-@media(max-width:413px){#global-header{min-height:172px}}
-@media(max-width:374px){#global-header{min-height:183px}}
+@media(max-width:540px){#global-header{min-height:170px}}
+@media(max-width:440px){#global-header{min-height:177px}}
+@media(max-width:374px){#global-header{min-height:169px}}
 </style>
 <script type="module" src="welcome-popup-v2.js?v=5"></script>
 </head>

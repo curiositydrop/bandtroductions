@@ -22,8 +22,8 @@
     #bt-global-header-component .bt-news-group a{color:#49e6df;text-decoration:none;margin:0;padding:2px 4px;font-size:inherit;background:rgba(0,0,0,.58);border-radius:3px;text-shadow:0 1px 3px #000}
     #bt-global-header-component .bt-news-group a:hover{text-decoration:underline}
     @keyframes btNewsScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-    #bt-global-header-component .bt-nav{display:grid!important;grid-template-columns:repeat(6,1fr);align-items:stretch;justify-content:stretch;gap:0!important;flex-wrap:nowrap!important;margin:0!important;padding:0!important;border:1px solid rgba(37,199,193,.42);border-top:0;background:#0c0d0d}
-    #bt-global-header-component .bt-nav a{display:block;margin:0!important;padding:12px 8px;text-align:center;color:#ddd;text-decoration:none;border:0;border-right:1px solid rgba(37,199,193,.42);border-bottom:1px solid rgba(37,199,193,.42);border-radius:0;font-weight:800;font-size:13px;line-height:1.2}
+    #bt-global-header-component .bt-nav{display:grid!important;grid-template-columns:repeat(7,1fr);align-items:stretch;justify-content:stretch;gap:0!important;flex-wrap:nowrap!important;margin:0!important;padding:0!important;border:1px solid rgba(37,199,193,.42);border-top:0;background:#0c0d0d}
+    #bt-global-header-component .bt-nav a{display:flex;align-items:center;justify-content:center;min-width:0;margin:0!important;padding:12px 4px;text-align:center;color:#ddd;text-decoration:none;border:0;border-right:1px solid rgba(37,199,193,.42);border-bottom:1px solid rgba(37,199,193,.42);border-radius:0;font-weight:800;font-size:13px;line-height:1.15}
     #bt-global-header-component .bt-nav a.bt-active{background:var(--bt-teal);color:#051111}
     #bt-global-header-component .bt-nav .bt-merch-highlight{position:relative;z-index:1;color:#effffd;background:rgba(37,199,193,.12);animation:btMerchPulse 1.8s ease-in-out infinite}
     #bt-global-header-component .bt-nav .bt-merch-highlight.bt-active{background:var(--bt-teal);color:#051111;animation:none}
@@ -33,6 +33,7 @@
       #bt-global-header-component .bt-news-card{height:46px;grid-template-columns:70px minmax(0,1fr)}
       #bt-global-header-component .bt-news-label{font-size:10px}
       #bt-global-header-component .bt-news-group{font-size:10px;gap:24px}
+      #bt-global-header-component .bt-nav a{font-size:11px;padding:10px 2px}
     }
     @media(max-width:650px){
       #global-header{padding:4px}
@@ -45,7 +46,10 @@
       #bt-global-header-component .bt-news-card{height:36px;grid-template-columns:52px minmax(0,1fr)}
       #bt-global-header-component .bt-news-label{font-size:8px;line-height:.9}
       #bt-global-header-component .bt-news-group{font-size:8.5px;gap:18px;padding:0 10px}
-      #bt-global-header-component .bt-nav a{font-size:9px;padding:8px 1px}
+      #bt-global-header-component .bt-nav a{font-size:9px;padding:7px 0;letter-spacing:-0.02em}
+    }
+    @media(max-width:360px){
+      #bt-global-header-component .bt-nav a{font-size:8px;padding:6px 0;letter-spacing:-0.03em}
     }
     @media(prefers-reduced-motion:reduce){
       #bt-global-header-component .bt-news-track,#bt-global-header-component .bt-nav .bt-merch-highlight{animation:none}
@@ -91,8 +95,11 @@
       <a href="venues.html" data-page="venues.html">VENUES</a>
       <a href="bandfeed1.html" data-page="bandfeed1.html">MUSIC VIDEOS</a>
       <a href="radio.html" data-page="radio.html">RADIO</a>
+      <a href="shows.html" data-page="shows.html">SHOWS</a>
+      <a href="collage.html" data-page="collage.html">COLLAGE</a>
+      <a href="btv.html" data-page="btv.html">BTV</a>
       <a class="bt-merch-highlight" href="merch.html" data-page="merch.html">MERCH HUB</a>
-      <a href="gear-exchange.html" data-page="gear-exchange.html">BUY•SELL•TRADE</a>
+      <a href="gear-exchange.html" data-page="gear-exchange.html">BUY•<wbr>SELL•<wbr>TRADE</a>
       <a href="auditions.html" data-page="auditions.html">AUDITION ROOM</a>
       <a href="sponsors.html" data-page="sponsors.html">SPONSORS</a>
       <a href="plans.html" data-page="plans.html">PLANS</a>
