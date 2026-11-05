@@ -12,17 +12,28 @@ Preview only. Nothing here is on `main` or bandtroductions.com.
 - Home left-column Collage / BTV cards and SEE ALL SHOWS are untouched.
 - Stripe, schedules, playlists, Storage rules, and user data are untouched.
 
+## Preview channel
+This environment has no Firebase login, so the Hosting preview channel was **not** published. `main` and bandtroductions.com were not deployed.
+
+When a machine is logged into project `bandtroductions-dev`, publish a channel only (never the live Hosting channel):
+
+```
+npx firebase-tools hosting:channel:deploy nav-visibility-a --project bandtroductions-dev --expires 14d
+```
+
+That command needs a `hosting` block in `firebase.json` (`public` is the repo root, ignore `functions/`, dotfiles, and `node_modules`). Do not run `firebase deploy --only hosting`. That would update the project's live Hosting site. bandtroductions.com is GitHub Pages and is not this channel.
+
 ## Rollback
 Production is unchanged. To drop this idea:
 
 1. Do not merge this branch.
-2. Ignore or delete the Firebase Hosting preview channel `nav-visibility-a` (it is not the live site).
+2. No preview channel was published from this branch. If one is created later, delete channel `nav-visibility-a`. It is not the live site.
 3. The pre-change main tip is the annotated tag `pre-nav-collage-shows-btv-2026-11-05` (commit `1e56b8bda91dfe2e2049985ede022661422f7608`).
 
 Restoring the header in git, if this branch were ever merged by mistake:
 
 ```
-git checkout pre-nav-collage-shows-btv-2026-11-05 -- global-header-v2.html global-header-v2.js global.js
+git checkout pre-nav-collage-shows-btv-2026-11-05 -- global-header-v2.html global-header-v2.js global.js index.html
 ```
 
 That returns the 11-link, 6-column nav. Then redeploy only if a preview channel was published from the merged code. Do not deploy hosting to the live channel.
