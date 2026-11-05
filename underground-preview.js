@@ -267,6 +267,15 @@ function ensureProfileSummary(){
   style.textContent=`
     .dashboard-profile-summary{display:grid;grid-template-columns:54px minmax(0,1fr);gap:9px;align-items:center;padding:10px 12px;border-bottom:1px solid #333;color:#eee;text-decoration:none;background:#0c0e0e}
     .dashboard-profile-summary[hidden]{display:none}
+    .dashboard-profile-summary{grid-template-columns:minmax(0,1fr)!important}
+    .left .menu a.dashboard-profile-main{display:grid;grid-template-columns:54px minmax(0,1fr);gap:9px;align-items:center;padding:0;margin:0;border:0;background:none;color:inherit;text-decoration:none;min-width:0}
+    .dashboard-profile-main>span:last-child{min-width:0}
+    .dashboard-profile-name,.dashboard-profile-type,.dashboard-profile-view{display:block;word-break:normal;overflow-wrap:break-word}
+    @media(max-width:650px){.left .menu a.dashboard-profile-main{grid-template-columns:minmax(0,1fr);gap:3px;justify-items:start}}
+    .dashboard-account-actions{display:grid;gap:0;border-bottom:1px solid #333}.dashboard-account-actions[hidden]{display:none}
+    .left .menu .dashboard-account-actions a.dashboard-action-primary{margin:8px 10px;padding:9px 10px;border-radius:8px;background:#25c7c1;color:#031212;font-weight:900;text-align:center;border:0}
+    .left .menu .dashboard-account-actions a.dashboard-action-upgrade{color:#25c7c1;font-weight:800}
+    @media(max-width:650px){.left .menu .dashboard-account-actions a.dashboard-action-primary{margin:5px 4px;padding:6px 4px}}
     .dashboard-profile-main{display:contents;color:inherit;text-decoration:none}
     .dashboard-profile-upgrade{display:inline-block;margin-top:5px;color:#25c7c1;font-weight:800;font-size:11px;text-decoration:underline;text-underline-offset:2px}
     @media(max-width:650px){.dashboard-profile-upgrade{font-size:8px;margin-top:3px}}
@@ -285,16 +294,34 @@ function renderProfileSummary(user, profile={}){
   const summary=ensureProfileSummary();
   if(!summary)return;
   const name=profile.displayName||profile.name||profile.bandName||profile.venueName||user?.displayName||'My Profile';
-  const type=profile.profileType||profile.type||profile.role||profile.category||'Member';
+  const accountType=String(profile.accountType||profile.profileType||profile.type||profile.role||'').toLowerCase();
+  const typeLabels={band:'Band',musician:'Musician',venue:'Venue',fan:'Fan'};
+  const type=typeLabels[accountType]||profile.profileType||profile.type||profile.role||profile.category||'Member';
   const image=profile.avatarUrl||profile.photoURL||profile.imageUrl||profile.profileImage||profile.avatar||user?.photoURL||'';
   const isAdmin=String(name||'').trim().toLowerCase()==='bandtroductions admin';
   const effectiveImage=image||(isAdmin?adminAvatarFallback:'');
-  const profileUrl=`profile.html?id=${encodeURIComponent(user.uid)}`;
-  const accountType=String(profile.accountType||profile.profileType||profile.type||'').toLowerCase();
+  const uid=encodeURIComponent(user.uid);
+  const profileUrl=`profile.html?id=${uid}`;
   const planStatus=String(profile.websitePlanStatus||profile.artistPlan?.status||'').toLowerCase();
   const isUpgraded=profile.websiteEnabled===true&&['active','trialing','comped'].includes(planStatus);
-  const showUpgrade=accountType==='band'&&!isUpgraded&&user.uid!=='19MH0ZzVlPVN4ediF4PesZR5TY13';
-  summary.innerHTML=`<a class="dashboard-profile-main" href="${profileUrl}"><span class="dashboard-profile-avatar">${effectiveImage?`<img src="${safeText(effectiveImage)}" alt="${safeText(name)}">`:safeText(initialsFor(name))}</span></a><span><a href="${profileUrl}" style="text-decoration:none"><span class="dashboard-profile-name">${safeText(name)}</span></a><span class="dashboard-profile-type">${safeText(type)}</span>${showUpgrade?'<a class="dashboard-profile-upgrade" href="plans.html">(Upgrade profile)</a>':'<span class="dashboard-profile-view">View profile →</span>'}</span>`;
+  const isArtist=accountType==='band'||accountType==='musician';
+  const isSiteOwner=user.uid==='19MH0ZzVlPVN4ediF4PesZR5TY13';
+  // One profile link: the whole card (avatar + name + type) opens the profile.
+  summary.innerHTML=`<a class="dashboard-profile-main" href="${profileUrl}" aria-label="View or edit my profile"><span class="dashboard-profile-avatar">${effectiveImage?`<img src="${safeText(effectiveImage)}" alt="${safeText(name)}">`:safeText(initialsFor(name))}</span><span><span class="dashboard-profile-name">${safeText(name)}</span><span class="dashboard-profile-type">${safeText(type)}</span><span class="dashboard-profile-view">View / edit profile →</span></span></a>`;
+  // Account-specific actions (no extra database reads: uses the profile already loaded).
+  let actions=profilePanel.querySelector('.dashboard-account-actions');
+  if(!actions){actions=document.createElement('div');actions.className='dashboard-account-actions';summary.insertAdjacentElement('afterend',actions);}
+  let html='';
+  if(isArtist){
+    html+='<a class="dashboard-action-primary" href="radio-submit.html">⬆ Upload a Song</a>';
+    if(isUpgraded)html+=`<a href="website.html?id=${uid}">My Website</a>`;
+    else if(!isSiteOwner)html+='<a class="dashboard-action-upgrade" href="plans.html">Upgrade: Get Your Website</a>';
+  }else if(accountType==='venue'){
+    html+='<a class="dashboard-action-primary" href="show-event.html">📅 Post a Show / Event</a>';
+  }else if(accountType==='fan'){
+    html+='<a class="dashboard-action-primary" href="bands.html">🎸 Discover Bands</a>';
+  }
+  actions.innerHTML=html;actions.hidden=!html;
   const avatarImg=summary.querySelector('.dashboard-profile-avatar img');
   if(avatarImg&&isAdmin){
     avatarImg.addEventListener('error',()=>{if(!avatarImg.src.endsWith('bt-admin-avatar.svg?v=1'))avatarImg.src=adminAvatarFallback;},{once:true});
@@ -475,8 +502,9 @@ onAuthStateChanged(auth,async user=>{
   const title=profilePanel.querySelector('h3');
   if(!user){
     clearProfileSummary();
+    const acts=profilePanel.querySelector('.dashboard-account-actions');if(acts)acts.hidden=true;
     if(title)title.textContent='My Profile';
-    if(profileLink){profileLink.textContent='Log In / Create Account';profileLink.href='login.html?returnTo=index.html';}
+    if(profileLink){profileLink.textContent='Log In / Create Account';profileLink.href='login.html?returnTo=index.html';profileLink.style.display='';}
     if(logoutLink)logoutLink.style.display='none';
     return;
   }
@@ -491,10 +519,11 @@ onAuthStateChanged(auth,async user=>{
     }catch(tagError){console.warn('Profile tagging list unavailable.',tagError);dashboardTagProfiles=[];}
     if(title)title.textContent='My Profile';
     renderProfileSummary(user,profile);
-    if(profileLink){profileLink.textContent='View / Edit Profile';profileLink.href=`profile.html?id=${encodeURIComponent(user.uid)}`;}
+    if(profileLink){profileLink.textContent='View / Edit Profile';profileLink.href=`profile.html?id=${encodeURIComponent(user.uid)}`;profileLink.style.display='none';}
   }catch(error){
     console.warn('Could not load profile for dashboard.',error);
     renderProfileSummary(user,{});
+    if(profileLink)profileLink.style.display='none';
   }
 });
 
