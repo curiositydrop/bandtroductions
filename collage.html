@@ -174,6 +174,11 @@ body.collage-page{
 .polaroid.is-new{
   animation:polaroidPop .55s ease;
 }
+.polaroid.is-selected{
+  z-index:6;
+  outline:2px solid #ff8f8f;
+  outline-offset:2px;
+}
 @keyframes polaroidPop{
   0%{opacity:0;transform:scale(.6) rotate(-8deg)}
   70%{opacity:1;transform:scale(1.08)}
@@ -190,6 +195,7 @@ body.collage-page{
   font-weight:800;
   pointer-events:none;
 }
+.wall-empty[hidden]{display:none !important}
 .wall-empty strong{color:var(--collage-teal);display:block;margin-bottom:6px;font-size:18px}
 .collage-actions{
   display:flex;
@@ -377,7 +383,7 @@ body.collage-page{
   </div>
 
   <div class="admin-strip" id="collage-admin">
-    Admin: click a Polaroid, then hit remove to yank a bad upload.
+    Admin: click a Polaroid — a live upload or a starter seed — then hit Remove. Seed removals stay off the wall for everyone.
     <span id="collage-admin-selected"></span>
   </div>
 
@@ -389,6 +395,6 @@ body.collage-page{
 
 <script src="global-header-v2.js?v=3"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
-<script type="module" src="collage.js?v=20261105-cya"></script>
+<script type="module" src="collage.js?v=20261105-seeds"></script>
 </body>
 </html>
