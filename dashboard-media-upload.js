@@ -9,6 +9,8 @@ const MB=1024*1024;
 const cleanName=name=>String(name||'upload').replace(/[^a-z0-9._-]+/gi,'-').slice(-100);
 
 function setStatus(composer,text){const el=composer?.querySelector('#dash-compose-status');if(el)el.textContent=text||'';}
+function rightsAccepted(composer){return ['dash-rights-own','dash-rights-safe','dash-rights-promo'].every(id=>composer.querySelector('#'+id)?.checked);}
+function rightsFlags(composer){return {ownershipAccepted:!!composer.querySelector('#dash-rights-own')?.checked,noInappropriateContentAccepted:!!composer.querySelector('#dash-rights-safe')?.checked,promoUseAccepted:!!composer.querySelector('#dash-rights-promo')?.checked};}
 function bytesLabel(bytes){return bytes>=MB?`${(bytes/MB).toFixed(1)} MB`:`${Math.max(1,Math.round(bytes/1024))} KB`;}
 function clearSelectedMedia(composer,{clearText=false}={}){
   if(!composer)return;
@@ -78,7 +80,7 @@ async function compressVideo(file,composer){
   return {blob,fileName:`${base}-compressed.${ext}`,contentType:mime.split(';')[0],compressed:true};
 }
 
-async function uploadMedia(file,mediaType,composer){
+async function uploadMedia(file,mediaType,composer,rights={}){
   if(!currentUser)throw new Error('not-signed-in');
   if(mediaType==='image'&&file.size>20*MB)throw new Error('image-too-large');
   if(mediaType==='video'&&file.size>250*MB)throw new Error('video-too-large');
@@ -95,7 +97,7 @@ async function uploadMedia(file,mediaType,composer){
   const snap=await new Promise((resolve,reject)=>task.on('state_changed',s=>{const pct=Math.round((s.bytesTransferred/s.totalBytes)*100);setStatus(composer,`${prepared.compressed?'Compressed. ':''}Uploading ${mediaType}… ${pct}%`);},reject,()=>resolve(task.snapshot)));
   const downloadUrl=await getDownloadURL(snap.ref);
   let profile={};try{const p=await getDoc(doc(db,'profiles',currentUser.uid));if(p.exists())profile=p.data();}catch{}
-  await addDoc(collection(db,'media'),{ownerId:currentUser.uid,ownerName:profile.displayName||profile.name||currentUser.displayName||'BANDtroductions Member',mediaType,downloadUrl,storagePath:path,fileName:prepared.fileName,contentType:prepared.contentType,sizeBytes:prepared.blob.size,originalSizeBytes:file.size,compressed:prepared.compressed,published:true,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+  await addDoc(collection(db,'media'),{ownerId:currentUser.uid,ownerName:profile.displayName||profile.name||currentUser.displayName||'BANDtroductions Member',mediaType,downloadUrl,storagePath:path,fileName:prepared.fileName,contentType:prepared.contentType,sizeBytes:prepared.blob.size,originalSizeBytes:file.size,compressed:prepared.compressed,...rights,published:true,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
   return {downloadUrl,prepared};
 }
 
@@ -105,7 +107,17 @@ function addUploadUI(composer){
   const imageField=composer.querySelector('#dash-image-field'),videoField=composer.querySelector('#dash-video-field');
   if(imageField){imageField.innerHTML=`<label style="display:block;font-size:11px;font-weight:900;color:var(--teal);margin-bottom:5px">UPLOAD IMAGE</label><input id="dash-image-file" type="file" accept="image/*,image/heic,image/heif"><button type="button" class="dash-remove-media btn" data-clear="image" hidden>REMOVE IMAGE</button><div id="dash-image-preview" class="dash-upload-preview"></div><div style="font-size:9px;color:#8f9999;margin-top:5px">Photos are resized/compressed before upload. GIFs stay animated.</div>`;}
   if(videoField){videoField.innerHTML=`<label style="display:block;font-size:11px;font-weight:900;color:var(--teal);margin-bottom:5px">UPLOAD VIDEO</label><input id="dash-video-file" type="file" accept="video/mp4,video/quicktime,video/webm,video/*"><button type="button" class="dash-remove-media btn" data-clear="video" hidden>REMOVE VIDEO</button><div id="dash-video-preview" class="dash-upload-preview"></div><div style="font-size:9px;color:#8f9999;margin-top:5px">Larger clips are compressed toward 720p before upload when your browser supports it.</div>`;}
-  const style=document.createElement('style');style.textContent=`.dash-upload-preview{margin-top:7px}.dash-upload-preview img,.dash-upload-preview video{display:block;width:100%;max-height:260px;object-fit:contain;background:#060707;border:1px solid #355;border-radius:6px}.dash-remove-media{margin:7px 0 0!important;border-color:#b94b4b!important;color:#ffb7b7!important;background:#1a0d0d!important}.dash-remove-media[hidden]{display:none!important}@media(max-width:650px){.dash-upload-preview img,.dash-upload-preview video{max-height:150px}#dash-image-field label,#dash-video-field label{font-size:6px!important}#dash-image-field div,#dash-video-field div{font-size:5px!important}.dash-remove-media{font-size:6px!important;padding:4px!important}}`;document.head.appendChild(style);
+  const style=document.createElement('style');style.textContent=`.dash-upload-preview{margin-top:7px}.dash-upload-preview img,.dash-upload-preview video{display:block;width:100%;max-height:260px;object-fit:contain;background:#060707;border:1px solid #355;border-radius:6px}.dash-remove-media{margin:7px 0 0!important;border-color:#b94b4b!important;color:#ffb7b7!important;background:#1a0d0d!important}.dash-remove-media[hidden]{display:none!important}.dash-rights{margin:10px 0 4px;padding:10px;border:1px solid rgba(37,199,193,.45);border-radius:8px;background:#0b1111}.dash-rights[hidden]{display:none!important}.dash-rights p{margin:0 0 8px;color:#9fd;font-size:12px;font-weight:800}.dash-rights-check{display:flex;gap:8px;align-items:flex-start;margin:0 0 8px;color:#e7f3f2;font-size:13px;line-height:1.4;font-weight:600}.dash-rights-check input{width:18px!important;height:18px!important;margin:2px 0 0!important;padding:0!important;flex:none;accent-color:#25c7c1}@media(max-width:650px){.dash-upload-preview img,.dash-upload-preview video{max-height:150px}#dash-image-field label,#dash-video-field label{font-size:6px!important}#dash-image-field div,#dash-video-field div{font-size:5px!important}.dash-remove-media{font-size:6px!important;padding:4px!important}.dash-rights-check{font-size:12px!important}}`;document.head.appendChild(style);
+  if(!composer.querySelector('#dash-rights')){
+    const rights=document.createElement('div');
+    rights.id='dash-rights';
+    rights.hidden=true;
+    rights.innerHTML='<p>Required before an image or video goes up.</p><label class="dash-rights-check"><input type="checkbox" id="dash-rights-own"> <span>I own or have permission to share everything in this upload, including the music, footage, and photos of anyone shown.</span></label><label class="dash-rights-check"><input type="checkbox" id="dash-rights-safe"> <span>No nudity, sexual, graphic, hateful, or otherwise inappropriate content. Violations get the upload removed and the account immediately deleted — paid or free, no refund.</span></label><label class="dash-rights-check"><input type="checkbox" id="dash-rights-promo"> <span>I give BANDtroductions a non-exclusive, royalty-free, worldwide right to use, edit, and share this upload, plus my band name and likeness, in promotions and advertisements for BANDtroductions — on the site, social media, and elsewhere — with no payment owed.</span></label>';
+    composer.querySelector('.dash-compose-actions')?.before(rights);
+  }
+  const syncRights=()=>{const mode=composer.querySelector('.dash-compose-tab.is-active')?.dataset.mode||'text';const box=composer.querySelector('#dash-rights');if(box)box.hidden=mode==='text';};
+  composer.querySelector('.dash-compose-tabs')?.addEventListener('click',syncRights);
+  syncRights();
   const bindPreview=(input,box,type)=>input?.addEventListener('change',()=>{box.replaceChildren();const f=input.files?.[0];const remove=composer.querySelector(`.dash-remove-media[data-clear="${type}"]`);if(!f){if(remove)remove.hidden=true;return;}const media=document.createElement(type==='video'?'video':'img');media.src=URL.createObjectURL(f);if(type==='video'){media.controls=true;media.preload='metadata'}media.onload=media.onloadedmetadata=()=>URL.revokeObjectURL(media.src);box.appendChild(media);if(remove)remove.hidden=false;setStatus(composer,`${type==='video'?'Video':'Image'} selected: ${bytesLabel(f.size)}`);});
   bindPreview(composer.querySelector('#dash-image-file'),composer.querySelector('#dash-image-preview'),'image');
   bindPreview(composer.querySelector('#dash-video-file'),composer.querySelector('#dash-video-preview'),'video');
@@ -125,14 +137,17 @@ function addUploadUI(composer){
     if(!text&&mode==='text'){setStatus(composer,'Write something first.');return;}
     if(mode==='image'&&!imageFile&&!text){setStatus(composer,'Choose an image or add a comment first.');return;}
     if(mode==='video'&&!videoFile&&!text){setStatus(composer,'Choose a video or add a comment first.');return;}
+    const rightsOn=mode==='image'||mode==='video';
+    if(rightsOn&&!rightsAccepted(composer)){setStatus(composer,'Check all three rights boxes before this image or video upload.');return;}
+    const rights=rightsOn?rightsFlags(composer):{};
     publish.disabled=true;
     try{
       let imageUrl='',videoUrl='';
-      if(mode==='image'&&imageFile){const result=await uploadMedia(imageFile,'image',composer);imageUrl=result.downloadUrl;}
-      if(mode==='video'&&videoFile){const result=await uploadMedia(videoFile,'video',composer);videoUrl=result.downloadUrl;}
+      if(mode==='image'&&imageFile){const result=await uploadMedia(imageFile,'image',composer,rights);imageUrl=result.downloadUrl;}
+      if(mode==='video'&&videoFile){const result=await uploadMedia(videoFile,'video',composer,rights);videoUrl=result.downloadUrl;}
       let profile={};try{const p=await getDoc(doc(db,'profiles',currentUser.uid));if(p.exists())profile=p.data();else{const u=await getDoc(doc(db,'users',currentUser.uid));if(u.exists())profile=u.data();}}catch{}
       setStatus(composer,'Publishing…');
-      await addDoc(collection(db,'posts'),{authorId:currentUser.uid,authorName:profile.displayName||profile.name||profile.bandName||profile.venueName||currentUser.displayName||'BANDtroductions Member',accountType:profile.accountType||profile.profileType||'member',category:mode==='text'?'general':mode,content:text,imageUrl,videoUrl,published:true,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+      await addDoc(collection(db,'posts'),{authorId:currentUser.uid,authorName:profile.displayName||profile.name||profile.bandName||profile.venueName||currentUser.displayName||'BANDtroductions Member',accountType:profile.accountType||profile.profileType||'member',category:mode==='text'?'general':mode,content:text,imageUrl,videoUrl,...rights,published:true,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
       clearSelectedMedia(composer,{clearText:true});
       setStatus(composer,'Posted.');setTimeout(()=>{composer.classList.remove('is-open');setStatus(composer,'');},700);
     }catch(error){console.error(error);const code=error?.code||error?.message||'';if(code==='image-too-large')setStatus(composer,'That image is over 20 MB. Choose a smaller image.');else if(code==='video-too-large')setStatus(composer,'That video is over 250 MB. Choose a shorter clip.');else if(code==='video-needs-compression')setStatus(composer,'This browser could not compress that video enough. Choose a clip under 100 MB.');else if(String(code).startsWith('storage/'))setStatus(composer,'Media upload is blocked by Firebase Storage rules.');else if(code==='permission-denied')setStatus(composer,'Post/media permissions blocked this upload.');else setStatus(composer,'Upload/post failed. Try again.');}

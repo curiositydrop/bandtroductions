@@ -52,8 +52,8 @@ body.btv-page{margin:0;background:radial-gradient(circle at 50% -20%,rgba(37,199
 .btv-upload input,.btv-upload select{width:100%;box-sizing:border-box;background:#050606;border:1px solid #2a3333;color:#eee;border-radius:8px;padding:10px;font:inherit}
 .btv-upload .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:600px){.btv-upload .row{grid-template-columns:1fr}.btv-logo{font-size:34px}.btv-lower{max-width:88%;left:10px;bottom:12px}}
-.btv-check{display:flex!important;gap:8px;align-items:flex-start;font-weight:400!important}
-.btv-check input{width:auto}
+.btv-check{display:flex!important;gap:10px;align-items:flex-start;font-weight:500!important;line-height:1.45;margin:12px 0!important}
+.btv-check input{width:18px;height:18px;margin-top:2px;flex:none;accent-color:var(--btv-teal)}
 .btv-status{min-height:20px;font-size:13px;margin-top:10px}
 .btv-status.ok{color:var(--btv-teal)}.btv-status.err{color:var(--btv-hot)}
 .btv-admin{display:none;margin-top:18px;border:1px solid #553;border-radius:10px;padding:10px}
@@ -99,7 +99,7 @@ body.btv-page{margin:0;background:radial-gradient(circle at 50% -20%,rgba(37,199
 
   <section class="btv-upload" id="btv-upload">
     <h2>Upload to BTV</h2>
-    <div id="btv-auth" hidden>Free band or musician account required. <a href="login.html?returnTo=btv.html%23btv-upload" style="color:var(--btv-teal)">Log in</a> · <a href="signup.html?returnTo=btv.html" style="color:var(--btv-teal)">Join free</a></div>
+    <div id="btv-auth" hidden>Free band, musician, or venue account required to upload. Fans can watch only. <a href="login.html?returnTo=btv.html%23btv-upload" style="color:var(--btv-teal)">Log in</a> · <a href="signup.html?returnTo=btv.html" style="color:var(--btv-teal)">Join free</a></div>
     <form id="btv-form" hidden>
       <div class="row">
         <div><label for="btv-f-band">Band / artist</label><input id="btv-f-band" required maxlength="80"></div>
@@ -107,7 +107,9 @@ body.btv-page{margin:0;background:radial-gradient(circle at 50% -20%,rgba(37,199
       </div>
       <label for="btv-f-title">Song / interview title</label><input id="btv-f-title" required maxlength="120">
       <label for="btv-f-url">Video link (YouTube, Vimeo, or a direct .mp4)</label><input id="btv-f-url" type="url" required placeholder="https://youtube.com/watch?v=…">
-      <label class="btv-check"><input type="checkbox" id="btv-f-orig" required> This is our original music/content and we have the rights to share it. No covers.</label>
+      <label class="btv-check"><input type="checkbox" id="btv-f-own" required> <span>I own or have permission to share everything in this upload, including the music, footage, and photos of anyone shown.</span></label>
+      <label class="btv-check"><input type="checkbox" id="btv-f-safe" required> <span>No nudity, sexual, graphic, hateful, or otherwise inappropriate content. Violations get the upload removed and the account immediately deleted — paid or free, no refund.</span></label>
+      <label class="btv-check"><input type="checkbox" id="btv-f-promo" required> <span>I give BANDtroductions a non-exclusive, royalty-free, worldwide right to use, edit, and share this upload, plus my band name and likeness, in promotions and advertisements for BANDtroductions — on the site, social media, and elsewhere — with no payment owed.</span></label>
       <button class="btv-btn primary" type="submit" style="margin-top:12px">Submit to BTV</button>
       <div style="font-size:12px;color:#899;margin-top:8px">Direct file uploads coming soon — for now drop a link. Every submission gets a quick review before it airs.</div>
     </form>
@@ -120,6 +122,6 @@ body.btv-page{margin:0;background:radial-gradient(circle at 50% -20%,rgba(37,199
   </section>
 </main>
 <script src="global-header-v2.js?v=3"></script>
-<script type="module" src="btv.js?v=20261105-preview1"></script>
+<script type="module" src="btv.js?v=20261105-cya"></script>
 </body>
 </html>
