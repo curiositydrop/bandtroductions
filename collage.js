@@ -405,7 +405,7 @@ function syncAuth(user) {
   isAdmin = Boolean(user && (ADMIN_EMAILS.has(email) || user.uid === ADMIN_UID));
   authBox.hidden = Boolean(user);
   adminStrip.classList.toggle('visible', isAdmin);
-  addBtn.textContent = user ? '📸 Stick It On The Wall' : '📸 Stick It On The Wall (free login)';
+  addBtn.textContent = '📸 Stick It On The Wall';
 }
 
 addBtn.addEventListener('click', () => {
