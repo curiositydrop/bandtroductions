@@ -118,6 +118,32 @@ function renderPostContent(post){
   }
   return text?`<p>${linkifyText(text,post.mentions)}</p>`:'';
 }
+
+// Unmistakable show card for category==='show' posts in the community feed.
+const showCardStyle=document.createElement('style');
+showCardStyle.textContent=`
+.post.post-is-show{border-color:#ff5a3c!important;box-shadow:inset 4px 0 0 #ff5a3c}
+.feed-show{display:grid;grid-template-columns:64px 1fr;margin-top:10px;border:1px solid #5a2b22;background:#140d0c}
+.feed-show-date{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 2px;border-right:2px dashed #5a2b22;background:repeating-linear-gradient(0deg,#1a0f0d 0 6px,#1d1110 6px 12px);text-align:center}
+.feed-show-date small{font-size:9px;font-weight:900;color:#9ca3a3;letter-spacing:1px}.feed-show-date em{font-style:normal;font-size:11px;font-weight:900;color:#ff5a3c}.feed-show-date strong{font-size:26px;line-height:1;color:#fff}
+.feed-show-body{padding:9px 10px;min-width:0}.feed-show-kicker{font-size:9px;font-weight:900;letter-spacing:1.5px;color:#ff5a3c}
+.feed-show-band{font-size:16px;font-weight:900;color:#fff;margin:2px 0}.feed-show-meta{font-size:12px;color:#ddd;display:flex;flex-wrap:wrap;gap:2px 10px}.feed-show-meta b{color:#25c7c1}
+.feed-show-acts{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.feed-show-acts a{font-size:10px;font-weight:900;text-decoration:none;border:1px solid #444;padding:5px 7px;color:#eee}.feed-show-acts a.primary{background:#25c7c1;border-color:#25c7c1;color:#041010}
+.feed-show-note{margin:8px 0 0;font-size:12px;color:#bbb;white-space:pre-line}
+@media(max-width:650px){.feed-show{grid-template-columns:44px 1fr}.feed-show-date strong{font-size:18px}.feed-show-date em,.feed-show-date small{font-size:7px}.feed-show-band{font-size:11px}.feed-show-meta{font-size:8px}.feed-show-kicker{font-size:7px}.feed-show-acts a{font-size:7px;padding:3px 5px}.feed-show-note{font-size:8px}}
+`;
+document.head.appendChild(showCardStyle);
+function renderShowCard(post){
+  const e=post.event||{};const pick=(...v)=>v.find(x=>x!==undefined&&x!==null&&String(x).trim()!=='')||'';
+  const date=pick(e.date,post.eventDate,post.showDate,post.date);const d=normalizeDate(date);
+  const band=pick(post.authorName,e.artist,e.band,e.title,'Live Show');const title=pick(e.title,post.eventTitle);
+  const venue=pick(e.venue,post.eventVenue,post.venue);const loc=pick(e.location,post.eventLocation,post.location);const time=pick(e.time,post.eventTime,post.showTime);
+  const past=d&&d<nyToday();
+  const tix=safeHttpUrl(pick(e.ticketUrl,post.ticketUrl,post.linkUrl));
+  let note=String(pick(e.details,post.content));const summary=[title,venue&&`at ${venue}`,loc&&`in ${loc}`].filter(Boolean).join(' ');if(summary&&note.startsWith(summary))note=note.slice(summary.length).trim();
+  const dateBox=d?`<small>${d.toLocaleString('en-US',{weekday:'short'}).toUpperCase()}</small><em>${d.toLocaleString('en-US',{month:'short'}).toUpperCase()}</em><strong>${d.getDate()}</strong>`:'<em>LIVE</em><strong>🎸</strong>';
+  return `<div class="feed-show"><div class="feed-show-date">${dateBox}</div><div class="feed-show-body"><div class="feed-show-kicker">${past?'PAST SHOW':'🎟 LIVE SHOW'}</div><div class="feed-show-band">${safeText(band)}</div>${title&&title!==band?`<div class="feed-show-meta">${safeText(title)}</div>`:''}<div class="feed-show-meta">${venue?`<span><b>@</b> ${safeText(venue)}</span>`:''}${loc?`<span>📍 ${safeText(loc)}</span>`:''}${time?`<span>🕒 ${safeText(time)}</span>`:''}</div><div class="feed-show-acts">${tix&&!past?`<a class="primary" href="${safeText(tix)}" target="_blank" rel="noopener">TICKETS</a>`:''}<a href="shows.html">ALL SHOWS →</a></div></div></div>${note?`<p class="feed-show-note">${safeText(note)}</p>`:''}`;
+}
 function renderVideo(post){
   const youtube=youtubeFromPost(post);
   if(youtube)return `<div class="post-video" style="position:relative;width:100%;aspect-ratio:16/9;margin-top:10px;background:#000;border:1px solid #333"><iframe src="https://www.youtube.com/embed/${safeText(youtube.id)}?playsinline=1" title="Post video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>`;
@@ -445,10 +471,10 @@ function renderFeed(posts){
   [...feed.children].forEach(el=>{if(el._btFeedPostId)existing.set(el._btFeedPostId,el);});
   const wanted=visible.map(post=>{
     const name=safeText(post.authorName||'BANDtroductions Member');
-    const html=`<div class="post-head"><div class="post-avatar">${safeText(initialsFor(post.authorName))}</div><div><div class="post-name">${name}</div><div class="post-meta">${safeText(formatDate(post.createdAt))}${post.category?` · ${safeText(post.category)}`:''}</div></div></div>${renderPostContent(post)}${post.imageUrl?`<img src="${safeText(post.imageUrl)}" alt="" style="display:block;width:100%;margin-top:12px;border:1px solid #333;max-height:420px;object-fit:cover">`:''}${renderVideo(post)}<div class="post-actions"><span>ROCK ON</span><span>COMMENT</span><span>SHARE</span></div>`;
+    const html=`<div class="post-head"><div class="post-avatar">${safeText(initialsFor(post.authorName))}</div><div><div class="post-name">${name}</div><div class="post-meta">${safeText(formatDate(post.createdAt))}${post.category?` · ${safeText(post.category)}`:''}</div></div></div>${post.category==='show'?renderShowCard(post):renderPostContent(post)}${post.imageUrl?`<img src="${safeText(post.imageUrl)}" alt="" style="display:block;width:100%;margin-top:12px;border:1px solid #333;max-height:420px;object-fit:cover">`:''}${renderVideo(post)}<div class="post-actions"><span>ROCK ON</span><span>COMMENT</span><span>SHARE</span></div>`;
     const kept=existing.get(post.id);
     if(kept&&kept._btFeedSig===html)return kept;
-    const article=document.createElement('article');article.className='post';
+    const article=document.createElement('article');article.className=post.category==='show'?'post post-is-show':'post';
     article.innerHTML=html;article._btFeedSig=html;article._btFeedPostId=post.id;article.dataset.postId=post.id;
     window.btApplyCachedAvatar?.(article,post);
     return article;

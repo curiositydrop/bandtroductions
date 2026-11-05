@@ -92,9 +92,11 @@ function renderShows(){
   if(!showsPanel)return;
   const heading=showsPanel.querySelector('h3');showsPanel.replaceChildren();if(heading)showsPanel.appendChild(heading);
   const create=document.createElement('a');create.href='show-event.html';create.className='btn primary';create.textContent='POST A SHOW';create.style.cssText='display:block;text-align:center;margin:8px';showsPanel.appendChild(create);
+  const all=document.createElement('a');all.href='shows.html';all.className='bt-see-all-shows';all.textContent='SEE ALL SHOWS →';all.style.cssText='display:block;text-align:right;margin:0 10px 6px;color:#25c7c1;font-weight:900;font-size:11px;text-decoration:none;letter-spacing:.5px';
   const today=nyToday();
   const shows=latestPosts.filter(p=>p.published!==false&&p.category==='show').map(p=>({post:p,e:eventData(p)})).filter(({e})=>{const d=normalizeDate(e.date);return d&&d>=today;}).sort((a,b)=>normalizeDate(a.e.date)-normalizeDate(b.e.date)).slice(0,5);
   injectShowEvents(shows.map(({post,e})=>({band:first(post.authorName,e.title),title:e.title,date:e.date,time:e.time,venue:e.venue,location:e.location,ticketUrl:e.ticketUrl,profileUrl:profileHref(post,e),image:e.imageUrl})));
+  showsPanel.appendChild(all);
   if(!shows.length){const empty=document.createElement('div');empty.style.padding='12px';empty.style.color='#9ca3a3';empty.textContent='Show/Event posts will appear here automatically.';showsPanel.appendChild(empty);return;}
   shows.forEach(({post,e})=>{
     const d=normalizeDate(e.date);
