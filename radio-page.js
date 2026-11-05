@@ -152,9 +152,9 @@ async function sync(){
 }
 $('rpListen').addEventListener('click',async()=>{
   const br=currentBreak();
-  if(br){listening=!listening;const v=$('rpAd');if(br.audioUrl){if(listening)playBreakAudio(br);else audio?.pause();v.muted=true;if(br.clipPlaying)v.play().catch(()=>{});}else{v.muted=!listening;if(listening)v.play().catch(()=>{});else audio?.pause();}renderPlayer();return;}
+  if(br){listening=!listening;if(listening)window.btTrack&&window.btTrack('radio_listen',{player:'radio_page'});const v=$('rpAd');if(br.audioUrl){if(listening)playBreakAudio(br);else audio?.pause();v.muted=true;if(br.clipPlaying)v.play().catch(()=>{});}else{v.muted=!listening;if(listening)v.play().catch(()=>{});else audio?.pause();}renderPlayer();return;}
   if(listening){listening=false;audio?.pause();renderPlayer();return;}
-  listening=true;ensureAudio();currentKey='';await sync();renderPlayer();
+  listening=true;window.btTrack&&window.btTrack('radio_listen',{player:'radio_page'});ensureAudio();currentKey='';await sync();renderPlayer();
 });
 
 loadStaticSponsorBreak();setInterval(()=>loadStaticSponsorBreak(),60000);

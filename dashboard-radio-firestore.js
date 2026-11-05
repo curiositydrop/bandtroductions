@@ -212,7 +212,7 @@ function render(){
   });
   if(b){
     panel.querySelector('.bt-radio-listen')?.addEventListener('click',()=>{
-      userUnmuted=!userUnmuted;
+      userUnmuted=!userUnmuted;if(userUnmuted)window.btTrack&&window.btTrack('radio_listen',{player:'home_card'});
       const v=panel.querySelector('video.bt-radio-ad');
       const cb=currentBreak();
       if(cb&&cb.audioUrl){ensureAudio();audio.muted=!userUnmuted;if(userUnmuted&&cb.clipPlaying)audio.play().catch(()=>{});}
@@ -233,6 +233,7 @@ function render(){
       return;
     }
     userUnmuted=true;
+    window.btTrack&&window.btTrack('radio_listen',{player:'home_card'});
     audio.muted=false;
     await synchronize(true);
     render();
