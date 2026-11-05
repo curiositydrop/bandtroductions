@@ -35,6 +35,22 @@
     .signup-fields{display:grid;gap:12px}
     .signup-fields[hidden]{display:none!important}
     .signup-final-note{font-size:.84rem;color:#999;line-height:1.5}
+    .auth-shell{max-width:100%;overflow-x:clip}
+    .signup-upgrade{border:1px solid rgba(0,200,180,.45);border-radius:12px;background:#101816;padding:12px;display:grid;gap:4px;max-width:100%;overflow-wrap:anywhere}
+    .signup-upgrade[hidden]{display:none!important}
+    .signup-upgrade-check{min-height:44px;align-items:center;font-size:16px;line-height:1.35}
+    .signup-upgrade-check input{width:22px;height:22px;min-width:22px;margin-top:1px}
+    .signup-upgrade-details{border-top:1px solid #2c403b;margin-top:4px}
+    .auth-form select{background-color:#0d0d0d;color:#fff;appearance:none;-webkit-appearance:none;padding-right:36px;background-image:linear-gradient(45deg,transparent 50%,#8ff7ee 50%),linear-gradient(135deg,#8ff7ee 50%,transparent 50%);background-position:calc(100% - 18px) calc(50% - 3px),calc(100% - 12px) calc(50% - 3px);background-size:6px 6px,6px 6px;background-repeat:no-repeat}
+    .signup-upgrade-details summary{min-height:44px;display:flex;align-items:center;gap:10px;cursor:pointer;color:#8ff7ee;font-weight:800;font-size:16px;touch-action:manipulation}
+    .signup-upgrade-details summary::-webkit-details-marker{display:none}
+    .signup-upgrade-details summary::after{content:"";width:8px;height:8px;margin-left:auto;border-right:2px solid #8ff7ee;border-bottom:2px solid #8ff7ee;transform:rotate(45deg);flex:none}
+    .signup-upgrade-details[open] summary::after{transform:rotate(225deg);margin-top:4px}
+    .signup-upgrade-copy p,.signup-upgrade-copy li{color:#d5e4e1;font-size:15px;line-height:1.45;margin:8px 0}
+    .signup-upgrade-copy ul{margin:8px 0;padding-left:18px}
+    @media (max-width:480px){
+      .auth-shell{width:min(100% - 16px,980px);margin:16px auto 36px;padding:16px 12px}
+    }
   </style>
 </head>
 <body class="hamburger-active auth-page">
@@ -109,6 +125,27 @@
             <option value="fan">Fan</option>
           </select>
         </label>
+
+        <div id="website-upgrade-offer" class="signup-upgrade" hidden>
+          <label class="auth-check signup-upgrade-check">
+            <input id="website-upgrade-interest" type="checkbox">
+            <span id="website-upgrade-label">Yes! I’m interested in my own website for $15/month.</span>
+          </label>
+          <details id="website-upgrade-details" class="signup-upgrade-details">
+            <summary>What’s included</summary>
+            <div class="signup-upgrade-copy">
+              <p>Optional Website + Merch upgrade for bands and musicians. Your free account is created either way. Leaving this unchecked does not charge you and does not start checkout.</p>
+              <ul>
+                <li>Full customizable artist website</li>
+                <li>Merch storefront listed in the Merch Hub</li>
+                <li>Shows, booking, music, photos and videos</li>
+                <li>Your existing profile information carries over automatically</li>
+              </ul>
+              <p>$15 today. Includes your first month. Your next 2 months are free, then $15/month. Cancel anytime.</p>
+              <p>The upgrade page asks you to confirm that the artist handles merchandise products, payments, orders, shipping, returns and customer service before any payment.</p>
+            </div>
+          </details>
+        </div>
 
         <label>
           Public display name
@@ -238,6 +275,9 @@
     const signupButton = document.getElementById('signup-button');
     const signupMessage = document.getElementById('signup-message');
     const accountTypeInput = document.getElementById('account-type');
+    const websiteUpgradeOffer = document.getElementById('website-upgrade-offer');
+    const websiteUpgradeInterest = document.getElementById('website-upgrade-interest');
+    const websiteUpgradeDetails = document.getElementById('website-upgrade-details');
     const displayNameInput = document.getElementById('display-name');
     const musicTypeInput = document.getElementById('music-type');
     const featuredMusicTypeInput = document.getElementById('featured-music-type');
@@ -299,6 +339,29 @@
       continueButton.disabled = !(validCredentials() && (!isClaimReturn || claimAgreementsAccepted()));
     }
 
+    function clearWebsiteUpgradeSelection() {
+      websiteUpgradeInterest.checked = false;
+      websiteUpgradeDetails.open = false;
+    }
+
+    function syncWebsiteUpgradeOffer(type) {
+      const eligible = type === 'band' || type === 'musician';
+      websiteUpgradeOffer.hidden = !eligible;
+      if (!eligible) clearWebsiteUpgradeSelection();
+    }
+
+    function artistUpgradeSelected() {
+      const type = accountTypeInput.value;
+      return (type === 'band' || type === 'musician') && websiteUpgradeInterest.checked;
+    }
+
+    function notifyAdminOfSignup(payload) {
+      // FormSubmit can hang (including HTTP 522). Account and profile completion must not wait on it.
+      void sendAdminApprovalEmail(payload).catch(error => {
+        console.warn('Admin approval email did not block signup:', error);
+      });
+    }
+
     function showAccountFields(type) {
       document.querySelectorAll('.signup-fields').forEach(section => section.hidden = true);
       const section = document.getElementById(`${type}-fields`);
@@ -310,6 +373,7 @@
         musicTypeInput.value = '';
         featuredMusicTypeInput.value = '';
       }
+      syncWebsiteUpgradeOffer(type);
       syncFeaturedMusicType();
       updateFinalState();
     }
@@ -335,7 +399,16 @@
     emailInput.addEventListener('input', updateContinueState);
     passwordInput.addEventListener('input', updateContinueState);
     document.getElementById('claim-agreements').addEventListener('change', updateContinueState);
-    accountTypeInput.addEventListener('change', () => showAccountFields(accountTypeInput.value));
+    accountTypeInput.addEventListener('change', () => {
+      clearWebsiteUpgradeSelection();
+      showAccountFields(accountTypeInput.value);
+    });
+    websiteUpgradeDetails.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && websiteUpgradeDetails.open) {
+        websiteUpgradeDetails.open = false;
+        websiteUpgradeDetails.querySelector('summary')?.focus();
+      }
+    });
     musicTypeInput.addEventListener('change', () => { syncFeaturedMusicType(); updateFinalState(); });
     profileForm.addEventListener('input', updateFinalState);
     profileForm.addEventListener('change', updateFinalState);
@@ -380,7 +453,7 @@
           accountType
         }).catch(error => console.warn('Admin account notification could not be created:', error));
         await sendEmailVerification(credential.user).catch(error => console.warn('Verification email could not be sent:', error));
-        await sendAdminApprovalEmail({
+        notifyAdminOfSignup({
           kind: 'signup',
           name: displayName,
           accountType,
@@ -510,7 +583,7 @@
         await updateProfile(createdUser, { displayName }).catch(error => console.warn('Firebase display name update failed:', error));
         await sendEmailVerification(createdUser).catch(error => console.warn('Verification email could not be sent:', error));
 
-        await sendAdminApprovalEmail({
+        notifyAdminOfSignup({
           kind: 'signup',
           name: displayName,
           accountType,
@@ -520,8 +593,14 @@
 
 
         await createWelcomePost({ profileId: createdUser.uid, displayName, accountType });
+        const upgradeSelected = artistUpgradeSelected();
         // Band of the Week: return voters to the band they wanted to vote for.
-        if (/^band-of-the-week\.html(?:\?|$)/i.test(safeReturn)) { window.location.href = safeReturn; return; }
+        if (!upgradeSelected && /^band-of-the-week\.html(?:\?|$)/i.test(safeReturn)) { window.location.href = safeReturn; return; }
+        if (upgradeSelected) {
+          signupMessage.textContent = 'Your free account is ready. Opening the optional website upgrade…';
+          window.location.href = `website.html?id=${encodeURIComponent(createdUser.uid)}&from=signup`;
+          return;
+        }
         window.location.href = `profile.html?id=${encodeURIComponent(createdUser.uid)}&fresh=${Date.now()}`;
       } catch (error) {
         console.error(error);
@@ -532,6 +611,14 @@
         signupButton.disabled = false;
       }
     });
+
+    const requestedType = (params.get('type') || '').trim().toLowerCase();
+    if (['band', 'musician', 'venue', 'fan'].includes(requestedType)) {
+      accountTypeInput.value = requestedType;
+      showAccountFields(requestedType);
+    } else {
+      syncWebsiteUpgradeOffer('');
+    }
 
     updateContinueState();
     updateFinalState();
