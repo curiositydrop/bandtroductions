@@ -21,15 +21,18 @@
     // Pages that already reserve the header in their own first-paint CSS (the homepage does, per breakpoint)
     // keep that value; other pages fall back to these defaults.
     if(parseFloat(getComputedStyle(target).minHeight)>0){}
-    else if(window.matchMedia('(max-width:650px)').matches) target.style.minHeight='124px';
-    else if(window.matchMedia('(max-width:1000px)').matches) target.style.minHeight='170px';
-    else target.style.minHeight='150px';
+    else if(window.matchMedia('(max-width:374px)').matches) target.style.minHeight='169px';
+    else if(window.matchMedia('(max-width:440px)').matches) target.style.minHeight='177px';
+    else if(window.matchMedia('(max-width:540px)').matches) target.style.minHeight='170px';
+    else if(window.matchMedia('(max-width:650px)').matches) target.style.minHeight='162px';
+    else if(window.matchMedia('(max-width:1000px)').matches) target.style.minHeight='262px';
+    else target.style.minHeight='218px';
 
     // Older index markup may still carry the previous boot class; release it immediately.
     document.documentElement.classList.remove('bt-home-booting');
 
     try{
-      const response=await fetch('global-header-v2.html?v=2');
+      const response=await fetch('global-header-v2.html?v=20261105-nav');
       if(!response.ok)throw new Error(`Header request failed: ${response.status}`);
       target.innerHTML=await response.text();
       const aliases={

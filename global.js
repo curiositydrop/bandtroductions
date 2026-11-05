@@ -65,7 +65,7 @@
 })();
 
 Promise.all([
-  fetch('global-header-v2.html?v=1',{cache:'no-cache'}).then(response=>{if(!response.ok)throw new Error(`Header request failed: ${response.status}`);return response.text();}),
+  fetch('global-header-v2.html?v=20261105-nav',{cache:'no-cache'}).then(response=>{if(!response.ok)throw new Error(`Header request failed: ${response.status}`);return response.text();}),
   fetch('global.html?v=10',{cache:'no-cache'}).then(response=>{if(!response.ok)throw new Error(`Footer request failed: ${response.status}`);return response.text();})
 ])
   .then(async ([headerHtml,footerHtml]) => {
