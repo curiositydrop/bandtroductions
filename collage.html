@@ -100,6 +100,9 @@ body.collage-page{
     repeating-linear-gradient(0deg,rgba(255,255,255,.015) 0 1px,transparent 1px 8px),
     #0c0f0f;
   border:1px solid #243030;
+  box-sizing:border-box;
+  width:100%;
+  max-width:100%;
   min-height:clamp(420px,72vw,640px);
   overflow:hidden;
 }
@@ -136,12 +139,14 @@ body.collage-page{
 .polaroid{
   position:absolute;
   width:clamp(96px,22vw,148px);
+  margin:0; /* UA figure margin would push the photo out of the mat */
   background:#f4f1ea;
   padding:8px 8px 28px;
   box-shadow:0 10px 24px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.35) inset;
   transition:transform .25s ease, box-shadow .25s ease, opacity .35s ease;
   cursor:default;
   z-index:1;
+  transform-origin:center center;
 }
 .polaroid:hover{
   z-index:5;
@@ -334,6 +339,6 @@ body.collage-page{
 
 <script src="global-header-v2.js?v=3"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
-<script type="module" src="collage.js?v=20261105-crowd"></script>
+<script type="module" src="collage.js?v=20261105-framefit"></script>
 </body>
 </html>
