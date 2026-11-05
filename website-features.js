@@ -4,7 +4,9 @@ import { collection, doc, getDoc, getDocs, onSnapshot, query, where, setDoc, run
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
 
 const RADIO_LOGO='5C9409EE-59F6-4151-9624-2998D7DDF2D0.png';
-let currentShows=[],showListeners=new Set();
+// A different ?v= on this file creates a second module. The public calendar and
+// the editor show list have to share one registry or published shows cannot be edited.
+const showHub=globalThis.__btWebsiteShowHub||(globalThis.__btWebsiteShowHub={shows:[],listeners:new Set()});
 const web=value=>{try{const u=new URL(value);return ['http:','https:'].includes(u.protocol)&&!u.username&&!u.password?u.href:'';}catch{return '';}};
 const make=(tag,text,className)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e;};
 function profileFromUrl(value){try{const u=new URL(value,location.href);return u.origin===location.origin||['bandtroductions.com','www.bandtroductions.com'].includes(u.hostname)?u.searchParams.get('id')||'':'';}catch{return '';}}
@@ -51,7 +53,7 @@ export function initWebsiteFeatures({profileId,profile}){
   for(let i=0;i<month.getDay();i++)grid.append(make('span',undefined,'ws-blank'));
   let count=0;
   for(let d=1;d<=days;d++){
-   const key=dayKey(y,m,d),shows=currentShows.filter(p=>eventData(p).date===key),cell=make(shows.length?'button':'div',undefined,'ws-day');cell.dataset.date=key;
+   const key=dayKey(y,m,d),shows=showHub.shows.filter(p=>eventData(p).date===key),cell=make(shows.length?'button':'div',undefined,'ws-day');cell.dataset.date=key;
    cell.append(make('span',String(d)));if(key===dayKey(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()))cell.setAttribute('aria-current','date');
    if(shows.length){count+=shows.length;cell.type='button';cell.classList.add('has-shows');cell.setAttribute('aria-label',key+': '+shows.map(p=>{const e=eventData(p);return e.title+', '+(e.age||'ages not specified');}).join('; '));
     const marks=make('span',undefined,'ws-day-marks');
@@ -71,8 +73,8 @@ export function initWebsiteFeatures({profileId,profile}){
  queries.forEach((q,i)=>stops.push(onSnapshot(q,snap=>{
   snapshots.set(i,snap.docs.map(d=>({id:d.id,...d.data()})));
   const merged=new Map([...snapshots.values()].flat().map(p=>[p.id,p]));
-  currentShows=[...merged.values()].filter(p=>p.published!==false&&p.category==='show'&&belongsToProfile(p,profileId)&&validDay(eventData(p).date)).sort((a,b)=>eventData(a).date.localeCompare(eventData(b).date));
-  draw();showListeners.forEach(fn=>fn());
+  showHub.shows=[...merged.values()].filter(p=>p.published!==false&&p.category==='show'&&belongsToProfile(p,profileId)&&validDay(eventData(p).date)).sort((a,b)=>eventData(a).date.localeCompare(eventData(b).date));
+  draw();showHub.listeners.forEach(fn=>fn());
  },error=>{console.warn('Website shows unavailable',error);section.querySelector('#ws-show-status').textContent='Some shows could not be loaded. Please refresh to try again.';})));
  initBandPlayer({main,profileId,profile,stops});
  window.addEventListener('pagehide',()=>{if(popup.d.open)popup.d.close();},{once:true});
@@ -135,16 +137,16 @@ export function mountWebsiteTools({container,profileId,profile,user,canEdit}){
  function clearShow(){showForm.reset();editing=null;editRevision=null;showForm.dataset.existingImageUrl='';showForm.querySelector('[type=submit]').textContent='Publish show';showForm.querySelector('.ws-remove-show').hidden=true;}
  function drawList(){
   const list=tools.querySelector('.ws-show-list');list.replaceChildren();
-  currentShows.forEach(p=>{const e=eventData(p),b=make('button',e.date+' · '+e.title,'button secondary');b.type='button';b.disabled=showBusy;b.onclick=()=>{
+  showHub.shows.forEach(p=>{const e=eventData(p),b=make('button',e.date+' · '+e.title,'button secondary');b.type='button';b.disabled=showBusy;b.onclick=()=>{
    if(showBusy)return;clearShow();editing=p;editRevision=revision(p);
    for(const key of ['title','date','time','venue','location','price','ticketUrl','donateUrl','details'])value(showForm,key).value=e[key]||'';
    showForm.dataset.existingImageUrl=e.imageUrl||'';
    if(!['All ages','21+'].includes(e.age)){age.value='';showStatus.textContent='Choose All ages or 21+ before saving this existing show.';}else{age.value=e.age;showStatus.textContent='Editing this show updates Social and Upcoming Shows too.';}
    showForm.querySelector('[type=submit]').textContent='Save show changes';showForm.querySelector('.ws-remove-show').hidden=false;
   };list.append(b);});
-  if(!currentShows.length)list.append(make('p','No published shows yet. Add your first show below.'));
+  if(!showHub.shows.length)list.append(make('p','No published shows yet. Add your first show below.'));
  }
- showListeners.add(drawList);drawList();
+ showHub.listeners.add(drawList);drawList();
  showForm.querySelector('.ws-new-show').onclick=()=>{clearShow();showStatus.textContent='';};
  async function saveShow(unpublish=false){
   if(showBusy)return;
@@ -241,7 +243,7 @@ export function mountWebsiteTools({container,profileId,profile,user,canEdit}){
  };
  const unload=e=>{if(songBusy||showBusy){e.preventDefault();e.returnValue='';}};
  window.addEventListener('beforeunload',unload);
- return ()=>{disposed=true;showListeners.delete(drawList);window.removeEventListener('beforeunload',unload);tools.remove();};
+ return ()=>{disposed=true;showHub.listeners.delete(drawList);window.removeEventListener('beforeunload',unload);tools.remove();};
 }
 function audioDuration(file){return new Promise((resolve,reject)=>{
  const a=document.createElement('audio'),url=URL.createObjectURL(file);

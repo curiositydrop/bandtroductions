@@ -1,5 +1,5 @@
 import { normalizeMembers, renderMembers, createMemberEditor } from './website-members.js?v=grid1';
-import { mountWebsiteTools } from './website-features.js?v=2';
+import { mountWebsiteTools } from './website-features.js?v=4';
 import { normalizeMedia, profileVideos, websiteVideos, applyMedia, createMediaEditor } from './website-media-v2.js?v=grid1';
 // Website pilot settings and owner editor. No database writes happen during preview.
 // Match admin-access.js without importing its account-normalization side effects.

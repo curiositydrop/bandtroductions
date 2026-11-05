@@ -38,9 +38,35 @@ function emit(){listeners.forEach(({q,fn})=>fn(result(q)));}
 export function onSnapshot(q,fn){const x={q,fn};listeners.push(x);queueMicrotask(()=>fn(result(q)));return ()=>listeners.splice(listeners.indexOf(x),1);}
 const authListeners=[];
 export function onAuthStateChanged(a,fn){authListeners.push(fn);queueMicrotask(()=>fn(a.currentUser));return ()=>{};}
+export async function signOut(){auth.currentUser=null;authListeners.forEach(fn=>fn(null));}
+export async function signInWithEmailAndPassword(){return {user:auth.currentUser};}
+export async function createUserWithEmailAndPassword(){return {user:auth.currentUser};}
+export async function sendPasswordResetEmail(){}
+export async function sendEmailVerification(){}
+export async function updateProfile(){}
+export function getAuth(){return auth;}
+export function initializeApp(){return app;}
+export function getApps(){return [app];}
+export function getApp(){return app;}
+export function getDatabase(){return {};}
+export function getFirestore(){return db;}
+export function getStorage(){return storage;}
 export function changeUser(user){auth.currentUser=user;authListeners.forEach(fn=>fn(user));}
 export function serverTimestamp(){const now=Date.now();return {toMillis:()=>now,toDate:()=>new Date(now)};}
 export async function setDoc(target,data){records.set(target.path,data);emit();}
+export async function updateDoc(target,data){records.set(target.path,{...(records.get(target.path)||{}),...data});emit();}
+export async function deleteDoc(target){records.delete(target.path);emit();}
+export async function addDoc(col,data){const id='added-'+(++serial);const path=(col.collection||'added')+'/'+id;records.set(path,{...data});emit();return {id,path};}
+export function orderBy(){return {};}
+export function limit(){return {};}
+export function startAfter(){return {};}
+export function or(){return {};}
+export function and(){return {};}
+export function documentId(){return '__name__';}
+export function writeBatch(){return {set(){},update(){},delete(){},commit:async()=>{}};}
+export function increment(n){return n;}
+export function arrayUnion(...values){return values;}
+export function arrayRemove(...values){return values;}
 export async function runTransaction(db,fn){const writes=[];await fn({get:getDoc,set:(t,d)=>writes.push([t.path,d]),update:(t,d)=>writes.push([t.path,{...records.get(t.path),...d}])});writes.forEach(([k,v])=>records.set(k,v));emit();}
 export function ref(storage,path){return {path};}
 export function getFunctions(){return {};}
@@ -62,6 +88,20 @@ const server=http.createServer((req,res)=>{
   const page=await browser.newPage({viewport:{width:390,height:844}});
   const memberPhotoFixture=await page.screenshot();
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  async function openEditorArea(area){
+   const button=page.locator(`button[data-editor-area="${area}"]`);
+   await button.scrollIntoViewIfNeeded();
+   await button.click();
+   await page.waitForFunction(name=>document.querySelector(`button[data-editor-area="${name}"]`)?.getAttribute('aria-pressed')==='true',area);
+  }
+  async function openEditorCard(title){
+   const heading=page.locator('#website-editor .editor-grid > section').filter({has:page.locator('h3',{hasText:title})}).first().locator('h3').first();
+   if(await heading.getAttribute('aria-expanded')!=='true')await heading.click();
+   await page.waitForFunction(name=>{
+    const card=[...document.querySelectorAll('#website-editor .editor-grid > section')].find(section=>section.querySelector('h3')?.textContent.includes(name));
+    return card?.querySelector('h3')?.getAttribute('aria-expanded')==='true';
+   },title);
+  }
   await page.route('**/*',async route=>{
    const url=route.request().url();
    if(url.includes('/firebase-dev.js')||url.startsWith('https://www.gstatic.com/firebasejs/'))return route.fulfill({contentType:'text/javascript',body:'export * from "'+base+'/mock-firebase.js";',headers:{'access-control-allow-origin':'*'}});
@@ -74,7 +114,13 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#photo-grid img').count(),2,'profile and extra website photos');
   assert.equal(await page.locator('#videos iframe').count(),3,'profile and extra website videos');
   assert.equal(await page.locator('#band-player audio').isVisible(),false,'no unapproved or other-band music');
-  await page.locator('.ws-tool summary').filter({hasText:'Manage shows calendar'}).click();
+  const calendarSummary=page.locator('.ws-tool summary').filter({hasText:'Manage shows calendar'});
+  const showsArea=page.locator('button[data-editor-area="tools"]');
+  assert.equal(await showsArea.isVisible(),true,'Shows & songs stays available to the website owner');
+  assert.equal(await calendarSummary.isVisible(),false,'show manager stays off the appearance screen until Shows & songs is chosen');
+  await openEditorArea('tools');
+  assert.equal(await page.locator('.ws-tools').isVisible(),true,'Shows & songs reveals the calendar and song tools');
+  await calendarSummary.click();
   const form=page.locator('.ws-show-form');
   const today=new Date(),date=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-15';
   for(const [name,v] of Object.entries({title:'Calendar test',date,time:'19:00',venue:'Test Hall',location:'Portland, ME',price:'$10',details:'Test show details'}))await form.locator('[name='+name+']').fill(v);
@@ -87,12 +133,17 @@ const server=http.createServer((req,res)=>{
   assert.match(await page.locator('dialog[open]').innerText(),/Test show details/);await page.locator('dialog[open] button').last().click();
   const saved=await page.evaluate(async()=>{const {records}=await import('/mock-firebase.js');return [...records].filter(([k])=>k.startsWith('posts/')).map(([,v])=>v);});
   assert.equal(saved.length,1);assert.equal(saved[0].category,'show');assert.equal(saved[0].published,true);assert.equal(saved[0].event.age,'All ages');
+  assert.match(await page.locator('.ws-show-list').innerText(),/Calendar test/,'editor list uses the same shows as the public calendar');
+  assert.equal(await page.evaluate(()=>(globalThis.__btWebsiteShowHub?.shows||[]).some(show=>show.event?.title==='Calendar test')),true,'published shows stay in the shared calendar registry');
   await page.locator('.ws-show-list button').click();await form.locator('[name=age]').selectOption('21+');await form.locator('[type=submit]').click();
   await page.waitForFunction(()=>document.querySelector('#shows .ws-day.has-shows .adults'));
   const postCount=await page.evaluate(async()=>{const {records}=await import('/mock-firebase.js');return [...records.keys()].filter(k=>k.startsWith('posts/')).length;});assert.equal(postCount,1,'editing reuses the Social post');
 
   // Member image participates in the same draft/publish lifecycle.
   assert.equal(await page.locator('a').filter({hasText:/^(Community profile|View current profile)/}).count(),0);
+  await openEditorArea('media');
+  assert.equal(await page.locator('#member-add').isVisible(),false,'Meet the band stays collapsed until its card is opened');
+  await openEditorCard('Meet the band');
   await page.locator('#member-add').click();
   await page.locator('[data-member-field=name]').fill('Mike');
   await page.locator('[data-member-field=instrument]').fill('Vocals');
@@ -106,24 +157,34 @@ const server=http.createServer((req,res)=>{
   page.once('dialog',d=>d.accept());
   await page.locator('#discard-website').click();
   assert.equal(await page.locator('#band-member-cards article').count(),0,'discard removes draft member');
+  await openEditorCard('Meet the band');
   await page.locator('#member-add').click();
   await page.locator('[data-member-field=name]').fill('Mike');
   await page.locator('[data-member-field=instrument]').fill('Vocals');
   await page.locator('.ws-member-edit-row input[type=file]').setInputFiles({name:'member.png',mimeType:'image/png',buffer:memberPhotoFixture});
   await page.waitForFunction(()=>document.querySelector('#editor-status').textContent.startsWith('Member photo ready.'));
   // Appearance preview retains inherited media and new features.
-  await page.locator('#booking-rate').fill('1600');await page.locator('[name="booking-payment"][value="deposit"]').check();await page.locator('#site-button-style').selectOption('pill');await page.locator('#website-form [type=submit]').click();
+  await openEditorArea('booking');
+  await openEditorCard('Booking & payment');
+  await page.locator('#booking-rate').fill('1600');
+  await page.locator('[name="booking-payment"][value="deposit"]').check();
+  await page.locator('#booking-deposit-link').fill('https://example.com/deposit');
+  await openEditorArea('media');
+  await openEditorCard('Photos & videos');
+  await page.locator('#site-button-style').selectOption('pill');
+  await page.locator('#website-form [type=submit]').click();
   assert.equal(await page.locator('#photo-grid img').count(),2);assert.equal(await page.locator('#shows').count(),1);assert.equal(await page.locator('#band-player').count(),1);
   await page.locator('#publish-website').click();await page.waitForFunction(()=>document.querySelector('#editor-status').textContent.startsWith('Published!'));
 
   assert.match(await page.locator('#booking-rate-summary').textContent(),/\$1600\.00 per show/);
   const booking=await page.evaluate(async()=>{const {records}=await import('/mock-firebase.js');return records.get('profiles/19MH0ZzVlPVN4ediF4PesZR5TY13').websiteSettings.booking;});
-  assert.equal(booking.paymentPolicy,'deposit');assert.equal(booking.rateCents,160000);assert.equal(booking.timezone,'America/Phoenix');assert.deepEqual(booking.blockedDates,['2026-12-25']);
+  assert.equal(booking.paymentPolicy,'deposit');assert.equal(booking.depositPaymentUrl,'https://example.com/deposit');assert.equal(booking.rateCents,160000);assert.equal(booking.timezone,'America/Phoenix');assert.deepEqual(booking.blockedDates,['2026-12-25']);
   const savedMembers=await page.evaluate(async()=>{const {records}=await import('/mock-firebase.js');return records.get('profiles/19MH0ZzVlPVN4ediF4PesZR5TY13').websiteSettings.bandMembers;});
   assert.equal(savedMembers[0].name,'Mike');assert.equal(savedMembers[0].instrument,'Vocals');assert.match(savedMembers[0].photoUrl,/profile-media\/19MH0ZzVlPVN4ediF4PesZR5TY13\/website-member_/);
   assert.equal(await page.locator('#band-member-cards img').count(),1);
   await page.locator('#home-nav').click();
   // Upload through mocked storage/review queue, then simulate the existing admin approval copy.
+  await openEditorArea('tools');
   await page.locator('.ws-tool summary').filter({hasText:'Upload songs'}).click();
   const song=page.locator('.ws-song-form');await song.locator('[name=title]').fill('Website test song');
   await song.locator('[name=audioFile]').setInputFiles('/tmp/bt-test.mp3');
@@ -138,6 +199,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('.ws-tracks button').filter({hasText:'Website test song'}).waitFor();
   assert.equal(await page.locator('.ws-tracks button').count(),1);assert.equal(await page.locator('#band-player audio').isVisible(),true);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'mobile has no horizontal overflow');
+  await openEditorArea('appearance');
   await page.locator('#close-editor').click();await page.locator('#home-nav').click();
   assert.equal(await page.locator('#home').isVisible(),true);assert.equal(await page.locator('#about').isVisible(),false);
   await page.screenshot({path:'/tmp/bt-website-review/mobile.png',fullPage:true});
@@ -158,7 +220,9 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#home').isVisible(),true);
   assert.equal(await page.locator('#about').isVisible(),false);
   assert.equal(await page.locator('#website-editor').count(),0);
-  assert.equal(await page.locator('header nav a:visible').count(),8);
+  for(const id of ['home','about','music','photos','shows','booking','contact'])assert.equal(await page.locator('#'+id+'-nav').isVisible(),true,id+' stays in the menu');
+  assert.equal(await page.locator('#merch-nav').isHidden(),true,'merch stays out of the menu until a storefront is published');
+  assert.equal(await page.locator('header nav a:visible').count(),7);
   await page.locator('#about-nav').click();await page.waitForFunction(()=>document.body.dataset.view==='about');
   assert.equal(await page.locator('#about').isVisible(),true);
   assert.equal(await page.locator('#home').isVisible(),false);
@@ -182,7 +246,7 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#about').isVisible(),false);
   await page.goBack();
   await page.waitForFunction(()=>document.body.dataset.view==='about');
-  await page.locator('#merch-nav').click();await page.waitForFunction(()=>document.body.dataset.view==='merch');
+  await page.evaluate(()=>{location.hash='/merch';});await page.waitForFunction(()=>document.body.dataset.view==='merch');
   assert.equal(await page.locator('#view-empty').isVisible(),true);
   await page.locator('#shows-nav').click();await page.waitForFunction(()=>document.body.dataset.view==='shows');
   assert.equal(await page.locator('#shows').isVisible(),true);
@@ -195,7 +259,7 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await page.screenshot({path:'/tmp/bt-website-review/navigation-mobile.png',fullPage:true});
   assert.deepEqual(errors,[]);
-  console.log('PASS navigation views, browser Back, visible full menu, empty views, persistent player and read-only preview');
+  console.log('PASS navigation views, browser Back, available menu, hidden merch without a store, empty views, persistent player and read-only preview');
 
   // Both approved routes mount the same editor, seed legacy members and enforce the pilot.
   await page.unroute(base+'/mock-firebase.js');
@@ -233,13 +297,13 @@ const server=http.createServer((req,res)=>{
   await page.route(base+'/mock-firebase.js',route=>route.fulfill({contentType:'text/javascript',body:mock.replaceAll('19MH0ZzVlPVN4ediF4PesZR5TY13','other-band')}));
   for(const routeName of ['website-upgrade-preview.html','website-navigation-preview.html']){
    await page.goto(base+'/'+routeName+'?id=other-band&edit=1');
-   await page.waitForFunction(()=>!document.getElementById('main').hidden);
-   // Wait for the async editor initializer to resolve, not a timer.
-   await page.evaluate(async()=>{const {initWebsiteEditor}=await import('./website-review-editor.js?v=7');await initWebsiteEditor({profileId:'other-band',profile:{ownerId:'other-band'},render:()=>{}});});
+   await page.waitForFunction(()=>/not currently available/i.test(document.getElementById('status')?.textContent||''));
+   // The public page stays withheld. The editor initializer still refuses a profile without the plan.
+   await page.evaluate(async()=>{const {initWebsiteEditor}=await import('./website-review-editor.js?v=7');await initWebsiteEditor({profileId:'other-band',profile:{ownerId:'other-band',published:true},render:()=>{}});});
    assert.equal(await page.locator('#website-editor').count(),0);
    assert.equal(await page.locator('.ws-tools').count(),0);
    assert.equal(await page.locator('#website-edit-link').isVisible(),false);
-   assert.match(await page.locator('#preview-lock-copy').textContent(),/locked/);
+   assert.match(await page.locator('#preview-lock-copy').textContent(),/Website \+ Merch plan/);
   }
   assert.deepEqual(errors,[]);
   console.log('PASS: both pilot editor routes, owner/admin/guest/account-change guards, legacy member fields, booking rates and payment persistence, contact booking navigation, other profiles locked.');
