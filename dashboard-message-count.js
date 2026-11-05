@@ -130,4 +130,4 @@ onAuthStateChanged(auth,async user=>{
 });
 
 // Load the No-App App help UI independently so it cannot interfere with dashboard counts.
-import('./no-app-app-help.js?v=2').catch(error=>console.warn('No-App App help unavailable.',error));
+import('./no-app-app-help.js?v=3').catch(error=>console.warn('No-App App help unavailable.',error));

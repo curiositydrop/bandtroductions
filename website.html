@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="bt-analytics.js?v=1"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0b100f">
 <meta name="robots" content="noindex,follow">
@@ -107,6 +108,7 @@ else onAuthStateChanged(auth,async user=>{
     const email=result.data?.contactEmail||user.email||'';
     if(email)checkout.searchParams.set('prefilled_email',email);
     try{localStorage.setItem('btWebsiteMerchUpgradeProfileId',profileId);}catch{}
+    window.btTrack&&window.btTrack('begin_checkout',{plan:'website_merch'});
     location.href=checkout.toString();
    }catch(error){
     console.error(error);button.disabled=false;status.className='status error';status.textContent=String(error?.message||'The upgrade could not be started. Please try again.').replace(/^Firebase(?:Error)?:\s*/i,'').replace(/\s*\([^)]*\)\.?$/,'');

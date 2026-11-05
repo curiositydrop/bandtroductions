@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+<script src="bt-analytics.js?v=1"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Create Account | BANDtroductions</title>
 <link rel="canonical" href="https://bandtroductions.com/signup.html">
@@ -343,6 +344,7 @@
       try {
         const credential = await createUserWithEmailAndPassword(auth, emailInput.value.trim(), passwordInput.value);
         const accountType = ['band', 'musician', 'venue'].includes(claimType) ? claimType : 'fan';
+        window.btTrack && window.btTrack('sign_up', { method: 'email_claim', account_type: accountType });
         const displayName = claimName || emailInput.value.trim().split('@')[0] || 'BANDtroductions Member';
         await updateProfile(credential.user, { displayName }).catch(() => {});
         await setDoc(doc(db, 'users', credential.user.uid), {
@@ -425,6 +427,7 @@
         if (!createdUser) {
           const credential = await createUserWithEmailAndPassword(auth, email, password);
           createdUser = credential.user;
+          window.btTrack && window.btTrack('sign_up', { method: 'email', account_type: accountType || 'unknown' });
           changeLoginButton.disabled = true;
           await setDoc(doc(db, 'users', createdUser.uid), {
             uid: createdUser.uid,
