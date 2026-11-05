@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTV — BANDtroductions Television</title>
+<meta name="description" content="BTV: original music videos and band interviews from the BANDtroductions underground. No covers. Just the real stuff.">
+<link rel="canonical" href="https://bandtroductions.com/btv.html">
+<meta property="og:title" content="BTV — BANDtroductions Television">
+<meta property="og:description" content="Original music videos and band interviews. No covers.">
+<meta property="og:image" content="https://bandtroductions.com/bt-share-1200x630.jpg">
+<link rel="stylesheet" href="style.css?v=4">
+<style>
+:root{--btv-teal:#25c7c1;--btv-hot:#ff3d6e;--btv-ink:#060707}
+body.btv-page{margin:0;background:radial-gradient(circle at 50% -20%,rgba(37,199,193,.16),transparent 45%),#060707;color:#eee;font-family:inherit}
+.preview-banner{background:#ff3d6e;color:#111;font-weight:800;text-align:center;font-size:12px;padding:6px;letter-spacing:.04em}
+.btv-shell{max-width:1200px;margin:0 auto;padding:18px 14px 50px}
+.btv-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.btv-logo{font-weight:900;font-size:44px;line-height:1;letter-spacing:-.04em;display:flex;align-items:center;gap:10px}
+.btv-logo b{background:var(--btv-teal);color:#050505;padding:2px 10px 4px;border-radius:6px;transform:rotate(-3deg);display:inline-block;box-shadow:4px 4px 0 var(--btv-hot)}
+.btv-logo small{font-size:12px;letter-spacing:.25em;color:#9aa;font-weight:700;text-transform:uppercase}
+.btv-onair{font-size:12px;font-weight:900;letter-spacing:.2em;color:var(--btv-hot);display:flex;align-items:center;gap:6px}
+.btv-onair:before{content:"";width:10px;height:10px;border-radius:50%;background:var(--btv-hot);box-shadow:0 0 12px var(--btv-hot);animation:blink 1.4s infinite}
+@keyframes blink{50%{opacity:.25}}
+.btv-screen{position:relative;background:#000;border:3px solid #1d2222;border-radius:14px;overflow:hidden;aspect-ratio:16/9;max-height:78vh;width:100%;box-shadow:0 0 0 1px #000,0 20px 60px rgba(0,0,0,.7)}
+.btv-screen:fullscreen{border:0;border-radius:0;max-height:none}
+.btv-screen video,.btv-screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;object-fit:contain}
+.btv-screen:after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px)}
+.btv-bug{position:absolute;top:14px;right:16px;font-weight:900;font-size:20px;color:#fff;opacity:.8;z-index:3;text-shadow:0 2px 6px #000;pointer-events:none}
+.btv-bug span{color:var(--btv-teal)}
+.btv-lower{position:absolute;left:18px;bottom:22px;z-index:3;max-width:70%;pointer-events:none;transition:opacity .6s,transform .6s}
+.btv-lower.hide{opacity:0;transform:translateX(-20px)}
+.btv-lower .kind{display:inline-block;background:var(--btv-hot);color:#111;font-size:11px;font-weight:900;letter-spacing:.15em;padding:3px 8px;text-transform:uppercase}
+.btv-lower .band{background:rgba(0,0,0,.78);border-left:5px solid var(--btv-teal);padding:6px 12px 2px;font-size:clamp(16px,2.6vw,28px);font-weight:900;text-transform:uppercase}
+.btv-lower .song{background:rgba(0,0,0,.78);border-left:5px solid var(--btv-teal);padding:0 12px 8px;font-size:clamp(13px,1.8vw,18px);color:#cfd}
+.btv-lower .song i{color:#9aa;font-style:normal}
+.btv-controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.btv-btn{background:#141818;color:#eee;border:1px solid #2a3333;padding:10px 14px;border-radius:8px;font-weight:800;cursor:pointer;font-size:14px;text-decoration:none}
+.btv-btn.primary{background:var(--btv-teal);color:#050505;border-color:var(--btv-teal)}
+.btv-btn:hover{filter:brightness(1.15)}
+.btv-rule{border:1px dashed #3a4444;border-radius:10px;padding:10px 14px;font-size:13px;color:#bcc;margin:8px 0 18px}
+.btv-rule b{color:var(--btv-hot)}
+.btv-queue h2,.btv-upload h2{font-size:16px;letter-spacing:.15em;text-transform:uppercase;color:var(--btv-teal);margin:22px 0 10px}
+.btv-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.btv-item{background:#0f1212;border:1px solid #222;border-radius:10px;overflow:hidden;cursor:pointer;text-align:left;color:#ddd;padding:0;font:inherit}
+.btv-item.on{border-color:var(--btv-teal);box-shadow:0 0 0 2px rgba(37,199,193,.35)}
+.btv-item .th{aspect-ratio:16/9;background:#000 center/cover no-repeat;position:relative}
+.btv-item .th em{position:absolute;left:6px;top:6px;font-style:normal;background:var(--btv-hot);color:#111;font-size:10px;font-weight:900;padding:2px 6px}
+.btv-item .tx{padding:8px 10px;font-size:13px}
+.btv-item .tx b{display:block;text-transform:uppercase}
+.btv-upload{background:#0d1010;border:1px solid #222;border-radius:12px;padding:6px 16px 16px;margin-top:24px}
+.btv-upload label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px}
+.btv-upload input,.btv-upload select{width:100%;box-sizing:border-box;background:#050606;border:1px solid #2a3333;color:#eee;border-radius:8px;padding:10px;font:inherit}
+.btv-upload .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){.btv-upload .row{grid-template-columns:1fr}.btv-logo{font-size:34px}.btv-lower{max-width:88%;left:10px;bottom:12px}}
+.btv-check{display:flex!important;gap:8px;align-items:flex-start;font-weight:400!important}
+.btv-check input{width:auto}
+.btv-status{min-height:20px;font-size:13px;margin-top:10px}
+.btv-status.ok{color:var(--btv-teal)}.btv-status.err{color:var(--btv-hot)}
+.btv-admin{display:none;margin-top:18px;border:1px solid #553;border-radius:10px;padding:10px}
+.btv-admin.on{display:block}
+.btv-admin .p{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #222;font-size:13px;flex-wrap:wrap}
+</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-60112G8RH3');</script>
+</head>
+<body class="btv-page">
+<div class="preview-banner">PREVIEW — BTV · not live on bandtroductions.com yet</div>
+<div id="global-header"></div>
+<main class="btv-shell">
+  <div class="btv-top">
+    <div class="btv-logo"><b>BTV</b><small>BANDtroductions<br>Television</small></div>
+    <div class="btv-onair">ON AIR</div>
+  </div>
+
+  <div class="btv-screen" id="btv-screen">
+    <video id="btv-video" playsinline muted preload="metadata"></video>
+    <iframe id="btv-embed" hidden allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="BTV video"></iframe>
+    <div class="btv-bug"><span>B</span>TV</div>
+    <div class="btv-lower" id="btv-lower">
+      <span class="kind" id="btv-kind">Music Video</span>
+      <div class="band" id="btv-band">Loading…</div>
+      <div class="song" id="btv-song"></div>
+    </div>
+  </div>
+
+  <div class="btv-controls">
+    <button class="btv-btn" id="btv-prev">⏮ Prev</button>
+    <button class="btv-btn primary" id="btv-play">▶ Play</button>
+    <button class="btv-btn" id="btv-next">Next ⏭</button>
+    <button class="btv-btn" id="btv-mute">🔇 Sound On</button>
+    <button class="btv-btn" id="btv-full">⛶ Full Screen</button>
+    <a class="btv-btn" href="#btv-upload">⬆ Upload to BTV</a>
+  </div>
+
+  <div class="btv-rule"><b>Originals only.</b> Same rule as BT Radio — your own songs, your own videos, band interviews, live sets of original music. No covers, no stuff you don't own the rights to.</div>
+
+  <section class="btv-queue">
+    <h2>Up Next</h2>
+    <div class="btv-list" id="btv-list"></div>
+  </section>
+
+  <section class="btv-upload" id="btv-upload">
+    <h2>Upload to BTV</h2>
+    <div id="btv-auth" hidden>Free band or musician account required. <a href="login.html?returnTo=btv.html%23btv-upload" style="color:var(--btv-teal)">Log in</a> · <a href="signup.html?returnTo=btv.html" style="color:var(--btv-teal)">Join free</a></div>
+    <form id="btv-form" hidden>
+      <div class="row">
+        <div><label for="btv-f-band">Band / artist</label><input id="btv-f-band" required maxlength="80"></div>
+        <div><label for="btv-f-type">Type</label><select id="btv-f-type"><option value="video">Music video</option><option value="interview">Band interview</option><option value="live">Live set (originals)</option></select></div>
+      </div>
+      <label for="btv-f-title">Song / interview title</label><input id="btv-f-title" required maxlength="120">
+      <label for="btv-f-url">Video link (YouTube, Vimeo, or a direct .mp4)</label><input id="btv-f-url" type="url" required placeholder="https://youtube.com/watch?v=…">
+      <label class="btv-check"><input type="checkbox" id="btv-f-orig" required> This is our original music/content and we have the rights to share it. No covers.</label>
+      <button class="btv-btn primary" type="submit" style="margin-top:12px">Submit to BTV</button>
+      <div style="font-size:12px;color:#899;margin-top:8px">Direct file uploads coming soon — for now drop a link. Every submission gets a quick review before it airs.</div>
+    </form>
+    <div class="btv-status" id="btv-status" role="status"></div>
+  </section>
+
+  <section class="btv-admin" id="btv-admin">
+    <strong>Admin: pending BTV submissions</strong>
+    <div id="btv-pending">None yet.</div>
+  </section>
+</main>
+<script src="global-header-v2.js?v=3"></script>
+<script type="module" src="btv.js?v=20261105-preview1"></script>
+</body>
+</html>
