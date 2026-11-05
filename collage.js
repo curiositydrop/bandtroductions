@@ -4,6 +4,7 @@
  * Preview-safe data path (NO new Storage/Firestore rules required):
  *   Storage: profile-media/{uid}/collage-{ts}-{name}
  *   Firestore media docs with gallery: 'collage'
+ *   Hidden starter seeds: profiles/{adminUid}.collageHiddenSeedIds (admin update, public read)
  *
  * Production TODO (Mike must approve before deploying rules):
  *   Prefer dedicated collage/{uid}/{file} Storage path + collageItems collection.
@@ -13,6 +14,7 @@ import { auth, db, storage } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import {
   addDoc,
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -21,6 +23,7 @@ import {
   onSnapshot,
   query,
   serverTimestamp,
+  updateDoc,
   where
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import {
@@ -36,16 +39,22 @@ const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const ADMIN_EMAILS = new Set(['mbergeron79@gmail.com', 'mbegeron79@gmail.com']);
 const ADMIN_UID = 'PJXufsvdCCgRpfKcLtxPH3jEQN83';
 
+const SEED_ASSET_V = '20261105-generic';
 const SEED = [
-  { id: 'seed-01', url: 'assets/collage/seed-01.jpg', displayName: 'Scene seed', createdAtMs: 1 },
-  { id: 'seed-02', url: 'assets/collage/seed-02.jpg', displayName: 'Scene seed', createdAtMs: 2 },
-  { id: 'seed-03', url: 'assets/collage/seed-03.jpg', displayName: 'Scene seed', createdAtMs: 3 },
-  { id: 'seed-04', url: 'assets/collage/seed-04.jpg', displayName: 'Scene seed', createdAtMs: 4 },
-  { id: 'seed-05', url: 'assets/collage/seed-05.jpg', displayName: 'Scene seed', createdAtMs: 5 },
-  { id: 'seed-06', url: 'assets/collage/seed-06.jpg', displayName: 'Scene seed', createdAtMs: 6 },
-  { id: 'seed-07', url: 'assets/collage/seed-07.jpg', displayName: 'Scene seed', createdAtMs: 7 },
-  { id: 'seed-08', url: 'assets/collage/seed-08.jpg', displayName: 'Scene seed', createdAtMs: 8 }
+  { id: 'seed-01', url: `assets/collage/seed-01.jpg?v=${SEED_ASSET_V}`, displayName: 'Scene seed', createdAtMs: 1 },
+  { id: 'seed-02', url: `assets/collage/seed-02.jpg?v=${SEED_ASSET_V}`, displayName: 'Scene seed', createdAtMs: 2 },
+  { id: 'seed-03', url: `assets/collage/seed-03.jpg?v=${SEED_ASSET_V}`, displayName: 'Scene seed', createdAtMs: 3 },
+  { id: 'seed-04', url: `assets/collage/seed-04.jpg?v=${SEED_ASSET_V}`, displayName: 'Scene seed', createdAtMs: 4 },
+  { id: 'seed-05', url: `assets/collage/seed-05.jpg?v=${SEED_ASSET_V}`, displayName: 'Scene seed', createdAtMs: 5 },
+  { id: 'seed-06', url: `assets/collage/seed-06.jpg?v=${SEED_ASSET_V}`, displayName: 'Scene seed', createdAtMs: 6 },
+  { id: 'seed-07', url: `assets/collage/seed-07.jpg?v=${SEED_ASSET_V}`, displayName: 'Scene seed', createdAtMs: 7 },
+  { id: 'seed-08', url: `assets/collage/seed-08.jpg?v=${SEED_ASSET_V}`, displayName: 'Scene seed', createdAtMs: 8 }
 ];
+
+// Starter hides live on the admin profile. That doc is publicly readable
+// (published profile) and existing profile rules already limit updates to the
+// owner and admins, so no new Firestore rules are required.
+const HIDDEN_SEED_FIELD = 'collageHiddenSeedIds';
 
 const wallEl = document.getElementById('collage-wall');
 const emptyEl = document.getElementById('collage-empty');
@@ -64,6 +73,8 @@ const adminSelected = document.getElementById('collage-admin-selected');
 let currentUser = null;
 let isAdmin = false;
 let items = [];
+let latestLive = [];
+let hiddenSeedIds = new Set();
 let knownIds = new Set();
 let selectedId = null;
 let uploading = false;
@@ -185,7 +196,9 @@ function renderWall(highlightId) {
   emptyEl.hidden = list.length > 0;
   list.forEach((item) => {
     const el = document.createElement('figure');
-    el.className = 'polaroid' + (item.id === highlightId ? ' is-new' : '');
+    el.className = 'polaroid' +
+      (item.id === highlightId ? ' is-new' : '') +
+      (item.id === selectedId ? ' is-selected' : '');
     el.dataset.id = item.id;
     el.title = captionFor(item);
     const img = document.createElement('img');
@@ -197,7 +210,7 @@ function renderWall(highlightId) {
     cap.className = 'cap';
     cap.textContent = captionFor(item);
     el.append(img, cap);
-    if (isAdmin && !String(item.id).startsWith('seed-')) {
+    if (isAdmin) {
       el.style.cursor = 'pointer';
       el.addEventListener('click', () => selectForAdmin(item));
     }
@@ -209,6 +222,8 @@ function renderWall(highlightId) {
     countEl.textContent = `${liveCount} live shot${liveCount === 1 ? '' : 's'} on the wall` +
       (list.length > liveCount ? ` · showing with ${list.length - liveCount} starter Polaroids` : '') +
       (items.length > MAX_WALL ? ` · newest ${MAX_WALL}` : '');
+  } else if (!list.length) {
+    countEl.textContent = 'Wall is clear · your upload lands live for everyone';
   } else {
     countEl.textContent = `${list.length} starter Polaroids · your upload lands live for everyone`;
   }
@@ -216,6 +231,9 @@ function renderWall(highlightId) {
 
 function selectForAdmin(item) {
   selectedId = item.id;
+  wallEl.querySelectorAll('.polaroid').forEach((el) => {
+    el.classList.toggle('is-selected', el.dataset.id === item.id);
+  });
   adminSelected.textContent = '';
   const label = document.createElement('span');
   label.textContent = ` Selected: ${captionFor(item)} `;
@@ -226,8 +244,58 @@ function selectForAdmin(item) {
   adminSelected.append(label, btn);
 }
 
+function isSeedId(id) {
+  return String(id || '').startsWith('seed-');
+}
+function visibleSeeds() {
+  return SEED.filter((seed) => !hiddenSeedIds.has(seed.id));
+}
+function publishWall(highlight) {
+  const live = latestLive;
+  const seeds = live.length >= 12 ? [] : visibleSeeds();
+  items = [...live, ...seeds];
+  if (selectedId && !items.some((item) => item.id === selectedId)) {
+    selectedId = null;
+    adminSelected.textContent = '';
+  }
+  renderWall(highlight || null);
+}
+function applyHiddenSeedIds(raw) {
+  const next = new Set();
+  if (Array.isArray(raw)) {
+    raw.forEach((id) => {
+      const value = String(id || '');
+      if (isSeedId(value)) next.add(value);
+    });
+  }
+  hiddenSeedIds = next;
+  publishWall(null);
+}
+
+async function hideSeed(item) {
+  if (!isAdmin || !isSeedId(item?.id)) return;
+  if (!confirm(`Remove this starter Polaroid from the wall for everyone?\n${captionFor(item)}`)) return;
+  setStatus('Removing starter…');
+  try {
+    await updateDoc(doc(db, 'profiles', ADMIN_UID), {
+      [HIDDEN_SEED_FIELD]: arrayUnion(item.id),
+      collageHiddenSeedIdsUpdatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    hiddenSeedIds = new Set([...hiddenSeedIds, item.id]);
+    publishWall(null);
+    setStatus('Starter Polaroid removed. It stays off the wall after refresh.', 'ok');
+  } catch (error) {
+    console.error(error);
+    setStatus(error?.code === 'permission-denied'
+      ? 'Admin remove blocked by rules.'
+      : 'Could not remove that starter Polaroid.', 'error');
+  }
+}
+
 async function removeItem(item) {
-  if (!isAdmin || !item?.id || String(item.id).startsWith('seed-')) return;
+  if (!isAdmin || !item?.id) return;
+  if (isSeedId(item.id)) return hideSeed(item);
   if (!confirm(`Remove this Polaroid from the wall?\n${captionFor(item)}`)) return;
   setStatus('Removing…');
   try {
@@ -269,10 +337,10 @@ function mergeLive(docs) {
   }
   knownIds = new Set(live.map((x) => x.id));
 
-  // Keep seeds visible under live shots until the wall has enough real photos.
-  const combined = live.length >= 12 ? live : [...live, ...SEED];
-  items = combined;
-  renderWall(highlight);
+  // Seeds stay mixed with live shots until 12 real photos, and any seed an
+  // admin has hidden stays off even when the live count is still under 12.
+  latestLive = live;
+  publishWall(highlight);
   if (highlight && !uploading) setStatus('New Polaroid just hit the wall.', 'ok');
 }
 
@@ -286,10 +354,18 @@ function startLiveListener() {
     mergeLive(snap.docs);
   }, (error) => {
     console.warn('Collage live listener failed; showing seeds.', error);
-    items = [...SEED];
-    knownIds = new Set(SEED.map((s) => s.id));
-    renderWall();
+    latestLive = [];
+    knownIds = new Set();
+    publishWall(null);
     setStatus('Live wall unavailable right now — starter Polaroids are up. Upload may still work when you are logged in.', 'error');
+  });
+}
+
+function startHiddenSeedListener() {
+  return onSnapshot(doc(db, 'profiles', ADMIN_UID), (snap) => {
+    applyHiddenSeedIds(snap.exists() ? snap.data()?.[HIDDEN_SEED_FIELD] : []);
+  }, (error) => {
+    console.warn('Collage seed-hide list unavailable; starter Polaroids stay up.', error);
   });
 }
 
@@ -520,14 +596,17 @@ fileInput.addEventListener('change', () => {
 });
 saveBtn.addEventListener('click', saveCollage);
 
-items = [...SEED];
-knownIds = new Set(SEED.map((s) => s.id));
-renderWall();
+latestLive = [];
+publishWall(null);
 if (typeof ResizeObserver !== 'undefined') {
   new ResizeObserver(() => placePolaroids()).observe(wallEl);
 } else {
   window.addEventListener('resize', placePolaroids);
 }
 document.fonts?.ready?.then(() => placePolaroids()).catch(() => {});
+startHiddenSeedListener();
 startLiveListener();
-onAuthStateChanged(auth, syncAuth);
+onAuthStateChanged(auth, (user) => {
+  syncAuth(user);
+  publishWall(null);
+});

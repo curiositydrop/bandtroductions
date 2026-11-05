@@ -6,6 +6,40 @@
 - Modest links: global header news ticker + homepage secondary card next to “Vote”
 - **No production deploy. No rules deploy. No merge to main.**
 
+## Generic seeds + admin hide (2026-11-05, preview only)
+
+The eight starter JPGs are generic show scenes (stage light, crowd silhouettes, fog, a guitar and amp, a microphone). Captions stay **Scene seed**. No band names, logos, or branded posters. Image URLs are cache-busted with `?v=20261105-generic`.
+
+### License
+All eight photos are from Unsplash and used under the [Unsplash License](https://unsplash.com/license): free to use, including commercially. Attribution is not required. Source files (square-cropped to 800px JPEG for the wall):
+
+| Seed | Scene | Source |
+|---|---|---|
+| seed-01 | Spotlight and crowd silhouette | https://images.unsplash.com/photo-1758979141086-1c32a2885d06 |
+| seed-02 | Crowd, fog, and stage lights | https://images.unsplash.com/photo-1540039155733-5bb30b53aa14 |
+| seed-03 | Hands up in warm stage light | https://images.unsplash.com/photo-1507874457470-272b3c8d8ee2 |
+| seed-04 | Fog and a stage light bar | https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b |
+| seed-05 | Performers as silhouettes | https://images.unsplash.com/photo-1501612780327-45045538702b |
+| seed-06 | Festival crowd facing the stage | https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3 |
+| seed-07 | Electric guitar and amp | https://images.unsplash.com/photo-1550291652-6ea9114a47b1 |
+| seed-08 | Dynamic microphone | https://images.unsplash.com/photo-1516280440614-37939bbacd81 |
+
+seed-01’s Unsplash page credits Massiel Castro. The other seven are the Unsplash photo ids above.
+
+### How admin seed remove persists
+Live uploads are still `media` docs with `gallery: 'collage'`. Admin Remove on those still `deleteDoc`s the media doc (and best-effort deletes Storage).
+
+Starter seeds are not Firestore docs. Hiding one writes its id into `profiles/PJXufsvdCCgRpfKcLtxPH3jEQN83.collageHiddenSeedIds` with `arrayUnion`. Every visitor (logged out included) subscribes to that profile doc and drops those ids when the wall is built. The `live.length >= 12` auto-drop is unchanged and still runs; a manual hide works below 12 live photos.
+
+Why this path, with no rules change:
+
+- Anonymous `get` of that profile already succeeds (the profile is `published: true`).
+- Anonymous `update` of that profile is denied.
+- Admin profile edits elsewhere already `updateDoc` arbitrary fields (`adminNote`, `published`, and so on), so a new array field does not need a new ruleset.
+- A new collection would need a rules deploy. A `media` doc any signed-in member can create would let a non-admin hide seeds for everyone. The admin profile does not.
+
+The Remove control is the same as live uploads: an admin clicks the Polaroid, then Remove in the admin strip. Non-admins never get that click handler, and the strip stays hidden. Only the two admin emails and the admin UID are treated as admin in the client. The write still has to pass Firestore rules, which limit profile updates to the owner and admins.
+
 ## Preview-safe data path (works with CURRENT rules)
 Uploads intentionally reuse paths that already allow signed-in members:
 
