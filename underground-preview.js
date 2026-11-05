@@ -551,6 +551,7 @@ function renderFeed(posts){
 function renderShows(posts){
   if(!showsPanel)return;showsPanel.id='bt-upcoming-shows';const heading=showsPanel.querySelector('h3');showsPanel.replaceChildren();if(heading)showsPanel.appendChild(heading);
   const create=document.createElement('a');create.href='show-event.html';create.className='btn primary';create.textContent='POST A SHOW';create.style.cssText='display:block;text-align:center;margin:8px';showsPanel.appendChild(create);
+  const all=document.createElement('a');all.href='shows.html';all.className='bt-see-all-shows';all.textContent='SEE ALL SHOWS →';all.style.cssText='display:block;text-align:right;margin:0 10px 6px;color:#25c7c1;font-weight:900;font-size:11px;text-decoration:none;letter-spacing:.5px';showsPanel.appendChild(all);
   const now=nyToday();const showDateOf=p=>p.event?.date||p.eventDate||p.showDate;
   const shows=posts.filter(p=>p.published!==false&&p.category==='show').filter(p=>{const d=normalizeDate(showDateOf(p));return !d||d>=now;}).sort((a,b)=>{const ad=normalizeDate(showDateOf(a)),bd=normalizeDate(showDateOf(b));if(ad&&bd)return ad-bd;if(ad)return-1;if(bd)return 1;return 0;}).slice(0,5);
   injectShowEvents(shows.filter(p=>normalizeDate(showDateOf(p))).map(p=>{const e=p.event||{};return{band:p.authorName||e.artist||e.band||e.title,title:e.title,date:showDateOf(p),time:e.time,venue:e.venue,location:e.location,ticketUrl:e.ticketUrl,profileUrl:profileHref(p),image:e.imageUrl||p.imageUrl};}));
