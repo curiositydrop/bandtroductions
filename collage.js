@@ -54,6 +54,9 @@ const countEl = document.getElementById('collage-count');
 const addBtn = document.getElementById('collage-add-btn');
 const saveBtn = document.getElementById('collage-save-btn');
 const fileInput = document.getElementById('collage-file');
+const consentPanel = document.getElementById('collage-consent');
+const consentContinue = document.getElementById('collage-consent-continue');
+const CONSENT_IDS = ['collage-own', 'collage-safe', 'collage-promo', 'collage-public'];
 const authBox = document.getElementById('collage-auth-box');
 const adminStrip = document.getElementById('collage-admin');
 const adminSelected = document.getElementById('collage-admin-selected');
@@ -64,6 +67,7 @@ let items = [];
 let knownIds = new Set();
 let selectedId = null;
 let uploading = false;
+let consentUnlocked = false;
 let layoutSeed = hashStr('bandtroductions-collage-v1');
 
 function hashStr(s) {
@@ -333,10 +337,35 @@ async function compressImage(file) {
   return { blob, contentType: 'image/jpeg', fileName: `${base}.jpg` };
 }
 
+function consentChecked() {
+  return CONSENT_IDS.every((id) => document.getElementById(id)?.checked);
+}
+
+function consentFlags() {
+  return {
+    ownershipAccepted: document.getElementById('collage-own').checked,
+    noInappropriateContentAccepted: document.getElementById('collage-safe').checked,
+    promoUseAccepted: document.getElementById('collage-promo').checked,
+    collagePublicSaveAccepted: document.getElementById('collage-public').checked
+  };
+}
+
+function showConsent() {
+  consentUnlocked = false;
+  consentPanel.hidden = false;
+  consentPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 async function handleUpload(file) {
   if (!currentUser) {
     authBox.hidden = false;
     setStatus('Log in free to stick your shot on the wall.', 'error');
+    return;
+  }
+  if (!consentUnlocked || !consentChecked()) {
+    showConsent();
+    setStatus('Check all four boxes, then continue, before this photo can go up.', 'error');
+    fileInput.value = '';
     return;
   }
   if (!file) return;
@@ -387,6 +416,7 @@ async function handleUpload(file) {
       fileName: prepared.fileName,
       contentType: prepared.contentType,
       sizeBytes: prepared.blob.size,
+      ...consentFlags(),
       published: true,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
@@ -454,9 +484,34 @@ function syncAuth(user) {
 addBtn.addEventListener('click', () => {
   if (!currentUser) {
     authBox.hidden = false;
+    consentPanel.hidden = true;
     setStatus('Free login required — create a profile and you’re in.', 'error');
     return;
   }
+  if (!consentUnlocked || !consentChecked()) {
+    showConsent();
+    setStatus('Agree to all four, then continue.', 'error');
+    return;
+  }
+  fileInput.click();
+});
+consentPanel.addEventListener('change', () => {
+  if (!consentChecked()) consentUnlocked = false;
+});
+consentContinue.addEventListener('click', () => {
+  if (!currentUser) {
+    authBox.hidden = false;
+    setStatus('Free login required — create a profile and you’re in.', 'error');
+    return;
+  }
+  if (!consentChecked()) {
+    consentUnlocked = false;
+    setStatus('Check all four boxes to stick a photo on the wall.', 'error');
+    return;
+  }
+  consentUnlocked = true;
+  consentPanel.hidden = true;
+  setStatus('');
   fileInput.click();
 });
 fileInput.addEventListener('change', () => {

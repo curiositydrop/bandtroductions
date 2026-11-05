@@ -282,6 +282,47 @@ body.collage-page{
   padding:4px 8px;
 }
 #collage-file{display:none}
+.collage-consent{
+  max-width:720px;
+  margin:16px auto 0;
+  padding:14px 14px 16px;
+  border:1px solid rgba(37,199,193,.5);
+  background:#0d1212;
+  border-radius:12px;
+  text-align:left;
+}
+.collage-consent[hidden]{display:none!important}
+.collage-consent h2{
+  margin:0 0 6px;
+  color:var(--collage-teal);
+  font-size:16px;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.collage-consent-lead{
+  margin:0 0 12px;
+  color:#d7ecea;
+  font-size:14px;
+  line-height:1.45;
+}
+.collage-check{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  margin:0 0 12px;
+  color:#e7f3f2;
+  font-size:14px;
+  line-height:1.45;
+  font-weight:600;
+}
+.collage-check input{
+  width:22px;
+  height:22px;
+  margin-top:1px;
+  flex:none;
+  accent-color:var(--collage-teal);
+}
+.collage-consent .collage-btn{width:100%;margin-top:4px}
 </style>
 <script src="bt-analytics.js?v=1"></script>
 </head>
@@ -314,6 +355,15 @@ body.collage-page{
     <button type="button" class="collage-btn" id="collage-save-btn">💾 Save This Collage</button>
     <input id="collage-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif">
   </div>
+  <section class="collage-consent" id="collage-consent" hidden>
+    <h2>Before it hits the wall</h2>
+    <p class="collage-consent-lead">Check all four. Then continue to choose a photo.</p>
+    <label class="collage-check"><input type="checkbox" id="collage-own"> <span>I own or have permission to share everything in this upload, including the music, footage, and photos of anyone shown.</span></label>
+    <label class="collage-check"><input type="checkbox" id="collage-safe"> <span>No nudity, sexual, graphic, hateful, or otherwise inappropriate content. Violations get the upload removed and the account immediately deleted — paid or free, no refund.</span></label>
+    <label class="collage-check"><input type="checkbox" id="collage-promo"> <span>I give BANDtroductions a non-exclusive, royalty-free, worldwide right to use, edit, and share this upload, plus my band name and likeness, in promotions and advertisements for BANDtroductions — on the site, social media, and elsewhere — with no payment owed.</span></label>
+    <label class="collage-check"><input type="checkbox" id="collage-public"> <span>I understand the collage is public, and anyone (member or not) can view it and save it — including my photo — to their own device with Save This Collage.</span></label>
+    <button type="button" class="collage-btn primary" id="collage-consent-continue">Continue</button>
+  </section>
   <div class="collage-meta" id="collage-count">Loading the wall…</div>
   <div class="collage-status" id="collage-status" role="status"></div>
 
@@ -339,6 +389,6 @@ body.collage-page{
 
 <script src="global-header-v2.js?v=3"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
-<script type="module" src="collage.js?v=20261105-framefit"></script>
+<script type="module" src="collage.js?v=20261105-cya"></script>
 </body>
 </html>

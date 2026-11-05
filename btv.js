@@ -14,7 +14,7 @@ const ADMIN_EMAILS = new Set(['mbergeron79@gmail.com', 'mbegeron79@gmail.com']);
 const ADMIN_UID = 'PJXufsvdCCgRpfKcLtxPH3jEQN83';
 const KIND = { video: 'Music Video', interview: 'Band Interview', live: 'Live Set' };
 const SEED = [
-  { id: 'seed-01', band: 'BANDtroductions', title: 'Go Pro — Get Found', type: 'video', videoUrl: 'assets/btv/seed-01.mp4', thumb: 'assets/btv/seed-01.jpg' },
+  { id: 'seed-01', band: 'BANDtroductions', title: 'Get Found — Join Free', type: 'video', videoUrl: 'assets/btv/seed-01.mp4', thumb: 'assets/btv/seed-01.jpg' },
   { id: 'seed-02', band: 'BANDtroductions', title: 'The Scene (cinematic promo)', type: 'interview', videoUrl: 'assets/btv/seed-02.mp4', thumb: 'assets/btv/seed-02.jpg' }
 ];
 const $ = (id) => document.getElementById(id);
@@ -90,33 +90,90 @@ $('btv-pending').addEventListener('click', async (e) => {
   } catch (err) { alert('Admin action failed: ' + err.message); }
 });
 
+const UPLOAD_TYPES = new Set(['band', 'musician', 'artist', 'venue']);
+const loggedOutAuthHtml = $('btv-auth').innerHTML;
 let profile = null;
+let accountType = '';
+let authGen = 0;
+
+function canUploadBtv() {
+  return isAdmin || UPLOAD_TYPES.has(accountType);
+}
+
+function showUploadGate(mode) {
+  const authBox = $('btv-auth');
+  if (mode === 'in') {
+    authBox.hidden = true;
+    $('btv-form').hidden = false;
+    return;
+  }
+  $('btv-form').hidden = true;
+  authBox.hidden = false;
+  authBox.innerHTML = mode === 'out'
+    ? loggedOutAuthHtml
+    : 'Fans can watch only. BTV uploads need a free band, musician, or venue account.';
+}
+
+async function loadAccountType(u) {
+  profile = null;
+  let type = '';
+  try {
+    const s = await getDoc(doc(db, 'profiles', u.uid));
+    if (s.exists()) {
+      profile = s.data();
+      type = String(profile.profileType || profile.accountType || '').toLowerCase();
+    }
+  } catch {}
+  if (!type) {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', u.uid));
+      if (userDoc.exists()) type = String(userDoc.data()?.accountType || userDoc.data()?.profileType || '').toLowerCase();
+    } catch {}
+  }
+  return type;
+}
+
 onAuthStateChanged(auth, async (u) => {
+  const gen = ++authGen;
   user = u; isAdmin = !!u && (u.uid === ADMIN_UID || ADMIN_EMAILS.has((u.email || '').toLowerCase()));
   $('btv-admin').classList.toggle('on', isAdmin);
-  $('btv-auth').hidden = !!u; $('btv-form').hidden = !u;
-  if (u) {
-    try { const s = await getDoc(doc(db, 'profiles', u.uid)); profile = s.exists() ? s.data() : null; } catch {}
-    const n = profile?.bandName || profile?.displayName || profile?.name || '';
-    if (n && !$('btv-f-band').value) $('btv-f-band').value = n;
-    const t = String(profile?.profileType || profile?.accountType || '').toLowerCase();
-    if (t && !['band', 'musician', 'artist'].includes(t) && !isAdmin) setStatus('BTV uploads are for band & musician accounts — you can still watch!', 'err');
+  if (!u) {
+    profile = null;
+    accountType = '';
+    showUploadGate('out');
+    return;
   }
+  accountType = await loadAccountType(u);
+  if (gen !== authGen) return;
+  if (!canUploadBtv()) {
+    showUploadGate('watch');
+    setStatus('Fans can watch BTV. Uploads are for free band, musician, and venue accounts.', 'err');
+    return;
+  }
+  showUploadGate('in');
+  setStatus('');
+  const n = profile?.bandName || profile?.venueName || profile?.displayName || profile?.name || '';
+  if (n && !$('btv-f-band').value) $('btv-f-band').value = n;
 });
 
 $('btv-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!user) return setStatus('Log in first.', 'err');
+  if (!canUploadBtv()) return setStatus('BTV uploads are for free band, musician, and venue accounts. Fans can watch only.', 'err');
   const url = $('btv-f-url').value.trim();
   if (!embedUrl(url) && !/^https:\/\/.+\.(mp4|webm|mov)(\?.*)?$/i.test(url)) return setStatus('Use a YouTube, Vimeo, or direct https .mp4/.webm link.', 'err');
-  if (!$('btv-f-orig').checked) return setStatus('Originals only — please confirm.', 'err');
+  const ownershipAccepted = $('btv-f-own').checked;
+  const noInappropriateContentAccepted = $('btv-f-safe').checked;
+  const promoUseAccepted = $('btv-f-promo').checked;
+  if (!ownershipAccepted || !noInappropriateContentAccepted || !promoUseAccepted) return setStatus('Check all three rights boxes before submitting.', 'err');
   setStatus('Sending to BTV…');
   try {
     await addDoc(collection(db, 'media'), {
       ownerId: user.uid, ownerName: $('btv-f-band').value.trim(), displayName: $('btv-f-band').value.trim(),
       gallery: 'btv', mediaType: 'video', btvType: $('btv-f-type').value, btvStatus: 'pending',
       band: $('btv-f-band').value.trim(), title: $('btv-f-title').value.trim(), videoUrl: url, url,
-      originalContent: true, published: true, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+      ownershipAccepted, noInappropriateContentAccepted, promoUseAccepted,
+      published: true, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
     });
     e.target.reset(); setStatus('Got it! Your video is in the BTV review queue. 🤘', 'ok');
     try { gtag('event', 'btv_submit'); } catch {}
