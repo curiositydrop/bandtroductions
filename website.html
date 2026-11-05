@@ -32,6 +32,7 @@
 <p id="loading" class="loading">Loading artist website…</p>
 <section id="upgrade-card" class="card" hidden>
   <p class="eyebrow">Artist upgrade</p>
+  <p id="signup-free-note" hidden style="margin:0 0 14px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;color:var(--ink)">Your free account is already active. This upgrade is optional. Closing checkout, or a checkout error, leaves that free profile in place.</p>
   <h1>Website + Merch</h1>
   <p id="artist-copy">Turn your free artist profile into a full band website and merch storefront.</p>
   <p class="price"><strong>$15</strong> today</p>
@@ -95,6 +96,10 @@ else onAuthStateChanged(auth,async user=>{
   loading.hidden=true;
   if(!isOwner){unavailable.hidden=false;return;}
   upgrade.hidden=false;
+  if(params.get('from')==='signup'){
+    document.getElementById('signup-free-note').hidden=false;
+    document.getElementById('back-profile').textContent='Continue with free profile';
+  }
   document.getElementById('artist-copy').textContent=`Upgrade ${profile.displayName||'your artist profile'} to a full website and merch storefront. Your current profile content becomes the starting point.`;
   button.onclick=async()=>{
    if(!agreement.checked){status.className='status error';status.textContent='Check the seller responsibility agreement to continue.';return;}
