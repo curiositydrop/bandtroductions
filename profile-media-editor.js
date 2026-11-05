@@ -99,7 +99,7 @@ function addRow(item = { type: 'video', url: '', caption: '' }) {
       <small>Only embeddable YouTube or Vimeo links are accepted.</small>
     </label>
     <div class="media-image-field media-image-upload" hidden>
-      <label>Upload image<input class="media-file" type="file" accept="image/*"></label>
+      <label>Upload image<input class="media-file" type="file" accept="image/*,image/heic,image/heif"></label>
       <input class="media-existing-url" type="hidden">
       <img class="media-image-preview" alt="Media image preview" hidden>
     </div>
