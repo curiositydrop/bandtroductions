@@ -106,40 +106,82 @@ function captionFor(item) {
   return name.length > 22 ? name.slice(0, 20) + '…' : name || 'Scene';
 }
 
-function layoutPositions(count) {
+// .frame-mat clips overflow. Keep the whole Polaroid — white border, caption,
+// tilt, and the 1.08 pop — inside the mat with a small margin.
+const EDGE_MARGIN = 8;
+const MAX_POLAROID_SCALE = 1.08;
+
+function clamp01(n) {
+  return Math.min(1, Math.max(0, n));
+}
+function polaroidOutset(cardW, cardH, rotDeg) {
+  const rad = Math.abs(rotDeg) * Math.PI / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const boxW = Math.max(cardW * cos + cardH * sin, cardW * MAX_POLAROID_SCALE);
+  const boxH = Math.max(cardW * sin + cardH * cos, cardH * MAX_POLAROID_SCALE);
+  return {
+    x: Math.ceil(Math.max(0, (boxW - cardW) / 2)),
+    y: Math.ceil(Math.max(0, (boxH - cardH) / 2))
+  };
+}
+function axisRange(wall, card, outset) {
+  const min = EDGE_MARGIN + outset;
+  const max = wall - card - outset - EDGE_MARGIN;
+  if (max >= min) return { min, max };
+  const centered = (wall - card) / 2;
+  return { min: centered, max: centered };
+}
+function layoutPositions(count, wallW, wallH, cardW, cardH) {
   const rand = mulberry32(layoutSeed + count * 97);
   const positions = [];
   const cols = count <= 8 ? 3 : count <= 18 ? 4 : 5;
-  const rows = Math.max(3, Math.ceil(count / cols) + 1);
+  const rows = Math.max(1, Math.ceil(count / cols));
   for (let i = 0; i < count; i++) {
     const col = i % cols;
     const row = Math.floor(i / cols);
-    const xBase = (col + 0.5) / cols;
-    const yBase = (row + 0.55) / rows;
-    const jitterX = (rand() - 0.5) * (70 / cols);
-    const jitterY = (rand() - 0.5) * (55 / rows);
+    const jitterX = (rand() - 0.5) * (0.7 / cols);
+    const jitterY = (rand() - 0.5) * (0.55 / rows);
     const rot = (rand() - 0.5) * 16;
+    const outset = polaroidOutset(cardW, cardH, rot);
+    const xRange = axisRange(wallW, cardW, outset.x);
+    const yRange = axisRange(wallH, cardH, outset.y);
+    const nx = clamp01((col + 0.5) / cols + jitterX);
+    const ny = clamp01((row + 0.5) / rows + jitterY);
     positions.push({
-      left: Math.min(86, Math.max(4, xBase * 100 + jitterX)),
-      top: Math.min(78, Math.max(4, yBase * 100 + jitterY)),
+      left: xRange.min + nx * (xRange.max - xRange.min),
+      top: yRange.min + ny * (yRange.max - yRange.min),
       rot
     });
   }
   return positions;
+}
+function placePolaroids() {
+  const cards = [...wallEl.querySelectorAll('.polaroid')];
+  if (!cards.length) return;
+  const wallW = wallEl.clientWidth;
+  const wallH = wallEl.clientHeight;
+  if (wallW < 8 || wallH < 8) return;
+  const cardW = cards[0].offsetWidth;
+  const cardH = cards[0].offsetHeight;
+  if (!cardW || !cardH) return;
+  const positions = layoutPositions(cards.length, wallW, wallH, cardW, cardH);
+  cards.forEach((el, idx) => {
+    const pos = positions[idx];
+    if (!pos) return;
+    el.style.left = `${pos.left.toFixed(2)}px`;
+    el.style.top = `${pos.top.toFixed(2)}px`;
+    el.style.transform = `rotate(${pos.rot.toFixed(2)}deg)`;
+  });
 }
 
 function renderWall(highlightId) {
   const list = items.slice(0, MAX_WALL);
   wallEl.replaceChildren();
   emptyEl.hidden = list.length > 0;
-  const positions = layoutPositions(list.length);
-  list.forEach((item, idx) => {
-    const pos = positions[idx] || { left: 10, top: 10, rot: 0 };
+  list.forEach((item) => {
     const el = document.createElement('figure');
     el.className = 'polaroid' + (item.id === highlightId ? ' is-new' : '');
-    el.style.left = pos.left + '%';
-    el.style.top = pos.top + '%';
-    el.style.transform = `rotate(${pos.rot.toFixed(2)}deg)`;
     el.dataset.id = item.id;
     el.title = captionFor(item);
     const img = document.createElement('img');
@@ -157,6 +199,7 @@ function renderWall(highlightId) {
     }
     wallEl.appendChild(el);
   });
+  placePolaroids();
   const liveCount = list.filter((x) => !String(x.id).startsWith('seed-')).length;
   if (liveCount) {
     countEl.textContent = `${liveCount} live shot${liveCount === 1 ? '' : 's'} on the wall` +
@@ -425,5 +468,11 @@ saveBtn.addEventListener('click', saveCollage);
 items = [...SEED];
 knownIds = new Set(SEED.map((s) => s.id));
 renderWall();
+if (typeof ResizeObserver !== 'undefined') {
+  new ResizeObserver(() => placePolaroids()).observe(wallEl);
+} else {
+  window.addEventListener('resize', placePolaroids);
+}
+document.fonts?.ready?.then(() => placePolaroids()).catch(() => {});
 startLiveListener();
 onAuthStateChanged(auth, syncAuth);
