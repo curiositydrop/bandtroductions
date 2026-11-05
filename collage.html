@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Show Collage Wall | BANDtroductions</title>
+<meta name="description" content="Drop your show photos on the BANDtroductions Collage Wall. Polaroid-style, live updates, free to join the scene forever.">
+<link rel="canonical" href="https://bandtroductions.com/collage.html">
+<meta property="og:title" content="Show Collage Wall | BANDtroductions">
+<meta property="og:description" content="Upload your show photos. Watch them land live on a shared Polaroid collage wall.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://bandtroductions.com/collage.html">
+<meta property="og:site_name" content="BANDtroductions">
+<meta property="og:image" content="https://bandtroductions.com/6088D6CE-FC3E-40D6-BF94-9191E0A7FE10.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Show Collage Wall | BANDtroductions">
+<meta name="twitter:description" content="Upload your show photos. Watch them land live on a shared Polaroid collage wall.">
+<link rel="stylesheet" href="style.css?v=4">
+<style>
+:root{
+  --collage-teal:#25c7c1;
+  --collage-ink:#0a0b0b;
+  --collage-frame:#1a1410;
+  --collage-gold:#c9a46a;
+}
+body.collage-page{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 50% -10%,rgba(37,199,193,.14),transparent 42%),
+    radial-gradient(circle at 80% 80%,rgba(180,40,40,.08),transparent 35%),
+    linear-gradient(180deg,#121414 0%,#080909 55%,#050606 100%);
+  color:#eee;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.collage-shell{
+  max-width:1100px;
+  margin:0 auto;
+  padding:18px 16px 64px;
+}
+.collage-hero{
+  text-align:center;
+  margin:8px auto 22px;
+}
+.collage-hero h1{
+  margin:0 0 8px;
+  font-size:clamp(28px,5vw,48px);
+  letter-spacing:-1px;
+  font-weight:900;
+}
+.collage-hero h1 span{color:var(--collage-teal)}
+.collage-hero p{
+  margin:0 auto;
+  max-width:640px;
+  color:#b7c4c3;
+  line-height:1.55;
+  font-size:clamp(14px,2.2vw,17px);
+}
+.collage-badge{
+  display:inline-block;
+  margin-bottom:10px;
+  padding:4px 10px;
+  border:1px solid rgba(37,199,193,.45);
+  color:var(--collage-teal);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.frame-stage{
+  position:relative;
+  margin:0 auto;
+  width:min(100%,920px);
+}
+.picture-frame{
+  position:relative;
+  background:
+    linear-gradient(145deg,#2a2218,#120e0a 45%,#1d1712);
+  border:10px solid #3a2f24;
+  border-radius:6px;
+  box-shadow:
+    0 0 0 2px #6a563f,
+    0 0 0 8px #1a1410,
+    0 28px 60px rgba(0,0,0,.65),
+    inset 0 0 40px rgba(0,0,0,.45);
+  padding:clamp(14px,3vw,28px);
+}
+.picture-frame::before{
+  content:"";
+  position:absolute;
+  inset:8px;
+  border:1px solid rgba(201,164,106,.28);
+  pointer-events:none;
+  border-radius:2px;
+}
+.frame-mat{
+  position:relative;
+  background:
+    radial-gradient(circle at 30% 20%,rgba(255,255,255,.04),transparent 40%),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.015) 0 1px,transparent 1px 8px),
+    #0c0f0f;
+  border:1px solid #243030;
+  min-height:clamp(420px,72vw,640px);
+  overflow:hidden;
+}
+.frame-mat.landscape-tall{
+  aspect-ratio:4/5;
+}
+@media(min-width:820px){
+  .frame-mat.landscape-tall{
+    aspect-ratio:16/11;
+    min-height:520px;
+  }
+}
+.frame-plate{
+  position:absolute;
+  left:50%;
+  bottom:-18px;
+  transform:translateX(-50%);
+  background:linear-gradient(180deg,#d7b07a,#9a7544);
+  color:#1a120a;
+  font-weight:900;
+  font-size:11px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  padding:6px 14px;
+  border-radius:2px;
+  box-shadow:0 4px 12px rgba(0,0,0,.45);
+  white-space:nowrap;
+}
+.collage-wall{
+  position:absolute;
+  inset:0;
+  padding:12px;
+}
+.polaroid{
+  position:absolute;
+  width:clamp(96px,22vw,148px);
+  background:#f4f1ea;
+  padding:8px 8px 28px;
+  box-shadow:0 10px 24px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.35) inset;
+  transition:transform .25s ease, box-shadow .25s ease, opacity .35s ease;
+  cursor:default;
+  z-index:1;
+}
+.polaroid:hover{
+  z-index:5;
+  box-shadow:0 16px 34px rgba(0,0,0,.7);
+  transform:scale(1.05) rotate(0deg)!important;
+}
+.polaroid img{
+  display:block;
+  width:100%;
+  aspect-ratio:1;
+  object-fit:cover;
+  background:#222;
+}
+.polaroid .cap{
+  margin-top:7px;
+  color:#2a2a2a;
+  font-size:10px;
+  font-weight:800;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-family:Georgia,"Times New Roman",serif;
+}
+.polaroid.is-new{
+  animation:polaroidPop .55s ease;
+}
+@keyframes polaroidPop{
+  0%{opacity:0;transform:scale(.6) rotate(-8deg)}
+  70%{opacity:1;transform:scale(1.08)}
+  100%{opacity:1}
+}
+.wall-empty{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:24px;
+  text-align:center;
+  color:#8ea3a1;
+  font-weight:800;
+  pointer-events:none;
+}
+.wall-empty strong{color:var(--collage-teal);display:block;margin-bottom:6px;font-size:18px}
+.collage-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  justify-content:center;
+  margin:34px auto 10px;
+  max-width:720px;
+}
+.collage-btn{
+  appearance:none;
+  border:1px solid var(--collage-teal);
+  background:transparent;
+  color:var(--collage-teal);
+  font-weight:900;
+  font-size:15px;
+  padding:14px 22px;
+  cursor:pointer;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-width:min(100%,240px);
+}
+.collage-btn.primary{
+  background:var(--collage-teal);
+  color:#041212;
+}
+.collage-btn:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+.collage-btn:hover:not(:disabled){
+  filter:brightness(1.08);
+}
+.collage-meta{
+  text-align:center;
+  color:#8b9897;
+  font-size:13px;
+  margin-top:8px;
+}
+.collage-status{
+  text-align:center;
+  min-height:24px;
+  margin-top:12px;
+  color:#cfeceb;
+  font-weight:800;
+  font-size:14px;
+}
+.collage-status.error{color:#ff8f8f}
+.collage-status.ok{color:#7dffc7}
+.collage-auth{
+  text-align:center;
+  margin-top:18px;
+  padding:14px;
+  border:1px dashed rgba(37,199,193,.35);
+  background:rgba(8,12,12,.55);
+  max-width:640px;
+  margin-left:auto;
+  margin-right:auto;
+}
+.collage-auth a{color:var(--collage-teal);font-weight:900}
+.collage-notes{
+  max-width:720px;
+  margin:28px auto 0;
+  color:#8f9c9b;
+  font-size:13px;
+  line-height:1.55;
+  text-align:center;
+}
+.admin-strip{
+  display:none;
+  margin:18px auto 0;
+  max-width:920px;
+  padding:12px;
+  border:1px solid rgba(255,140,140,.35);
+  background:rgba(40,10,10,.35);
+  color:#ffc9c9;
+  font-size:13px;
+}
+.admin-strip.visible{display:block}
+.admin-strip button{
+  margin-left:8px;
+  border:1px solid #ff8f8f;
+  background:transparent;
+  color:#ffc9c9;
+  font-weight:800;
+  cursor:pointer;
+  padding:4px 8px;
+}
+#collage-file{display:none}
+.preview-banner{
+  text-align:center;
+  background:#1a1510;
+  border-bottom:1px solid rgba(201,164,106,.35);
+  color:#e7d3ad;
+  font-size:12px;
+  font-weight:800;
+  padding:8px 12px;
+  letter-spacing:.03em;
+}
+</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-60112G8RH3"></script>
+<script>
+window.dataLayer=window.dataLayer||[];
+function gtag(){dataLayer.push(arguments);}
+gtag('js',new Date());
+gtag('config','G-60112G8RH3');
+</script>
+</head>
+<body class="collage-page">
+<div class="preview-banner">PREVIEW — Show Collage Wall · not live on bandtroductions.com yet</div>
+<div id="global-header"></div>
+<main class="collage-shell">
+  <header class="collage-hero">
+    <div class="collage-badge">Live Scene Wall</div>
+    <h1>The Show <span>Collage</span></h1>
+    <p>Drop your pit / balcony / merch-line photos onto the wall. They land live as Polaroids. You’re part of the scene forever.</p>
+  </header>
+
+  <div class="frame-stage">
+    <div class="picture-frame" id="collage-frame" aria-label="BANDtroductions show collage picture frame">
+      <div class="frame-mat landscape-tall" id="collage-mat">
+        <div class="collage-wall" id="collage-wall" aria-live="polite"></div>
+        <div class="wall-empty" id="collage-empty" hidden>
+          <div>
+            <strong>Wall’s warming up</strong>
+            Be the first to slap a Polaroid on it.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-plate">BANDtroductions · Show Collage</div>
+  </div>
+
+  <div class="collage-actions">
+    <button type="button" class="collage-btn primary" id="collage-add-btn">📸 Stick It On The Wall</button>
+    <button type="button" class="collage-btn" id="collage-save-btn">💾 Save This Collage</button>
+    <input id="collage-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif">
+  </div>
+  <div class="collage-meta" id="collage-count">Loading the wall…</div>
+  <div class="collage-status" id="collage-status" role="status"></div>
+
+  <div class="collage-auth" id="collage-auth-box" hidden>
+    Free account required to upload — that’s how we keep the wall real.
+    <div style="margin-top:10px">
+      <a href="login.html?returnTo=collage.html">Log in</a>
+      &nbsp;·&nbsp;
+      <a href="signup.html?returnTo=collage.html">Join free</a>
+    </div>
+  </div>
+
+  <div class="admin-strip" id="collage-admin">
+    Admin: click a Polaroid, then hit remove to yank a bad upload.
+    <span id="collage-admin-selected"></span>
+  </div>
+
+  <p class="collage-notes">
+    JPEG / PNG / WebP / GIF · max 8&nbsp;MB · newest ~48 photos shown · HEIC from iPhone: convert to JPEG first (or open in Photos and share as JPEG).<br>
+    Want it forever? Save the collage to your phone and check back later to see how the wall grew.
+  </p>
+</main>
+
+<script src="global-header-v2.js?v=3"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
+<script type="module" src="collage.js?v=20261105-preview1"></script>
+</body>
+</html>
