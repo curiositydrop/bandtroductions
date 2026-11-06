@@ -79,7 +79,8 @@ export async function deleteObject(){}
 const server=http.createServer((req,res)=>{
  if(req.url==='/mock-firebase.js'){res.setHeader('Content-Type','text/javascript');return res.end(mock);}
  const file=path.join(root,decodeURIComponent(req.url.split('?')[0]));if(!file.startsWith(root)){res.statusCode=403;return res.end();}
- try{res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'application/octet-stream');res.end(fs.readFileSync(file));}catch{res.statusCode=404;res.end();}
+ // GitHub Pages serves .mjs as JavaScript. octet-stream fails the editor import of admin-notify-core.mjs.
+ try{const javascript=file.endsWith('.js')||file.endsWith('.mjs');res.setHeader('Content-Type',javascript?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'application/octet-stream');res.end(fs.readFileSync(file));}catch{res.statusCode=404;res.end();}
 });
 (async()=>{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
