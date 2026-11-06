@@ -41,7 +41,7 @@ function renderBreak(b){
   const card=$('rpPlayer');card.classList.add('is-live');
   $('rpStatus').textContent='● ON AIR';$('rpStatus').className='rp-status live';
   $('rpCover').hidden=true;
-  const v=$('rpAd');let img=$('rpSponsorImage');if(!img){img=document.createElement('img');img.id='rpSponsorImage';img.style.cssText='width:100%;height:100%;object-fit:contain;background:black';v.after(img);}const still=!b.videoUrl&&!!b.posterUrl;img.hidden=!still;v.hidden=still;if(still){img.src=b.posterUrl;img.alt=b.sponsorName+' sponsor image';v.pause();v.removeAttribute('src');}else if(v.getAttribute('src')!==b.videoUrl){v.src=b.videoUrl;if(b.posterUrl)v.poster=b.posterUrl;}
+  const v=$('rpAd');let img=$('rpSponsorImage');if(!img){img=document.createElement('img');img.id='rpSponsorImage';img.style.cssText='display:none;width:min(260px,72vw);aspect-ratio:1;object-fit:contain;margin:14px auto;border-radius:12px;border:1px solid #33504e;background:black';v.after(img);}const still=!b.videoUrl&&!!b.posterUrl;img.hidden=!still;img.style.display=still?'block':'none';v.hidden=still;if(still){img.src=b.posterUrl;img.alt=b.sponsorName+' sponsor image';v.pause();v.removeAttribute('src');}else if(v.getAttribute('src')!==b.videoUrl){v.src=b.videoUrl;if(b.posterUrl)v.poster=b.posterUrl;}
   v.setAttribute('aria-label',`${b.sponsorName} sponsor clip`);
   const viaAudio=breakAudio(b);
   if(viaAudio)playBreakAudio(b);
@@ -59,7 +59,7 @@ function renderBreak(b){
   $('rpListen').disabled=false;$('rpListen').textContent=listening?'❚❚ PAUSE':'▶ LISTEN LIVE';
   $('rpProgress').hidden=true;$('rpUpNext').innerHTML='';$('rpOff').hidden=true;
 }
-function hideBreak(){const v=$('rpAd');v?.pause();if(v)v.hidden=true;const img=$('rpSponsorImage');if(img)img.hidden=true;$('rpCover').hidden=false;}
+function hideBreak(){const v=$('rpAd');v?.pause();if(v)v.hidden=true;const img=$('rpSponsorImage');if(img){img.hidden=true;img.style.display='none';}$('rpCover').hidden=false;}
 function renderPlayer(){
   const b=currentBreak();
   if(b){renderBreak(b);return;}
