@@ -134,7 +134,7 @@ form.onsubmit=async e=>{e.preventDefault();if(PREVIEW||!PUBLISH_ENABLED)return;i
 if(vf&&vf.type!=='video/mp4'){status.textContent='Video must be MP4.';return;}
 if(im&&!/^image\/(jpeg|png|webp)$/.test(im.type)){status.textContent='Image must be JPG, PNG, or WebP.';return;}
 if(vf&&im){status.textContent='Choose either a video or an image.';return;}
-if(!af){status.textContent='Select audio or extract it from an MP4.';return;}
+if(!af&&!current.audioUrl){status.textContent='Select audio or extract it from an MP4.';return;}
 if(!vf&&!im&&!current.videoUrl&&!current.posterUrl){status.textContent='Select a video or image.';return;}
 if(af&&!['audio/mp4','audio/x-m4a','audio/m4a','audio/mpeg','audio/wav'].includes(af.type)){status.textContent='Audio must be MP3, M4A, or extracted WAV.';return;}
 if((vf&&vf.size>40*1024*1024)||(im&&im.size>5*1024*1024)||(af&&af.size>15*1024*1024)){status.textContent='Max file sizes: video 40 MB, image 5 MB, audio 15 MB.';return;}
