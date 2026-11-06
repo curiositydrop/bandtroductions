@@ -127,7 +127,7 @@ function restoreDraft(){
 const metadata=file=>new Promise((resolve,reject)=>{const url=URL.createObjectURL(file),el=document.createElement(file.type.startsWith('video/')?'video':'audio');el.preload='metadata';el.onloadedmetadata=()=>{const n=el.duration;URL.revokeObjectURL(url);resolve(n);};el.onerror=()=>{URL.revokeObjectURL(url);reject(Error('Cannot read media duration'));};el.src=url;});
 onAuthStateChanged(auth,user=>{unsub();if(!isAdminAccount(user)){panel.hidden=true;return;}panel.hidden=false;unsub=onSnapshot(doc(db,'radioPlaylists','__stationControl'),s=>{fill(s.data()?.sponsorBreak||DEFAULT);if(!dirty)restoreDraft();},e=>status.textContent='Unable to load ad settings: '+e.message);});
 if(PREVIEW){status.textContent='Preview mode: uploads and saving are disabled to protect the live station.';panel.querySelector('#bt-ad-save').disabled=true;}
-form.onsubmit=async e=>{e.preventDefault();if(PREVIEW||!PUBLISH_ENABLED)return;if(extracting){status.textContent='Wait for audio extraction to finish.';return;}const user=auth.currentUser;if(!isAdminAccount(user)||!user.emailVerified){status.textContent='Verified administrator sign-in required.';return;}const vf=form.elements.visual.files[0],af=form.elements.audio.files[0]||extractedAudio;const type=form.elements.visualType.value;
+form.onsubmit=async e=>{e.preventDefault();if(PREVIEW||!PUBLISH_ENABLED)return;if(extracting){status.textContent='Wait for audio extraction to finish.';return;}const user=auth.currentUser;if(!isAdminAccount(user)||(user.email!=='mbergeron79@gmail.com')||(!user.emailVerified&&user.uid!=='PJXufsvdCCgRpfKcLtxPH3jEQN83')){status.textContent='Authorized administrator sign-in required.';return;}const vf=form.elements.visual.files[0],af=form.elements.audio.files[0]||extractedAudio;const type=form.elements.visualType.value;
 if(vf&&!(type==='image'?/^image\/(jpeg|png|webp)$/.test(vf.type):vf.type==='video/mp4')){status.textContent='Visual type does not match selected file.';return;}
 if(af&&!['audio/mp4','audio/x-m4a','audio/m4a','audio/mpeg','audio/wav'].includes(af.type)){status.textContent='Audio must be MP3, M4A, or extracted WAV.';return;}
 if((vf&&vf.size>40*1024*1024)||(af&&af.size>15*1024*1024)){status.textContent='Max file sizes: video 40 MB, audio 15 MB.';return;}
@@ -143,5 +143,5 @@ if(af)next.audioUrl=await upload(af);
 if(!next.videoUrl&&!next.posterUrl)throw Error('Select a video or image.');
 await setDoc(doc(db,'radioPlaylists','__stationControl'),{sponsorBreak:next,updatedAt:Date.now()},{merge:true});
 form.elements.visual.value='';form.elements.audio.value='';extractedAudio=null;dirty=false;sessionStorage.removeItem('bt-radio-ad-draft');status.textContent='Published. New settings will be picked up by connected players; check the next eligible break.';showPreview();
-}catch(err){status.textContent='Not saved: '+err.message;}finally{panel.querySelector('#bt-ad-save').disabled=PREVIEW;}}
+}catch(err){status.textContent='Not saved: '+err.message;}finally{panel.querySelector('#bt-ad-save').disabled=PREVIEW||!PUBLISH_ENABLED;}}
 }
