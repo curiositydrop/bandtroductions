@@ -5,7 +5,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstati
 import { isAdminAccount } from './admin-access.js';
 
 const DEFAULT={active:true,sponsorName:'New Leaf Painting Co.',clickUrl:'https://newleafpaintingco.com',videoUrl:'/assets/ads/new-leaf-ad.mp4',audioUrl:'/assets/ads/new-leaf-ad.m4a',durationSeconds:18};
-const PREVIEW=/pages\.dev$|grok\.bot$|--.*\.web\.app$/.test(location.hostname)||new URLSearchParams(location.search).has('adPreview');
+const PREVIEW=/pages\.dev$|grok\.bot$|vercel\.app$|--.*\.web\.app$/.test(location.hostname)||new URLSearchParams(location.search).has('adPreview');
 const host=document.getElementById('cr-radio-body');
 if(host){
 const panel=document.createElement('section');
