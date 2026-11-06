@@ -7,7 +7,7 @@ import { isAdminAccount } from './admin-access.js';
 const DEFAULT={active:true,sponsorName:'New Leaf Painting Co.',clickUrl:'https://newleafpaintingco.com',videoUrl:'/assets/ads/new-leaf-ad.mp4',audioUrl:'/assets/ads/new-leaf-ad.m4a',durationSeconds:18};
 const PREVIEW=/pages\.dev$|grok\.bot$|vercel\.app$|--.*\.web\.app$/.test(location.hostname)||new URLSearchParams(location.search).has('adPreview');
 // Do not enable production publishing until Firestore and Storage authorization are verified.
-const PUBLISH_ENABLED=false;
+const PUBLISH_ENABLED=false; // Enable only after Storage rules are deployed and verified.
 const host=document.getElementById('cr-radio-body');
 if(host){
 const panel=document.createElement('section');
