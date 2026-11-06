@@ -82,8 +82,8 @@ form.addEventListener('input',()=>{dirty=true;});
 form.addEventListener('change',()=>{dirty=true;});
 form.elements.visual.addEventListener('change',()=>{extractedAudio=null;showPreview();if(form.elements.visual.files[0]?.type==='video/mp4')extract();});
 form.elements.audio.addEventListener('change',()=>{extractedAudio=null;showPreview();});
-form.elements.image.addEventListener('change',()=>{if(form.elements.image.files.length)form.elements.visual.value='';showPreview();});
-form.elements.visual.addEventListener('change',()=>{if(form.elements.visual.files.length)form.elements.image.value='';showPreview();});
+form.elements.image.addEventListener('change',()=>{if(form.elements.image.files.length){form.elements.visual.value='';form.elements.audioOnly.checked=false;}showPreview();});
+form.elements.visual.addEventListener('change',()=>{if(form.elements.visual.files.length){form.elements.image.value='';form.elements.audioOnly.checked=false;}showPreview();});
 function encodeWav(buffer){
   const channels=Math.min(2,buffer.numberOfChannels),rate=buffer.sampleRate,frames=buffer.length;
   const bytes=44+frames*channels*2;
@@ -115,6 +115,7 @@ async function extract(){
   }catch(error){extractedAudio=null;status.textContent='Could not extract audio on this device: '+error.message+' Use a separate MP3/M4A audio file instead.';}
   finally{await ctx?.close().catch(()=>{});extracting=false;button.disabled=false;}
 }
+form.elements.audioOnly.addEventListener('change',()=>{if(form.elements.audioOnly.checked){form.elements.visual.value='';form.elements.image.value='';}showPreview();});
 panel.querySelector('#bt-ad-extract').onclick=extract;
 panel.querySelector('#bt-ad-draft').onclick=()=>{
   const draft={sponsorName:form.elements.sponsorName.value,clickUrl:form.elements.clickUrl.value,durationSeconds:form.elements.durationSeconds.value,active:form.elements.active.checked};
@@ -132,12 +133,12 @@ const metadata=file=>new Promise((resolve,reject)=>{const url=URL.createObjectUR
 onAuthStateChanged(auth,user=>{unsub();if(!isAdminAccount(user)){panel.hidden=true;return;}panel.hidden=false;unsub=onSnapshot(doc(db,'radioPlaylists','__stationControl'),s=>{fill(s.data()?.sponsorBreak||DEFAULT);if(!dirty)restoreDraft();},e=>status.textContent='Unable to load ad settings: '+e.message);});
 panel.querySelector('#bt-ad-save').disabled=PREVIEW||!PUBLISH_ENABLED;
 if(PREVIEW){status.textContent='Preview mode: uploads and saving are disabled to protect the live station.';}
-form.onsubmit=async e=>{e.preventDefault();if(PREVIEW||!PUBLISH_ENABLED)return;if(extracting){status.textContent='Wait for audio extraction to finish.';return;}const user=auth.currentUser;if(!isAdminAccount(user)||(user.email!=='mbergeron79@gmail.com')||(!user.emailVerified&&user.uid!=='PJXufsvdCCgRpfKcLtxPH3jEQN83')){status.textContent='Authorized administrator sign-in required.';return;}const vf=form.elements.visual.files[0],im=form.elements.image.files[0],af=form.elements.audio.files[0]||extractedAudio;
+form.onsubmit=async e=>{e.preventDefault();if(PREVIEW||!PUBLISH_ENABLED)return;if(extracting){status.textContent='Wait for audio extraction to finish.';return;}const user=auth.currentUser;if(!isAdminAccount(user)||(user.email!=='mbergeron79@gmail.com')||(!user.emailVerified&&user.uid!=='PJXufsvdCCgRpfKcLtxPH3jEQN83')){status.textContent='Authorized administrator sign-in required.';return;}const vf=form.elements.visual.files[0],im=form.elements.image.files[0],af=form.elements.audio.files[0]||extractedAudio,only=form.elements.audioOnly.checked;
 if(vf&&vf.type!=='video/mp4'){status.textContent='Video must be MP4.';return;}
 if(im&&!/^image\/(jpeg|png|webp)$/.test(im.type)){status.textContent='Image must be JPG, PNG, or WebP.';return;}
 if(vf&&im){status.textContent='Choose either a video or an image.';return;}
 if(!af&&!current.audioUrl){status.textContent='Select audio or extract it from an MP4.';return;}
-if(!vf&&!im&&!current.videoUrl&&!current.posterUrl){status.textContent='Select a video or image.';return;}
+if(!only&&!vf&&!im&&!current.videoUrl&&!current.posterUrl){status.textContent='Select a video, image, or audio-only mode.';return;}
 if(af&&!['audio/mp4','audio/x-m4a','audio/m4a','audio/mpeg','audio/wav'].includes(af.type)){status.textContent='Audio must be MP3, M4A, or extracted WAV.';return;}
 if((vf&&vf.size>40*1024*1024)||(im&&im.size>5*1024*1024)||(af&&af.size>15*1024*1024)){status.textContent='Max file sizes: video 40 MB, image 5 MB, audio 15 MB.';return;}
 const duration=Number(form.elements.durationSeconds.value);if(!Number.isInteger(duration)||duration<1||duration>60){status.textContent='Duration must be 1–60 seconds.';return;}
@@ -148,10 +149,11 @@ if(!/^https:\/\//i.test(next.clickUrl))throw Error('Sponsor link must use HTTPS.
 const storage=getStorage();async function upload(file){const name=Date.now()+'-'+Math.random().toString(36).slice(2)+'-'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');const path='between-show-ads/'+user.uid+'/'+name;const reference=ref(storage,path);await uploadBytes(reference,file,{contentType:file.type});return getDownloadURL(reference);}
 if(vf){next.videoUrl=await upload(vf);next.posterUrl='';}
 if(im){next.posterUrl=await upload(im);next.videoUrl='';}
+if(only){next.videoUrl='';next.posterUrl='';}
 if(af)next.audioUrl=await upload(af);
-if(!next.videoUrl&&!next.posterUrl)throw Error('Select a video or image.');
+if(!next.videoUrl&&!next.posterUrl&&!only)throw Error('Select a video or image.');
 if(!next.audioUrl)throw Error('Select audio or extract it from a video.');
 await setDoc(doc(db,'radioPlaylists','__stationControl'),{sponsorBreak:next,updatedAt:Date.now()},{merge:true});
-form.elements.visual.value='';form.elements.image.value='';form.elements.audio.value='';extractedAudio=null;dirty=false;sessionStorage.removeItem('bt-radio-ad-draft');status.textContent='Published. New settings will be picked up by connected players; check the next eligible break.';showPreview();
+form.elements.visual.value='';form.elements.image.value='';form.elements.audio.value='';form.elements.audioOnly.checked=false;extractedAudio=null;dirty=false;sessionStorage.removeItem('bt-radio-ad-draft');status.textContent='Published. New settings will be picked up by connected players; check the next eligible break.';showPreview();
 }catch(err){status.textContent='Not saved: '+err.message;}finally{panel.querySelector('#bt-ad-save').disabled=PREVIEW||!PUBLISH_ENABLED;}}
 }
