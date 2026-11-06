@@ -6,6 +6,7 @@ on:
       - 'admin.html'
       - 'storage.rules'
       - '.github/workflows/ad-manager-preview-checks.yml'
+      - 'tests/between-show-ad-engine.test.mjs'
 permissions:
   contents: read
 jobs:
@@ -18,6 +19,8 @@ jobs:
           node-version: '22'
       - name: Check JavaScript syntax
         run: node --check between-show-ad-manager.js
+      - name: Test split audio and video schedule compatibility
+        run: node tests/between-show-ad-engine.test.mjs
       - name: Verify preview isolation and integration
         run: |
           node - <<'NODE'
