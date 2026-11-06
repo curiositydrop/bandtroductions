@@ -7,7 +7,7 @@ import { isAdminAccount } from './admin-access.js';
 const DEFAULT={active:true,sponsorName:'New Leaf Painting Co.',clickUrl:'https://newleafpaintingco.com',videoUrl:'/assets/ads/new-leaf-ad.mp4',audioUrl:'/assets/ads/new-leaf-ad.m4a',durationSeconds:18};
 const PREVIEW=/pages\.dev$|grok\.bot$|vercel\.app$|--.*\.web\.app$/.test(location.hostname)||new URLSearchParams(location.search).has('adPreview');
 // Do not enable production publishing until Firestore and Storage authorization are verified.
-const PUBLISH_ENABLED=false; // Enable only after Storage rules are deployed and verified.
+const PUBLISH_ENABLED=true; // Preview domains remain read-only; live requires authorized admin.
 const host=document.getElementById('cr-radio-body');
 if(host){
 const panel=document.createElement('section');
@@ -126,7 +126,8 @@ function restoreDraft(){
 }
 const metadata=file=>new Promise((resolve,reject)=>{const url=URL.createObjectURL(file),el=document.createElement(file.type.startsWith('video/')?'video':'audio');el.preload='metadata';el.onloadedmetadata=()=>{const n=el.duration;URL.revokeObjectURL(url);resolve(n);};el.onerror=()=>{URL.revokeObjectURL(url);reject(Error('Cannot read media duration'));};el.src=url;});
 onAuthStateChanged(auth,user=>{unsub();if(!isAdminAccount(user)){panel.hidden=true;return;}panel.hidden=false;unsub=onSnapshot(doc(db,'radioPlaylists','__stationControl'),s=>{fill(s.data()?.sponsorBreak||DEFAULT);if(!dirty)restoreDraft();},e=>status.textContent='Unable to load ad settings: '+e.message);});
-if(PREVIEW){status.textContent='Preview mode: uploads and saving are disabled to protect the live station.';panel.querySelector('#bt-ad-save').disabled=true;}
+panel.querySelector('#bt-ad-save').disabled=PREVIEW||!PUBLISH_ENABLED;
+if(PREVIEW){status.textContent='Preview mode: uploads and saving are disabled to protect the live station.';}
 form.onsubmit=async e=>{e.preventDefault();if(PREVIEW||!PUBLISH_ENABLED)return;if(extracting){status.textContent='Wait for audio extraction to finish.';return;}const user=auth.currentUser;if(!isAdminAccount(user)||(user.email!=='mbergeron79@gmail.com')||(!user.emailVerified&&user.uid!=='PJXufsvdCCgRpfKcLtxPH3jEQN83')){status.textContent='Authorized administrator sign-in required.';return;}const vf=form.elements.visual.files[0],af=form.elements.audio.files[0]||extractedAudio;const type=form.elements.visualType.value;
 if(vf&&!(type==='image'?/^image\/(jpeg|png|webp)$/.test(vf.type):vf.type==='video/mp4')){status.textContent='Visual type does not match selected file.';return;}
 if(af&&!['audio/mp4','audio/x-m4a','audio/m4a','audio/mpeg','audio/wav'].includes(af.type)){status.textContent='Audio must be MP3, M4A, or extracted WAV.';return;}
