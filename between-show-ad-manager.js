@@ -79,7 +79,7 @@ if(PREVIEW){status.textContent='Preview mode: uploads and saving are disabled to
 form.onsubmit=async e=>{e.preventDefault();if(PREVIEW)return;const user=auth.currentUser;if(!isAdminAccount(user)||!user.emailVerified){status.textContent='Verified administrator sign-in required.';return;}const vf=form.elements.visual.files[0],af=form.elements.audio.files[0]||extractedAudio;const type=form.elements.visualType.value;
 if(vf&&!(type==='image'?/^image\/(jpeg|png|webp)$/.test(vf.type):vf.type==='video/mp4')){status.textContent='Visual type does not match selected file.';return;}
 if(af&&!['audio/mp4','audio/x-m4a','audio/m4a','audio/mpeg','audio/wav'].includes(af.type)){status.textContent='Audio must be MP3, M4A, or extracted WAV.';return;}
-if(vf&&vf.size>40*1024*1024||af&&af.size>15*1024*1024){status.textContent='Max file sizes: video 40 MB, audio 15 MB.';return;}
+if((vf&&vf.size>40*1024*1024)||(af&&af.size>15*1024*1024)){status.textContent='Max file sizes: video 40 MB, audio 15 MB.';return;}
 const duration=Number(form.elements.durationSeconds.value);if(!Number.isInteger(duration)||duration<1||duration>60){status.textContent='Duration must be 1–60 seconds.';return;}
 try{if(vf&&vf.type==='video/mp4'&&(await metadata(vf))>duration+1)throw Error('Video exceeds configured duration.');if(af&&(await metadata(af))>duration+1)throw Error('Audio exceeds configured duration.');
 const button=panel.querySelector('#bt-ad-save');button.disabled=true;status.textContent='Uploading and saving…';
@@ -91,6 +91,6 @@ if(vf){const url=await upload(vf);if(type==='image'){next.posterUrl=url;next.vid
 if(af)next.audioUrl=await upload(af);
 if(!next.videoUrl&&!next.posterUrl)throw Error('Select a video or image.');
 await setDoc(doc(db,'radioPlaylists','__stationControl'),{sponsorBreak:next,updatedAt:Date.now()},{merge:true});
-status.textContent='Published. New settings will be picked up by connected players; check the next eligible break.';
+form.elements.visual.value='';form.elements.audio.value='';extractedAudio=null;status.textContent='Published. New settings will be picked up by connected players; check the next eligible break.';showPreview();
 }catch(err){status.textContent='Not saved: '+err.message;}finally{panel.querySelector('#bt-ad-save').disabled=PREVIEW;}}
 }
