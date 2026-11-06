@@ -103,7 +103,7 @@ function isFiller(p){
 }
 function dayList(p){return Array.isArray(p.days)&&p.days.length?p.days:['every'];}
 export function sponsorBreak(playlists,config,date=new Date()){
-  if(!config||config.active!==true||!config.videoUrl)return null;
+  if(!config||config.active!==true||!(config.videoUrl||config.posterUrl))return null;
   const now=easternClock(date);
   const day=now.weekday.toLowerCase().slice(0,3);
   const shows=Object.entries(playlists||{}).map(([id,p])=>({id,...p}))
@@ -165,7 +165,7 @@ const PREVIEW_TEST_BREAK=(()=>{try{return /--[a-z0-9-]+\.web\.app$/i.test(locati
 const TEST_BREAK_START=Date.now()+20000;
 export function withPreviewTestBreak(real,config){
   if(real||!PREVIEW_TEST_BREAK)return real;
-  const c=config||{};if(!c.videoUrl)return null;
+  const c=config||{};if(!(c.videoUrl||c.posterUrl))return null;
   const durationSeconds=Math.max(1,Math.min(60,Number(c.durationSeconds)||40));
   const offsetSeconds=(Date.now()-TEST_BREAK_START)/1000;
   if(offsetSeconds<0||offsetSeconds>=durationSeconds+3)return null;
