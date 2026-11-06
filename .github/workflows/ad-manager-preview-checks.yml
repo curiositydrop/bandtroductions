@@ -30,7 +30,7 @@ jobs:
           const html=fs.readFileSync('admin.html','utf8');
           const rules=fs.readFileSync('storage.rules','utf8');
           assert.match(html,/between-show-ad-manager\.js/);
-          assert.match(js,/if\(PREVIEW\)return/);
+          assert.match(js,/if\(PREVIEW\|\|!PUBLISH_ENABLED\)return/);
           assert.match(js,/sponsorBreak:next/);
           assert.match(js,/audioUrl/);
           assert.match(js,/videoUrl/);
