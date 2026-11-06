@@ -26,7 +26,11 @@ panel.innerHTML=`<h3 style="color:#0ccfbd;margin:0 0 5px">Between-Show Advertise
 <div id="bt-ad-preview" style="border:1px solid #315650;padding:10px;border-radius:10px"><div id="bt-ad-visual"></div><audio id="bt-ad-audio" controls preload="metadata" style="width:100%"></audio></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="bt-ad-preview-button" class="crr-btn">Preview selected media</button><button type="submit" id="bt-ad-save" class="crr-btn primary">Publish advertisement</button></div>
 <p id="bt-ad-status" role="status" aria-live="polite" style="color:#aab;font-size:.85rem"></p></form>`;
-host.parentElement.append(panel);
+// The existing Radio module replaces the body contents after admin authentication.
+function placePanel(){const radio=host.querySelector('#crr');if(radio&&panel.parentElement!==radio)radio.append(panel);}
+placePanel();
+const placementObserver=new MutationObserver(placePanel);
+placementObserver.observe(host,{childList:true});
 const form=panel.querySelector('form'),status=panel.querySelector('#bt-ad-status'),visual=panel.querySelector('#bt-ad-visual'),audio=panel.querySelector('#bt-ad-audio');
 panel.querySelectorAll('input,select').forEach(el=>{el.style.maxWidth='100%';if(el.type!=='checkbox'&&el.type!=='file')el.style.cssText='display:block;box-sizing:border-box;width:100%;padding:10px;margin-top:4px;border-radius:8px;background:#101717;color:white;border:1px solid #456';});
 let current={...DEFAULT},unsub=()=>{},objectUrls=[],extractedAudio=null;
@@ -35,7 +39,7 @@ function mediaUrl(file,fallback){if(!file)return fallback;const url=URL.createOb
 function fill(c){current={...DEFAULT,...c};form.elements.sponsorName.value=current.sponsorName||'';form.elements.clickUrl.value=current.clickUrl||'';form.elements.durationSeconds.value=current.durationSeconds||18;form.elements.active.checked=current.active===true;form.elements.visualType.value=current.posterUrl&&!current.videoUrl?'image':'video';showPreview();}
 function showPreview(){revoke();visual.replaceChildren();const vf=form.elements.visual.files[0],af=form.elements.audio.files[0];const src=mediaUrl(vf,current.videoUrl||current.posterUrl);const image=(vf&&vf.type.startsWith('image/'))||(!vf&&!current.videoUrl);if(src){const el=document.createElement(image?'img':'video');el.src=src;el.style.cssText='display:block;width:100%;max-height:240px;object-fit:contain;background:black;margin-bottom:8px';if(!image){el.muted=true;el.controls=true;el.playsInline=true;}visual.append(el);}audio.src=mediaUrl(af,current.audioUrl||'');}
 panel.querySelector('#bt-ad-preview-button').onclick=showPreview;
-form.elements.visual.addEventListener('change',()=>{extractedAudio=null;showPreview();});
+form.elements.visual.addEventListener('change',()=>{extractedAudio=null;showPreview();if(form.elements.visual.files[0]?.type==='video/mp4'&&!PREVIEW)extract();});
 form.elements.audio.addEventListener('change',()=>{extractedAudio=null;showPreview();});
 function encodeWav(buffer){
   const channels=Math.min(2,buffer.numberOfChannels),rate=buffer.sampleRate,frames=buffer.length;
@@ -86,7 +90,7 @@ if(vf&&!af)throw Error('Extract audio first or select a separate audio file befo
 if(vf){const url=await upload(vf);if(type==='image'){next.posterUrl=url;next.videoUrl='';}else{next.videoUrl=url;next.posterUrl='';}}
 if(af)next.audioUrl=await upload(af);
 if(!next.videoUrl&&!next.posterUrl)throw Error('Select a video or image.');
-await setDoc(doc(db,'radioPlaylists','__stationControl'),{sponsorBreak:next,type:'stationControl',updatedAt:Date.now()},{merge:true});
+await setDoc(doc(db,'radioPlaylists','__stationControl'),{sponsorBreak:next,updatedAt:Date.now()},{merge:true});
 status.textContent='Published. New settings will be picked up by connected players; check the next eligible break.';
 }catch(err){status.textContent='Not saved: '+err.message;}finally{panel.querySelector('#bt-ad-save').disabled=PREVIEW;}}
 }
