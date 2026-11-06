@@ -25,7 +25,7 @@ panel.innerHTML=`<h3 style="color:#0ccfbd;margin:0 0 5px">Between-Show Advertise
 <p class="crr-muted" style="margin:0">Automatic extraction happens on your device. If Safari cannot decode this MP4, use the separate audio option.</p>
 <label>Ad duration (seconds, max 60)<input name="durationSeconds" type="number" min="1" max="60" step="1" required></label>
 <label style="display:flex;align-items:center;gap:8px"><input name="active" type="checkbox" style="width:auto"> Enable between-show ad</label>
-<div id="bt-ad-preview" style="border:1px solid #315650;padding:10px;border-radius:10px"><div id="bt-ad-visual"></div><audio id="bt-ad-audio" controls preload="metadata" style="width:100%"></audio></div>
+<div id="bt-ad-preview" style="border:1px solid #315650;padding:10px;border-radius:10px"><div id="bt-ad-visual"></div><audio id="bt-ad-audio" preload="metadata" style="display:none"></audio><button type="button" id="bt-ad-play" class="crr-btn" style="margin-top:8px;width:100%">▶ Play commercial preview</button><p class="crr-muted" style="margin:6px 0 0">One button plays the muted video and separate audio together. Preview only; no changes to the station.</p></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="bt-ad-preview-button" class="crr-btn">Preview selected media</button><button type="button" id="bt-ad-draft" class="crr-btn">Save Draft</button><button type="submit" id="bt-ad-save" class="crr-btn primary">Publish advertisement</button></div>
 <p id="bt-ad-status" role="status" aria-live="polite" style="color:#aab;font-size:.85rem"></p></form>`;
 // The existing Radio module replaces the body contents after admin authentication.
@@ -39,7 +39,42 @@ let current={...DEFAULT},unsub=()=>{},objectUrls=[],extractedAudio=null,dirty=fa
 function revoke(){objectUrls.forEach(u=>URL.revokeObjectURL(u));objectUrls=[];}
 function mediaUrl(file,fallback){if(!file)return fallback;const url=URL.createObjectURL(file);objectUrls.push(url);return url;}
 function fill(c){current={...DEFAULT,...c};if(dirty)return;form.elements.sponsorName.value=current.sponsorName||'';form.elements.clickUrl.value=current.clickUrl||'';form.elements.durationSeconds.value=current.durationSeconds||18;form.elements.active.checked=current.active===true;form.elements.visualType.value=current.posterUrl&&!current.videoUrl?'image':'video';showPreview();}
-function showPreview(){revoke();visual.replaceChildren();const vf=form.elements.visual.files[0],af=form.elements.audio.files[0]||extractedAudio;const src=mediaUrl(vf,current.videoUrl||current.posterUrl);const image=(vf&&vf.type.startsWith('image/'))||(!vf&&!current.videoUrl);if(src){const el=document.createElement(image?'img':'video');el.src=src;el.style.cssText='display:block;width:100%;max-height:240px;object-fit:contain;background:black;margin-bottom:8px';if(!image){el.muted=true;el.controls=true;el.playsInline=true;}visual.append(el);}audio.src=mediaUrl(af,current.audioUrl||'');}
+function showPreview(){stopPreview();revoke();visual.replaceChildren();const vf=form.elements.visual.files[0],af=form.elements.audio.files[0]||extractedAudio;const src=mediaUrl(vf,current.videoUrl||current.posterUrl);const image=(vf&&vf.type.startsWith('image/'))||(!vf&&!current.videoUrl);if(src){const el=document.createElement(image?'img':'video');el.src=src;el.style.cssText='display:block;width:100%;max-height:240px;object-fit:contain;background:black;margin-bottom:8px';if(!image){el.muted=true;el.controls=false;el.playsInline=true;el.preload='metadata';}visual.append(el);}audio.src=mediaUrl(af,current.audioUrl||'');}
+const playButton=panel.querySelector('#bt-ad-play');
+let previewPlaying=false,previewToken=0;
+function videoElement(){return visual.querySelector('video');}
+function stopPreview(){
+  previewToken++;previewPlaying=false;
+  const video=videoElement();if(video){video.pause();try{video.currentTime=0;}catch{}}
+  audio.pause();try{audio.currentTime=0;}catch{}
+  playButton.textContent='▶ Play commercial preview';
+}
+playButton.onclick=()=>{
+  const video=videoElement();
+  if(previewPlaying){stopPreview();return;}
+  if(!video){status.textContent='Choose a video to preview.';return;}
+  const token=++previewToken;
+  video.pause();audio.pause();
+  try{video.currentTime=0;}catch{}
+  try{audio.currentTime=0;}catch{}
+  video.muted=true;video.playsInline=true;
+  previewPlaying=true;playButton.textContent='■ Stop preview';
+  // Both play() calls happen directly in this tap handler for iPhone Safari.
+  const videoPlay=video.play();
+  const audioPlay=audio.src?audio.play():Promise.resolve();
+  Promise.all([videoPlay,audioPlay]).then(()=>{
+    if(token!==previewToken)return;
+    // Correct minor startup offset; keep the audio as the timing reference.
+    if(audio.src&&Number.isFinite(audio.currentTime)&&Math.abs(video.currentTime-audio.currentTime)>0.25)
+      try{video.currentTime=audio.currentTime;}catch{}
+  }).catch(error=>{
+    if(token!==previewToken)return;
+    stopPreview();status.textContent='Preview could not start: '+error.message;
+  });
+};
+audio.addEventListener('ended',()=>{if(previewPlaying)stopPreview();});
+visual.addEventListener('ended',event=>{if(event.target.tagName==='VIDEO'&&previewPlaying)stopPreview();},true);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&previewPlaying)stopPreview();});
 panel.querySelector('#bt-ad-preview-button').onclick=showPreview;
 form.addEventListener('input',()=>{dirty=true;});
 form.addEventListener('change',()=>{dirty=true;});
