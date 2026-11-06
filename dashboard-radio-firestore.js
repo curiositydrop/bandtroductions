@@ -135,8 +135,8 @@ function breakMarkup(b){
   const next=`${formatMinutes(b.nextStartMinutes)} · ${b.nextShow}`;
   return `<div class="radio"><div class="radio-box bt-radio-box bt-radio-on-break">
     <div class="bt-radio-status-row"><span class="bt-radio-status live">● ON AIR</span></div>
-    <div class="bt-radio-art-row"><video class="bt-radio-art bt-radio-ad" src="${esc(b.videoUrl)}" ${b.posterUrl?`poster="${esc(b.posterUrl)}"`:''} muted playsinline webkit-playsinline preload="auto" aria-label="${esc(b.sponsorName)} sponsor clip"></video><img class="bt-radio-logo" src="${RADIO_LOGO}" alt="BANDtroductions Radio"></div>
-    <div class="bt-radio-info"><div class="bt-radio-now">A WORD FROM OUR SPONSOR</div>
+    <div class="bt-radio-art-row">${b.videoUrl?`<video class="bt-radio-art bt-radio-ad" src="${esc(b.videoUrl)}" ${b.posterUrl?`poster="${esc(b.posterUrl)}"`:''} muted playsinline webkit-playsinline preload="auto" aria-label="${esc(b.sponsorName)} sponsor clip"></video>`:`<img class="bt-radio-art bt-radio-ad" src="${esc(b.posterUrl||RADIO_LOGO)}" alt="${esc(b.posterUrl?b.sponsorName+' sponsor image':'BANDtroductions Radio artwork')}" style="object-fit:contain">`}<img class="bt-radio-logo" src="${RADIO_LOGO}" alt="BANDtroductions Radio"></div>
+    <div class="bt-radio-info"><div class="bt-radio-now">${b.videoUrl||b.posterUrl?'A WORD FROM OUR SPONSOR':'BANDTRODUCTIONS RADIO SHOUTOUT'}</div>
     <div class="bt-radio-track">${esc(b.sponsorName)}</div>
     <div class="bt-radio-playlist"><a class="bt-radio-ad-link" href="${esc(b.clickUrl)}" target="_blank" rel="noopener sponsored">Visit ${esc(b.sponsorName)} ›</a></div></div>
     <div class="bt-radio-next"><div class="bt-radio-next-label">UP NEXT</div><div class="bt-radio-next-name">${esc(next)}</div></div>

@@ -41,18 +41,17 @@ function renderBreak(b){
   const card=$('rpPlayer');card.classList.add('is-live');
   $('rpStatus').textContent='● ON AIR';$('rpStatus').className='rp-status live';
   $('rpCover').hidden=true;
-  const v=$('rpAd');v.hidden=false;
-  if(v.getAttribute('src')!==b.videoUrl){v.src=b.videoUrl;if(b.posterUrl)v.poster=b.posterUrl;}
+  const v=$('rpAd');let img=$('rpSponsorImage');if(!img){img=document.createElement('img');img.id='rpSponsorImage';img.style.cssText='display:none;width:min(260px,72vw);aspect-ratio:1;object-fit:contain;margin:14px auto;border-radius:12px;border:1px solid #33504e;background:black';v.after(img);}const still=!b.videoUrl;img.hidden=!still;img.style.display=still?'block':'none';v.hidden=still;if(still){img.src=b.posterUrl||DEFAULT_COVER;img.alt=b.posterUrl?b.sponsorName+' sponsor image':'BANDtroductions Radio artwork';v.pause();v.removeAttribute('src');}else if(v.getAttribute('src')!==b.videoUrl){v.src=b.videoUrl;if(b.posterUrl)v.poster=b.posterUrl;}
   v.setAttribute('aria-label',`${b.sponsorName} sponsor clip`);
   const viaAudio=breakAudio(b);
   if(viaAudio)playBreakAudio(b);
   v.muted=viaAudio||!listening;
   const target=viaAudio&&audio&&audio.readyState>0&&!audio.paused?audio.currentTime:b.offsetSeconds;
-  if(b.clipPlaying){
+  if(!still&&b.clipPlaying){
     if(v.readyState>0&&Math.abs((v.currentTime||0)-target)>(viaAudio?.5:1.5)){try{v.currentTime=target;}catch{}}
     if(v.paused)v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});});
   }else if(!v.paused)v.pause();
-  $('rpLabel').textContent='A WORD FROM OUR SPONSOR';
+  $('rpLabel').textContent=b.videoUrl||b.posterUrl?'A WORD FROM OUR SPONSOR':'BANDTRODUCTIONS RADIO SHOUTOUT';
   $('rpTrack').textContent=b.sponsorName;
   $('rpArtist').innerHTML=`<a class="rp-ad-link" href="${esc(safeUrl(b.clickUrl)||'radio-sponsor.html')}" target="_blank" rel="noopener sponsored">Visit ${esc(b.sponsorName)} ›</a>`;
   $('rpShow').textContent=`Up next: ${b.nextShow} at ${formatMinutes(b.nextStartMinutes)} ET`;
@@ -60,7 +59,7 @@ function renderBreak(b){
   $('rpListen').disabled=false;$('rpListen').textContent=listening?'❚❚ PAUSE':'▶ LISTEN LIVE';
   $('rpProgress').hidden=true;$('rpUpNext').innerHTML='';$('rpOff').hidden=true;
 }
-function hideBreak(){const v=$('rpAd');if(v&&!v.hidden){v.pause();v.hidden=true;$('rpCover').hidden=false;}}
+function hideBreak(){const v=$('rpAd');v?.pause();if(v)v.hidden=true;const img=$('rpSponsorImage');if(img){img.hidden=true;img.style.display='none';}$('rpCover').hidden=false;}
 function renderPlayer(){
   const b=currentBreak();
   if(b){renderBreak(b);return;}
@@ -152,7 +151,7 @@ async function sync(){
 }
 $('rpListen').addEventListener('click',async()=>{
   const br=currentBreak();
-  if(br){listening=!listening;if(listening)window.btTrack&&window.btTrack('radio_listen',{player:'radio_page'});const v=$('rpAd');if(br.audioUrl){if(listening)playBreakAudio(br);else audio?.pause();v.muted=true;if(br.clipPlaying)v.play().catch(()=>{});}else{v.muted=!listening;if(listening)v.play().catch(()=>{});else audio?.pause();}renderPlayer();return;}
+  if(br){listening=!listening;if(listening)window.btTrack&&window.btTrack('radio_listen',{player:'radio_page'});const v=$('rpAd');if(br.audioUrl){if(listening)playBreakAudio(br);else audio?.pause();v.muted=true;if(br.videoUrl&&br.clipPlaying)v.play().catch(()=>{});}else{v.muted=!listening;if(listening)v.play().catch(()=>{});else audio?.pause();}renderPlayer();return;}
   if(listening){listening=false;audio?.pause();renderPlayer();return;}
   listening=true;window.btTrack&&window.btTrack('radio_listen',{player:'radio_page'});ensureAudio();currentKey='';await sync();renderPlayer();
 });
