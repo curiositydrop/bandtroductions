@@ -93,6 +93,7 @@
 
         <button id="continue-button" class="auth-button" type="submit" disabled>Continue</button>
         <p id="credentials-message" class="auth-message" role="status"></p>
+        <a id="claim-notice-continue" class="auth-button" hidden style="min-height:44px">Continue claim</a>
       </form>
 
       <div id="claim-directory-box" class="signup-claim-box">
@@ -234,6 +235,7 @@
 
         <p class="signup-final-note">Your account is not created until you finish this form and tap Create Account below.</p>
         <button id="signup-button" class="auth-button" type="submit" disabled>Create Account</button>
+        <a id="signup-notice-continue" class="auth-button" hidden style="min-height:44px">Continue</a>
         <p id="signup-message" class="auth-message" role="status"></p>
       </form>
     </section>
@@ -245,7 +247,7 @@
     import { auth, db } from './firebase-dev.js';
     import { sendAdminApprovalEmail } from './admin-approval-email.js?v=3';
     import { createWelcomePost } from './welcome-profile-post.js?v=2';
-    import { createAdminAccountNotification } from './admin-new-account-notification.js?v=1';
+    import { notifySiteAdmins, signupNoticeMessage } from './admin-notify.js?v=1';
     import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
     import { doc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
@@ -446,12 +448,14 @@
           createdAt: serverTimestamp()
         });
         finishWelcomeLocalState();
-        await createAdminAccountNotification({
-          userId: credential.user.uid,
+        const notice = await notifySiteAdmins({
+          type: 'new_account',
+          subjectId: credential.user.uid,
           profileId: credential.user.uid,
-          displayName,
-          accountType
-        }).catch(error => console.warn('Admin account notification could not be created:', error));
+          actorId: credential.user.uid,
+          actorName: displayName,
+          message: signupNoticeMessage({ accountType, displayName, claim: true })
+        });
         await sendEmailVerification(credential.user).catch(error => console.warn('Verification email could not be sent:', error));
         notifyAdminOfSignup({
           kind: 'signup',
@@ -460,6 +464,13 @@
           submittedBy: emailInput.value.trim(),
           details: `New ${accountType} account created from an existing-profile claim. User ID: ${credential.user.uid}`
         });
+        if (!notice.ok) {
+          credentialsMessage.textContent = `Your account is ready. ${notice.message} The admin email was only attempted and is not confirmed.`;
+          const cont = document.getElementById('claim-notice-continue');
+          cont.href = safeReturn;
+          cont.hidden = false;
+          return;
+        }
         window.location.href = safeReturn;
       } catch (error) {
         console.error(error);
@@ -529,13 +540,6 @@
             createdAt: serverTimestamp()
           });
           finishWelcomeLocalState();
-          await createAdminAccountNotification({
-            userId: createdUser.uid,
-            profileId: createdUser.uid,
-            displayName,
-            accountType,
-            location: locationValue()
-          }).catch(error => console.warn('Admin account notification could not be created:', error));
         }
 
         const profileData = {
@@ -582,6 +586,14 @@
         });
         await updateProfile(createdUser, { displayName }).catch(error => console.warn('Firebase display name update failed:', error));
         await sendEmailVerification(createdUser).catch(error => console.warn('Verification email could not be sent:', error));
+        const notice = await notifySiteAdmins({
+          type: 'new_account',
+          subjectId: createdUser.uid,
+          profileId: createdUser.uid,
+          actorId: createdUser.uid,
+          actorName: displayName,
+          message: signupNoticeMessage({ accountType, displayName, location: locationValue() })
+        });
 
         notifyAdminOfSignup({
           kind: 'signup',
@@ -594,14 +606,21 @@
 
         await createWelcomePost({ profileId: createdUser.uid, displayName, accountType });
         const upgradeSelected = artistUpgradeSelected();
-        // Band of the Week: return voters to the band they wanted to vote for.
-        if (!upgradeSelected && /^band-of-the-week\.html(?:\?|$)/i.test(safeReturn)) { window.location.href = safeReturn; return; }
-        if (upgradeSelected) {
-          signupMessage.textContent = 'Your free account is ready. Opening the optional website upgrade…';
-          window.location.href = `website.html?id=${encodeURIComponent(createdUser.uid)}&from=signup`;
+        const destination = (!upgradeSelected && /^band-of-the-week\.html(?:\?|$)/i.test(safeReturn))
+          ? safeReturn
+          : upgradeSelected
+            ? `website.html?id=${encodeURIComponent(createdUser.uid)}&from=signup`
+            : `profile.html?id=${encodeURIComponent(createdUser.uid)}&fresh=${Date.now()}`;
+        if (!notice.ok) {
+          signupMessage.textContent = `Your free account is ready. ${notice.message} The admin email was only attempted and is not confirmed.`;
+          const cont = document.getElementById('signup-notice-continue');
+          cont.href = destination;
+          cont.hidden = false;
+          signupButton.hidden = true;
           return;
         }
-        window.location.href = `profile.html?id=${encodeURIComponent(createdUser.uid)}&fresh=${Date.now()}`;
+        if (upgradeSelected) signupMessage.textContent = 'Your free account is ready. Opening the optional website upgrade…';
+        window.location.href = destination;
       } catch (error) {
         console.error(error);
         signupMessage.textContent = createdUser

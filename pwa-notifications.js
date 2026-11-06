@@ -82,7 +82,9 @@ async function syncSubscription(){
     return {status:'subscribed'};
   }catch(error){
     console.warn('BANDtroductions push registration failed:',error);
-    return {status:'error',code:error?.code||'',message:error?.message||''};
+    const code=String(error?.code||'');
+    if(/not-found|unavailable|internal|functions\//i.test(code)) return {status:'server-not-ready',code};
+    return {status:'error',code,message:error?.message||''};
   }
 }
 
