@@ -14,18 +14,20 @@ const panel=document.createElement('section');
 panel.className='crr-panel';panel.id='between-show-ad-manager';
 panel.style.cssText='border:1px solid #315650;border-radius:14px;background:#0b0e0e;padding:14px;margin-bottom:12px;color:#eee';
 panel.innerHTML=`<h3 style="color:#0ccfbd;margin:0 0 5px">Between-Show Advertisement</h3>
-<p style="color:#aab;margin:0 0 12px;font-size:.85rem">Manage sponsor video or image with separate radio audio. Does not modify playlists or the station switch.</p>
+<p style="color:#aab;margin:0 0 12px;font-size:.85rem">Manage video, image, or audio-only radio spots. Does not modify playlists or the station switch.</p>
 <form id="bt-ad-form" style="display:grid;gap:10px">
 <label>Sponsor name<input name="sponsorName" maxlength="100" required></label>
 <label>Website link<input name="clickUrl" type="url" required placeholder="https://example.com"></label>
 <label>Replacement MP4 commercial<input name="visual" type="file" accept="video/mp4,.mp4"></label>
 <label>Or sponsor image (JPG, PNG, WebP)<input name="image" type="file" accept="image/jpeg,image/png,image/webp"></label>
-<label>Optional separate audio (fallback)<input name="audio" type="file" accept="audio/mp4,audio/x-m4a,audio/m4a,audio/mpeg,audio/wav"></label>
+<label>Commercial audio (MP3, M4A, WAV)<input name="audio" type="file" accept="audio/mp4,audio/x-m4a,audio/m4a,audio/mpeg,audio/wav"></label>
+<p class="crr-muted" style="margin:0">Audio is required for image and audio-only ads. For MP4, upload audio or extract it from the video.</p>
+<label style="display:flex;align-items:center;gap:8px"><input name="audioOnly" type="checkbox" style="width:auto"> Audio-only (no image or video)</label>
 <button type="button" id="bt-ad-extract" class="crr-btn">Extract audio from selected MP4</button>
 <p class="crr-muted" style="margin:0">Automatic extraction happens on your device. If Safari cannot decode this MP4, use the separate audio option.</p>
 <label>Ad duration (seconds, max 60)<input name="durationSeconds" type="number" min="1" max="60" step="1" required></label>
 <label style="display:flex;align-items:center;gap:8px"><input name="active" type="checkbox" style="width:auto"> Enable between-show ad</label>
-<div id="bt-ad-preview" style="border:1px solid #315650;padding:10px;border-radius:10px"><div id="bt-ad-visual"></div><audio id="bt-ad-audio" preload="metadata" style="display:none"></audio><button type="button" id="bt-ad-play" class="crr-btn" style="margin-top:8px;width:100%">▶ Play commercial preview</button><p class="crr-muted" style="margin:6px 0 0">One button plays the muted video and separate audio together. Preview only; no changes to the station.</p></div>
+<div id="bt-ad-preview" style="border:1px solid #315650;padding:10px;border-radius:10px"><div id="bt-ad-visual"></div><audio id="bt-ad-audio" preload="metadata" style="display:none"></audio><button type="button" id="bt-ad-play" class="crr-btn" style="margin-top:8px;width:100%">▶ Play commercial preview</button><p class="crr-muted" style="margin:6px 0 0">One button plays the commercial audio with any selected visuals. Preview only; no changes to the station.</p></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="bt-ad-preview-button" class="crr-btn">Preview selected media</button><button type="button" id="bt-ad-draft" class="crr-btn">Save Draft</button><button type="submit" id="bt-ad-save" class="crr-btn primary">Publish advertisement</button></div>
 <p id="bt-ad-status" role="status" aria-live="polite" style="color:#aab;font-size:.85rem"></p></form>`;
 // The existing Radio module replaces the body contents after admin authentication.
@@ -39,7 +41,7 @@ let current={...DEFAULT},unsub=()=>{},objectUrls=[],extractedAudio=null,dirty=fa
 function revoke(){objectUrls.forEach(u=>URL.revokeObjectURL(u));objectUrls=[];}
 function mediaUrl(file,fallback){if(!file)return fallback;const url=URL.createObjectURL(file);objectUrls.push(url);return url;}
 function fill(c){current={...DEFAULT,...c};if(dirty)return;form.elements.sponsorName.value=current.sponsorName||'';form.elements.clickUrl.value=current.clickUrl||'';form.elements.durationSeconds.value=current.durationSeconds||18;form.elements.active.checked=current.active===true;showPreview();}
-function showPreview(){stopPreview();revoke();visual.replaceChildren();const vf=form.elements.visual.files[0],im=form.elements.image.files[0],af=form.elements.audio.files[0]||extractedAudio;const image=!!im||(!vf&&!current.videoUrl&&!!current.posterUrl);const src=mediaUrl(image?im:vf,image?(current.posterUrl||''):(current.videoUrl||''));if(src){const el=document.createElement(image?'img':'video');el.src=src;el.style.cssText='display:block;width:100%;max-height:240px;object-fit:contain;background:black;margin-bottom:8px';if(!image){el.muted=true;el.controls=false;el.playsInline=true;el.preload='metadata';}visual.append(el);}audio.src=mediaUrl(af,current.audioUrl||'');}
+function showPreview(){stopPreview();revoke();visual.replaceChildren();const vf=form.elements.visual.files[0],im=form.elements.image.files[0],af=form.elements.audio.files[0]||extractedAudio;const only=form.elements.audioOnly.checked;const image=!only&&(!!im||(!vf&&!current.videoUrl&&!!current.posterUrl));const src=only?'':mediaUrl(image?im:vf,image?(current.posterUrl||''):(current.videoUrl||''));if(src){const el=document.createElement(image?'img':'video');el.src=src;el.style.cssText='display:block;width:100%;max-height:240px;object-fit:contain;background:black;margin-bottom:8px';if(!image){el.muted=true;el.controls=false;el.playsInline=true;el.preload='metadata';}visual.append(el);}audio.src=mediaUrl(af,current.audioUrl||'');}
 const playButton=panel.querySelector('#bt-ad-play');
 let previewPlaying=false,previewToken=0;
 function videoElement(){return visual.querySelector('video');}
@@ -52,7 +54,7 @@ function stopPreview(){
 playButton.onclick=()=>{
   const video=videoElement();
   if(previewPlaying){stopPreview();return;}
-  if(!video&&!visual.querySelector('img')){status.textContent='Choose a video or image to preview.';return;}
+  if(!video&&!visual.querySelector('img')&&!audio.src){status.textContent='Choose media to preview.';return;}
   const token=++previewToken;
   video?.pause();audio.pause();
   if(video)try{video.currentTime=0;}catch{}
