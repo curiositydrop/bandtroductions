@@ -16,7 +16,7 @@ panel.innerHTML=`<h3 style="color:#0ccfbd;margin:0 0 5px">Between-Show Advertise
 <form id="bt-ad-form" style="display:grid;gap:10px">
 <label>Sponsor name<input name="sponsorName" maxlength="100" required></label>
 <label>Website link<input name="clickUrl" type="url" required placeholder="https://example.com"></label>
-<label>Visual <select name="visualType"><option value="video">Muted video</option><option value="image">Static image</option></select></label>
+<label>Visual <select name="visualType"><option value="video">Muted video</option><option value="image" disabled>Static image (pending player support)</option></select></label>
 <label>Replacement video or image<input name="visual" type="file" accept="video/mp4,image/jpeg,image/png,image/webp"></label>
 <label>Replacement audio<input name="audio" type="file" accept="audio/mp4,audio/x-m4a,audio/m4a,audio/mpeg"></label>
 <label>Ad duration (seconds, max 60)<input name="durationSeconds" type="number" min="1" max="60" step="1" required></label>
@@ -24,7 +24,7 @@ panel.innerHTML=`<h3 style="color:#0ccfbd;margin:0 0 5px">Between-Show Advertise
 <div id="bt-ad-preview" style="border:1px solid #315650;padding:10px;border-radius:10px"><div id="bt-ad-visual"></div><audio id="bt-ad-audio" controls preload="metadata" style="width:100%"></audio></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="bt-ad-preview-button" class="crr-btn">Preview selected media</button><button type="submit" id="bt-ad-save" class="crr-btn primary">Save advertisement</button></div>
 <p id="bt-ad-status" role="status" aria-live="polite" style="color:#aab;font-size:.85rem"></p></form>`;
-host.prepend(panel);
+host.parentElement.append(panel);
 const form=panel.querySelector('form'),status=panel.querySelector('#bt-ad-status'),visual=panel.querySelector('#bt-ad-visual'),audio=panel.querySelector('#bt-ad-audio');
 panel.querySelectorAll('input,select').forEach(el=>{el.style.maxWidth='100%';if(el.type!=='checkbox'&&el.type!=='file')el.style.cssText='display:block;box-sizing:border-box;width:100%;padding:10px;margin-top:4px;border-radius:8px;background:#101717;color:white;border:1px solid #456';});
 let current={...DEFAULT},unsub=()=>{},objectUrls=[];
