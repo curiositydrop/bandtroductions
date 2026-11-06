@@ -1,0 +1,37 @@
+name: Between-show ad manager preview checks
+on:
+  pull_request:
+    paths:
+      - 'between-show-ad-manager.js'
+      - 'admin.html'
+      - 'storage.rules'
+      - '.github/workflows/ad-manager-preview-checks.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: node --check between-show-ad-manager.js
+      - name: Verify preview isolation and integration
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const assert=require('node:assert/strict');
+          const js=fs.readFileSync('between-show-ad-manager.js','utf8');
+          const html=fs.readFileSync('admin.html','utf8');
+          const rules=fs.readFileSync('storage.rules','utf8');
+          assert.match(html,/between-show-ad-manager\.js/);
+          assert.match(js,/if\(PREVIEW\)return/);
+          assert.match(js,/sponsorBreak:next/);
+          assert.match(js,/audioUrl/);
+          assert.match(js,/videoUrl/);
+          assert.match(rules,/match \/between-show-ads\/\{userId\}\/\{fileName\}/);
+          assert.match(rules,/isVerifiedAdmin\(\)/);
+          console.log('Static preview safety checks passed');
+          NODE
