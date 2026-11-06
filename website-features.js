@@ -1,7 +1,8 @@
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-functions.js';
 import { app, auth, db, storage } from './firebase-dev.js';
-import { collection, doc, getDoc, getDocs, onSnapshot, query, where, setDoc, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { collection, doc, getDoc, onSnapshot, query, where, setDoc, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
+import { notifySiteAdmins, songNoticeMessage } from './admin-notify.js?v=1';
 
 const RADIO_LOGO='5C9409EE-59F6-4151-9624-2998D7DDF2D0.png';
 // A different ?v= on this file creates a second module. The public calendar and
@@ -233,7 +234,8 @@ export function mountWebsiteTools({container,profileId,profile,user,canEdit}){
    const record={artist,title,album:value(songForm,'album').value.trim()||'Single',genre:value(songForm,'genre').value.trim(),location:value(songForm,'location').value.trim(),contactName:value(songForm,'contactName').value.trim(),contactEmail:value(songForm,'contactEmail').value.trim(),memberDisplayName:account.data().displayName||artist,memberAccountType:account.data().accountType||'',submittedByUid:user.uid,submittedByVerifiedAccount:true,profileUrl:new URL('profile.html?id='+encodeURIComponent(profileId),location.href).href,websiteProfileId:profileId,submissionSource:'profile-website',coverUrl,coverStoragePath,originalCoverFileName:coverFile?.name||'',audioUrl,audioStoragePath:audioPath,originalAudioFileName:audioFile.name,durationSeconds:Math.round(durationSeconds*10)/10,signedToLabel:value(songForm,'signedToLabel').value==='true',labelContact:value(songForm,'labelContact').value.trim(),notes:value(songForm,'notes').value.trim(),permissionConfirmed:true,broadcastPermission:true,agreementAccepted:true,websiteRadioPermission:true,websiteRadioPermissionText:permissions[3][1],approved:false,reviewStatus:'pending',submittedAt:Date.now(),createdAt:serverTimestamp(),isrc:'',label:'',releaseYear:'',songwriter:'',publisher:'',explicit:false};
    await setDoc(attempt,record);committed=true;const submissionId=attempt.id;attempt=null;
    songForm.reset();songStatus.textContent='Submitted for admin approval! After approval, this song appears in your player and is available for BANDtroductions Radio scheduling.';
-   void notifyAdmins({user,artist,title,submissionId});
+   const notice=await notifyAdmins({user,artist,title,submissionId});
+   if(!notice.ok)songStatus.textContent+=` ${notice.message}`;
   }catch(error){
    console.error('Website song submission failed',error);
    // Keep uploads on ambiguous network failures so a committed review entry never loses its audio.
@@ -253,8 +255,6 @@ function audioDuration(file){return new Promise((resolve,reject)=>{
  a.onerror=()=>done(new Error('Could not read this MP3. Please try another file.'));a.preload='metadata';a.src=url;
 });}
 async function notifyAdmins({user,artist,title,submissionId}){
- try{const snap=await getDocs(query(collection(db,'profiles'),where('isAdmin','==',true)));
- await Promise.all(snap.docs.map(d=>setDoc(doc(db,'notifications','website_radio_'+submissionId+'_'+d.id),{recipientId:d.id,actorId:user.uid,actorName:artist,type:'radio-submission',message:artist+' submitted “'+title+'” from their website for radio approval.',linkUrl:'admin.html',read:false,createdAt:serverTimestamp()})));
- }catch(error){console.warn('Song saved; optional admin notification unavailable.',error);}
+ return notifySiteAdmins({type:'radio-submission',subjectId:submissionId,actorId:user.uid,actorName:artist,message:songNoticeMessage({artist,title,source:'website'})});
 }
 const AGREEMENT_HTML="<p>By submitting music to BANDtroductions Radio, you agree to the following terms:</p>\n    <h3>Ownership & Authority</h3>\n    <p>You represent and warrant that you own or control all rights necessary to submit the music provided to BANDtroductions Radio and that you have authority to grant the permissions described here.</p>\n    <h3>Grant of Permission</h3>\n    <p>You grant BANDtroductions and BANDtroductions Radio a non-exclusive, worldwide, royalty-free, revocable permission to store, stream, broadcast, and promote the submitted recording — including in social media posts, promotions, and advertisements — and to display artist names, song titles, logos, artwork, and promotional information connected with that use. This permission is revocable going forward. Already-published promotions may remain after a removal request for future use. Ownership remains with the artist or rights holder.</p>\n    <h3>Signed Artists & Other Rights Arrangements</h3>\n    <p>If the music is subject to a label, publishing, management, distribution, or other rights agreement, you represent that all necessary permissions have been obtained before submission. BANDtroductions may request verification.</p>\n    <h3>Airplay & Compensation</h3>\n    <p>Submission does not guarantee airplay, promotion, placement, rotation frequency, or continued inclusion. Unless otherwise agreed in writing, BANDtroductions does not owe compensation or fees for use authorized by this submission.</p>\n    <h3>Removal</h3>\n    <p>You may request that future use of your submitted recording stop by contacting BANDtroductions. Already-published promotions may remain after that request; the permission is revocable going forward. BANDtroductions may also remove a submission at its discretion.</p>\n    <h3>Acceptance</h3>\n    <p>By checking the submission boxes and submitting music, you confirm that you have read, understood, and agree to these terms.</p>";

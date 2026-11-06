@@ -32,6 +32,7 @@ import {
   uploadBytesResumable,
   deleteObject
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
+import { notifySiteAdmins, collageNoticeMessage } from './admin-notify.js?v=1';
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const MAX_WALL = 48;
@@ -480,7 +481,7 @@ async function handleUpload(file) {
       }, reject, resolve);
     });
     const downloadUrl = await getDownloadURL(task.snapshot.ref);
-    await addDoc(collection(db, 'media'), {
+    const saved = await addDoc(collection(db, 'media'), {
       ownerId: currentUser.uid,
       ownerName: displayName,
       displayName,
@@ -497,7 +498,17 @@ async function handleUpload(file) {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
-    setStatus('You’re on the wall. Welcome to forever.', 'ok');
+    const notice = await notifySiteAdmins({
+      type: 'collage-upload',
+      subjectId: saved.id,
+      profileId: currentUser.uid,
+      actorId: currentUser.uid,
+      actorName: displayName,
+      message: collageNoticeMessage({ name: displayName })
+    });
+    setStatus(notice.ok
+      ? 'You’re on the wall. Welcome to forever.'
+      : `You’re on the wall. ${notice.message}`, notice.ok ? 'ok' : 'warn');
   } catch (error) {
     console.error('Collage upload failed', error);
     const code = error?.code || '';

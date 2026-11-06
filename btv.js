@@ -9,6 +9,7 @@ import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { addDoc, collection, deleteDoc, doc, getDoc, limit, onSnapshot, query, serverTimestamp, updateDoc, where }
   from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { notifySiteAdmins, btvNoticeMessage } from './admin-notify.js?v=1';
 
 const ADMIN_EMAILS = new Set(['mbergeron79@gmail.com', 'mbegeron79@gmail.com']);
 const ADMIN_UID = 'PJXufsvdCCgRpfKcLtxPH3jEQN83';
@@ -168,14 +169,25 @@ $('btv-form').addEventListener('submit', async (e) => {
   if (!ownershipAccepted || !noInappropriateContentAccepted || !promoUseAccepted) return setStatus('Check all three rights boxes before submitting.', 'err');
   setStatus('Sending to BTV…');
   try {
-    await addDoc(collection(db, 'media'), {
-      ownerId: user.uid, ownerName: $('btv-f-band').value.trim(), displayName: $('btv-f-band').value.trim(),
-      gallery: 'btv', mediaType: 'video', btvType: $('btv-f-type').value, btvStatus: 'pending',
-      band: $('btv-f-band').value.trim(), title: $('btv-f-title').value.trim(), videoUrl: url, url,
+    const band = $('btv-f-band').value.trim();
+    const title = $('btv-f-title').value.trim();
+    const kind = $('btv-f-type').value;
+    const saved = await addDoc(collection(db, 'media'), {
+      ownerId: user.uid, ownerName: band, displayName: band,
+      gallery: 'btv', mediaType: 'video', btvType: kind, btvStatus: 'pending',
+      band, title, videoUrl: url, url,
       ownershipAccepted, noInappropriateContentAccepted, promoUseAccepted,
       published: true, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
     });
-    e.target.reset(); setStatus('Got it! Your video is in the BTV review queue. 🤘', 'ok');
+    e.target.reset();
+    const notice = await notifySiteAdmins({
+      type: 'btv-submission',
+      subjectId: saved.id,
+      actorId: user.uid,
+      actorName: band,
+      message: btvNoticeMessage({ band, title, kind })
+    });
+    setStatus(notice.ok ? 'Got it! Your video is in the BTV review queue. 🤘' : `Your video is in the BTV review queue. ${notice.message}`, notice.ok ? 'ok' : 'warn');
     try { gtag('event', 'btv_submit'); } catch {}
   } catch (err) { console.error(err); setStatus('Could not submit right now: ' + err.message, 'err'); }
 });
