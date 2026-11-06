@@ -14,12 +14,12 @@ const panel=document.createElement('section');
 panel.className='crr-panel';panel.id='between-show-ad-manager';
 panel.style.cssText='border:1px solid #315650;border-radius:14px;background:#0b0e0e;padding:14px;margin-bottom:12px;color:#eee';
 panel.innerHTML=`<h3 style="color:#0ccfbd;margin:0 0 5px">Between-Show Advertisement</h3>
-<p style="color:#aab;margin:0 0 12px;font-size:.85rem">Manage the commercial video and separate radio audio. Does not modify playlists or the station switch.</p>
+<p style="color:#aab;margin:0 0 12px;font-size:.85rem">Manage sponsor video or image with separate radio audio. Does not modify playlists or the station switch.</p>
 <form id="bt-ad-form" style="display:grid;gap:10px">
 <label>Sponsor name<input name="sponsorName" maxlength="100" required></label>
 <label>Website link<input name="clickUrl" type="url" required placeholder="https://example.com"></label>
-<label>Visual <select name="visualType"><option value="video">Muted video</option><option value="image" disabled>Static image (pending player support)</option></select></label>
 <label>Replacement MP4 commercial<input name="visual" type="file" accept="video/mp4,.mp4"></label>
+<label>Or sponsor image (JPG, PNG, WebP)<input name="image" type="file" accept="image/jpeg,image/png,image/webp"></label>
 <label>Optional separate audio (fallback)<input name="audio" type="file" accept="audio/mp4,audio/x-m4a,audio/m4a,audio/mpeg,audio/wav"></label>
 <button type="button" id="bt-ad-extract" class="crr-btn">Extract audio from selected MP4</button>
 <p class="crr-muted" style="margin:0">Automatic extraction happens on your device. If Safari cannot decode this MP4, use the separate audio option.</p>
@@ -38,8 +38,8 @@ panel.querySelectorAll('input,select').forEach(el=>{el.style.maxWidth='100%';if(
 let current={...DEFAULT},unsub=()=>{},objectUrls=[],extractedAudio=null,dirty=false,extracting=false;
 function revoke(){objectUrls.forEach(u=>URL.revokeObjectURL(u));objectUrls=[];}
 function mediaUrl(file,fallback){if(!file)return fallback;const url=URL.createObjectURL(file);objectUrls.push(url);return url;}
-function fill(c){current={...DEFAULT,...c};if(dirty)return;form.elements.sponsorName.value=current.sponsorName||'';form.elements.clickUrl.value=current.clickUrl||'';form.elements.durationSeconds.value=current.durationSeconds||18;form.elements.active.checked=current.active===true;form.elements.visualType.value=current.posterUrl&&!current.videoUrl?'image':'video';showPreview();}
-function showPreview(){stopPreview();revoke();visual.replaceChildren();const vf=form.elements.visual.files[0],af=form.elements.audio.files[0]||extractedAudio;const src=mediaUrl(vf,current.videoUrl||current.posterUrl);const image=(vf&&vf.type.startsWith('image/'))||(!vf&&!current.videoUrl);if(src){const el=document.createElement(image?'img':'video');el.src=src;el.style.cssText='display:block;width:100%;max-height:240px;object-fit:contain;background:black;margin-bottom:8px';if(!image){el.muted=true;el.controls=false;el.playsInline=true;el.preload='metadata';}visual.append(el);}audio.src=mediaUrl(af,current.audioUrl||'');}
+function fill(c){current={...DEFAULT,...c};if(dirty)return;form.elements.sponsorName.value=current.sponsorName||'';form.elements.clickUrl.value=current.clickUrl||'';form.elements.durationSeconds.value=current.durationSeconds||18;form.elements.active.checked=current.active===true;showPreview();}
+function showPreview(){stopPreview();revoke();visual.replaceChildren();const vf=form.elements.visual.files[0],im=form.elements.image.files[0],af=form.elements.audio.files[0]||extractedAudio;const image=!!im||(!vf&&!current.videoUrl&&!!current.posterUrl);const src=mediaUrl(image?im:vf,image?(current.posterUrl||''):(current.videoUrl||''));if(src){const el=document.createElement(image?'img':'video');el.src=src;el.style.cssText='display:block;width:100%;max-height:240px;object-fit:contain;background:black;margin-bottom:8px';if(!image){el.muted=true;el.controls=false;el.playsInline=true;el.preload='metadata';}visual.append(el);}audio.src=mediaUrl(af,current.audioUrl||'');}
 const playButton=panel.querySelector('#bt-ad-play');
 let previewPlaying=false,previewToken=0;
 function videoElement(){return visual.querySelector('video');}
@@ -52,20 +52,20 @@ function stopPreview(){
 playButton.onclick=()=>{
   const video=videoElement();
   if(previewPlaying){stopPreview();return;}
-  if(!video){status.textContent='Choose a video to preview.';return;}
+  if(!video&&!visual.querySelector('img')){status.textContent='Choose a video or image to preview.';return;}
   const token=++previewToken;
-  video.pause();audio.pause();
-  try{video.currentTime=0;}catch{}
+  video?.pause();audio.pause();
+  if(video)try{video.currentTime=0;}catch{}
   try{audio.currentTime=0;}catch{}
-  video.muted=true;video.playsInline=true;
+  if(video){video.muted=true;video.playsInline=true;}
   previewPlaying=true;playButton.textContent='■ Stop preview';
   // Both play() calls happen directly in this tap handler for iPhone Safari.
-  const videoPlay=video.play();
+  const videoPlay=video?video.play():Promise.resolve();
   const audioPlay=audio.src?audio.play():Promise.resolve();
   Promise.all([videoPlay,audioPlay]).then(()=>{
     if(token!==previewToken)return;
     // Correct minor startup offset; keep the audio as the timing reference.
-    if(audio.src&&Number.isFinite(audio.currentTime)&&Math.abs(video.currentTime-audio.currentTime)>0.25)
+    if(video&&audio.src&&Number.isFinite(audio.currentTime)&&Math.abs(video.currentTime-audio.currentTime)>0.25)
       try{video.currentTime=audio.currentTime;}catch{}
   }).catch(error=>{
     if(token!==previewToken)return;
@@ -80,6 +80,8 @@ form.addEventListener('input',()=>{dirty=true;});
 form.addEventListener('change',()=>{dirty=true;});
 form.elements.visual.addEventListener('change',()=>{extractedAudio=null;showPreview();if(form.elements.visual.files[0]?.type==='video/mp4')extract();});
 form.elements.audio.addEventListener('change',()=>{extractedAudio=null;showPreview();});
+form.elements.image.addEventListener('change',()=>{if(form.elements.image.files.length)form.elements.visual.value='';showPreview();});
+form.elements.visual.addEventListener('change',()=>{if(form.elements.visual.files.length)form.elements.image.value='';showPreview();});
 function encodeWav(buffer){
   const channels=Math.min(2,buffer.numberOfChannels),rate=buffer.sampleRate,frames=buffer.length;
   const bytes=44+frames*channels*2;
@@ -128,21 +130,26 @@ const metadata=file=>new Promise((resolve,reject)=>{const url=URL.createObjectUR
 onAuthStateChanged(auth,user=>{unsub();if(!isAdminAccount(user)){panel.hidden=true;return;}panel.hidden=false;unsub=onSnapshot(doc(db,'radioPlaylists','__stationControl'),s=>{fill(s.data()?.sponsorBreak||DEFAULT);if(!dirty)restoreDraft();},e=>status.textContent='Unable to load ad settings: '+e.message);});
 panel.querySelector('#bt-ad-save').disabled=PREVIEW||!PUBLISH_ENABLED;
 if(PREVIEW){status.textContent='Preview mode: uploads and saving are disabled to protect the live station.';}
-form.onsubmit=async e=>{e.preventDefault();if(PREVIEW||!PUBLISH_ENABLED)return;if(extracting){status.textContent='Wait for audio extraction to finish.';return;}const user=auth.currentUser;if(!isAdminAccount(user)||(user.email!=='mbergeron79@gmail.com')||(!user.emailVerified&&user.uid!=='PJXufsvdCCgRpfKcLtxPH3jEQN83')){status.textContent='Authorized administrator sign-in required.';return;}const vf=form.elements.visual.files[0],af=form.elements.audio.files[0]||extractedAudio;const type=form.elements.visualType.value;
-if(vf&&!(type==='image'?/^image\/(jpeg|png|webp)$/.test(vf.type):vf.type==='video/mp4')){status.textContent='Visual type does not match selected file.';return;}
+form.onsubmit=async e=>{e.preventDefault();if(PREVIEW||!PUBLISH_ENABLED)return;if(extracting){status.textContent='Wait for audio extraction to finish.';return;}const user=auth.currentUser;if(!isAdminAccount(user)||(user.email!=='mbergeron79@gmail.com')||(!user.emailVerified&&user.uid!=='PJXufsvdCCgRpfKcLtxPH3jEQN83')){status.textContent='Authorized administrator sign-in required.';return;}const vf=form.elements.visual.files[0],im=form.elements.image.files[0],af=form.elements.audio.files[0]||extractedAudio;
+if(vf&&vf.type!=='video/mp4'){status.textContent='Video must be MP4.';return;}
+if(im&&!/^image\/(jpeg|png|webp)$/.test(im.type)){status.textContent='Image must be JPG, PNG, or WebP.';return;}
+if(vf&&im){status.textContent='Choose either a video or an image.';return;}
+if(!af){status.textContent='Select audio or extract it from an MP4.';return;}
+if(!vf&&!im&&!current.videoUrl&&!current.posterUrl){status.textContent='Select a video or image.';return;}
 if(af&&!['audio/mp4','audio/x-m4a','audio/m4a','audio/mpeg','audio/wav'].includes(af.type)){status.textContent='Audio must be MP3, M4A, or extracted WAV.';return;}
-if((vf&&vf.size>40*1024*1024)||(af&&af.size>15*1024*1024)){status.textContent='Max file sizes: video 40 MB, audio 15 MB.';return;}
+if((vf&&vf.size>40*1024*1024)||(im&&im.size>5*1024*1024)||(af&&af.size>15*1024*1024)){status.textContent='Max file sizes: video 40 MB, image 5 MB, audio 15 MB.';return;}
 const duration=Number(form.elements.durationSeconds.value);if(!Number.isInteger(duration)||duration<1||duration>60){status.textContent='Duration must be 1–60 seconds.';return;}
 try{if(vf&&vf.type==='video/mp4'&&(await metadata(vf))>duration+1)throw Error('Video exceeds configured duration.');if(af&&(await metadata(af))>duration+1)throw Error('Audio exceeds configured duration.');
 const button=panel.querySelector('#bt-ad-save');button.disabled=true;status.textContent='Uploading and saving…';
 const next={...current,sponsorName:form.elements.sponsorName.value.trim(),clickUrl:form.elements.clickUrl.value.trim(),durationSeconds:duration,active:form.elements.active.checked};
 if(!/^https:\/\//i.test(next.clickUrl))throw Error('Sponsor link must use HTTPS.');
 const storage=getStorage();async function upload(file){const name=Date.now()+'-'+Math.random().toString(36).slice(2)+'-'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');const path='between-show-ads/'+user.uid+'/'+name;const reference=ref(storage,path);await uploadBytes(reference,file,{contentType:file.type});return getDownloadURL(reference);}
-if(vf&&!af)throw Error('Extract audio first or select a separate audio file before publishing.');
-if(vf){const url=await upload(vf);if(type==='image'){next.posterUrl=url;next.videoUrl='';}else{next.videoUrl=url;next.posterUrl='';}}
+if(vf){next.videoUrl=await upload(vf);next.posterUrl='';}
+if(im){next.posterUrl=await upload(im);next.videoUrl='';}
 if(af)next.audioUrl=await upload(af);
 if(!next.videoUrl&&!next.posterUrl)throw Error('Select a video or image.');
+if(!next.audioUrl)throw Error('Select audio or extract it from a video.');
 await setDoc(doc(db,'radioPlaylists','__stationControl'),{sponsorBreak:next,updatedAt:Date.now()},{merge:true});
-form.elements.visual.value='';form.elements.audio.value='';extractedAudio=null;dirty=false;sessionStorage.removeItem('bt-radio-ad-draft');status.textContent='Published. New settings will be picked up by connected players; check the next eligible break.';showPreview();
+form.elements.visual.value='';form.elements.image.value='';form.elements.audio.value='';extractedAudio=null;dirty=false;sessionStorage.removeItem('bt-radio-ad-draft');status.textContent='Published. New settings will be picked up by connected players; check the next eligible break.';showPreview();
 }catch(err){status.textContent='Not saved: '+err.message;}finally{panel.querySelector('#bt-ad-save').disabled=PREVIEW||!PUBLISH_ENABLED;}}
 }
