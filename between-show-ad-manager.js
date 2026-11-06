@@ -77,11 +77,18 @@ playButton.onclick=()=>{
 audio.addEventListener('ended',()=>{if(previewPlaying)stopPreview();});
 visual.addEventListener('ended',event=>{if(event.target.tagName==='VIDEO'&&previewPlaying)stopPreview();},true);
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&previewPlaying)stopPreview();});
+let durationReadToken=0;
+async function autoFillDuration(){
+ const token=++durationReadToken;
+ const file=form.elements.audio.files[0]||extractedAudio||form.elements.visual.files[0];
+ if(!file)return;
+ try{const seconds=await metadata(file);if(token!==durationReadToken)return;if(!Number.isFinite(seconds)||seconds<=0)throw Error('Unknown duration');const rounded=Math.ceil(seconds);if(rounded>60){status.textContent='Clip is '+rounded+' seconds; maximum is 60.';return;}form.elements.durationSeconds.value=rounded;dirty=true;status.textContent='Detected '+rounded+' seconds. You can edit this.';}catch{if(token===durationReadToken)status.textContent='Could not detect duration; enter it manually.';}
+}
 panel.querySelector('#bt-ad-preview-button').onclick=showPreview;
 form.addEventListener('input',()=>{dirty=true;});
 form.addEventListener('change',()=>{dirty=true;});
-form.elements.visual.addEventListener('change',()=>{extractedAudio=null;showPreview();if(form.elements.visual.files[0]?.type==='video/mp4')extract();});
-form.elements.audio.addEventListener('change',()=>{extractedAudio=null;showPreview();});
+form.elements.visual.addEventListener('change',()=>{extractedAudio=null;showPreview();autoFillDuration();if(form.elements.visual.files[0]?.type==='video/mp4')extract();});
+form.elements.audio.addEventListener('change',()=>{extractedAudio=null;showPreview();autoFillDuration();});
 form.elements.image.addEventListener('change',()=>{if(form.elements.image.files.length){form.elements.visual.value='';form.elements.audioOnly.checked=false;}showPreview();});
 form.elements.visual.addEventListener('change',()=>{if(form.elements.visual.files.length){form.elements.image.value='';form.elements.audioOnly.checked=false;}showPreview();});
 function encodeWav(buffer){
@@ -111,7 +118,7 @@ async function extract(){
     if(!decoded.length)throw Error('No audio track found.');
     extractedAudio=encodeWav(decoded);
     form.elements.audio.value='';
-    showPreview();status.textContent='Audio extracted. Preview it, then publish when ready.';
+    showPreview();autoFillDuration();status.textContent='Audio extracted. Preview it, then publish when ready.';
   }catch(error){extractedAudio=null;status.textContent='Could not extract audio on this device: '+error.message+' Use a separate MP3/M4A audio file instead.';}
   finally{await ctx?.close().catch(()=>{});extracting=false;button.disabled=false;}
 }
