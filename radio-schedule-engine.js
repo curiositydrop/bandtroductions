@@ -1,3 +1,4 @@
+import { planCommercialBreak, commercialAtOffset } from './radio-break-planner.mjs';
 import './radio-control-room-ux-fix.js?v=1';
 
 export const RADIO_TIMEZONE='America/New_York';
@@ -105,7 +106,9 @@ function isFiller(p){
 }
 function dayList(p){return Array.isArray(p.days)&&p.days.length?p.days:['every'];}
 export function sponsorBreak(playlists,config,date=new Date()){
-  if(!config||config.active!==true||!(config.videoUrl||config.posterUrl||config.audioUrl))return null;
+  if(!config||config.active!==true)return null;
+  const multiAd=Array.isArray(config.ads);
+  if(!multiAd&&!(config.videoUrl||config.posterUrl||config.audioUrl))return null;
   const now=easternClock(date);
   const day=now.weekday.toLowerCase().slice(0,3);
   const shows=Object.entries(playlists||{}).map(([id,p])=>({id,...p}))
@@ -128,18 +131,24 @@ export function sponsorBreak(playlists,config,date=new Date()){
   });
   if(!next)return null;
   const offsetSeconds=now.second;
-  const durationSeconds=Math.max(1,Math.min(60,Number(config.durationSeconds)||40));
+  const plan=multiAd?planCommercialBreak(config.ads):null;
+  if(multiAd&&!plan.ok)return null;
+  const selected=multiAd?commercialAtOffset(plan,offsetSeconds):null;
+  if(multiAd&&!selected)return null;
+  const clip=selected||config;
+  const clipOffset=selected?selected.offsetSeconds:offsetSeconds;
+  const durationSeconds=Math.max(1,Math.min(60,Number(clip.durationSeconds)||40));
   return {
     type:'sponsorBreak',
-    key:`break|${ended.id}|${next.id}|${day}|${m}`,
-    sponsorName:String(config.sponsorName||'Our Sponsor'),
-    clickUrl:String(config.clickUrl||'radio-sponsor.html'),
-    videoUrl:String(config.videoUrl||''),
-    audioUrl:String(config.audioUrl||''),
-    posterUrl:String(config.posterUrl||''),
+    key:`break|${ended.id}|${next.id}|${day}|${m}${selected?'|'+selected.startSeconds:''}`,
+    sponsorName:String(clip.sponsorName||'Our Sponsor'),
+    clickUrl:String(clip.clickUrl||'radio-sponsor.html'),
+    videoUrl:String(clip.videoUrl||''),
+    audioUrl:String(clip.audioUrl||''),
+    posterUrl:String(clip.posterUrl||''),
     durationSeconds,
-    offsetSeconds,
-    clipPlaying:offsetSeconds<durationSeconds,
+    offsetSeconds:clipOffset,
+    clipPlaying:clipOffset<durationSeconds,
     endedShow:ended.upNextDisplayName||ended.name||'',
     nextShow:next.upNextDisplayName||next.name||'',
     nextStartMinutes:nextMin
