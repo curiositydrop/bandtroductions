@@ -95,7 +95,11 @@ service firebase.storage {
                             && isVerifiedAdmin()
                             && (request.resource.contentType == 'audio/mpeg'
                                 || (fileName.matches('station-id-.*\\.m4a')
-                                    && request.resource.contentType == 'audio/mp4'))
+                                    && request.resource.contentType == 'audio/mp4')
+                                || (fileName.matches('station-id-.*\\.wav')
+                                    && request.resource.contentType == 'audio/wav')
+                                || (fileName.matches('station-id-.*\\.aac')
+                                    && request.resource.contentType == 'audio/aac'))
                             && request.resource.size > 0
                             && request.resource.size <= 250 * 1024 * 1024;
       allow delete: if request.auth != null
