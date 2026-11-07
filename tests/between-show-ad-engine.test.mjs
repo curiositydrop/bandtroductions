@@ -43,3 +43,8 @@ assert.equal(first.sponsorName,'Test');
 assert.equal(second.sponsorName,'Second sponsor');
 assert.equal(second.offsetSeconds,5);
 assert.equal(sponsorBreak(playlists,{active:true,ads:[config,config,config]},date),null);
+
+const tail=sponsorBreak(playlists,two,new Date('2026-11-06T17:00:55Z'));
+assert.ok(tail,'remaining break seconds must not fall through to a song');
+assert.equal(tail.clipPlaying,false);
+assert.equal(tail.offsetSeconds,25);
