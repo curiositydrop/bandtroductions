@@ -48,3 +48,5 @@ const tail=sponsorBreak(playlists,two,new Date('2026-11-06T17:00:55Z'));
 assert.ok(tail,'remaining break seconds must not fall through to a song');
 assert.equal(tail.clipPlaying,false);
 assert.equal(tail.offsetSeconds,25);
+
+assert.equal(sponsorBreak(playlists,{active:true,ads:[]},new Date('2026-11-06T17:00:30Z')),null,'empty ad schedule must not crash the radio player');
