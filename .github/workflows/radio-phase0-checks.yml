@@ -1,0 +1,23 @@
+name: Radio Phase 0 safety checks
+on:
+  pull_request:
+    paths:
+      - 'radio-playlist-validation.mjs'
+      - 'radio-playlist-save-fix.js'
+      - 'radio-schedule-engine.js'
+      - 'tests/radio-playlist-validation.test.mjs'
+      - 'tests/between-show-ad-engine.test.mjs'
+      - '.github/workflows/radio-phase0-checks.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check radio-playlist-save-fix.js && node --check radio-schedule-engine.js && node --check radio-playlist-validation.mjs
+      - run: node --test tests/radio-playlist-validation.test.mjs
+      - run: node tests/between-show-ad-engine.test.mjs
