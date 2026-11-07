@@ -30,4 +30,4 @@ jobs:
       - run: node --test tests/radio-playlist-validation.test.mjs tests/radio-break-planner.test.mjs tests/radio-station-id-tools.test.mjs
       - run: node tests/between-show-ad-engine.test.mjs
       - name: Verify Control Room integration
-        run: grep -q 'radio-two-ad-editor.js' admin.html && grep -q 'radio-station-id-library.js' admin.html && grep -q 'Preview is read-only' radio-two-ad-editor.js
+        run: grep -q 'radio-two-ad-editor.js' admin.html && grep -q 'radio-station-id-library.js' admin.html && grep -q 'uploadBytes' radio-station-id-library.js && grep -q 'audioDuration' radio-station-id-library.js && grep -q 'Preview is read-only' radio-two-ad-editor.js
