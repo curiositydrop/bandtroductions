@@ -13,3 +13,5 @@ test('rejects out-of-range show times',()=>assert.equal(validatePlaylistItems([s
 
 test('station ID must precede a song',()=>{const id={type:'stationId',id:'id1',audioUrl:'id.mp3',durationSeconds:10};const track={...song(),type:'track',id:'track1'};assert.equal(validatePlaylistItems([track,id],600,660).reason,'station-id-position');assert.equal(validatePlaylistItems([id,track],600,660).ok,true);});
 test('linked station ID must precede its linked song',()=>{const id={type:'stationId',audioUrl:'id.mp3',durationSeconds:10,linkedSongId:'other'};const track={...song(),type:'track',id:'track1'};assert.equal(validatePlaylistItems([id,track],600,660).reason,'station-id-link');});
+
+test('commercials cannot be inserted inside music playlists',()=>{const sponsor={type:'sponsor',audioUrl:'ad.mp3',durationSeconds:15};assert.equal(validatePlaylistItems([song(),sponsor],600,660).reason,'commercial-in-playlist');});
