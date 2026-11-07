@@ -2,7 +2,7 @@ import {auth,db} from './firebase-dev.js';
 import {doc,onSnapshot,setDoc} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import {isAdminAccount} from './admin-access.js';
 import {planCommercialBreak} from './radio-break-planner.mjs';
-const preview=/(?:\\.pages\\.dev|\\.vercel\\.app|--[a-z0-9-]+\\.web\\.app)$/i.test(location.hostname)||new URLSearchParams(location.search).has('radioPreview');
+const preview=/(?:\.pages\.dev|\.vercel\.app|--[a-z0-9-]+\.web\.app)$/i.test(location.hostname)||new URLSearchParams(location.search).has('radioPreview');
 const host=document.getElementById('cr-radio-body');
 if(host){
   const panel=document.createElement('section');panel.id='radio-two-ad-editor';panel.className='crr-panel';panel.style.cssText='border:1px solid #315650;border-radius:14px;background:#0b0e0e;padding:14px;margin:12px 0;color:#eee';
