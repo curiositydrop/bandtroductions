@@ -10,3 +10,6 @@ test('handles overnight show window',()=>assert.equal(validatePlaylistItems([son
 test('rejects empty playlists',()=>assert.equal(validatePlaylistItems([],600,660).reason,'empty'));
 test('allows full-day rotation from midnight to 24:00',()=>assert.equal(validatePlaylistItems([song(300)],0,1440).ok,true));
 test('rejects out-of-range show times',()=>assert.equal(validatePlaylistItems([song()],-10,1500).reason,'invalid-window'));
+
+test('station ID must precede a song',()=>{const id={type:'stationId',id:'id1',audioUrl:'id.mp3',durationSeconds:10};const track={...song(),type:'track',id:'track1'};assert.equal(validatePlaylistItems([track,id],600,660).reason,'station-id-position');assert.equal(validatePlaylistItems([id,track],600,660).ok,true);});
+test('linked station ID must precede its linked song',()=>{const id={type:'stationId',audioUrl:'id.mp3',durationSeconds:10,linkedSongId:'other'};const track={...song(),type:'track',id:'track1'};assert.equal(validatePlaylistItems([id,track],600,660).reason,'station-id-link');});
