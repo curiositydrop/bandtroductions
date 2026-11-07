@@ -66,7 +66,9 @@ export function nextPlaylist(playlists,date=new Date()){
 export function playlistPosition(playlist,date=new Date()){
   if(!playlist||!Array.isArray(playlist.items)||!playlist.items.length)return null;
   const now=easternClock(date);
-  const durations=playlist.items.map(item=>Math.max(1,Number(item.durationSeconds)||1));
+  const durations=playlist.items.map(item=>Number(item?.durationSeconds));
+  // Never invent a one-second song: invalid metadata would desynchronize playback.
+  if(durations.some(duration=>!Number.isFinite(duration)||duration<=0))return null;
   const total=durations.reduce((sum,n)=>sum+n,0);
   if(!total)return null;
   const start=Number(playlist.startMinutes||0)*60;
