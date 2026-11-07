@@ -8,6 +8,8 @@ on:
       - 'radio-break-planner.mjs'
       - 'radio-two-ad-editor.js'
       - 'radio-station-id-tools.mjs'
+      - 'radio-station-id-library.js'
+      - 'control-room-radio-v2.js'
       - 'tests/radio-station-id-tools.test.mjs'
       - 'admin.html'
       - 'tests/radio-break-planner.test.mjs'
@@ -24,8 +26,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check radio-playlist-save-fix.js && node --check radio-schedule-engine.js && node --check radio-playlist-validation.mjs && node --check radio-break-planner.mjs && node --check radio-two-ad-editor.js && node --check radio-station-id-tools.mjs
+      - run: node --check radio-playlist-save-fix.js && node --check radio-schedule-engine.js && node --check radio-playlist-validation.mjs && node --check radio-break-planner.mjs && node --check radio-two-ad-editor.js && node --check radio-station-id-tools.mjs && node --check radio-station-id-library.js && node --check control-room-radio-v2.js
       - run: node --test tests/radio-playlist-validation.test.mjs tests/radio-break-planner.test.mjs tests/radio-station-id-tools.test.mjs
       - run: node tests/between-show-ad-engine.test.mjs
       - name: Verify Control Room integration
-        run: grep -q 'radio-two-ad-editor.js' admin.html && grep -q 'Preview is read-only' radio-two-ad-editor.js
+        run: grep -q 'radio-two-ad-editor.js' admin.html && grep -q 'radio-station-id-library.js' admin.html && grep -q 'Preview is read-only' radio-two-ad-editor.js
