@@ -1,7 +1,7 @@
 // Pure validation shared by the Radio Control Room and its tests.
 export function validatePlaylistItems(draft, startMinutes, endMinutes) {
   if (!Array.isArray(draft) || !draft.length) return {ok:false, reason:'empty'};
-  if (draft.some(item => !item || !item.audioUrl)) return {ok:false, reason:'missing-audio'};
+  // Commercials belong only in the scheduled between-show break, never inside songs.\n  if (draft.some(item => item?.type === 'sponsor')) return {ok:false,reason:'commercial-in-playlist'};\n  if (draft.some(item => !item || !item.audioUrl)) return {ok:false, reason:'missing-audio'};
   if (draft.some(item => !Number.isFinite(Number(item.durationSeconds)) || Number(item.durationSeconds) <= 0)) return {ok:false, reason:'invalid-duration'};
   if (draft.some((item,index)=>item.type==='stationId'&&(index===draft.length-1||draft[index+1]?.type!=='track'))) return {ok:false,reason:'station-id-position'};
   if (draft.some((item,index)=>item.type==='stationId'&&item.linkedSongId&&draft[index+1]?.id!==item.linkedSongId)) return {ok:false,reason:'station-id-link'};
