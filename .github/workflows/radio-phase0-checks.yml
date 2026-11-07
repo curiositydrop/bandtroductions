@@ -10,7 +10,7 @@ on:
       - 'radio-station-id-tools.mjs'
       - 'tests/radio-station-id-tools.test.mjs'
       - 'admin.html'
-      - 'tests/radio-break-planner.test.mjs tests/radio-station-id-tools.test.mjs'
+      - 'tests/radio-break-planner.test.mjs'
       - 'tests/radio-playlist-validation.test.mjs'
       - 'tests/between-show-ad-engine.test.mjs'
       - '.github/workflows/radio-phase0-checks.yml'
@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: '22'
       - run: node --check radio-playlist-save-fix.js && node --check radio-schedule-engine.js && node --check radio-playlist-validation.mjs && node --check radio-break-planner.mjs && node --check radio-two-ad-editor.js && node --check radio-station-id-tools.mjs
-      - run: node --test tests/radio-playlist-validation.test.mjs tests/radio-break-planner.test.mjs
+      - run: node --test tests/radio-playlist-validation.test.mjs tests/radio-break-planner.test.mjs tests/radio-station-id-tools.test.mjs
       - run: node tests/between-show-ad-engine.test.mjs
       - name: Verify Control Room integration
         run: grep -q 'radio-two-ad-editor.js' admin.html && grep -q 'Preview is read-only' radio-two-ad-editor.js
