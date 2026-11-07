@@ -4,7 +4,7 @@ import { validatePlaylistItems } from '../radio-playlist-validation.mjs';
 const song = (seconds=180) => ({audioUrl:'https://example.com/approved.mp3',durationSeconds:seconds});
 test('accepts a valid playlist',()=>assert.equal(validatePlaylistItems([song(180)],600,660).ok,true));
 test('rejects missing audio without silently dropping the song',()=>assert.equal(validatePlaylistItems([song(),{durationSeconds:120}],600,660).reason,'missing-audio'));
-test('rejects unknown and zero durations rather than substituting 180s',()=>{for(const duration of [undefined,0,-1,NaN]) assert.equal(validatePlaylistItems([song(duration)],600,660).reason,'invalid-duration');});
+test('rejects unknown and zero durations rather than substituting 180s',()=>{for(const duration of [undefined,0,-1,NaN]) assert.equal(validatePlaylistItems([{audioUrl:'https://example.com/approved.mp3',durationSeconds:duration}],600,660).reason,'invalid-duration');});
 test('rejects overfull schedule',()=>assert.equal(validatePlaylistItems([song(2000),song(2000)],600,660).reason,'overfull'));
 test('handles overnight show window',()=>assert.equal(validatePlaylistItems([song(3600)],1380,60).ok,true));
 test('rejects empty playlists',()=>assert.equal(validatePlaylistItems([],600,660).reason,'empty'));
