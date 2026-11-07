@@ -5,6 +5,8 @@ on:
       - 'radio-playlist-validation.mjs'
       - 'radio-playlist-save-fix.js'
       - 'radio-schedule-engine.js'
+      - 'radio-break-planner.mjs'
+      - 'tests/radio-break-planner.test.mjs'
       - 'tests/radio-playlist-validation.test.mjs'
       - 'tests/between-show-ad-engine.test.mjs'
       - '.github/workflows/radio-phase0-checks.yml'
@@ -18,6 +20,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check radio-playlist-save-fix.js && node --check radio-schedule-engine.js && node --check radio-playlist-validation.mjs
-      - run: node --test tests/radio-playlist-validation.test.mjs
+      - run: node --check radio-playlist-save-fix.js && node --check radio-schedule-engine.js && node --check radio-playlist-validation.mjs && node --check radio-break-planner.mjs
+      - run: node --test tests/radio-playlist-validation.test.mjs tests/radio-break-planner.test.mjs
       - run: node tests/between-show-ad-engine.test.mjs
