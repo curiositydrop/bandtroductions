@@ -93,7 +93,9 @@ service firebase.storage {
       allow create, update: if request.auth != null
                             && request.auth.uid == userId
                             && isVerifiedAdmin()
-                            && request.resource.contentType == 'audio/mpeg'
+                            && (request.resource.contentType == 'audio/mpeg'
+                                || (fileName.matches('station-id-.*\\.m4a')
+                                    && request.resource.contentType == 'audio/mp4'))
                             && request.resource.size > 0
                             && request.resource.size <= 250 * 1024 * 1024;
       allow delete: if request.auth != null
