@@ -10,7 +10,7 @@ const app=getApps().find(a=>a.name==='radioPlaylistLibraryV6')||initializeApp(cf
 const legacyDb=getDatabase(app);
 const STATION_CONTROL_ID='__stationControl';
 // Preview domains and explicit preview mode must never modify production station data.
-const RADIO_READ_ONLY_PREVIEW=/(?:\\.pages\\.dev|\\.vercel\\.app|--[a-z0-9-]+\\.web\\.app)$/i.test(location.hostname)||new URLSearchParams(location.search).has('radioPreview');
+const RADIO_READ_ONLY_PREVIEW=/(?:\.pages\.dev|\.vercel\.app|--[a-z0-9-]+\.web\.app)$/i.test(location.hostname)||new URLSearchParams(location.search).has('radioPreview');
 function requireLiveRadioAdmin(){if(!RADIO_READ_ONLY_PREVIEW)return true;alert('Radio preview is read-only. Live station changes are disabled.');return false;}
 
 let stationPlaylists={},stationSettings={},legacyTracks={},firestoreTracks={},tracks={},sponsors={},shadowDraft=[];
