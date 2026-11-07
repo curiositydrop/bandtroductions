@@ -134,9 +134,10 @@ export function sponsorBreak(playlists,config,date=new Date()){
   const plan=multiAd?planCommercialBreak(config.ads):null;
   if(multiAd&&!plan.ok)return null;
   const selected=multiAd?commercialAtOffset(plan,offsetSeconds):null;
-  if(multiAd&&!selected)return null;
-  const clip=selected||config;
-  const clipOffset=selected?selected.offsetSeconds:offsetSeconds;
+  // Preserve the break through its full minute, even after the last ad ends.
+  // Otherwise the player can fall back to music during the unfilled seconds.
+  const clip=selected||(multiAd?plan.slots[plan.slots.length-1]:config);
+  const clipOffset=selected?selected.offsetSeconds:(multiAd?Number(clip.durationSeconds):offsetSeconds);
   const durationSeconds=Math.max(1,Math.min(60,Number(clip.durationSeconds)||40));
   return {
     type:'sponsorBreak',
@@ -148,7 +149,7 @@ export function sponsorBreak(playlists,config,date=new Date()){
     posterUrl:String(clip.posterUrl||''),
     durationSeconds,
     offsetSeconds:clipOffset,
-    clipPlaying:clipOffset<durationSeconds,
+    clipPlaying:!!(!multiAd||selected)&&clipOffset<durationSeconds,
     endedShow:ended.upNextDisplayName||ended.name||'',
     nextShow:next.upNextDisplayName||next.name||'',
     nextStartMinutes:nextMin
