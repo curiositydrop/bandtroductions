@@ -132,7 +132,7 @@ export function sponsorBreak(playlists,config,date=new Date()){
   if(!next)return null;
   const offsetSeconds=now.second;
   const plan=multiAd?planCommercialBreak(config.ads):null;
-  if(multiAd&&!plan.ok)return null;
+  if(multiAd&&(!plan.ok||!plan.slots.length))return null;
   const selected=multiAd?commercialAtOffset(plan,offsetSeconds):null;
   // Preserve the break through its full minute, even after the last ad ends.
   // Otherwise the player can fall back to music during the unfilled seconds.
