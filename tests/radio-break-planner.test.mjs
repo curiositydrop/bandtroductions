@@ -8,3 +8,5 @@ test('rejects overfull break',()=>assert.equal(planCommercialBreak([ad(40),ad(30
 test('rejects missing media',()=>assert.equal(planCommercialBreak([{...ad(),audioUrl:''}]).reason,'invalid-media'));
 test('ignores disabled ads',()=>assert.equal(planCommercialBreak([ad(),{...ad(),active:false},ad()]).slots.length,2));
 test('chooses correct clip and local seek time',()=>{const p=planCommercialBreak([ad(20),ad(30)]);assert.equal(commercialAtOffset(p,21).offsetSeconds,1);assert.equal(commercialAtOffset(p,55),null);});
+
+test('rejects sequence with no enabled commercials',()=>assert.equal(planCommercialBreak([{...ad(),active:false}]).reason,'no-active-ads'));
