@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {planCommercialBreak,commercialAtOffset} from '../radio-break-planner.mjs';
+const ad=(durationSeconds=20)=>({active:true,sponsorName:'Sponsor',audioUrl:'https://example.com/ad.mp3',durationSeconds});
+test('allows two ads totaling at most 60 seconds',()=>{const p=planCommercialBreak([ad(25),ad(35)]);assert.equal(p.ok,true);assert.equal(p.remainingSeconds,0);assert.equal(p.slots[1].startSeconds,25);});
+test('rejects three enabled commercials',()=>assert.equal(planCommercialBreak([ad(),ad(),ad()]).reason,'too-many-ads'));
+test('rejects overfull break',()=>assert.equal(planCommercialBreak([ad(40),ad(30)]).reason,'overfull-break'));
+test('rejects missing media',()=>assert.equal(planCommercialBreak([{...ad(),audioUrl:''}]).reason,'invalid-media'));
+test('ignores disabled ads',()=>assert.equal(planCommercialBreak([ad(),{...ad(),active:false},ad()]).slots.length,2));
+test('chooses correct clip and local seek time',()=>{const p=planCommercialBreak([ad(20),ad(30)]);assert.equal(commercialAtOffset(p,21).offsetSeconds,1);assert.equal(commercialAtOffset(p,55),null);});
+
+test('rejects sequence with no enabled commercials',()=>assert.equal(planCommercialBreak([{...ad(),active:false}]).reason,'no-active-ads'));

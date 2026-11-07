@@ -1,0 +1,10 @@
+// Insert inside service cloud.firestore / match /databases/{database}/documents.
+// Do NOT replace the existing rules file with this snippet.
+match /radioStationIds/{stationId} {
+  // Station ID metadata contains public approved audio URLs only.
+  // Public metadata is necessary for the existing collection listener;
+  // never store private contact or billing data in these documents.
+  allow read: if true;
+  // The site's existing isAdmin() verifies the administrator's identity.
+  allow create, update, delete: if isAdmin();
+}

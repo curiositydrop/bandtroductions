@@ -1,3 +1,4 @@
+import { planCommercialBreak, commercialAtOffset } from './radio-break-planner.mjs';
 import './radio-control-room-ux-fix.js?v=1';
 
 export const RADIO_TIMEZONE='America/New_York';
@@ -66,7 +67,9 @@ export function nextPlaylist(playlists,date=new Date()){
 export function playlistPosition(playlist,date=new Date()){
   if(!playlist||!Array.isArray(playlist.items)||!playlist.items.length)return null;
   const now=easternClock(date);
-  const durations=playlist.items.map(item=>Math.max(1,Number(item.durationSeconds)||1));
+  const durations=playlist.items.map(item=>Number(item?.durationSeconds));
+  // Never invent a one-second song: invalid metadata would desynchronize playback.
+  if(durations.some(duration=>!Number.isFinite(duration)||duration<=0))return null;
   const total=durations.reduce((sum,n)=>sum+n,0);
   if(!total)return null;
   const start=Number(playlist.startMinutes||0)*60;
@@ -103,7 +106,9 @@ function isFiller(p){
 }
 function dayList(p){return Array.isArray(p.days)&&p.days.length?p.days:['every'];}
 export function sponsorBreak(playlists,config,date=new Date()){
-  if(!config||config.active!==true||!(config.videoUrl||config.posterUrl||config.audioUrl))return null;
+  if(!config||config.active!==true)return null;
+  const multiAd=Array.isArray(config.ads);
+  if(!multiAd&&!(config.videoUrl||config.posterUrl||config.audioUrl))return null;
   const now=easternClock(date);
   const day=now.weekday.toLowerCase().slice(0,3);
   const shows=Object.entries(playlists||{}).map(([id,p])=>({id,...p}))
@@ -126,18 +131,25 @@ export function sponsorBreak(playlists,config,date=new Date()){
   });
   if(!next)return null;
   const offsetSeconds=now.second;
-  const durationSeconds=Math.max(1,Math.min(60,Number(config.durationSeconds)||40));
+  const plan=multiAd?planCommercialBreak(config.ads):null;
+  if(multiAd&&(!plan.ok||!plan.slots.length))return null;
+  const selected=multiAd?commercialAtOffset(plan,offsetSeconds):null;
+  // Preserve the break through its full minute, even after the last ad ends.
+  // Otherwise the player can fall back to music during the unfilled seconds.
+  const clip=selected||(multiAd?plan.slots[plan.slots.length-1]:config);
+  const clipOffset=selected?selected.offsetSeconds:(multiAd?Number(clip.durationSeconds):offsetSeconds);
+  const durationSeconds=Math.max(1,Math.min(60,Number(clip.durationSeconds)||40));
   return {
     type:'sponsorBreak',
-    key:`break|${ended.id}|${next.id}|${day}|${m}`,
-    sponsorName:String(config.sponsorName||'Our Sponsor'),
-    clickUrl:String(config.clickUrl||'radio-sponsor.html'),
-    videoUrl:String(config.videoUrl||''),
-    audioUrl:String(config.audioUrl||''),
-    posterUrl:String(config.posterUrl||''),
+    key:`break|${ended.id}|${next.id}|${day}|${m}${selected?'|'+selected.startSeconds:''}`,
+    sponsorName:String(clip.sponsorName||'Our Sponsor'),
+    clickUrl:String(clip.clickUrl||'radio-sponsor.html'),
+    videoUrl:String(clip.videoUrl||''),
+    audioUrl:String(clip.audioUrl||''),
+    posterUrl:String(clip.posterUrl||''),
     durationSeconds,
-    offsetSeconds,
-    clipPlaying:offsetSeconds<durationSeconds,
+    offsetSeconds:clipOffset,
+    clipPlaying:!!(!multiAd||selected)&&clipOffset<durationSeconds,
     endedShow:ended.upNextDisplayName||ended.name||'',
     nextShow:next.upNextDisplayName||next.name||'',
     nextStartMinutes:nextMin
