@@ -8,3 +8,5 @@ test('rejects unknown and zero durations rather than substituting 180s',()=>{for
 test('rejects overfull schedule',()=>assert.equal(validatePlaylistItems([song(2000),song(2000)],600,660).reason,'overfull'));
 test('handles overnight show window',()=>assert.equal(validatePlaylistItems([song(3600)],1380,60).ok,true));
 test('rejects empty playlists',()=>assert.equal(validatePlaylistItems([],600,660).reason,'empty'));
+test('allows full-day rotation from midnight to 24:00',()=>assert.equal(validatePlaylistItems([song(300)],0,1440).ok,true));
+test('rejects out-of-range show times',()=>assert.equal(validatePlaylistItems([song()],-10,1500).reason,'invalid-window'));
