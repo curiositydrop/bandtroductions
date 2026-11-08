@@ -7,6 +7,22 @@ const host=document.getElementById('cr-radio-body');
 if(host){
   const panel=document.createElement('section');panel.id='radio-two-ad-editor';panel.className='crr-panel';panel.style.cssText='border:1px solid #315650;border-radius:14px;background:#0b0e0e;padding:14px;margin:12px 0;color:#eee';
   panel.innerHTML='<h3 style="color:#0ccfbd">Two-ad break sequencing (preview)</h3><p class="crr-muted">Schedule up to two previously uploaded commercials in a 60-second between-show break. No ads interrupt songs. Upload media using the existing advertisement manager first.</p><div id="radio-two-ad-slots"></div><div id="radio-two-ad-status" role="status" aria-live="polite"></div><button type="button" class="crr-btn primary" id="radio-two-ad-publish">Publish two-ad sequence</button>';
+  const heading=panel.querySelector('h3');
+  const toggle=document.createElement('button');
+  toggle.type='button';toggle.className='crr-btn';
+  toggle.textContent='+ Expand';toggle.setAttribute('aria-expanded','false');
+  toggle.style.cssText='margin:8px 0;min-height:36px';
+  heading.after(toggle);
+  const collapsible=document.createElement('div');
+  collapsible.hidden=true;
+  while(toggle.nextSibling)collapsible.append(toggle.nextSibling);
+  panel.append(collapsible);
+  toggle.addEventListener('click',()=>{
+    const opening=collapsible.hidden;
+    collapsible.hidden=!opening;
+    toggle.textContent=opening?'− Collapse':'+ Expand';
+    toggle.setAttribute('aria-expanded',String(opening));
+  });
   const attach=()=>{const root=host.querySelector('#crr');if(root&&panel.parentElement!==root)root.append(panel);};attach();new MutationObserver(attach).observe(host,{childList:true});
   const slots=panel.querySelector('#radio-two-ad-slots'),status=panel.querySelector('#radio-two-ad-status'),publish=panel.querySelector('#radio-two-ad-publish');
   const fields=['sponsorName','clickUrl','audioUrl','videoUrl','posterUrl','durationSeconds'];
