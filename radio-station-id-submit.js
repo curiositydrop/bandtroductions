@@ -4,6 +4,9 @@ import {ref,uploadBytes} from 'https://www.gstatic.com/firebasejs/12.16.0/fireba
 import {auth,db,storage} from './firebase-dev.js';
 const form=document.getElementById('stationSubmitForm'),gate=document.getElementById('memberGate'),status=document.getElementById('stationStatus'),send=document.getElementById('stationSend');
 let user=null;
+const nameField=document.getElementById('personName'),bandField=document.getElementById('bandName'),titleField=document.getElementById('stationTitle');
+function syncTitle(){titleField.value='Station ID - '+nameField.value.trim()+' - '+bandField.value.trim();}
+nameField.addEventListener('input',syncTitle);bandField.addEventListener('input',syncTitle);
 const preview=/(?:\\.pages\\.dev|\\.vercel\\.app|--[a-z0-9-]+\\.web\\.app)$/i.test(location.hostname)||new URLSearchParams(location.search).has('radioPreview');
 const allowedTypes={mp3:'audio/mpeg',m4a:'audio/mp4',wav:'audio/wav',aac:'audio/aac'};
 function duration(file){return new Promise((resolve,reject)=>{const url=URL.createObjectURL(file),audio=new Audio();const clean=()=>URL.revokeObjectURL(url);audio.onloadedmetadata=()=>{const d=audio.duration;clean();Number.isFinite(d)&&d>0?resolve(d):reject(Error('Audio duration could not be read'))};audio.onerror=()=>{clean();reject(Error('Cannot read this audio file'))};audio.src=url;});}
@@ -14,7 +17,7 @@ onAuthStateChanged(auth,async u=>{
  try{const member=await getDoc(doc(db,'users',u.uid));if(!member.exists()){gate.textContent='Complete your BANDtroductions account before submitting.';return;}
  user=u;document.getElementById('personName').value=member.data().displayName||u.displayName||'';
  document.getElementById('bandName').value=member.data().bandName||member.data().displayName||'';
- gate.textContent='Signed in. Your song eligibility will be verified during admin review.';form.classList.remove('hidden');
+ syncTitle();gate.textContent='Signed in. Your song eligibility will be verified during admin review.';form.classList.remove('hidden');
  }catch(e){gate.textContent='Could not verify your account and approved radio song. Please try again.';console.error(e);}
 });
 form.addEventListener('submit',async e=>{
@@ -29,7 +32,7 @@ form.addEventListener('submit',async e=>{
  try{const uid=user.uid,nonce=Date.now()+'-'+Math.random().toString(36).slice(2,10);
  const path='station-id-submissions/'+uid+'/station-id-'+nonce+'.'+ext;
  await uploadBytes(ref(storage,path),file,{contentType:allowedTypes[ext]});
- await addDoc(collection(db,'radioStationIdSubmissions'),{submittedByUid:uid,personName:name,artist:band,title:title==='Station ID'?'Station ID - '+name+' - '+band:title,customTitle:title,durationSeconds:Math.round(seconds*100)/100,audioStoragePath:path,status:'pending',submittedAt:serverTimestamp()});
- form.reset();status.textContent='Station ID submitted! It will appear in the admin approval queue.';document.getElementById('stationTitle').value='Station ID';
+ await addDoc(collection(db,'radioStationIdSubmissions'),{submittedByUid:uid,personName:name,artist:band,title:title,customTitle:'Station ID',durationSeconds:Math.round(seconds*100)/100,audioStoragePath:path,status:'pending',submittedAt:serverTimestamp()});
+ form.reset();status.textContent='Station ID submitted! It will appear in the admin approval queue.';syncTitle();
  }catch(err){console.error(err);status.textContent='Submission not completed: '+err.message;}finally{send.disabled=false;}
 });
