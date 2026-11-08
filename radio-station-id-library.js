@@ -1,6 +1,6 @@
 import {auth,db} from './firebase-dev.js';
 import {collection,doc,onSnapshot,setDoc,deleteDoc,updateDoc,getDocs,query,where} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import {getStorage,ref as storageRef,uploadBytes,getDownloadURL} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
+import {getStorage,ref as storageRef,uploadBytes,getDownloadURL,getBlob} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
 import {isAdminAccount} from './admin-access.js';
 import {validateStationId} from './radio-station-id-tools.mjs';
 const preview=/(?:\.pages\.dev|\.vercel\.app|--[a-z0-9-]+\.web\.app)$/i.test(location.hostname)||new URLSearchParams(location.search).has('radioPreview');
@@ -42,7 +42,14 @@ if(host){
     try{
      const tracks=await getDocs(query(collection(db,'radioApprovedTracks'),where('submittedByUid','==',item.submittedByUid)));
      if(tracks.empty)throw Error('This band needs an approved radio song before its Station ID can be approved.');
-     const url=await getDownloadURL(storageRef(storage,item.audioStoragePath));
+     const originalRef=storageRef(storage,item.audioStoragePath);
+     const audioBlob=await getBlob(originalRef);
+     const ext=item.audioStoragePath.split('.').pop().toLowerCase();
+     const contentTypes={mp3:'audio/mpeg',m4a:'audio/mp4',wav:'audio/wav',aac:'audio/aac'};
+     if(!contentTypes[ext]||audioBlob.size>25*1024*1024)throw Error('Invalid submitted recording.');
+     const approvedRef=storageRef(storage,'radio-admin/'+auth.currentUser.uid+'/station-id-member-'+key+'.'+ext);
+     await uploadBytes(approvedRef,audioBlob,{contentType:contentTypes[ext]});
+     const url=await getDownloadURL(approvedRef);
      const approved={title:item.title,artist:item.artist,audioUrl:url,durationSeconds:Number(item.durationSeconds),active:true,updatedAt:Date.now(),submittedByUid:item.submittedByUid};
      const check=validateStationId(approved);if(!check.ok)throw Error(check.reason);
      await setDoc(doc(db,'radioStationIds','member-'+key),approved);
