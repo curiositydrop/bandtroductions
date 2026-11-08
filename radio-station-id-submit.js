@@ -1,5 +1,5 @@
 import {onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import {collection,addDoc,doc,getDoc,getDocs,query,where,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import {collection,addDoc,doc,getDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import {ref,uploadBytes} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
 import {auth,db,storage} from './firebase-dev.js';
 const form=document.getElementById('stationSubmitForm'),gate=document.getElementById('memberGate'),status=document.getElementById('stationStatus'),send=document.getElementById('stationSend');
@@ -12,12 +12,9 @@ onAuthStateChanged(auth,async u=>{
  user=null;form.classList.add('hidden');
  if(!u){gate.innerHTML='Please <a href="login.html?returnTo=radio-station-id-submit.html">log in</a> or <a href="signup.html?returnTo=radio-station-id-submit.html">create a free account</a>.';return;}
  try{const member=await getDoc(doc(db,'users',u.uid));if(!member.exists()){gate.textContent='Complete your BANDtroductions account before submitting.';return;}
- // Only approved radio tracks qualify. This is also checked in Firestore rules.
- const approved=await getDocs(query(collection(db,'radioApprovedTracks'),where('submittedByUid','==',u.uid)));
- if(approved.empty){gate.textContent='Upload a song and have it approved for BANDtroductions Radio before submitting a Station ID.';return;}
  user=u;document.getElementById('personName').value=member.data().displayName||u.displayName||'';
  document.getElementById('bandName').value=member.data().bandName||member.data().displayName||'';
- gate.textContent='Signed in and eligible to submit.';form.classList.remove('hidden');
+ gate.textContent='Signed in. Your song eligibility will be verified during admin review.';form.classList.remove('hidden');
  }catch(e){gate.textContent='Could not verify your account and approved radio song. Please try again.';console.error(e);}
 });
 form.addEventListener('submit',async e=>{
