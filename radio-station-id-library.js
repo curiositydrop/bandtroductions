@@ -1,5 +1,5 @@
 import {auth,db} from './firebase-dev.js';
-import {collection,doc,onSnapshot,setDoc,deleteDoc,updateDoc} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import {collection,doc,onSnapshot,setDoc,deleteDoc,updateDoc,getDocs,query,where} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import {getStorage,ref as storageRef,uploadBytes,getDownloadURL} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
 import {isAdminAccount} from './admin-access.js';
 import {validateStationId} from './radio-station-id-tools.mjs';
@@ -40,6 +40,8 @@ if(host){
     if(!allowed()||!confirm('Approve this Station ID?'))return;
     approve.disabled=true;
     try{
+     const tracks=await getDocs(query(collection(db,'radioApprovedTracks'),where('submittedByUid','==',item.submittedByUid)));
+     if(tracks.empty)throw Error('This band needs an approved radio song before its Station ID can be approved.');
      const url=await getDownloadURL(storageRef(storage,item.audioStoragePath));
      const approved={title:item.title,artist:item.artist,audioUrl:url,durationSeconds:Number(item.durationSeconds),active:true,updatedAt:Date.now(),submittedByUid:item.submittedByUid};
      const check=validateStationId(approved);if(!check.ok)throw Error(check.reason);
