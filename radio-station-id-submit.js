@@ -4,9 +4,11 @@ import {ref,uploadBytes} from 'https://www.gstatic.com/firebasejs/12.16.0/fireba
 import {auth,db,storage} from './firebase-dev.js';
 const form=document.getElementById('stationSubmitForm'),gate=document.getElementById('memberGate'),status=document.getElementById('stationStatus'),send=document.getElementById('stationSend');
 let user=null;
+const preview=/(?:\\.pages\\.dev|\\.vercel\\.app|--[a-z0-9-]+\\.web\\.app)$/i.test(location.hostname)||new URLSearchParams(location.search).has('radioPreview');
 const allowedTypes={mp3:'audio/mpeg',m4a:'audio/mp4',wav:'audio/wav',aac:'audio/aac'};
 function duration(file){return new Promise((resolve,reject)=>{const url=URL.createObjectURL(file),audio=new Audio();const clean=()=>URL.revokeObjectURL(url);audio.onloadedmetadata=()=>{const d=audio.duration;clean();Number.isFinite(d)&&d>0?resolve(d):reject(Error('Audio duration could not be read'))};audio.onerror=()=>{clean();reject(Error('Cannot read this audio file'))};audio.src=url;});}
 onAuthStateChanged(auth,async u=>{
+ if(preview){gate.textContent='Read-only preview: Station ID uploads are disabled.';return;}
  user=null;form.classList.add('hidden');
  if(!u){gate.innerHTML='Please <a href="login.html?returnTo=radio-station-id-submit.html">log in</a> or <a href="signup.html?returnTo=radio-station-id-submit.html">create a free account</a>.';return;}
  try{const member=await getDoc(doc(db,'users',u.uid));if(!member.exists()){gate.textContent='Complete your BANDtroductions account before submitting.';return;}
@@ -19,7 +21,7 @@ onAuthStateChanged(auth,async u=>{
  }catch(e){gate.textContent='Could not verify your account and approved radio song. Please try again.';console.error(e);}
 });
 form.addEventListener('submit',async e=>{
- e.preventDefault();if(!user)return;
+ e.preventDefault();if(preview||!user)return;
  const name=document.getElementById('personName').value.trim(),band=document.getElementById('bandName').value.trim(),title=document.getElementById('stationTitle').value.trim(),file=document.getElementById('stationAudio').files[0];
  if(!name||!band||!title||!file||!document.getElementById('stationRights').checked){status.textContent='Complete all fields and the permission checkbox.';return;}
  const ext=file.name.split('.').pop().toLowerCase();
