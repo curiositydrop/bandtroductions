@@ -141,35 +141,56 @@ function canEdit(item) {
 // Grid-based placement reserves a separate cell for each Polaroid. The card
 // scales to its cell, including the full three-line caption and rotation,
 // preventing the heavy overlaps from the old jittered positions.
+// Scattered, reproducible placement. No straight rows: each card is jittered
+// independently, and an overlap-area guard keeps cards from hiding each other.
 function layoutPositions(count, wallW, wallH) {
   const rand = mulberry32(layoutSeed + count * 97);
-  const usableW = Math.max(1, wallW - 32);
-  const usableH = Math.max(1, wallH - 32);
-  const step = 0.90; // approximately 10% overlap
+  const margin = 18;
+  const usableW = Math.max(1, wallW - margin * 2);
+  const usableH = Math.max(1, wallH - margin * 2);
   let best = null;
   for (let cols = 1; cols <= count; cols++) {
     const rows = Math.ceil(count / cols);
-    const widthByW = usableW / (1 + (cols - 1) * step);
-    const widthByH = (usableH / (1 + (rows - 1) * step) - 20) / 1.35;
-    const width = Math.min(160, widthByW, widthByH);
+    // Reserve extra breathing room for randomized positioning.
+    const width = Math.min(150, usableW / (cols * .92 + .08),
+      (usableH / (rows * .92 + .08) - 20) / 1.35);
     if (!best || width > best.width) best = { cols, rows, width };
   }
   const width = Math.max(1, best.width);
   const cardH = width * 1.35 + 20;
-  const totalW = width * (1 + (best.cols - 1) * step);
-  const totalH = cardH * (1 + (best.rows - 1) * step);
-  const startX = (wallW - totalW) / 2;
-  const startY = (wallH - totalH) / 2;
+  const stepX = (usableW - width) / Math.max(1, best.cols - 1);
+  const stepY = (usableH - cardH) / Math.max(1, best.rows - 1);
   const positions = [];
+  const maxX = Math.max(margin, wallW - margin - width);
+  const maxY = Math.max(margin, wallH - margin - cardH);
+  const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+  // Compare occupied rectangles. Their intersection may cover no more than
+  // 12% of either Polaroid's area (a little rotation adds visual variety).
+  function overlapFraction(x, y, other) {
+    const dx = Math.max(0, Math.min(x + width, other.left + width) - Math.max(x, other.left));
+    const dy = Math.max(0, Math.min(y + cardH, other.top + cardH) - Math.max(y, other.top));
+    return dx * dy / (width * cardH);
+  }
   for (let i = 0; i < count; i++) {
     const col = i % best.cols, row = Math.floor(i / best.cols);
-    const rot = (rand() - .5) * 10;
-    const jitterX = (rand() - .5) * width * .035;
-    const jitterY = (rand() - .5) * cardH * .025;
+    const baseX = margin + col * stepX;
+    const baseY = margin + row * stepY;
+    let chosen = null;
+    for (let attempt = 0; attempt < 90; attempt++) {
+      const rangeX = Math.min(width * .28, stepX * .32);
+      const rangeY = Math.min(cardH * .25, stepY * .32);
+      const x = clamp(baseX + (rand() - .5) * 2 * rangeX, margin, maxX);
+      const y = clamp(baseY + (rand() - .5) * 2 * rangeY, margin, maxY);
+      const overlap = positions.reduce((max, other) => Math.max(max, overlapFraction(x, y, other)), 0);
+      const stagger = Math.abs(x - baseX) / width + Math.abs(y - baseY) / cardH;
+      const candidate = { left: x, top: y, overlap, stagger };
+      if (!chosen || (overlap <= .12 && (chosen.overlap > .12 || stagger > chosen.stagger))
+        || (chosen.overlap > .12 && overlap < chosen.overlap)) chosen = candidate;
+    }
     positions.push({
-      left: startX + col * width * step + jitterX,
-      top: startY + row * cardH * step + jitterY,
-      rot
+      left: chosen.left,
+      top: chosen.top,
+      rot: (rand() - .5) * 12
     });
   }
   return { width, positions };
