@@ -30,6 +30,22 @@ panel.innerHTML=`<h3 style="color:#0ccfbd;margin:0 0 5px">Between-Show Advertise
 <div id="bt-ad-preview" style="border:1px solid #315650;padding:10px;border-radius:10px"><div id="bt-ad-visual"></div><audio id="bt-ad-audio" preload="metadata" style="display:none"></audio><button type="button" id="bt-ad-play" class="crr-btn" style="margin-top:8px;width:100%">▶ Play commercial preview</button><p class="crr-muted" style="margin:6px 0 0">One button plays the commercial audio with any selected visuals. Preview only; no changes to the station.</p></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="bt-ad-preview-button" class="crr-btn">Preview selected media</button><button type="button" id="bt-ad-draft" class="crr-btn">Save Draft</button><button type="submit" id="bt-ad-save" class="crr-btn primary">Publish advertisement</button></div>
 <p id="bt-ad-status" role="status" aria-live="polite" style="color:#aab;font-size:.85rem"></p></form>`;
+  const heading=panel.querySelector('h3');
+  const toggle=document.createElement('button');
+  toggle.type='button';toggle.className='crr-btn';
+  toggle.textContent='+ Expand';toggle.setAttribute('aria-expanded','false');
+  toggle.style.cssText='margin:8px 0;min-height:36px';
+  heading.after(toggle);
+  const collapsible=document.createElement('div');
+  collapsible.hidden=true;
+  while(toggle.nextSibling)collapsible.append(toggle.nextSibling);
+  panel.append(collapsible);
+  toggle.addEventListener('click',()=>{
+    const opening=collapsible.hidden;
+    collapsible.hidden=!opening;
+    toggle.textContent=opening?'− Collapse':'+ Expand';
+    toggle.setAttribute('aria-expanded',String(opening));
+  });
 // The existing Radio module replaces the body contents after admin authentication.
 function placePanel(){const radio=host.querySelector('#crr');if(radio&&panel.parentElement!==radio)radio.append(panel);}
 placePanel();
