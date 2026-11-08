@@ -41,6 +41,25 @@ function install(){
   <div class="crr-library"><strong style="color:#fff">Approved Sponsors</strong><input id="crr-sponsor-search" class="crr-search" placeholder="Search sponsors…"><div id="crr-sponsor-library" class="crr-library-list"></div></div>
   </div></section>
   <section class="crr-panel"><div class="crr-head"><div><h3>Scheduled Playlists</h3><div class="crr-muted">Edit, duplicate, disable, or delete programming.</div></div><span id="crr-playlist-count" class="crr-count">0</span></div><div id="crr-schedules" class="crr-schedules"></div></section></div>`;
+  // Collapse panels without destroying their contents or playlist draft state.
+  for(const panel of document.querySelectorAll('#crr > .crr-panel')){
+    const head=panel.querySelector(':scope > .crr-head');
+    if(!head)continue;
+    const button=document.createElement('button');
+    button.type='button';button.className='crr-btn';
+    button.textContent='− Collapse';button.setAttribute('aria-expanded','true');
+    button.setAttribute('aria-label','Collapse '+(head.querySelector('h2,h3')?.textContent||'radio panel'));
+    head.append(button);
+    const content=document.createElement('div');content.className='crr-collapsible';
+    while(head.nextSibling)content.append(head.nextSibling);
+    panel.append(content);
+    button.addEventListener('click',()=>{
+      const expanded=content.hidden;
+      content.hidden=!expanded;
+      button.textContent=expanded?'− Collapse':'+ Expand';
+      button.setAttribute('aria-expanded',String(expanded));
+    });
+  }
   wireUi();
   installAdminAudioUpload();
 }
