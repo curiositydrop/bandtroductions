@@ -40,22 +40,21 @@ if(host){
     if(!allowed()||!confirm('Approve this Station ID?'))return;
     approve.disabled=true;
     try{
-     const tracks=await getDocs(query(collection(db,'radioApprovedTracks'),where('submittedByUid','==',item.submittedByUid)));
-     if(tracks.empty)throw Error('This band needs an approved radio song before its Station ID can be approved.');
-     const originalRef=storageRef(storage,item.audioStoragePath);
-     const audioBlob=await getBlob(originalRef);
-     const ext=item.audioStoragePath.split('.').pop().toLowerCase();
-     const contentTypes={mp3:'audio/mpeg',m4a:'audio/mp4',wav:'audio/wav',aac:'audio/aac'};
-     if(!contentTypes[ext]||audioBlob.size>25*1024*1024)throw Error('Invalid submitted recording.');
-     const approvedRef=storageRef(storage,'radio-admin/'+auth.currentUser.uid+'/station-id-member-'+key+'.'+ext);
-     await uploadBytes(approvedRef,audioBlob,{contentType:contentTypes[ext]});
-     const url=await getDownloadURL(approvedRef);
+     status.textContent='Checking song eligibility…';
+     if(item.submittedByUid!==auth.currentUser.uid){
+       const tracks=await getDocs(query(collection(db,'radioApprovedTracks'),where('submittedByUid','==',item.submittedByUid)));
+       if(tracks.empty)throw Error('This band needs an approved radio song before its Station ID can be approved.');
+     }
+     status.textContent='Preparing approved recording…';
+     const url=await getDownloadURL(storageRef(storage,item.audioStoragePath));
+     status.textContent='Saving approval…';
      const approved={title:item.title,artist:item.artist,audioUrl:url,durationSeconds:Number(item.durationSeconds),active:true,updatedAt:Date.now(),submittedByUid:item.submittedByUid};
      const check=validateStationId(approved);if(!check.ok)throw Error(check.reason);
      await setDoc(doc(db,'radioStationIds','member-'+key),approved);
+     status.textContent='Finalizing approval…';
      await deleteDoc(doc(db,'radioStationIdSubmissions',key));
      status.textContent='Station ID approved and added to the library.';
-    }catch(e){status.textContent='Approval failed: '+e.message;approve.disabled=false;}
+    }catch(e){status.textContent='Approval failed: '+e.message;alert('Station ID approval failed: '+e.message);approve.disabled=false;}
    };
    const reject=document.createElement('button');reject.className='crr-btn danger';reject.textContent='Reject';reject.disabled=!allowed();
    reject.onclick=async()=>{if(!allowed()||!confirm('Reject this Station ID?'))return;try{await updateDoc(doc(db,'radioStationIdSubmissions',key),{status:'rejected',reviewedAt:Date.now()});status.textContent='Station ID rejected.';}catch(e){status.textContent=e.message;}};
