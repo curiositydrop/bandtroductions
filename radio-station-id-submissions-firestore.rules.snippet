@@ -1,0 +1,36 @@
+// ADD INSIDE the existing Firestore service match /databases/{database}/documents.
+// Preserve all existing rules. Requires existing isAdmin() function.
+// Member upload path must match authenticated UID. Members cannot edit, approve,
+// reject or delete queue records. Admin can review and delete after approval.
+match /radioStationIdSubmissions/{submissionId} {
+  allow create: if request.auth != null
+    && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+    && request.resource.data.keys().hasOnly([
+      'submittedByUid','personName','artist','title','customTitle',
+      'durationSeconds','audioStoragePath','status','submittedAt'
+    ])
+    && request.resource.data.submittedByUid == request.auth.uid
+    && request.resource.data.personName is string
+    && request.resource.data.personName.size() > 0
+    && request.resource.data.personName.size() <= 100
+    && request.resource.data.artist is string
+    && request.resource.data.artist.size() > 0
+    && request.resource.data.artist.size() <= 100
+    && request.resource.data.title is string
+    && request.resource.data.title.size() <= 220
+    && request.resource.data.customTitle is string
+    && request.resource.data.customTitle.size() > 0
+    && request.resource.data.customTitle.size() <= 100
+    && request.resource.data.durationSeconds is number
+    && request.resource.data.durationSeconds > 0
+    && request.resource.data.durationSeconds <= 60
+    && request.resource.data.audioStoragePath is string
+    && request.resource.data.audioStoragePath.matches('station-id-submissions/' + request.auth.uid + '/station-id-[a-zA-Z0-9-]+[.](mp3|m4a|wav|aac)')
+    && request.resource.data.status == 'pending'
+    && request.resource.data.submittedAt == request.time;
+  allow read, update, delete: if isAdmin();
+}
+// Existing radioStationIds rules remain admin-write-only and public-read.
+// IMPORTANT: song eligibility is verified in the UI and again by the admin;
+// Firestore cannot securely prove existence of a matching approved song using
+// a collection query without a deterministic per-user eligibility record.

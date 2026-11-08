@@ -86,6 +86,25 @@ service firebase.storage {
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
+    /* Member Station ID submissions remain private until admin approval. */
+    match /station-id-submissions/{userId}/{fileName} {
+      allow get: if isOwnerOrAdmin(userId);
+      allow list: if isVerifiedAdmin();
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && fileName.matches('station-id-.*[.](mp3|m4a|wav|aac)')
+                    && request.resource.size > 0
+                    && request.resource.size <= 25 * 1024 * 1024
+                    && (
+                      (fileName.matches('.*[.]mp3') && request.resource.contentType == 'audio/mpeg')
+                      || (fileName.matches('.*[.]m4a') && request.resource.contentType == 'audio/mp4')
+                      || (fileName.matches('.*[.]wav') && request.resource.contentType == 'audio/wav')
+                      || (fileName.matches('.*[.]aac') && request.resource.contentType == 'audio/aac')
+                    );
+      allow update: if false;
+      allow delete: if isVerifiedAdmin();
+    }
+
     /* ADMIN SONG / SHOW UPLOADS: MP3 files up to 250 MB */
     match /radio-admin/{userId}/{fileName} {
       allow get: if true;

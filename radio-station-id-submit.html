@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Submit a Station ID | BANDtroductions Radio</title><link rel="canonical" href="https://bandtroductions.com/radio-station-id-submit.html">
+<link rel="stylesheet" href="style.css?v=10">
+<style>body{background:#050505;color:#fff;font-family:Arial,sans-serif}.wrap{max-width:600px;margin:35px auto;padding:20px}.card{background:#111;border:1px solid #245c54;border-radius:18px;padding:24px}h1{color:#00c8b4}label{display:block;margin:16px 0;font-weight:700}input{display:block;width:100%;box-sizing:border-box;padding:12px;margin-top:7px;border:1px solid #39756c;border-radius:9px;background:#050505;color:#fff}button{padding:12px 20px;border:0;border-radius:25px;background:#00c8b4;font-weight:800}button:disabled{opacity:.5}.hidden{display:none}a{color:#00c8b4}.note{color:#bbb;font-size:.9em}</style></head>
+<body><main class="wrap"><a href="radio-submit.html">← Radio submissions</a><div class="card">
+<h1>Submit a Station ID</h1><p>Record a short introduction for your band. If approved, we'll place it before your band's music on BANDtroductions Radio.</p>
+<p class="note">A free BANDtroductions account and at least one approved radio song are required. Submission does not guarantee airplay.</p>
+<div id="memberGate" role="status">Checking your account…</div>
+<form id="stationSubmitForm" class="hidden">
+<label>Your name<input id="personName" maxlength="100" required autocomplete="name"></label>
+<label>Band name<input id="bandName" maxlength="100" required></label>
+<label>Station ID title<input id="stationTitle" maxlength="100" placeholder="Station ID" value="Station ID" required></label>
+<label>Station ID recording<input id="stationAudio" type="file" accept=".mp3,.m4a,.wav,.aac,audio/mpeg,audio/mp4,audio/wav,audio/aac" required></label>
+<p class="note">MP3, M4A, WAV or AAC; up to 25 MB and 60 seconds. Your recording will be reviewed before it is added to the library.</p>
+<label><input id="stationRights" type="checkbox" required style="display:inline;width:auto"> I own this recording or have permission to submit it, and authorize BANDtroductions to store, broadcast and promote it. I understand approval and airplay are not guaranteed.</label>
+<button id="stationSend" type="submit">Submit Station ID for Review</button><p id="stationStatus" role="status" aria-live="polite"></p>
+</form></div></main><script type="module" src="radio-station-id-submit.js?v=1"></script></body></html>
