@@ -143,23 +143,32 @@ function canEdit(item) {
 // preventing the heavy overlaps from the old jittered positions.
 function layoutPositions(count, wallW, wallH) {
   const rand = mulberry32(layoutSeed + count * 97);
-  const usableW = Math.max(1, wallW - 24);
-  const usableH = Math.max(1, wallH - 24);
+  const usableW = Math.max(1, wallW - 32);
+  const usableH = Math.max(1, wallH - 32);
+  const step = 0.90; // approximately 10% overlap
   let best = null;
   for (let cols = 1; cols <= count; cols++) {
     const rows = Math.ceil(count / cols);
-    const cellW = usableW / cols, cellH = usableH / rows;
-    const width = Math.min(148, cellW * .85, (cellH * .85 - 20) / 1.35);
-    if (!best || width > best.width) best = { cols, rows, cellW, cellH, width };
+    const widthByW = usableW / (1 + (cols - 1) * step);
+    const widthByH = (usableH / (1 + (rows - 1) * step) - 20) / 1.35;
+    const width = Math.min(160, widthByW, widthByH);
+    if (!best || width > best.width) best = { cols, rows, width };
   }
   const width = Math.max(1, best.width);
+  const cardH = width * 1.35 + 20;
+  const totalW = width * (1 + (best.cols - 1) * step);
+  const totalH = cardH * (1 + (best.rows - 1) * step);
+  const startX = (wallW - totalW) / 2;
+  const startY = (wallH - totalH) / 2;
   const positions = [];
   for (let i = 0; i < count; i++) {
     const col = i % best.cols, row = Math.floor(i / best.cols);
-    const rot = (rand() - .5) * 8;
+    const rot = (rand() - .5) * 10;
+    const jitterX = (rand() - .5) * width * .035;
+    const jitterY = (rand() - .5) * cardH * .025;
     positions.push({
-      left: 12 + col * best.cellW + (best.cellW - width) / 2,
-      top: 12 + row * best.cellH + (best.cellH - (width * 1.35 + 20)) / 2,
+      left: startX + col * width * step + jitterX,
+      top: startY + row * cardH * step + jitterY,
       rot
     });
   }
@@ -246,7 +255,7 @@ function renderWall(highlightId) {
     ]) {
       const line = document.createElement('span');
       line.className = 'cap-line ' + kind;
-      line.textContent = value || '\\u00a0';
+      line.textContent = value || '\u00a0';
       line.title = value;
       cap.appendChild(line);
     }
