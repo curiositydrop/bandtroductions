@@ -36,6 +36,8 @@ import { notifySiteAdmins, collageNoticeMessage } from './admin-notify.js?v=1';
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const MAX_WALL = 48;
+const MAX_PLACE = 36;
+const MAX_CUSTOM = 32;
 const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const ADMIN_EMAILS = new Set(['mbergeron79@gmail.com', 'mbegeron79@gmail.com']);
 const ADMIN_UID = 'PJXufsvdCCgRpfKcLtxPH3jEQN83';
@@ -80,6 +82,12 @@ let knownIds = new Set();
 let selectedId = null;
 let uploading = false;
 let consentUnlocked = false;
+let pendingFile = null;
+let editingItem = null;
+const labelsPanel = document.getElementById('collage-labels');
+const labelUser = document.getElementById('collage-label-user');
+const labelPlace = document.getElementById('collage-label-place');
+const labelCustom = document.getElementById('collage-label-custom');
 let layoutSeed = hashStr('bandtroductions-collage-v1');
 
 function hashStr(s) {
@@ -117,79 +125,143 @@ function tsMs(value) {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
 }
+function usernameFor(user) {
+  return String(user?.email || '').split('@')[0].trim().slice(0, 40) || 'Member';
+}
 function captionFor(item) {
-  const name = String(item.displayName || item.ownerName || 'Scene').trim();
-  return name.length > 22 ? name.slice(0, 20) + '…' : name || 'Scene';
+  return String(item.username || item.displayName || 'Scene').trim();
 }
-
-// .frame-mat clips overflow. Keep the whole Polaroid — white border, caption,
-// tilt, and the 1.08 pop — inside the mat with a small margin.
-const EDGE_MARGIN = 8;
-const MAX_POLAROID_SCALE = 1.08;
-
-function clamp01(n) {
-  return Math.min(1, Math.max(0, n));
+function safeLabel(value, max) {
+  return String(value || '').replace(/[\\r\\n\\t]+/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, max);
 }
-function polaroidOutset(cardW, cardH, rotDeg) {
-  const rad = Math.abs(rotDeg) * Math.PI / 180;
-  const cos = Math.cos(rad);
-  const sin = Math.sin(rad);
-  const boxW = Math.max(cardW * cos + cardH * sin, cardW * MAX_POLAROID_SCALE);
-  const boxH = Math.max(cardW * sin + cardH * cos, cardH * MAX_POLAROID_SCALE);
-  return {
-    x: Math.ceil(Math.max(0, (boxW - cardW) / 2)),
-    y: Math.ceil(Math.max(0, (boxH - cardH) / 2))
-  };
+function canEdit(item) {
+  return !isSeedId(item.id) && !!currentUser &&
+    (isAdmin || item.ownerId === currentUser.uid);
 }
-function axisRange(wall, card, outset) {
-  const min = EDGE_MARGIN + outset;
-  const max = wall - card - outset - EDGE_MARGIN;
-  if (max >= min) return { min, max };
-  const centered = (wall - card) / 2;
-  return { min: centered, max: centered };
-}
-function layoutPositions(count, wallW, wallH, cardW, cardH) {
+// Grid-based placement reserves a separate cell for each Polaroid. The card
+// scales to its cell, including the full three-line caption and rotation,
+// preventing the heavy overlaps from the old jittered positions.
+// Scattered, reproducible placement. No straight rows: each card is jittered
+// independently, and an overlap-area guard keeps cards from hiding each other.
+// Seeded free-form scatter: no grid or row anchors. We reject positions
+// that obscure more than 15% of another card, including its caption.
+function layoutPositions(count, wallW, wallH) {
+  const margin = 18;
+  const usableW = Math.max(1, wallW - margin * 2);
+  const usableH = Math.max(1, wallH - margin * 2);
   const rand = mulberry32(layoutSeed + count * 97);
-  const positions = [];
-  const cols = count <= 8 ? 3 : count <= 18 ? 4 : 5;
-  const rows = Math.max(1, Math.ceil(count / cols));
-  for (let i = 0; i < count; i++) {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const jitterX = (rand() - 0.5) * (0.7 / cols);
-    const jitterY = (rand() - 0.5) * (0.55 / rows);
-    const rot = (rand() - 0.5) * 16;
-    const outset = polaroidOutset(cardW, cardH, rot);
-    const xRange = axisRange(wallW, cardW, outset.x);
-    const yRange = axisRange(wallH, cardH, outset.y);
-    const nx = clamp01((col + 0.5) / cols + jitterX);
-    const ny = clamp01((row + 0.5) / rows + jitterY);
-    positions.push({
-      left: xRange.min + nx * (xRange.max - xRange.min),
-      top: yRange.min + ny * (yRange.max - yRange.min),
-      rot
-    });
+  const maxOverlap = .15;
+  // Scale down only when necessary to fit all photos with the overlap cap.
+  const initialWidth = Math.min(150, usableW / Math.max(1, Math.sqrt(count * usableW / usableH) * .90),
+    Math.sqrt(usableW * usableH / (count * 1.35 * .83)));
+  let best = [];
+  let finalWidth = initialWidth;
+  for (let scale = 1; scale >= .48; scale -= .035) {
+    const width = Math.max(1, initialWidth * scale);
+    const height = width * 1.35 + 20;
+    const maxX = wallW - margin - width;
+    const maxY = wallH - margin - height;
+    if (maxX < margin || maxY < margin) continue;
+    const placed = [];
+    for (let i = 0; i < count; i++) {
+      let selected = null;
+      // Candidate positions are fully random, not derived from rows.
+      for (let attempt = 0; attempt < 1200; attempt++) {
+        const x = margin + rand() * (maxX - margin);
+        const y = margin + rand() * (maxY - margin);
+        let maxArea = 0;
+        let totalArea = 0;
+        let nearest = Infinity;
+        for (const other of placed) {
+          const dx = Math.max(0, Math.min(x + width, other.left + width) - Math.max(x, other.left));
+          const dy = Math.max(0, Math.min(y + height, other.top + height) - Math.max(y, other.top));
+          const area = dx * dy / (width * height);
+          maxArea = Math.max(maxArea, area);
+          totalArea += area;
+          nearest = Math.min(nearest, Math.hypot((x - other.left) / width, (y - other.top) / height));
+        }
+        if (maxArea > maxOverlap || totalArea > maxOverlap) continue;
+        // Prefer a natural amount of overlap, without piling on captions.
+        const score = (placed.length ? Math.min(nearest, 2) * .10 : 0)
+          - Math.abs(totalArea - .055) * .8 + rand() * .10;
+        if (!selected || score > selected.score) selected = { left: x, top: y, score };
+        if (attempt > 140 && selected && selected.score > .19) break;
+      }
+      if (!selected) break;
+      placed.push({ left: selected.left, top: selected.top, rot: (rand() - .5) * 8 });
+    }
+    if (placed.length > best.length) { best = placed; finalWidth = width; }
+    if (placed.length === count) return { width, positions: placed };
   }
-  return positions;
+  // Extremely dense walls: use a smaller free-form scatter rather than
+  // dropping photos; deterministic fallback ensures all cards are visible.
+  const width = Math.min(finalWidth, usableW / Math.ceil(Math.sqrt(count * usableW / usableH)));
+  const height = width * 1.35 + 20;
+  const cols = Math.max(1, Math.floor(usableW / width));
+  const rows = Math.ceil(count / cols);
+  const dx = cols > 1 ? (usableW - width) / (cols - 1) : 0;
+  const dy = rows > 1 ? (usableH - height) / (rows - 1) : 0;
+  return { width, positions: Array.from({ length: count }, (_, i) => ({
+    left: margin + (i % cols) * dx,
+    top: margin + Math.floor(i / cols) * dy,
+    rot: (rand() - .5) * 6
+  })) };
 }
 function placePolaroids() {
   const cards = [...wallEl.querySelectorAll('.polaroid')];
   if (!cards.length) return;
-  const wallW = wallEl.clientWidth;
-  const wallH = wallEl.clientHeight;
+  const wallW = wallEl.clientWidth, wallH = wallEl.clientHeight;
   if (wallW < 8 || wallH < 8) return;
-  const cardW = cards[0].offsetWidth;
-  const cardH = cards[0].offsetHeight;
-  if (!cardW || !cardH) return;
-  const positions = layoutPositions(cards.length, wallW, wallH, cardW, cardH);
+  const layout = layoutPositions(cards.length, wallW, wallH);
+  wallEl.style.setProperty('--polaroid-width', layout.width.toFixed(2) + 'px');
   cards.forEach((el, idx) => {
-    const pos = positions[idx];
-    if (!pos) return;
-    el.style.left = `${pos.left.toFixed(2)}px`;
-    el.style.top = `${pos.top.toFixed(2)}px`;
-    el.style.transform = `rotate(${pos.rot.toFixed(2)}deg)`;
+    const pos = layout.positions[idx];
+    el.style.left = pos.left.toFixed(2) + 'px';
+    el.style.top = pos.top.toFixed(2) + 'px';
+    el.style.transform = 'rotate(' + pos.rot.toFixed(2) + 'deg)';
   });
 }
+function openLabels(file = null, item = null) {
+  pendingFile = file;
+  editingItem = item;
+  labelUser.value = item?.username || usernameFor(currentUser);
+  labelPlace.value = item?.venueLocation || '';
+  labelCustom.value = item?.customCaption || '';
+  document.getElementById('collage-labels-heading').textContent =
+    item ? 'Edit your Polaroid label' : 'Label your new Polaroid';
+  document.getElementById('collage-label-save').textContent =
+    item ? 'Save label' : 'Upload photo';
+  labelsPanel.hidden = false;
+  labelsPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+document.getElementById('collage-label-cancel').addEventListener('click', () => {
+  labelsPanel.hidden = true; pendingFile = null; editingItem = null; fileInput.value = '';
+});
+document.getElementById('collage-label-save').addEventListener('click', async () => {
+  const venueLocation = safeLabel(labelPlace.value, MAX_PLACE);
+  const customCaption = safeLabel(labelCustom.value, MAX_CUSTOM);
+  const username = labelUser.value;
+  const button = document.getElementById('collage-label-save');
+  if (editingItem) {
+    if (!canEdit(editingItem)) return setStatus('Only the photo owner or admin can edit this label.', 'error');
+    button.disabled = true;
+    try {
+      await updateDoc(doc(db, 'media', editingItem.id), {
+        venueLocation, customCaption, updatedAt: serverTimestamp()
+      });
+      labelsPanel.hidden = true; editingItem = null;
+      setStatus('Polaroid label updated.', 'ok');
+    } catch (e) {
+      console.error('Collage label edit failed', e);
+      setStatus('Label edit blocked. Firestore media update permissions may need adjusting.', 'error');
+    } finally { button.disabled = false; }
+  } else if (pendingFile) {
+    const file = pendingFile;
+    pendingFile = null;
+    labelsPanel.hidden = true;
+    await handleUpload(file, { username, venueLocation, customCaption });
+  }
+});
 
 function renderWall(highlightId) {
   const list = items.slice(0, MAX_WALL);
@@ -209,11 +281,25 @@ function renderWall(highlightId) {
     img.decoding = 'async';
     const cap = document.createElement('figcaption');
     cap.className = 'cap';
-    cap.textContent = captionFor(item);
+    for (const [value, kind] of [
+      [captionFor(item), 'username'],
+      [item.venueLocation || '', 'place'],
+      [item.customCaption || '', 'custom']
+    ]) {
+      const line = document.createElement('span');
+      line.className = 'cap-line ' + kind;
+      line.textContent = value || '\u00a0';
+      line.title = value;
+      cap.appendChild(line);
+    }
     el.append(img, cap);
     if (isAdmin) {
       el.style.cursor = 'pointer';
       el.addEventListener('click', () => selectForAdmin(item));
+    } else if (canEdit(item)) {
+      el.style.cursor = 'pointer';
+      el.title = 'Tap to edit your Polaroid label';
+      el.addEventListener('click', () => openLabels(null, item));
     }
     wallEl.appendChild(el);
   });
@@ -243,6 +329,13 @@ function selectForAdmin(item) {
   btn.textContent = 'Remove';
   btn.addEventListener('click', () => removeItem(item));
   adminSelected.append(label, btn);
+  if (canEdit(item)) {
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.textContent = 'Edit label';
+    edit.addEventListener('click', () => openLabels(null, item));
+    adminSelected.append(edit);
+  }
 }
 
 function isSeedId(id) {
@@ -324,6 +417,9 @@ function mergeLive(docs) {
       id: d.id,
       url: data.downloadUrl || data.url || '',
       displayName: data.displayName || data.ownerName || 'Member',
+      username: data.username || String(data.ownerEmail || '').split('@')[0] || data.displayName || data.ownerName || 'Member',
+      venueLocation: data.venueLocation || '',
+      customCaption: data.customCaption || '',
       ownerId: data.ownerId || data.uid || '',
       storagePath: data.storagePath || '',
       createdAtMs: tsMs(data.createdAt) || Date.now()
@@ -433,7 +529,7 @@ function showConsent() {
   consentPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-async function handleUpload(file) {
+async function handleUpload(file, labels = {}) {
   if (!currentUser) {
     authBox.hidden = false;
     setStatus('Log in free to stick your shot on the wall.', 'error');
@@ -485,6 +581,9 @@ async function handleUpload(file) {
       ownerId: currentUser.uid,
       ownerName: displayName,
       displayName,
+      username: usernameFor(currentUser),
+      venueLocation: safeLabel(labels.venueLocation, MAX_PLACE),
+      customCaption: safeLabel(labels.customCaption, MAX_CUSTOM),
       mediaType: 'image',
       gallery: 'collage',
       downloadUrl,
@@ -603,7 +702,7 @@ consentContinue.addEventListener('click', () => {
 });
 fileInput.addEventListener('change', () => {
   const file = fileInput.files?.[0];
-  if (file) handleUpload(file);
+  if (file) openLabels(file);
 });
 saveBtn.addEventListener('click', saveCollage);
 

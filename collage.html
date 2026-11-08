@@ -138,10 +138,11 @@ body.collage-page{
 }
 .polaroid{
   position:absolute;
-  width:clamp(96px,22vw,148px);
+  width:var(--polaroid-width, 120px);
+  box-sizing:border-box;
   margin:0; /* UA figure margin would push the photo out of the mat */
   background:#f4f1ea;
-  padding:8px 8px 28px;
+  padding:6px 6px 8px;
   box-shadow:0 10px 24px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.35) inset;
   transition:transform .25s ease, box-shadow .25s ease, opacity .35s ease;
   cursor:default;
@@ -161,16 +162,27 @@ body.collage-page{
   background:#222;
 }
 .polaroid .cap{
-  margin-top:7px;
+  margin-top:5px;
   color:#2a2a2a;
-  font-size:10px;
-  font-weight:800;
+  font-size:clamp(7px,1.3vw,10px);
+  line-height:1.2;
+  font-weight:700;
   text-align:center;
+  font-family:Georgia,"Times New Roman",serif;
+}
+.polaroid .cap-line{
+  display:block;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  font-family:Georgia,"Times New Roman",serif;
 }
+.polaroid .cap-line.custom{font-style:italic;font-weight:500}
+.collage-labels{max-width:720px;margin:14px auto;padding:16px;border:1px solid rgba(37,199,193,.5);background:#0d1212;border-radius:12px}
+.collage-labels[hidden]{display:none!important}
+.collage-labels label{display:block;font-size:13px;font-weight:700;margin:10px 0;color:#d7ecea}
+.collage-labels input{display:block;box-sizing:border-box;width:100%;margin-top:5px;padding:10px;background:#182222;color:#fff;border:1px solid #52706d;border-radius:5px}
+.collage-labels .hint{font-size:12px;color:#a4b8b6}
+.collage-labels .collage-btn{min-width:0;margin:6px 8px 0 0}
 .polaroid.is-new{
   animation:polaroidPop .55s ease;
 }
@@ -371,6 +383,15 @@ body.collage-page{
     <label class="collage-check"><input type="checkbox" id="collage-public"> <span>I understand the collage is public, and anyone (member or not) can view it and save it — including my photo — to their own device with Save This Collage.</span></label>
     <button type="button" class="collage-btn primary" id="collage-consent-continue">Continue</button>
   </section>
+  <section class="collage-labels" id="collage-labels" hidden>
+    <h2 id="collage-labels-heading">Your Polaroid label</h2>
+    <p class="hint">Line 1 is your account email username (before @), automatically. Lines 2 and 3 are editable. Keep them short to fit the Polaroid.</p>
+    <label>Line 1 · Member username<input id="collage-label-user" readonly></label>
+    <label>Line 2 · Venue, city/town &amp; state<input id="collage-label-place" maxlength="36" placeholder="The Venue · Portland, ME"></label>
+    <label>Line 3 · Your custom message<input id="collage-label-custom" maxlength="32" placeholder="Best night ever!"></label>
+    <button type="button" class="collage-btn primary" id="collage-label-save">Save &amp; continue</button>
+    <button type="button" class="collage-btn" id="collage-label-cancel">Cancel</button>
+  </section>
   <div class="collage-meta" id="collage-count">Loading the wall…</div>
   <div class="collage-status" id="collage-status" role="status"></div>
 
@@ -396,6 +417,6 @@ body.collage-page{
 
 <script src="global-header-v2.js?v=3"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
-<script type="module" src="collage.js?v=20261105-seeds"></script>
+<script type="module" src="collage.js?v=20261108-freeform"></script>
 </body>
 </html>
