@@ -144,13 +144,13 @@ function canEdit(item) {
 // Scattered, reproducible placement. No straight rows: each card is jittered
 // independently, and an overlap-area guard keeps cards from hiding each other.
 // Seeded free-form scatter: no grid or row anchors. We reject positions
-// that obscure more than 12% of another card, including its caption.
+// that obscure more than 15% of another card, including its caption.
 function layoutPositions(count, wallW, wallH) {
   const margin = 18;
   const usableW = Math.max(1, wallW - margin * 2);
   const usableH = Math.max(1, wallH - margin * 2);
   const rand = mulberry32(layoutSeed + count * 97);
-  const maxOverlap = .12;
+  const maxOverlap = .15;
   // Scale down only when necessary to fit all photos with the overlap cap.
   const initialWidth = Math.min(150, usableW / Math.max(1, Math.sqrt(count * usableW / usableH) * .90),
     Math.sqrt(usableW * usableH / (count * 1.35 * .83)));
