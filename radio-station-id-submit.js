@@ -29,7 +29,7 @@ form.addEventListener('submit',async e=>{
  try{const uid=user.uid,nonce=Date.now()+'-'+Math.random().toString(36).slice(2,10);
  const path='station-id-submissions/'+uid+'/station-id-'+nonce+'.'+ext;
  await uploadBytes(ref(storage,path),file,{contentType:allowedTypes[ext]});
- await addDoc(collection(db,'radioStationIdSubmissions'),{submittedByUid:uid,personName:name,artist:band,title:'Station ID - '+name+' - '+band,customTitle:title,durationSeconds:Math.round(seconds*100)/100,audioStoragePath:path,status:'pending',submittedAt:serverTimestamp()});
+ await addDoc(collection(db,'radioStationIdSubmissions'),{submittedByUid:uid,personName:name,artist:band,title:title==='Station ID'?'Station ID - '+name+' - '+band:title,customTitle:title,durationSeconds:Math.round(seconds*100)/100,audioStoragePath:path,status:'pending',submittedAt:serverTimestamp()});
  form.reset();status.textContent='Station ID submitted! It will appear in the admin approval queue.';document.getElementById('stationTitle').value='Station ID';
  }catch(err){console.error(err);status.textContent='Submission not completed: '+err.message;}finally{send.disabled=false;}
 });
