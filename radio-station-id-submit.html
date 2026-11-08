@@ -10,9 +10,9 @@
 <form id="stationSubmitForm" class="hidden">
 <label>Your name<input id="personName" maxlength="100" required autocomplete="name"></label>
 <label>Band name<input id="bandName" maxlength="100" required></label>
-<label>Station ID title<input id="stationTitle" maxlength="100" placeholder="Station ID" value="Station ID" required></label>
+<label>Station ID title (automatic)<input id="stationTitle" maxlength="220" value="Station ID" readonly aria-readonly="true"></label>
 <label>Station ID recording<input id="stationAudio" type="file" accept=".mp3,.m4a,.wav,.aac,audio/mpeg,audio/mp4,audio/wav,audio/aac" required></label>
 <p class="note">MP3, M4A, WAV or AAC; up to 25 MB and 60 seconds. Your recording will be reviewed before it is added to the library.</p>
 <label><input id="stationRights" type="checkbox" required style="display:inline;width:auto"> I own this recording or have permission to submit it, and authorize BANDtroductions to store, broadcast and promote it. I understand approval and airplay are not guaranteed.</label>
 <button id="stationSend" type="submit">Submit Station ID for Review</button><p id="stationStatus" role="status" aria-live="polite"></p>
-</form></div></main><script type="module" src="radio-station-id-submit.js?v=1"></script></body></html>
+</form></div></main><script type="module" src="radio-station-id-submit.js?v=2"></script></body></html>
