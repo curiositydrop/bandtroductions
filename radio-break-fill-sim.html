@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Break fill preview | BANDtroductions Radio</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 16px/1.45 Arial, Helvetica, sans-serif; background: #070909; color: #eee; }
+    main { width: min(100%, 640px); margin: 0 auto; padding: 16px; }
+    h1 { font-size: 1.6rem; line-height: 1.1; margin: 0 0 8px; }
+    h1 span, h2 { color: #0ccfbd; }
+    p { margin: 0 0 12px; color: #c9d4d3; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+    button, input { font: inherit; }
+    button { min-height: 44px; padding: 8px 12px; border-radius: 8px; border: 1px solid #315650; background: #10201e; color: #fff; }
+    button[aria-pressed="true"] { background: #0ccfbd; color: #04120f; border-color: #0ccfbd; }
+    input[type="range"] { width: 100%; min-height: 44px; }
+    #sim-readout { border: 1px solid #315650; border-radius: 12px; padding: 12px; background: #0b0e0e; }
+    #sim-readout strong { color: #fff; }
+    audio { width: 100%; margin-top: 8px; }
+    #cr-radio-body { margin-top: 20px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>BANDtroductions <span>break fill</span></h1>
+  <p>Preview only. This page writes nothing. Paid-ad time plays the sample New Leaf spot. Leftover seconds play the station bed and stop when the simulated minute ends.</p>
+  <div class="row" role="group" aria-label="Ad load">
+    <button type="button" id="sim-ads-0" aria-pressed="true">0 ads</button>
+    <button type="button" id="sim-ads-1">1 ad · 18s</button>
+    <button type="button" id="sim-ads-2">2 ads · 45s</button>
+    <button type="button" id="sim-ads-full">Ads fill 60s</button>
+  </div>
+  <label for="sim-slider">Position in the 60-second break <output id="sim-slider-label">0.0s</output></label>
+  <input id="sim-slider" type="range" min="0" max="60" value="0" step="0.1">
+  <div class="row">
+    <button type="button" id="sim-apply">Preview this moment</button>
+    <button type="button" id="sim-play">Play from here</button>
+  </div>
+  <div id="sim-readout">
+    <div>Phase: <strong id="sim-phase" data-phase="fill">fill</strong></div>
+    <div>Clock: <strong id="sim-clock" data-offset="0">0.0s</strong></div>
+    <div>Bed position: <strong id="sim-clip" data-clip="0">0.0s</strong></div>
+    <div>Volume: <strong id="sim-volume" data-volume="1">100%</strong></div>
+    <div id="sim-note">Bed covers the whole minute.</div>
+  </div>
+  <audio id="sim-audio" playsinline webkit-playsinline preload="auto"></audio>
+  <h2>Control Room</h2>
+  <p>The section below is the real fill-bed manager. On this page it cannot upload or save.</p>
+  <div id="cr-radio-body"></div>
+</main>
+<script type="module" src="radio-break-fill-sim.js?v=1"></script>
+<script type="module" src="radio-break-fill-manager.js?v=1"></script>
+</body>
+</html>

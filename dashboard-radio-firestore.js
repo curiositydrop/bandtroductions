@@ -1,6 +1,7 @@
 import { db as devDb } from './firebase-dev.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak, withPreviewTestBreak } from './radio-schedule-engine.js?v=6';
+import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak, withPreviewTestBreak, betweenShowGap, previewBreakOffset, previewDemoAdSeconds } from './radio-schedule-engine.js?v=7';
+import { currentBreakFill, syncBreakFillAudio, clearBreakFillAudio } from './radio-break-fill.mjs';
 
 const oldPanel=document.querySelector('.radio-panel');
 if(!oldPanel)throw new Error('Radio panel not found');
@@ -109,15 +110,25 @@ let autoplayAttemptedKey='';
 const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]));
 const eqBars=()=>Array.from({length:13},()=>'<span></span>').join('');
 
+function sponsorConfig(){return effectiveSponsorBreak(stationSettings);}
 function currentBreak(){
   if(!stationEnabled)return null;
-  const c=effectiveSponsorBreak(stationSettings);
+  const c=sponsorConfig();
   return withPreviewTestBreak(sponsorBreak(playlists,c),c);
+}
+function currentFill(date=new Date()){
+  const c=sponsorConfig();
+  const preview=previewBreakOffset(date);
+  if(preview!=null){
+    const now=easternClock(date);
+    return currentBreakFill({stationEnabled,sponsorConfig:c,fillConfig:stationSettings.breakFill,previewOffset:preview,previewAdSeconds:previewDemoAdSeconds(c),previewNextStart:(now.minutes+1)%1440});
+  }
+  return currentBreakFill({stationEnabled,sponsorConfig:c,fillConfig:stationSettings.breakFill,gap:betweenShowGap(playlists,date)});
 }
 
 function state(){
   if(!stationEnabled)return null;
-  if(currentBreak())return null;
+  if(currentBreak()||currentFill())return null;
   const p=activePlaylist(playlists);
   if(!p)return null;
   const pos=playlistPosition(p);
@@ -148,8 +159,27 @@ function breakMarkup(b){
 
 // Sponsor audio plays through the same <audio> element as the music (already unlocked by the
 // LISTEN tap), so iPhone plays it with no extra tap. The video stays muted for visuals only.
+function fillMarkup(fill){
+  const next=`${formatMinutes(fill.nextStartMinutes)} · ${fill.nextShow}`;
+  return `<div class="radio"><div class="radio-box bt-radio-box bt-radio-on-fill">
+    <div class="bt-radio-status-row"><span class="bt-radio-status live">● ON AIR</span></div>
+    <div class="bt-radio-art-row"><img class="bt-radio-art" src="${RADIO_LOGO}" alt="BANDtroductions Radio"><img class="bt-radio-logo" src="${RADIO_LOGO}" alt="BANDtroductions Radio"></div>
+    <div class="bt-radio-info"><div class="bt-radio-now">STATION BREAK</div>
+    <div class="bt-radio-track">BANDtroductions Radio</div>
+    <div class="bt-radio-playlist">Music bed until the next show</div></div>
+    <div class="bt-radio-next"><div class="bt-radio-next-label">UP NEXT</div><div class="bt-radio-next-name">${esc(next)}</div></div>
+    <div class="bt-radio-eq" aria-hidden="true">${eqBars()}</div>
+    <button type="button" class="btn primary bt-radio-listen">${userUnmuted?'🔇 MUTE':'🔊 LISTEN NOW'}</button>
+    ${actions()}
+  </div></div>`;
+}
+function playFillAudio(fill){
+  ensureAudio();
+  syncBreakFillAudio(audio,fill,{shouldPlay:true,muted:!userUnmuted,current:currentFill});
+}
 function playBreakAudio(b){
   ensureAudio();
+  clearBreakFillAudio(audio);
   audio.muted=!userUnmuted;
   if(currentKey!==b.key){currentKey=b.key;autoplayAttemptedKey='';audio.src=b.audioUrl;audio.load();
     audio.addEventListener('loadedmetadata',()=>{const f=currentBreak();if(f&&f.key===b.key){try{audio.currentTime=f.offsetSeconds;}catch{}if(f.clipPlaying)audio.play().catch(()=>{});}},{once:true});
@@ -197,9 +227,13 @@ function playerMarkup(s){
 let lastRenderedMarkup='';
 function render(){
   const b=currentBreak();
-  const s=b?null:state();
-  const markup='<h3><span class="bt-radio-heading-brand">BANDtroductions</span> <span class="bt-radio-heading-title">Radio</span></h3>'+(b?breakMarkup(b):playerMarkup(s));
-  if(b&&markup===lastRenderedMarkup&&panel.querySelector('.bt-radio-listen')){syncBreakVideo(b);return;}
+  const fill=currentFill();
+  const adPlaying=!!(b&&b.clipPlaying);
+  const s=adPlaying||fill||b?null:state();
+  const body=adPlaying||(b&&!fill)?breakMarkup(b):fill?fillMarkup(fill):playerMarkup(s);
+  const markup='<h3><span class="bt-radio-heading-brand">BANDtroductions</span> <span class="bt-radio-heading-title">Radio</span></h3>'+body;
+  if(fill&&!adPlaying&&markup===lastRenderedMarkup&&panel.querySelector('.bt-radio-listen')){playFillAudio(fill);return;}
+  if(adPlaying&&markup===lastRenderedMarkup&&panel.querySelector('.bt-radio-listen')){syncBreakVideo(b);return;}
   // Skip the 1s rebuild when nothing changed so the artwork/logo <img> nodes stay stable (iOS Safari repaints them on every replacement).
   if(markup===lastRenderedMarkup&&panel.querySelector('.bt-radio-listen'))return;
   lastRenderedMarkup=markup;
@@ -210,16 +244,28 @@ function render(){
     const keep=previousImages.find(old=>old.className===img.className&&old.getAttribute('src')===img.getAttribute('src'));
     if(keep){keep.alt=img.alt;img.replaceWith(keep);}
   });
-  if(b){
+  if(adPlaying||(b&&!fill)){
     panel.querySelector('.bt-radio-listen')?.addEventListener('click',()=>{
       userUnmuted=!userUnmuted;if(userUnmuted)window.btTrack&&window.btTrack('radio_listen',{player:'home_card'});
       const v=panel.querySelector('video.bt-radio-ad');
       const cb=currentBreak();
-      if(cb&&cb.audioUrl){ensureAudio();audio.muted=!userUnmuted;if(userUnmuted&&cb.clipPlaying)audio.play().catch(()=>{});}
+      if(cb&&cb.audioUrl){ensureAudio();audio.muted=!userUnmuted;clearBreakFillAudio(audio);if(userUnmuted&&cb.clipPlaying)audio.play().catch(()=>{});}
       else if(v){v.muted=!userUnmuted;if(userUnmuted&&cb?.clipPlaying)v.play().catch(()=>{});}
       lastRenderedMarkup='';render();
     });
     syncBreakVideo(b);
+    return;
+  }
+  if(fill){
+    panel.querySelector('.bt-radio-listen')?.addEventListener('click',()=>{
+      userUnmuted=!userUnmuted;if(userUnmuted)window.btTrack&&window.btTrack('radio_listen',{player:'home_card'});
+      ensureAudio();
+      audio.muted=!userUnmuted;
+      const fresh=currentFill();
+      if(fresh)syncBreakFillAudio(audio,fresh,{shouldPlay:true,muted:!userUnmuted,current:currentFill});
+      lastRenderedMarkup='';render();
+    });
+    playFillAudio(fill);
     return;
   }
   panel.querySelector('.bt-radio-listen:not([disabled])')?.addEventListener('click',async()=>{
@@ -263,7 +309,9 @@ async function tryMutedAutoplay(key){
 
 async function synchronize(forcePlay=false){
   const br=currentBreak();
-  if(br){
+  const fill=currentFill();
+  if(br&&br.clipPlaying){
+    if(audio)clearBreakFillAudio(audio);
     // Sponsor break with audioUrl: syncBreakVideo plays the ad sound on this same audio element.
     if(br.audioUrl)return;
     // Otherwise: music pauses; the clip's own audio plays (if the listener tapped LISTEN).
@@ -271,6 +319,17 @@ async function synchronize(forcePlay=false){
     currentKey='';autoplayAttemptedKey='';
     return;
   }
+  if(fill){
+    playFillAudio(fill);
+    currentKey=fill.key;
+    return;
+  }
+  if(br){
+    if(audio){clearBreakFillAudio(audio);if(!audio.paused)audio.pause();}
+    currentKey='';autoplayAttemptedKey='';
+    return;
+  }
+  if(audio)clearBreakFillAudio(audio);
   const s=state();
   if(!s){
     if(audio){audio.pause();audio.removeAttribute('src');audio.load();}
@@ -335,7 +394,30 @@ onSnapshot(collection(devDb,'radioPlaylists'),snap=>{
   panel.innerHTML='<h3><span class="bt-radio-heading-brand">BANDtroductions</span> <span class="bt-radio-heading-title">Radio</span></h3><div class="radio"><div class="radio-box bt-radio-box"><div class="bt-radio-status-row"><span class="bt-radio-status off">OFF AIR</span></div><div style="color:#999;text-align:center">Schedule unavailable. Please refresh and try again.</div></div></div>';
 });
 
+let fillBoundary=0;
+function stopFillIfMinuteEnded(){
+  if(currentFill()||!audio?.dataset.breakFillUrl)return false;
+  audio.pause();
+  clearBreakFillAudio(audio);
+  currentKey='';
+  return true;
+}
+function armFillBoundary(){
+  clearTimeout(fillBoundary);
+  if(!currentFill())return;
+  const ms=60000-(Date.now()%60000);
+  fillBoundary=setTimeout(()=>{
+    if(currentFill()){armFillBoundary();return;}
+    if(stopFillIfMinuteEnded()){lastRenderedMarkup='';render();synchronize(false);}
+  },ms);
+}
+setInterval(()=>{
+  if(stopFillIfMinuteEnded()){lastRenderedMarkup='';render();synchronize(false);return;}
+  const fill=currentFill();
+  if(fill&&audio)syncBreakFillAudio(audio,fill,{shouldPlay:true,muted:!userUnmuted,current:currentFill});
+},100);
 setInterval(()=>{
   render();
   synchronize(false);
+  armFillBoundary();
 },1000);

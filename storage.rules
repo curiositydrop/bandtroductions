@@ -126,7 +126,12 @@ service firebase.storage {
                     && isVerifiedAdmin();
     }
 
-    /* Admin-only between-show advertising media. Public playback, verified admin uploads. */
+    /* Admin-only between-show advertising media. Public playback, verified admin uploads.
+       Break-fill beds use this same folder. MP3, M4A (including iPhone Voice Memos
+       uploaded as audio/mp4), and WAV already match the live rules.
+       AAC (audio/aac, audio/x-aac) and the extra WAV types below are in the repo
+       only until Mike approves a Storage rules deploy. Do not deploy rules from
+       the break-fill preview. */
     match /between-show-ads/{userId}/{fileName} {
       allow get: if true;
       allow list: if isVerifiedAdmin();
@@ -138,7 +143,7 @@ service firebase.storage {
                       (request.resource.size <= 40 * 1024 * 1024
                        && request.resource.contentType == 'video/mp4')
                       || (request.resource.size <= 15 * 1024 * 1024
-                       && request.resource.contentType.matches('audio/(mpeg|mp4|x-m4a|m4a|wav)'))
+                       && request.resource.contentType.matches('audio/(mpeg|mp4|x-m4a|m4a|wav|x-wav|wave|aac|x-aac)'))
                       || (request.resource.size <= 10 * 1024 * 1024
                        && request.resource.contentType.matches('image/(jpeg|png|webp)'))
                     );

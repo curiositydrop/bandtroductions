@@ -1,4 +1,5 @@
 import { planCommercialBreak, commercialAtOffset } from './radio-break-planner.mjs';
+import { paidAdSeconds } from './radio-break-fill.mjs';
 import './radio-control-room-ux-fix.js?v=1';
 
 export const RADIO_TIMEZONE='America/New_York';
@@ -105,10 +106,9 @@ function isFiller(p){
   return len>=1439;
 }
 function dayList(p){return Array.isArray(p.days)&&p.days.length?p.days:['every'];}
-export function sponsorBreak(playlists,config,date=new Date()){
-  if(!config||config.active!==true)return null;
-  const multiAd=Array.isArray(config.ads);
-  if(!multiAd&&!(config.videoUrl||config.posterUrl||config.audioUrl))return null;
+// A between-show gap: one real show ends this minute and another starts the next minute.
+// Full-day filler playlists (the Rotation) are not shows. Returns null outside that minute.
+export function betweenShowGap(playlists,date=new Date()){
   const now=easternClock(date);
   const day=now.weekday.toLowerCase().slice(0,3);
   const shows=Object.entries(playlists||{}).map(([id,p])=>({id,...p}))
@@ -130,18 +130,38 @@ export function sponsorBreak(playlists,config,date=new Date()){
     const d=dayList(p);return d.includes('every')||d.includes(nextDay);
   });
   if(!next)return null;
-  const offsetSeconds=now.second;
+  return {
+    offsetSeconds:now.second,
+    // Eastern offsets are whole hours, so the civil minute matches the UTC minute.
+    offsetSecondsExact:(date.getTime()%60000)/1000,
+    day,
+    minute:m,
+    endedId:ended.id,
+    nextId:next.id,
+    endedShow:ended.upNextDisplayName||ended.name||'',
+    nextShow:next.upNextDisplayName||next.name||'',
+    nextStartMinutes:nextMin
+  };
+}
+export function sponsorBreak(playlists,config,date=new Date()){
+  if(!config||config.active!==true)return null;
+  const multiAd=Array.isArray(config.ads);
+  if(!multiAd&&!(config.videoUrl||config.posterUrl||config.audioUrl))return null;
+  const gap=betweenShowGap(playlists,date);
+  if(!gap)return null;
+  const offsetSeconds=gap.offsetSeconds;
   const plan=multiAd?planCommercialBreak(config.ads):null;
   if(multiAd&&(!plan.ok||!plan.slots.length))return null;
   const selected=multiAd?commercialAtOffset(plan,offsetSeconds):null;
   // Preserve the break through its full minute, even after the last ad ends.
   // Otherwise the player can fall back to music during the unfilled seconds.
+  // The fill bed, when enabled, uses that same leftover tail.
   const clip=selected||(multiAd?plan.slots[plan.slots.length-1]:config);
   const clipOffset=selected?selected.offsetSeconds:(multiAd?Number(clip.durationSeconds):offsetSeconds);
   const durationSeconds=Math.max(1,Math.min(60,Number(clip.durationSeconds)||40));
   return {
     type:'sponsorBreak',
-    key:`break|${ended.id}|${next.id}|${day}|${m}${selected?'|'+selected.startSeconds:''}`,
+    key:`break|${gap.endedId}|${gap.nextId}|${gap.day}|${gap.minute}${selected?'|'+selected.startSeconds:''}`,
     sponsorName:String(clip.sponsorName||'Our Sponsor'),
     clickUrl:String(clip.clickUrl||'radio-sponsor.html'),
     videoUrl:String(clip.videoUrl||''),
@@ -150,9 +170,9 @@ export function sponsorBreak(playlists,config,date=new Date()){
     durationSeconds,
     offsetSeconds:clipOffset,
     clipPlaying:!!(!multiAd||selected)&&clipOffset<durationSeconds,
-    endedShow:ended.upNextDisplayName||ended.name||'',
-    nextShow:next.upNextDisplayName||next.name||'',
-    nextStartMinutes:nextMin
+    endedShow:gap.endedShow,
+    nextShow:gap.nextShow,
+    nextStartMinutes:gap.nextStartMinutes
   };
 }
 
@@ -170,17 +190,68 @@ export function effectiveSponsorBreak(stationSettings){
   return staticBreakConfig;
 }
 
-// PREVIEW-ONLY test break. Active only on a Firebase Hosting preview channel host
-// (<site>--<channel>-<hash>.web.app) AND with ?testBreak=1 in the URL. It never runs on
-// bandtroductions.com or the default web.app site and never reads or writes Firestore.
-const PREVIEW_TEST_BREAK=(()=>{try{return /--[a-z0-9-]+\.web\.app$/i.test(location.hostname)&&new URLSearchParams(location.search).get('testBreak')==='1';}catch{return false;}})();
-const TEST_BREAK_START=Date.now()+20000;
+// PREVIEW-ONLY test break. Active on a Firebase Hosting preview channel
+// (<site>--<channel>-<hash>.web.app), or on localhost, AND with ?testBreak=1.
+// Optional &adSeconds=18 (0–60) and &breakOffset=50 seek the simulated minute.
+// It never runs on bandtroductions.com or the default web.app site and never writes.
+function isBreakPreviewHost(hostname){
+  return hostname==='localhost'||hostname==='127.0.0.1'||/--[a-z0-9-]+\.web\.app$/i.test(hostname||'');
+}
+function readPreviewTestQuery(){
+  try{
+    if(!isBreakPreviewHost(location.hostname))return null;
+    const q=new URLSearchParams(location.search);
+    if(q.get('testBreak')!=='1')return null;
+    return q;
+  }catch{return null;}
+}
+const PREVIEW_TEST_QUERY=readPreviewTestQuery();
+const PREVIEW_TEST_BREAK=!!PREVIEW_TEST_QUERY;
+function previewOriginMs(){
+  const raw=Number(PREVIEW_TEST_QUERY?.get('breakOffset'));
+  const into=Number.isFinite(raw)?Math.min(59.5,Math.max(0,raw)):0;
+  const lead=into>0?0:1200;
+  return Date.now()-into*1000+lead;
+}
+const TEST_BREAK_START=PREVIEW_TEST_BREAK?previewOriginMs():0;
+const PREVIEW_FALLBACK_AD={sponsorName:'New Leaf Painting Co.',clickUrl:'https://newleafpaintingco.com',videoUrl:'/assets/ads/new-leaf-ad.mp4',audioUrl:'/assets/ads/new-leaf-ad.m4a',posterUrl:'',durationSeconds:18};
+export function previewBreakOffset(date=new Date()){
+  if(!PREVIEW_TEST_BREAK)return null;
+  const offset=(date.getTime()-TEST_BREAK_START)/1000;
+  if(offset<0||offset>=60)return null;
+  return offset;
+}
+export function previewAdSecondsOverride(){
+  if(!PREVIEW_TEST_BREAK||!PREVIEW_TEST_QUERY.has('adSeconds'))return null;
+  const n=Number(PREVIEW_TEST_QUERY.get('adSeconds'));
+  if(!Number.isFinite(n)||n<0||n>60)return null;
+  return n;
+}
+// Same ad window the fill planner uses during ?testBreak=1. A station with no
+// playable ad still demos the shipped 18s New Leaf spot, then the bed.
+export function previewDemoAdSeconds(config){
+  const override=previewAdSecondsOverride();
+  if(override!=null)return override;
+  const scheduled=paidAdSeconds(config||{});
+  if(scheduled>0)return scheduled;
+  return PREVIEW_TEST_BREAK?18:0;
+}
+function previewBreakMedia(config){
+  if(Array.isArray(config?.ads)){
+    const ad=config.ads.find(item=>item&&item.active!==false&&(item.audioUrl||item.videoUrl||item.posterUrl));
+    if(ad)return ad;
+  }
+  if(config&&(config.audioUrl||config.videoUrl||config.posterUrl))return config;
+  return PREVIEW_FALLBACK_AD;
+}
 export function withPreviewTestBreak(real,config){
-  if(real||!PREVIEW_TEST_BREAK)return real;
-  const c=config||{};if(!(c.videoUrl||c.posterUrl||c.audioUrl))return null;
-  const durationSeconds=Math.max(1,Math.min(60,Number(c.durationSeconds)||40));
-  const offsetSeconds=(Date.now()-TEST_BREAK_START)/1000;
-  if(offsetSeconds<0||offsetSeconds>=durationSeconds+3)return null;
+  if(!PREVIEW_TEST_BREAK)return real;
+  const offsetSeconds=previewBreakOffset();
+  if(offsetSeconds==null)return real;
+  const adSeconds=previewDemoAdSeconds(config);
+  if(!(adSeconds>0))return null;
+  const media=previewBreakMedia(config);
   const now=easternClock();
-  return {type:'sponsorBreak',key:'break|preview-test',sponsorName:String(c.sponsorName||'Our Sponsor'),clickUrl:String(c.clickUrl||'radio-sponsor.html'),videoUrl:String(c.videoUrl||''),audioUrl:String(c.audioUrl||''),posterUrl:String(c.posterUrl||''),durationSeconds,offsetSeconds,clipPlaying:offsetSeconds<durationSeconds,endedShow:'Test',nextShow:'Back to the music',nextStartMinutes:(now.minutes+1)%1440};
+  const clipPlaying=offsetSeconds<adSeconds;
+  return {type:'sponsorBreak',key:'break|preview-test',sponsorName:String(media.sponsorName||'Our Sponsor'),clickUrl:String(media.clickUrl||'radio-sponsor.html'),videoUrl:String(media.videoUrl||''),audioUrl:String(media.audioUrl||''),posterUrl:String(media.posterUrl||''),durationSeconds:adSeconds,offsetSeconds:clipPlaying?offsetSeconds:adSeconds,clipPlaying,endedShow:'Test',nextShow:'Back to the music',nextStartMinutes:(now.minutes+1)%1440};
 }

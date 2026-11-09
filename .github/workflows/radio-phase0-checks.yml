@@ -15,6 +15,11 @@ on:
       - 'tests/radio-break-planner.test.mjs'
       - 'tests/radio-playlist-validation.test.mjs'
       - 'tests/between-show-ad-engine.test.mjs'
+      - 'radio-break-fill.mjs'
+      - 'radio-break-fill-manager.js'
+      - 'radio-page.js'
+      - 'dashboard-radio-firestore.js'
+      - 'tests/radio-break-fill.test.mjs'
       - '.github/workflows/radio-phase0-checks.yml'
 permissions:
   contents: read
@@ -26,8 +31,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check radio-playlist-save-fix.js && node --check radio-schedule-engine.js && node --check radio-playlist-validation.mjs && node --check radio-break-planner.mjs && node --check radio-two-ad-editor.js && node --check radio-station-id-tools.mjs && node --check radio-station-id-library.js && node --check control-room-radio-v2.js
-      - run: node --test tests/radio-playlist-validation.test.mjs tests/radio-break-planner.test.mjs tests/radio-station-id-tools.test.mjs
+      - run: node --check radio-playlist-save-fix.js && node --check radio-schedule-engine.js && node --check radio-playlist-validation.mjs && node --check radio-break-planner.mjs && node --check radio-two-ad-editor.js && node --check radio-station-id-tools.mjs && node --check radio-station-id-library.js && node --check control-room-radio-v2.js && node --check radio-break-fill.mjs && node --check radio-break-fill-manager.js && node --check radio-break-fill-sim.js && node --check radio-page.js && node --check dashboard-radio-firestore.js
+      - run: node --test tests/radio-playlist-validation.test.mjs tests/radio-break-planner.test.mjs tests/radio-station-id-tools.test.mjs tests/radio-break-fill.test.mjs
       - run: node tests/between-show-ad-engine.test.mjs
       - name: Verify Control Room integration
         run: grep -q 'radio-two-ad-editor.js' admin.html && grep -q 'radio-station-id-library.js' admin.html && grep -q 'uploadBytes' radio-station-id-library.js && grep -q 'audioDuration' radio-station-id-library.js && grep -q 'Preview is read-only' radio-two-ad-editor.js
