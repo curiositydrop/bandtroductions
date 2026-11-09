@@ -56,10 +56,13 @@ onAuthStateChanged(auth,async current=>{
  }catch(e){console.error(e)}
 });
 
+let showPublishInProgress=false;
+let showPublishSucceeded=false;
 $('publish-event').addEventListener('click',async()=>{
- if(!user)return;
+ if(!user||showPublishInProgress||showPublishSucceeded)return;
  const title=$('event-title').value.trim(),date=$('event-date').value;
  if(!title||!date){$('event-status').textContent='Event title and date are required.';return}
+ showPublishInProgress=true;
  const button=$('publish-event');button.disabled=true;$('event-status').textContent='Publishing show…';
  const details=$('event-details').value.trim(),venue=$('event-venue').value.trim(),location=$('event-location').value.trim();
  const summary=[title,venue&&`at ${venue}`,location&&`in ${location}`].filter(Boolean).join(' ');
@@ -90,9 +93,10 @@ $('publish-event').addEventListener('click',async()=>{
    createdAt:serverTimestamp(),
    updatedAt:serverTimestamp()
   });
-  $('event-status').textContent='Show posted. It will appear in Social and Upcoming Shows.';
+  showPublishSucceeded=true;
+  $('event-status').textContent='Show posted. It will appear in Social and Upcoming Shows. To post another show, reopen this page.';
  }catch(e){console.error(e);$('event-status').textContent=e.code==='permission-denied'?'Post permissions blocked the event.':'The show could not be published.'}
- finally{button.disabled=false}
+ finally{showPublishInProgress=false;button.disabled=showPublishSucceeded}
 });
 </script>
 </body>
