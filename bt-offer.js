@@ -3,8 +3,7 @@
 export const PROMO_ENDS_AT = '2026-12-31T23:59:59-05:00';
 export const PROMO_DEADLINE_MS = Date.parse(PROMO_ENDS_AT);
 export const PROMO_CHECKOUT_URL = 'https://buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g';
-// Fill this with the post-promo Stripe Payment Link. Empty means checkout stays closed after the deadline.
-export const STANDARD_CHECKOUT_URL = '';
+export const STANDARD_CHECKOUT_URL = 'https://buy.stripe.com/9B6dR23K6ccaevL6yv6oo0h';
 export const PLAN_ID = 'website-merch';
 export const PLAN_PRICE = 15;
 export const PAUSED_MESSAGE = 'Upgrades are paused for a moment. Contact us.';
@@ -25,9 +24,22 @@ export function resolveNow(now = new Date(), loc) {
   if (!isPreviewHost(host)) return now;
   let stamp = '';
   try { stamp = new URLSearchParams(String(loc?.search || '')).get('bt_now') || ''; } catch { stamp = ''; }
-  if (!stamp) return now;
-  const parsed = new Date(stamp);
-  return Number.isNaN(parsed.getTime()) ? now : parsed;
+  const storage = globalThis.sessionStorage;
+  if (stamp) {
+    const parsed = new Date(stamp);
+    if (!Number.isNaN(parsed.getTime())) {
+      try { storage?.setItem('bt_now', stamp); } catch {}
+      return parsed;
+    }
+  }
+  try {
+    const saved = storage?.getItem('bt_now') || '';
+    if (saved) {
+      const parsed = new Date(saved);
+      if (!Number.isNaN(parsed.getTime())) return parsed;
+    }
+  } catch {}
+  return now;
 }
 
 export function currentOffer(now = new Date(), loc = globalThis.location) {
@@ -51,9 +63,9 @@ export function currentOffer(now = new Date(), loc = globalThis.location) {
     value: PLAN_PRICE,
     label: 'Band Website + Merch',
     heading: '$15/month',
-    text: '$15/month.',
+    text: '$15/month. Cancel anytime.',
     ends: '',
-    short: '$15/month.'
+    short: '$15/month. Cancel anytime.'
   };
 }
 

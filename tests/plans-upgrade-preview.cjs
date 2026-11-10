@@ -298,6 +298,39 @@ async function overflow(page) {
       await returning.page.locator('#upgrade-card').waitFor({ state: 'visible' });
       assert.equal(returning.page.url().includes('profile.html'), false);
       await returning.context.close();
+
+      const standard = await openPhone(browser, base, prepare);
+      const standardEvents = [];
+      await standard.page.exposeFunction('__recordCheckout', (name, params) => { standardEvents.push({ name, params }); });
+      await standard.page.goto(`${base}/plans.html?bt_now=2027-01-01T00:00:01-05:00`, { waitUntil: 'domcontentloaded' });
+      await standard.page.waitForFunction(() => document.documentElement.dataset.upgradeState === 'eligible');
+      const standardPlans = await standard.page.locator('#launch-offer').innerText();
+      assert.match(standardPlans, /\$15\/month\. Cancel anytime\./);
+      assert.equal(/FREE|activation fee|paused/i.test(standardPlans), false);
+      await standard.page.locator('#upgrade-account-link').click();
+      await standard.page.waitForURL(/website\.html\?id=band-owner$/, { waitUntil: 'domcontentloaded' });
+      await standard.page.locator('#upgrade-card').waitFor({ state: 'visible' });
+      assert.match(await standard.page.locator('#offer-detail').innerText(), /\$15\/month\. Cancel anytime\./);
+      assert.equal(/FREE|activation fee/i.test(await standard.page.locator('#offer-detail').innerText()), false);
+      await standard.page.evaluate(() => {
+        const original = window.btTrack;
+        window.btTrack = function(name, params) {
+          window.__recordCheckout(name, params);
+          return original.apply(this, arguments);
+        };
+      });
+      await standard.page.locator('#seller-agreement').check();
+      await standard.page.locator('#upgrade-button').click();
+      await standard.page.waitForURL(/buy\.stripe\.com\/9B6dR23K6ccaevL6yv6oo0h/, { waitUntil: 'domcontentloaded' });
+      const standardCheckout = new URL(standard.state.stripe[0]);
+      assert.equal(standardCheckout.origin + standardCheckout.pathname, 'https://buy.stripe.com/9B6dR23K6ccaevL6yv6oo0h');
+      assert.equal(standardCheckout.searchParams.get('client_reference_id'), 'band-owner');
+      assert.equal(standardCheckout.searchParams.get('prefilled_email'), 'band@example.com');
+      const checkouts = standardEvents.filter(event => event.name === 'begin_checkout');
+      assert.equal(checkouts.length, 1);
+      assert.equal(checkouts[0].params.plan, 'website-merch');
+      assert.equal(checkouts[0].params.value, 15);
+      await standard.context.close();
     }
 
     {
