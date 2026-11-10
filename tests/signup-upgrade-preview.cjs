@@ -34,7 +34,7 @@ function staticChecks() {
     'Merch storefront listed in the Merch Hub',
     'Shows, booking, music, photos and videos',
     'Your existing profile information carries over automatically',
-    'Pay just $15 for your first month. Months 2 and 3 are FREE, then just $15/month. Offer ends December 31, 2026.'
+    '$15/month. Cancel anytime.'
   ]) {
     assert.equal(signup.includes(benefit), true, benefit);
   }

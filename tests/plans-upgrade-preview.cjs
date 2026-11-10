@@ -331,6 +331,22 @@ async function overflow(page) {
       assert.equal(checkouts[0].params.plan, 'website-merch');
       assert.equal(checkouts[0].params.value, 15);
       await standard.context.close();
+
+      const merchAfter = await openPhone(browser, base);
+      await merchAfter.page.goto(`${base}/merch.html?bt_now=2027-01-01T00:00:01-05:00`, { waitUntil: 'domcontentloaded' });
+      await merchAfter.page.waitForFunction(() => document.getElementById('merch-offer-detail').textContent.includes('Cancel anytime'));
+      const merchDetail = await merchAfter.page.locator('#merch-offer-detail').innerText();
+      assert.equal(merchDetail, '$15/month. Cancel anytime.');
+      assert.equal(/free|2 months|launch offer|activation fee/i.test(merchDetail), false);
+      assert.equal(await merchAfter.page.locator('#merch-offer-price').innerText(), '$15');
+      await merchAfter.context.close();
+
+      const merchDuring = await openPhone(browser, base);
+      await merchDuring.page.goto(`${base}/merch.html`, { waitUntil: 'domcontentloaded' });
+      await merchDuring.page.waitForFunction(() => /FREE/.test(document.getElementById('merch-offer-detail').textContent));
+      assert.match(await merchDuring.page.locator('#merch-offer-detail').innerText(), /Months 2 and 3 are FREE/);
+      assert.equal(await merchDuring.page.locator('#merch-offer-price').innerText(), '$15 TODAY');
+      await merchDuring.context.close();
     }
 
     {

@@ -105,9 +105,10 @@ test('eligible owners go to website checkout and other roles do not', () => {
 test('plans page sells the existing offer and only tracked upgrade intent', () => {
   assert.match(plans, /Your band’s official website, without building one\./);
   assert.match(plans, /\$15 <small>\/ month<\/small>/);
-  assert.match(plans, /Get 2 Months FREE!/);
-  assert.match(plans, /Pay just \$15 for your first month\. Months 2 and 3 are FREE, then just \$15\/month\./);
-  assert.match(plans, /Offer ends December 31, 2026\./);
+  assert.match(plans, /Get your band's official website plus a merch store for \$15\/month\. Free accounts stay free\./);
+  assert.equal(/months two and three free|Months 2 and 3 are FREE|Get 2 Months FREE/i.test(plans), false);
+  assert.match(plans, /\$15\/month\. Cancel anytime\./);
+  assert.match(fs.readFileSync(new URL('../bt-offer.js', import.meta.url), 'utf8'), /Get 2 Months FREE!/);
   assert.match(plans, /Band Website \+ Merch/);
   assert.equal(plans.includes('custom-domain'), false);
   assert.equal(plans.includes('custom domain'), false);

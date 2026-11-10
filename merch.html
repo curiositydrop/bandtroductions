@@ -72,7 +72,7 @@
       <section id="selected-store" class="section-card market-section" hidden aria-live="polite"><div id="selected-store-head" class="store-head"></div><div id="selected-store-intro" class="store-intro"></div><div id="selected-product-grid" class="product-grid"></div></section>
 
       <section id="sell-merch" class="section-card market-section" aria-labelledby="seller-title">
-        <div class="seller-intro"><div><p class="eyebrow">For Bands &amp; Musicians</p><h2 id="seller-title">PUT YOUR MERCH IN THE MARKETPLACE.</h2><p>Upgrade your free artist profile to a full website plus a branded merch storefront, product grid, images, and direct purchase links. BANDtroductions takes no percentage of your sales.</p></div><div class="price-block"><strong>$15 TODAY</strong><span>WEBSITE + MERCH</span><small>Includes your first month. Your next 2 months are free, then $15/month. Cancel anytime.</small></div></div>
+        <div class="seller-intro"><div><p class="eyebrow">For Bands &amp; Musicians</p><h2 id="seller-title">PUT YOUR MERCH IN THE MARKETPLACE.</h2><p>Upgrade your free artist profile to a full website plus a branded merch storefront, product grid, images, and direct purchase links. BANDtroductions takes no percentage of your sales.</p></div><div class="price-block"><strong id="merch-offer-price">$15</strong><span>WEBSITE + MERCH</span><small id="merch-offer-detail">$15/month. Cancel anytime.</small></div></div>
         <div id="owner-panel" class="owner-panel"><h3>Artist Store Access</h3><p id="owner-summary">Log in with the account that owns your band or musician profile, or create an artist account to begin.</p><div id="owner-actions"><a class="button primary" href="login.html?returnTo=merch.html">LOGIN / CREATE ACCOUNT</a></div><p id="owner-message" class="owner-message" role="status"></p>
           <form id="store-form" class="merch-form store-form" hidden>
             <label>Store contact email<input id="store-contact-email" type="email" maxlength="200" required placeholder="artist@example.com"></label>
@@ -104,6 +104,14 @@
     <footer>© BANDtroductions · <a href="about.html">About BANDtroductions</a> · <a href="index.html">Back to Community</a></footer>
   </div>
   <script src="global-header-v2.js?v=1"></script>
+  <script type="module">
+    import { PAUSED_MESSAGE, currentOffer } from './bt-offer.js';
+    const offer = currentOffer();
+    const price = document.getElementById('merch-offer-price');
+    const detail = document.getElementById('merch-offer-detail');
+    if (price) price.textContent = offer.promo ? '$15 TODAY' : '$15';
+    if (detail) detail.textContent = offer.paused ? PAUSED_MESSAGE : offer.short;
+  </script>
   <script type="module" src="merch.js?v=17"></script>
 </body>
 </html>
