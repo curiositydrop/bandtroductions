@@ -18,7 +18,10 @@ import {
   clearBreakFillAudio,
   releaseFillAudio,
   isApprovedFillUrl,
-  fillBlockedByFailure
+  fillBlockedByFailure,
+  configuredBreakAds,
+  planPaidAdPlayback,
+  assessAdPublish
 } from '../radio-break-fill.mjs';
 
 const STORAGE = 'https://firebasestorage.googleapis.com/v0/b/bandtroductions-dev.firebasestorage.app/o/between-show-ads%2Fadmin%2Fpromo.m4a?alt=media&token=abc';
@@ -295,6 +298,103 @@ test('save cannot enable a bed without an approved upload', () => {
   assert.equal(off.breakFill.enabled, false);
   assert.equal(isApprovedFillUrl(off.breakFill.audioUrl), true);
   assert.equal(planBreakFillSave({ enabled: false, existing: { audioUrl: '/assets/radio/break-fill-default.wav' } }).breakFill.audioUrl, '');
+});
+
+test('a longer playable file is not cut at the typed duration when it fits in 60s', () => {
+  const longer = { durationSeconds: 10, audioUrl: '/ads/long.m4a', sponsorName: 'Longer' };
+  const before = JSON.stringify(longer);
+  const during = planPaidAdPlayback({ ads: [longer], actualDurations: [25], breakOffset: 12 });
+  assert.equal(during.phase, 'ad');
+  assert.equal(during.promiseFullPlay, true);
+  assert.equal(during.allowFill, false);
+  assert.equal(during.loop, false);
+  assert.equal(during.localOffset, 12);
+  const finished = planPaidAdPlayback({ ads: [longer], actualDurations: [25], breakOffset: 25 });
+  assert.equal(finished.phase, 'ads-complete');
+  assert.equal(finished.allowFill, true);
+  assert.equal(finished.fillStartsAt, 25);
+  assert.equal(JSON.stringify(longer), before);
+
+  const two = [{ durationSeconds: 10, audioUrl: '/ads/a.m4a', active: true }, { durationSeconds: 10, audioUrl: '/ads/b.m4a', active: true }];
+  const twoBefore = JSON.stringify(two);
+  const mid = planPaidAdPlayback({ ads: two, actualDurations: [20, 25], breakOffset: 15 });
+  assert.equal(mid.adIndex, 0);
+  assert.equal(mid.promiseFullPlay, true);
+  const second = planPaidAdPlayback({ ads: two, actualDurations: [20, 25], breakOffset: 22 });
+  assert.equal(second.adIndex, 1);
+  assert.equal(second.localOffset, 2);
+  const afterBoth = planPaidAdPlayback({ ads: two, actualDurations: [20, 25], breakOffset: 45 });
+  assert.equal(afterBoth.phase, 'ads-complete');
+  assert.equal(afterBoth.fillStartsAt, 45);
+  assert.equal(JSON.stringify(two), twoBefore);
+
+  const shorter = planPaidAdPlayback({ ads: [{ durationSeconds: 20, audioUrl: '/ads/short.m4a' }], actualDurations: [8], breakOffset: 8 });
+  assert.equal(shorter.phase, 'ads-complete');
+  assert.equal(shorter.fillStartsAt, 8);
+  assert.equal(shorter.loop, false);
+  assert.equal(planPaidAdPlayback({ ads: [{ durationSeconds: 20, audioUrl: '/ads/short.m4a' }], actualDurations: [8], breakOffset: 7 }).phase, 'ad');
+
+  const pending = planPaidAdPlayback({ ads: [longer], actualDurations: [null], breakOffset: 12 });
+  assert.equal(pending.phase, 'ad');
+  assert.equal(pending.reason, 'duration-pending');
+  assert.equal(pending.allowFill, false);
+  const failed = planPaidAdPlayback({ ads: [longer], actualDurations: ['failed'], breakOffset: 12 });
+  assert.equal(failed.reason, 'duration-failed');
+  assert.equal(failed.allowFill, false);
+  assert.equal(failed.loop, false);
+
+  const leaf = JSON.parse(readFileSync('sponsor-break.json', 'utf8'));
+  assert.equal(leaf.durationSeconds, 18);
+  const buf = readFileSync('assets/ads/new-leaf-ad.m4a');
+  const mvhd = buf.indexOf('mvhd');
+  const movieSeconds = buf.readUInt32BE(mvhd + 20) / buf.readUInt32BE(mvhd + 16);
+  assert.ok(Math.abs(movieSeconds - 18.006) < 0.001);
+  for (const playable of [18.005, 18.026666666666667]) {
+    const atInteger = planPaidAdPlayback({ ads: [{ ...leaf, durationSeconds: 18 }], actualDurations: [playable], breakOffset: 18 });
+    assert.equal(atInteger.phase, 'ad');
+    assert.equal(atInteger.promiseFullPlay, true);
+    assert.equal(atInteger.allowFill, false);
+    const justAfter = planPaidAdPlayback({ ads: [{ ...leaf, durationSeconds: 18 }], actualDurations: [playable], breakOffset: playable });
+    assert.equal(justAfter.phase, 'ads-complete');
+    assert.equal(justAfter.fillStartsAt, playable);
+    assert.equal(justAfter.loop, false);
+  }
+  const publishLeaf = assessAdPublish({ ads: [{ ...leaf, active: true }], actualDurations: [18.005] });
+  assert.equal(publishLeaf.ok, true);
+  assert.equal(publishLeaf.promiseFullPlay, true);
+
+  const tooLong = assessAdPublish({
+    ads: [{ active: true, audioUrl: '/ads/a.m4a', durationSeconds: 30 }, { active: true, audioUrl: '/ads/b.m4a', durationSeconds: 30 }],
+    actualDurations: [30.6, 30.6]
+  });
+  assert.equal(tooLong.ok, false);
+  assert.equal(tooLong.reason, 'overfull-actual');
+  assert.equal(tooLong.promiseFullPlay, false);
+  const airTooLong = planPaidAdPlayback({
+    ads: [{ durationSeconds: 30, audioUrl: '/ads/a.m4a' }, { durationSeconds: 30, audioUrl: '/ads/b.m4a' }],
+    actualDurations: [40, 30],
+    breakOffset: 50
+  });
+  assert.equal(airTooLong.promiseFullPlay, false);
+  assert.equal(airTooLong.allowFill, false);
+  assert.equal(airTooLong.phase, 'ad');
+  assert.equal(planPaidAdPlayback({
+    ads: [{ durationSeconds: 30, audioUrl: '/ads/a.m4a' }, { durationSeconds: 30, audioUrl: '/ads/b.m4a' }],
+    actualDurations: [40, 30],
+    breakOffset: 60
+  }).reason, 'next-show');
+  assert.equal(assessAdPublish({
+    ads: [{ active: true, audioUrl: '/ads/a.m4a', durationSeconds: 10 }],
+    actualDurations: [25]
+  }).reason, 'metadata-shorter-than-file');
+  assert.equal(configuredBreakAds({ active: true, ads: [{ active: true, audioUrl: 'a', durationSeconds: 30 }, { active: true, audioUrl: 'b', durationSeconds: 30 }, { active: true, audioUrl: 'c', durationSeconds: 10 }] }).ok, false);
+  assert.equal(planPaidAdPlayback({ ads: [], actualDurations: [], breakOffset: 10 }).reason, 'zero-ads');
+  assert.equal(currentBreakFill({
+    sponsorConfig: { active: true, audioUrl: '/ads/long.m4a', durationSeconds: 10 },
+    fillConfig: null,
+    gap: { offsetSecondsExact: 12, endedShow: 'Early', nextShow: 'Late', nextStartMinutes: 1 },
+    actualAdSeconds: 25
+  }), null);
 });
 
 test('ads are not shortened for the bed, and a bad ad list is left untouched', () => {

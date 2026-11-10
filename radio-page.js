@@ -2,8 +2,8 @@
 // schedule engine as the homepage player. Read-only: never writes to Firestore.
 import { db as devDb } from './firebase-dev.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak, withPreviewTestBreak, betweenShowGap, previewBreakOffset, previewDemoAdSeconds } from './radio-schedule-engine.js?v=7';
-import { currentBreakFill, syncBreakFillAudio, clearBreakFillAudio, releaseFillAudio, fillBlockedByFailure } from './radio-break-fill.mjs?v=20261110-fill-saved-preview';
+import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak, withPreviewTestBreak, betweenShowGap, previewBreakOffset, previewDemoAdSeconds, previewAdSecondsOverride } from './radio-schedule-engine.js?v=7';
+import { currentBreakFill, syncBreakFillAudio, clearBreakFillAudio, releaseFillAudio, fillBlockedByFailure, configuredBreakAds, planPaidAdPlayback, holdPaidAd, noteMeasuredAdDuration, primeAdDuration, actualDurationFor } from './radio-break-fill.mjs?v=20261110-ad-file-length';
 
 const STATION_CONTROL_ID='__stationControl';
 const DEFAULT_COVER='bt-radio-logo-280.webp';
@@ -17,16 +17,30 @@ let playlists={},stationEnabled=true,stationSettings={},loaded=false;
 let audio=null,listening=false,currentKey='',selectedDay='';
 
 function sponsorConfig(){return effectiveSponsorBreak(stationSettings);}
-function currentBreak(){if(!stationEnabled)return null;const c=sponsorConfig();return withPreviewTestBreak(sponsorBreak(playlists,c),c);}
+function paidRun(date=new Date()){
+  if(previewAdSecondsOverride()!=null)return null;
+  const preview=previewBreakOffset(date);
+  const gap=preview==null?betweenShowGap(playlists,date):null;
+  const offset=preview!=null?preview:gap?.offsetSecondsExact;
+  if(offset==null)return null;
+  const parsed=configuredBreakAds(sponsorConfig());
+  if(!parsed.ok||!parsed.ads.length)return null;
+  for(const ad of parsed.ads)if(ad.audioUrl)primeAdDuration(ad.audioUrl);
+  return planPaidAdPlayback({ads:parsed.ads,actualDurations:parsed.ads.map(ad=>ad.audioUrl?actualDurationFor(ad.audioUrl):null),breakOffset:offset});
+}
+function currentBreak(){if(!stationEnabled)return null;const c=sponsorConfig();return holdPaidAd(withPreviewTestBreak(sponsorBreak(playlists,c),c),paidRun())||null;}
 function currentFill(date=new Date()){
+  const run=paidRun(date);
+  if(run&&run.allowFill===false)return null;
   const c=sponsorConfig();
+  const actualAdSeconds=run&&run.allowFill?run.fillStartsAt:null;
   const preview=previewBreakOffset(date);
   if(preview!=null){
     const now=easternClock(date);
-    const previewFill=currentBreakFill({stationEnabled,sponsorConfig:c,fillConfig:stationSettings.breakFill,previewOffset:preview,previewAdSeconds:previewDemoAdSeconds(c),previewNextStart:(now.minutes+1)%1440});
+    const previewFill=currentBreakFill({stationEnabled,sponsorConfig:c,fillConfig:stationSettings.breakFill,previewOffset:preview,previewAdSeconds:previewDemoAdSeconds(c),previewNextStart:(now.minutes+1)%1440,actualAdSeconds});
     return fillBlockedByFailure(audio,previewFill)?null:previewFill;
   }
-  const fill=currentBreakFill({stationEnabled,sponsorConfig:c,fillConfig:stationSettings.breakFill,gap:betweenShowGap(playlists,date)});
+  const fill=currentBreakFill({stationEnabled,sponsorConfig:c,fillConfig:stationSettings.breakFill,gap:betweenShowGap(playlists,date),actualAdSeconds});
   return fillBlockedByFailure(audio,fill)?null:fill;
 }
 // Sponsor audio through the same (already tap-unlocked) <audio> element as the music, so iPhone plays it with no extra tap.
@@ -35,11 +49,11 @@ function playBreakAudio(b){
   ensureAudio();
   clearBreakFillAudio(audio);
   if(currentKey!==b.key){currentKey=b.key;audio.src=b.audioUrl;audio.load();
-    audio.addEventListener('loadedmetadata',()=>{const f=currentBreak();if(f&&f.key===b.key){try{audio.currentTime=f.offsetSeconds;}catch{}if(f.clipPlaying)audio.play().catch(()=>{});}},{once:true});
+    audio.addEventListener('loadedmetadata',()=>{noteMeasuredAdDuration(b.audioUrl,audio.duration);const f=currentBreak();if(f&&f.key===b.key){try{audio.currentTime=f.offsetSeconds;}catch{}if(f.clipPlaying&&!audio.ended)audio.play().catch(()=>{});}},{once:true});
     audio.play().catch(()=>{});return;}
   if(!b.clipPlaying){if(!audio.paused)audio.pause();return;}
   if(audio.readyState>0&&Math.abs((audio.currentTime||0)-b.offsetSeconds)>1.5){try{audio.currentTime=b.offsetSeconds;}catch{}}
-  if(audio.paused&&audio.readyState>0&&(audio.currentTime||0)<(audio.duration||99)-.3)audio.play().catch(()=>{});
+  if(!audio.ended&&audio.paused&&audio.readyState>0&&(audio.currentTime||0)<(audio.duration||99)-.3)audio.play().catch(()=>{});
 }
 function state(){
   if(!stationEnabled||currentBreak()||currentFill())return null;

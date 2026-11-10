@@ -22,6 +22,177 @@ export function breakFillContentType(fileName) {
   return CONTENT_TYPES[ext] || '';
 }
 
+// Active ads in air order. An invalid list (3 ads, overfull configured
+// durations, bad metadata) is not turned into a shorter lineup.
+export function configuredBreakAds(config) {
+  if (!config || config.active !== true) return { ok: true, ads: [] };
+  if (Array.isArray(config.ads)) {
+    const plan = planCommercialBreak(config.ads);
+    if (!plan.ok) return { ok: false, reason: plan.reason, ads: [] };
+    return { ok: true, ads: plan.slots };
+  }
+  if (!(config.audioUrl || config.videoUrl || config.posterUrl)) return { ok: true, ads: [] };
+  return {
+    ok: true,
+    ads: [{ ...config, durationSeconds: Math.max(1, Math.min(BREAK_LENGTH_SECONDS, Number(config.durationSeconds) || 40)) }]
+  };
+}
+
+// File length is the playable length. Configured duration must not end a longer
+// file early. A file shorter than its metadata plays once and does not loop.
+// Unknown or failed measurement does not release the ad to fill.
+// If the real lengths cannot finish inside 60s, full play and the next-show
+// boundary cannot both happen: the result says so and does not invent a cut lineup.
+export function planPaidAdPlayback({ ads = [], actualDurations = [], breakOffset, breakSeconds = BREAK_LENGTH_SECONDS } = {}) {
+  const offset = Number(breakOffset);
+  if (!Number.isFinite(offset)) return { phase: 'none', reason: 'bad-offset', promiseFullPlay: false, allowFill: false, loop: false };
+  if (offset < 0 || offset >= breakSeconds) return { phase: 'break-over', reason: 'next-show', promiseFullPlay: true, allowFill: false, hardStop: breakSeconds, loop: false };
+  if (ads.length > 2) return { phase: 'rejected', reason: 'too-many-ads', promiseFullPlay: false, allowFill: false, loop: false };
+  if (!ads.length) return { phase: 'no-ads', reason: 'zero-ads', promiseFullPlay: true, allowFill: true, fillStartsAt: 0, loop: false };
+
+  const playable = [];
+  let unresolved = false;
+  for (let i = 0; i < ads.length; i++) {
+    const actual = actualDurations[i];
+    if (!ads[i]?.audioUrl) {
+      playable.push(Number(ads[i].durationSeconds));
+      continue;
+    }
+    if (actual === 'failed' || actual == null || !Number.isFinite(Number(actual)) || Number(actual) <= 0) {
+      unresolved = true;
+      playable.push(null);
+      continue;
+    }
+    playable.push(Number(actual));
+  }
+
+  if (unresolved) {
+    let cursor = 0;
+    for (let i = 0; i < ads.length; i++) {
+      if (playable[i] == null) {
+        if (offset >= cursor) {
+          return { phase: 'ad', reason: actualDurations[i] === 'failed' ? 'duration-failed' : 'duration-pending', promiseFullPlay: false, allowFill: false, adIndex: i, ad: ads[i], localOffset: Math.max(0, offset - cursor), loop: false };
+        }
+      } else if (offset < cursor + playable[i]) {
+        return { phase: 'ad', reason: 'playing', promiseFullPlay: false, allowFill: false, adIndex: i, ad: ads[i], localOffset: offset - cursor, loop: false };
+      } else cursor += playable[i];
+    }
+    return { phase: 'ad', reason: 'duration-pending', promiseFullPlay: false, allowFill: false, adIndex: ads.length - 1, ad: ads[ads.length - 1], localOffset: 0, loop: false };
+  }
+
+  const total = playable.reduce((sum, n) => sum + n, 0);
+  if (total > breakSeconds + 1e-6) {
+    let cursor = 0;
+    for (let i = 0; i < ads.length; i++) {
+      const end = cursor + playable[i];
+      if (offset < end) {
+        return { phase: 'ad', reason: 'overfull-actual', ok: false, promiseFullPlay: false, allowFill: false, adIndex: i, ad: ads[i], localOffset: offset - cursor, hardStop: breakSeconds, loop: false };
+      }
+      cursor = end;
+    }
+    return { phase: 'break-over', reason: 'overfull-actual', ok: false, promiseFullPlay: false, allowFill: false, hardStop: breakSeconds, loop: false };
+  }
+
+  let cursor = 0;
+  for (let i = 0; i < ads.length; i++) {
+    const end = cursor + playable[i];
+    if (offset < end - 1e-9) {
+      const configured = Number(ads[i].durationSeconds);
+      return {
+        phase: 'ad',
+        reason: playable[i] + 1e-3 < configured ? 'file-shorter-than-metadata' : 'playing',
+        ok: true,
+        promiseFullPlay: true,
+        allowFill: false,
+        adIndex: i,
+        ad: ads[i],
+        localOffset: offset - cursor,
+        playable: playable[i],
+        fillStartsAt: total,
+        loop: false
+      };
+    }
+    cursor = end;
+  }
+  return { phase: 'ads-complete', reason: 'files-finished', ok: true, promiseFullPlay: true, allowFill: true, fillStartsAt: total, loop: false };
+}
+
+// Save gate. Does not write. A measured total over 60s is rejected whole.
+// A file more than a second longer than its typed duration is rejected rather
+// than stored short. New Leaf's 18.005s file against an integer 18 is inside
+// that one-second tolerance and is not a failed save.
+export function assessAdPublish({ ads, actualDurations } = {}) {
+  const configured = planCommercialBreak(ads);
+  if (!configured.ok) return { ok: false, reason: configured.reason, promiseFullPlay: false };
+  if (!Array.isArray(actualDurations) || actualDurations.length < configured.slots.length) return { ok: false, reason: 'duration-unconfirmed', promiseFullPlay: false };
+  const actuals = [];
+  for (let i = 0; i < configured.slots.length; i++) {
+    const actual = actualDurations[i];
+    if (actual === 'failed' || !Number.isFinite(Number(actual)) || Number(actual) <= 0) return { ok: false, reason: 'duration-unconfirmed', promiseFullPlay: false, index: i };
+    actuals.push(Number(actual));
+  }
+  const total = actuals.reduce((sum, n) => sum + n, 0);
+  if (total > BREAK_LENGTH_SECONDS + 1e-6) return { ok: false, reason: 'overfull-actual', promiseFullPlay: false, total };
+  for (let i = 0; i < actuals.length; i++) {
+    const typed = Number(configured.slots[i].durationSeconds);
+    if (actuals[i] > typed + 1) return { ok: false, reason: 'metadata-shorter-than-file', promiseFullPlay: false, index: i, actual: actuals[i], configured: typed };
+  }
+  return { ok: true, reason: 'fits', promiseFullPlay: true, total };
+}
+
+const measuredAdDurations = new Map();
+const failedAdDurations = new Set();
+const primingAdDurations = new Set();
+
+export function noteMeasuredAdDuration(url, seconds) {
+  if (!url) return;
+  if (!Number.isFinite(seconds) || seconds <= 0 || seconds === Infinity) {
+    failedAdDurations.add(url);
+    return;
+  }
+  failedAdDurations.delete(url);
+  measuredAdDurations.set(url, seconds);
+}
+
+export function actualDurationFor(url) {
+  if (!url) return null;
+  if (failedAdDurations.has(url)) return 'failed';
+  return measuredAdDurations.has(url) ? measuredAdDurations.get(url) : null;
+}
+
+export function primeAdDuration(url) {
+  if (!url || measuredAdDurations.has(url) || failedAdDurations.has(url) || primingAdDurations.has(url)) return;
+  if (typeof Audio === 'undefined') return;
+  primingAdDurations.add(url);
+  const probe = new Audio();
+  probe.preload = 'metadata';
+  probe.playsInline = true;
+  probe.addEventListener('loadedmetadata', () => { noteMeasuredAdDuration(url, probe.duration); primingAdDurations.delete(url); }, { once: true });
+  probe.addEventListener('error', () => { noteMeasuredAdDuration(url, NaN); primingAdDurations.delete(url); }, { once: true });
+  probe.src = url;
+}
+
+export function holdPaidAd(breakObject, run) {
+  if (!breakObject || !run || run.phase !== 'ad') {
+    if (breakObject && run?.phase === 'ads-complete') return { ...breakObject, clipPlaying: false };
+    return breakObject;
+  }
+  const ad = run.ad || {};
+  const sameFile = !ad.audioUrl || ad.audioUrl === breakObject.audioUrl;
+  return {
+    ...breakObject,
+    audioUrl: ad.audioUrl || breakObject.audioUrl,
+    videoUrl: ad.videoUrl ?? breakObject.videoUrl,
+    posterUrl: ad.posterUrl ?? breakObject.posterUrl,
+    sponsorName: ad.sponsorName || breakObject.sponsorName,
+    clickUrl: ad.clickUrl || breakObject.clickUrl,
+    durationSeconds: run.playable || breakObject.durationSeconds,
+    offsetSeconds: run.localOffset,
+    clipPlaying: true,
+    key: sameFile ? breakObject.key : `${breakObject.key}|file${run.adIndex}`
+  };
+}
+
 export function paidAdSeconds(config) {
   if (!config || config.active !== true) return 0;
   if (Array.isArray(config.ads)) {
@@ -162,7 +333,8 @@ export function currentBreakFill({
   gap = null,
   previewOffset = null,
   previewAdSeconds = null,
-  previewNextStart = 0
+  previewNextStart = 0,
+  actualAdSeconds = null
 } = {}) {
   if (!stationEnabled) return null;
   const source = resolveBreakFill(fillConfig);
@@ -172,11 +344,11 @@ export function currentBreakFill({
   let meta = null;
   if (previewOffset != null) {
     offset = previewOffset;
-    adSeconds = Number(previewAdSeconds) || 0;
+    adSeconds = actualAdSeconds == null || !Number.isFinite(Number(actualAdSeconds)) ? (Number(previewAdSeconds) || 0) : Number(actualAdSeconds);
     meta = { endedShow: 'Test', nextShow: 'Back to the music', nextStartMinutes: previewNextStart };
   } else if (gap) {
     offset = gap.offsetSecondsExact;
-    adSeconds = paidAdSeconds(sponsorConfig);
+    adSeconds = actualAdSeconds == null || !Number.isFinite(Number(actualAdSeconds)) ? paidAdSeconds(sponsorConfig) : Number(actualAdSeconds);
     meta = {
       endedShow: gap.endedShow,
       nextShow: gap.nextShow,
