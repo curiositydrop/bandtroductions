@@ -20,7 +20,7 @@ const centerColumn=document.querySelector('.center');
 const heroPanel=centerColumn?.querySelector('.hero');
 const showsPanel = [...document.querySelectorAll('.right .panel')].find(panel => panel.querySelector('h3')?.textContent.trim() === 'Upcoming Shows');
 const profilePanel = document.querySelector('.left .menu');
-const profileLink = profilePanel?.querySelector('a[href="profile.html"]');
+const profileLink = profilePanel?.querySelector('a');
 const sponsorGrid = document.querySelector('.left .sponsors');
 const onlineGrid = document.querySelector('.left .online');
 const menuLinks = profilePanel ? [...profilePanel.querySelectorAll('a')] : [];
@@ -203,6 +203,7 @@ function ensureComposer(){
   composer.querySelector('#dash-publish-post').addEventListener('click',publishDashboardPost);
   return composer;
 }
+document.getElementById('hero-create-post')?.addEventListener('click', openComposer);
 function openComposer(event){
   if(event)event.preventDefault();
   if(!auth.currentUser){location.href='login.html?returnTo=index.html';return;}
@@ -376,9 +377,15 @@ function renderSponsors(){
 
 async function renderOnline(users){
   if(!onlineGrid)return;
+  const panel=onlineGrid.closest('.online-panel');
   const cutoff=Date.now()-150000;
   const active=users.filter(u=>u.lastActiveAt?.toDate&&u.lastActiveAt.toDate().getTime()>=cutoff).sort((a,b)=>b.lastActiveAt.toDate()-a.lastActiveAt.toDate()).slice(0,8);
-  if(!active.length){onlineGrid.innerHTML='<div class="online-empty">No one is active right now.</div>';return;}
+  if(!active.length){
+    panel?.classList.add('is-empty');
+    onlineGrid.innerHTML='<div class="online-empty">No one is active right now.</div>';
+    return;
+  }
+  panel?.classList.remove('is-empty');
   const enriched=await Promise.all(active.map(async user=>{
     try{
       const snap=await getDoc(doc(db,'profiles',user.id));
@@ -500,28 +507,26 @@ function renderMemberCommunity(){
   feed?.classList.remove('bt-community-taste');
   renderFeed(latestDashboardPosts);
 }
-function setHeroButtons(user){
-  const links=[...(heroPanel?.querySelectorAll('.btns a')||[])];if(links.length<2)return;
-  const labels=user?[['CREATE POST','#create-post'],['MY PROFILE','profile.html']]:[['JOIN FREE','signup.html'],['EXPLORE BANDS','bands.html']];
-  labels.forEach(([t,h],i)=>{links[i].textContent=t;links[i].setAttribute('href',h);});
-  if(user)links[0].addEventListener('click',openComposer);else links[0].removeEventListener('click',openComposer);
-  try{if(user)localStorage.setItem('bt_member','1');else localStorage.removeItem('bt_member');}catch(e){}
-}
 function syncHeroCommunityState(user){
-  setHeroButtons(user);
-  if(!heroPanel)return;
-  const guest=heroPanel.querySelector('.bt-hero-guest');
-  const normal=heroPanel.querySelector('.btns');
-  const copy=heroPanel.querySelector('p');
-  if(user){
-    guest?.remove();
-    if(normal)normal.hidden=false;
-    if(copy){copy.innerHTML='No algorithms. No politics. No bullshit.<br>Just people connecting through music.';copy.style.fontSize='clamp(11px,1.2vw,14px)';copy.style.fontWeight='400';copy.style.lineHeight='1.35';}
-    return;
+  const member=Boolean(user);
+  document.documentElement.classList.toggle('bt-guest', !member);
+  document.documentElement.classList.toggle('bt-member', member);
+  try{if(member)localStorage.setItem('bt_member','1');else localStorage.removeItem('bt_member');}catch(e){}
+  if(profileLink){
+    if(member){
+      if(profileLink.textContent.trim()==='Log In / Create Account') profileLink.textContent='View / Edit Profile';
+      if(profileLink.getAttribute('href')==='login.html?returnTo=index.html') profileLink.href='profile.html';
+      profileLink.style.display='';
+    }else{
+      profileLink.textContent='Log In / Create Account';
+      profileLink.href='login.html?returnTo=index.html';
+      profileLink.style.display='';
+    }
   }
-  guest?.remove();
-  if(copy){copy.innerHTML='Discover independent music.<br><strong style="color:#eaffff">Join the scene for free.</strong>';copy.style.fontSize='clamp(13px,1.5vw,17px)';copy.style.fontWeight='900';copy.style.lineHeight='1.3';}
+  if(member) renderMemberCommunity();
+  else renderGuestCommunity();
 }
+window.btSyncHomeHero=syncHeroCommunityState;
 
 function renderFeed(posts){
   if(!feed)return;const heading=feed.querySelector(':scope > h3');
@@ -555,7 +560,9 @@ function renderShows(posts){
   const now=nyToday();const showDateOf=p=>p.event?.date||p.eventDate||p.showDate;
   const shows=posts.filter(p=>p.published!==false&&p.category==='show').filter(p=>{const d=normalizeDate(showDateOf(p));return !d||d>=now;}).sort((a,b)=>{const ad=normalizeDate(showDateOf(a)),bd=normalizeDate(showDateOf(b));if(ad&&bd)return ad-bd;if(ad)return-1;if(bd)return 1;return 0;}).slice(0,5);
   injectShowEvents(shows.filter(p=>normalizeDate(showDateOf(p))).map(p=>{const e=p.event||{};return{band:p.authorName||e.artist||e.band||e.title,title:e.title,date:showDateOf(p),time:e.time,venue:e.venue,location:e.location,ticketUrl:e.ticketUrl,profileUrl:profileHref(p),image:e.imageUrl||p.imageUrl};}));
-  if(!shows.length){const empty=document.createElement('div');empty.style.padding='12px';empty.style.color='#9ca3a3';empty.textContent='Show/Event posts will appear here automatically.';showsPanel.appendChild(empty);return;}
+  showsPanel.classList.remove('is-pending');
+  if(!shows.length){showsPanel.classList.add('is-empty');const empty=document.createElement('div');empty.style.padding='12px';empty.style.color='#9ca3a3';empty.textContent='Show/Event posts will appear here automatically.';showsPanel.appendChild(empty);return;}
+  showsPanel.classList.remove('is-empty');
   shows.forEach(post=>{
     const e=post.event||{};const eventDate=normalizeDate(showDateOf(post));const d=eventDate||(post.createdAt?.toDate?post.createdAt.toDate():new Date());
     const artist=post.authorName||e.artist||e.band||e.title||'Upcoming Show';const venue=e.venue||'';const time=e.time||'';
@@ -626,4 +633,4 @@ onSnapshot(collection(db,'posts'),snapshot=>{
   if(feed){const heading=feed.querySelector('h3');feed.replaceChildren();if(heading)feed.appendChild(heading);const failed=document.createElement('div');failed.className='post';failed.innerHTML='<p>Community feed temporarily unavailable. Please refresh.</p>';feed.appendChild(failed);}
 });
 
-onSnapshot(collection(db,'users'),snapshot=>{renderOnline(snapshot.docs.map(d=>({id:d.id,...d.data()})));},error=>{console.warn('Could not load Online Now.',error);if(onlineGrid)onlineGrid.innerHTML='<div class="online-empty">Online status unavailable.</div>';});
+onSnapshot(collection(db,'users'),snapshot=>{renderOnline(snapshot.docs.map(d=>({id:d.id,...d.data()})));},error=>{console.warn('Could not load Online Now.',error);onlineGrid?.closest('.online-panel')?.classList.add('is-empty');if(onlineGrid && document.documentElement.classList.contains('bt-member'))onlineGrid.innerHTML='<div class="online-empty">Online status unavailable.</div>';});
