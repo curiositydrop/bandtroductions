@@ -107,7 +107,7 @@ async function run() {
   if (fileFont < 16) failures.push('file input font is below 16px: ' + fileFont);
   await page.locator('#break-fill-play').click();
   const afterStatus = await page.locator('#break-fill-status').innerText();
-  if (!/Choose an audio file|stays silent/i.test(afterStatus)) failures.push('preview without a file should refuse: ' + afterStatus);
+  if (!/Choose an audio file|saved bed/i.test(afterStatus)) failures.push('preview without a file or saved bed should refuse: ' + afterStatus);
   const previewPaused = await page.locator('#break-fill-preview-audio').evaluate(el => el.paused && !String(el.src || '').includes('break-fill-default'));
   if (!previewPaused) failures.push('control room preview played without an uploaded file');
   await page.screenshot({ path: `${outDir}/sim-phone-control-room.png`, fullPage: true });

@@ -11,6 +11,7 @@ import {
   resolveBreakFill,
   planBreakFill,
   planBreakFillSave,
+  previewableBreakFill,
   currentBreakFill,
   clampFillSeek,
   syncBreakFillAudio,
@@ -264,6 +265,21 @@ test('accepts iPhone Voice Memo m4a plus mp3, wav, and aac, and rejects other fi
   assert.equal(breakFillContentType('spot.aac'), 'audio/aac');
   assert.equal(breakFillContentType('clip.mp4'), '');
   assert.equal(breakFillContentType('notes.txt'), '');
+});
+
+test('a saved bed can be previewed without choosing a replacement', () => {
+  const savedOff = { enabled: false, audioUrl: STORAGE, durationSeconds: 22, label: 'Promo' };
+  assert.equal(resolveBreakFill(savedOff), null);
+  assert.equal(previewableBreakFill(savedOff).audioUrl, STORAGE);
+  assert.equal(previewableBreakFill({ enabled: true, audioUrl: STORAGE, durationSeconds: 22 }).audioUrl, STORAGE);
+  assert.equal(previewableBreakFill(null), null);
+  assert.equal(previewableBreakFill({ enabled: true, audioUrl: '/assets/radio/break-fill-default.wav', durationSeconds: 12 }), null);
+  assert.equal(previewableBreakFill({ audioUrl: 'https://example.com/bed.m4a', durationSeconds: 12 }), null);
+  const again = planBreakFillSave({ enabled: true, existing: savedOff, fileReady: false, label: 'Promo' });
+  assert.equal(again.ok, true);
+  assert.equal(again.needsUpload, false);
+  assert.equal(again.breakFill.audioUrl, STORAGE);
+  assert.match(readFileSync('radio-break-fill-manager.js', 'utf8'), /previewableBreakFill\(stored\)/);
 });
 
 test('save cannot enable a bed without an approved upload', () => {

@@ -42,6 +42,21 @@ export function isApprovedFillUrl(url) {
   return host === 'firebasestorage.googleapis.com' || host.endsWith('.firebasestorage.app');
 }
 
+// A saved Storage object can be previewed even while the bed is off.
+// Station playback still requires resolveBreakFill (enabled and a duration).
+export function previewableBreakFill(stored) {
+  if (!stored || typeof stored !== 'object') return null;
+  const audioUrl = typeof stored.audioUrl === 'string' ? stored.audioUrl.trim() : '';
+  if (!isApprovedFillUrl(audioUrl)) return null;
+  const duration = Number(stored.durationSeconds);
+  return {
+    audioUrl,
+    durationSeconds: Number.isFinite(duration) && duration > 0 ? duration : null,
+    enabled: stored.enabled === true,
+    label: String(stored.label || '').slice(0, 120)
+  };
+}
+
 // Missing map, enabled not exactly true, placeholder/relative/foreign URL, or
 // bad duration: stay off. Never substitute a generated tone.
 export function resolveBreakFill(stored) {
@@ -81,16 +96,16 @@ export function planBreakFillSave({ enabled, existing, fileReady, durationSecond
     if (!Number.isFinite(duration) || duration <= 0 || duration > 600) return { ok: false, reason: 'duration' };
     return { ok: true, needsUpload: true, breakFill: { enabled: true, durationSeconds: duration, label: name } };
   }
-  const approved = resolveBreakFill(existing);
-  if (!approved) return { ok: false, reason: 'upload-required' };
+  const saved = previewableBreakFill(existing);
+  if (!saved || !(saved.durationSeconds > 0)) return { ok: false, reason: 'upload-required' };
   return {
     ok: true,
     needsUpload: false,
     breakFill: {
       enabled: true,
-      audioUrl: approved.audioUrl,
-      durationSeconds: approved.durationSeconds,
-      label: name || approved.label
+      audioUrl: saved.audioUrl,
+      durationSeconds: saved.durationSeconds,
+      label: name || saved.label
     }
   };
 }

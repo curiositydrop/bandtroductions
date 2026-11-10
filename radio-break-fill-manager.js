@@ -3,7 +3,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/f
 import { doc, onSnapshot, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
 import { isAdminAccount } from './admin-access.js';
-import { breakFillContentType, planBreakFillSave, resolveBreakFill, isApprovedFillUrl } from './radio-break-fill.mjs?v=20261110-fill-off';
+import { breakFillContentType, planBreakFillSave, resolveBreakFill, previewableBreakFill, isApprovedFillUrl } from './radio-break-fill.mjs?v=20261110-fill-saved-preview';
 
 const host = document.getElementById('cr-radio-body');
 if (host) {
@@ -33,7 +33,7 @@ if (host) {
     <p class="crr-muted" style="margin:8px 0;line-height:1.45">iPhone Voice Memos (.m4a) are welcome. AAC needs the Storage rules update in this branch before an upload will succeed; that rules change is not deployed. MP3, M4A, and WAV use the rules already live. Turning this on requires the file you upload here. A shorter clip loops. A longer clip is heard from the matching moment in the break. Either way it fades out over about 1.25 seconds at the end of the minute.</p>
     <audio id="break-fill-preview-audio" playsinline webkit-playsinline preload="none" style="display:none"></audio>
     <div class="break-fill-actions">
-      <button type="button" id="break-fill-play" class="crr-btn">Preview selected audio</button>
+      <button type="button" id="break-fill-play" class="crr-btn">Preview bed</button>
       <button type="button" id="break-fill-save" class="crr-btn primary">Save fill bed</button>
     </div>
     <p id="break-fill-status" role="status" aria-live="polite" style="color:#aab;font-size:.9rem;line-height:1.4"></p>
@@ -72,7 +72,9 @@ if (host) {
 
   function describe(data) {
     const approved = resolveBreakFill(data);
-    if (approved) return `Uploaded bed is on (${approved.durationSeconds}s)${approved.label ? `: ${approved.label}` : ''}.`;
+    if (approved) return `Uploaded bed is on (${approved.durationSeconds}s)${approved.label ? `: ${approved.label}` : ''}. Preview plays this saved file without choosing another.`;
+    const saved = previewableBreakFill(data);
+    if (saved) return 'A bed is saved but off. Preview plays that saved file without choosing a replacement. Turn it on and save to put it on the station.';
     if (data && data.enabled === true) return 'A bed was marked on, but it is not an approved upload, so the station will not play it.';
     return OFF_COPY;
   }
@@ -85,18 +87,17 @@ if (host) {
   }
   function previewSrc() {
     if (objectUrl) return objectUrl;
-    const approved = resolveBreakFill(stored);
-    return approved ? approved.audioUrl : '';
+    return previewableBreakFill(stored)?.audioUrl || '';
   }
   function stopPreview() {
     previewAudio.pause();
     try { previewAudio.currentTime = 0; } catch { /* not seekable yet */ }
-    playButton.textContent = 'Preview selected audio';
+    playButton.textContent = 'Preview bed';
   }
   playButton.addEventListener('click', () => {
     if (!previewAudio.paused) { stopPreview(); return; }
     const src = previewSrc();
-    if (!src) { status.textContent = 'Choose an audio file to preview. The station stays silent until a real upload is saved.'; return; }
+    if (!src) { status.textContent = 'Choose an audio file to preview. A saved bed plays here without choosing a replacement.'; return; }
     if (previewAudio.getAttribute('src') !== src) previewAudio.src = src;
     previewAudio.playsInline = true;
     playButton.textContent = 'Stop preview';
