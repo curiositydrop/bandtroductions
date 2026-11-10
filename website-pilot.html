@@ -323,5 +323,6 @@ try{
  try{await loadSiteMerch(db,firestore);}catch(error){console.warn('Merch storefront could not be loaded.',error);}}
 }catch(error){clearTimeout(slow);console.error(error);el('status').hidden=false;text('status','We could not connect to this band website. ');const retry=document.createElement('button');retry.type='button';retry.className='button';retry.textContent='Try again';retry.onclick=()=>location.reload();el('status').append(retry);}
 </script>
+<script type="module" src="radio-share-kit-owner.js?v=1"></script>
 </body>
 </html>

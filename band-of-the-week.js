@@ -3,6 +3,7 @@ import { auth } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { isAdminAccount } from './admin-access.js';
 import { BOTW, DRY_RUN, now, currentRound, roundFor, countdownParts, rankRound, loadVotes, castVote, loadCheers, cheer, loadRounds, loadConfig, finalizeRound, restingBands, loadDirectory, voteLink, slugify } from './botw-core.js';
+import { drawShareCard } from './share-card.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -147,15 +148,19 @@ async function applyPending() {
 }
 
 function drawCard(b, rankText) {
-  const c = document.createElement('canvas'); c.width = 1080; c.height = 1080; const x = c.getContext('2d');
-  const g = x.createLinearGradient(0, 0, 0, 1080); g.addColorStop(0, '#2a0010'); g.addColorStop(1, '#050505'); x.fillStyle = g; x.fillRect(0, 0, 1080, 1080);
-  const finish = () => {
-    x.fillStyle = '#ff004c'; x.font = '900 54px Arial'; x.textAlign = 'center'; x.fillText('I VOTED 🤘', 540, 120);
-    x.fillStyle = '#fff'; x.font = '900 84px Arial'; x.fillText(b.name.toUpperCase().slice(0, 22), 540, 860);
-    x.fillStyle = '#ccc'; x.font = '700 40px Arial'; x.fillText(`for Band of the Week · ${round.shortLabel}`, 540, 930);
-    x.fillStyle = '#ffcc33'; x.font = '900 36px Arial'; x.fillText(rankText, 540, 985); x.fillStyle = '#888'; x.font = '700 32px Arial'; x.fillText('bandtroductions.com · vote before Sat 11:59 PM ET', 540, 1045);
-  };
-  return new Promise(res => { const im = new Image(); im.onload = () => { const s = Math.min(im.width, im.height); x.save(); x.beginPath(); x.roundRect(240, 170, 600, 600, 40); x.clip(); x.drawImage(im, (im.width - s) / 2, (im.height - s) / 2, s, s, 240, 170, 600, 600); x.restore(); finish(); res(c); }; im.onerror = () => { finish(); res(c); }; im.src = b.image; });
+  return drawShareCard({
+    image: b.image,
+    fallback: false,
+    gradient: ['#2a0010', '#050505'],
+    photo: { x: 240, y: 170, size: 600, radius: 40 },
+    lines: [
+      { text: 'I VOTED 🤘', y: 120, font: '900 54px Arial', fill: '#ff004c' },
+      { text: b.name.toUpperCase().slice(0, 22), y: 860, font: '900 84px Arial', fill: '#fff' },
+      { text: `for Band of the Week · ${round.shortLabel}`, y: 930, font: '700 40px Arial', fill: '#ccc' },
+      { text: rankText, y: 985, font: '900 36px Arial', fill: '#ffcc33' },
+      { text: 'bandtroductions.com · vote before Sat 11:59 PM ET', y: 1045, font: '700 32px Arial', fill: '#888' }
+    ]
+  });
 }
 
 async function votedCard(id) {
