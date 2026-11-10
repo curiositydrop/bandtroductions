@@ -71,8 +71,9 @@ async function run() {
     const audio = document.querySelector('#sim-audio');
     return audio && audio.readyState >= 1 && !audio.paused && Math.abs(audio.currentTime - 8) < 1.5;
   }, null, { timeout: 8000 });
-  const src = await page.locator('#sim-audio').getAttribute('src');
-  if (!String(src).includes('break-fill-default.wav')) failures.push('late join played the wrong file: ' + src);
+  const src = await page.locator('#sim-audio').evaluate(el => el.src);
+  if (!String(src).startsWith('blob:')) failures.push('sim fill should be an isolated generated tone, got ' + src);
+  if (String(src).includes('break-fill-default')) failures.push('placeholder tone was used: ' + src);
   const playsinline = await page.locator('#sim-audio').evaluate(el => el.hasAttribute('playsinline'));
   if (!playsinline) failures.push('station audio is missing playsinline');
 
@@ -98,15 +99,17 @@ async function run() {
   if (!saveDisabled) failures.push('preview save button must stay disabled');
   const status = await page.locator('#break-fill-status').innerText();
   if (!status.includes('No station data changed')) failures.push('preview status missing read-only notice: ' + status);
+  const enabled = await page.locator('#break-fill-enabled').isChecked();
+  if (enabled) failures.push('fill checkbox must start off');
   const buttonHeight = await page.locator('#break-fill-play').evaluate(el => el.getBoundingClientRect().height);
   if (buttonHeight < 44) failures.push('preview button is smaller than 44px: ' + buttonHeight);
   const fileFont = await page.locator('#break-fill-file').evaluate(el => parseFloat(getComputedStyle(el).fontSize));
   if (fileFont < 16) failures.push('file input font is below 16px: ' + fileFont);
   await page.locator('#break-fill-play').click();
-  await page.waitForFunction(() => {
-    const audio = document.querySelector('#break-fill-preview-audio');
-    return audio && !audio.paused && audio.getAttribute('playsinline') !== null;
-  }, null, { timeout: 8000 });
+  const afterStatus = await page.locator('#break-fill-status').innerText();
+  if (!/Choose an audio file|stays silent/i.test(afterStatus)) failures.push('preview without a file should refuse: ' + afterStatus);
+  const previewPaused = await page.locator('#break-fill-preview-audio').evaluate(el => el.paused && !String(el.src || '').includes('break-fill-default'));
+  if (!previewPaused) failures.push('control room preview played without an uploaded file');
   await page.screenshot({ path: `${outDir}/sim-phone-control-room.png`, fullPage: true });
 
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -118,8 +121,13 @@ async function run() {
     isMobile: phone.isMobile,
     hasTouch: phone.hasTouch
   });
+  const placeholderHits = [];
+  radio.on('request', request => { if (request.url().includes('break-fill-default')) placeholderHits.push(request.url()); });
   await radio.goto(`${base}/radio.html?testBreak=1&adSeconds=18&breakOffset=40`, { waitUntil: 'domcontentloaded' });
-  await radio.waitForFunction(() => /STATION BREAK/.test(document.body.innerText), null, { timeout: 8000 });
+  await radio.waitForFunction(() => /New Leaf|A WORD FROM OUR SPONSOR/.test(document.body.innerText), null, { timeout: 8000 });
+  const radioText = await radio.locator('body').innerText();
+  if (/STATION BREAK/.test(radioText)) failures.push('real player showed a fill bed without an approved upload');
+  if (placeholderHits.length) failures.push('real player requested the placeholder tone');
   await radio.locator('#rpListen').click();
   await radio.waitForFunction(() => /PAUSE/.test(document.querySelector('#rpListen')?.textContent || ''), null, { timeout: 4000 });
   const radioOverflow = await radio.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

@@ -1,7 +1,25 @@
-import { planBreakFill, resolveBreakFill, FILL_FADE_SECONDS } from './radio-break-fill.mjs';
+import { planBreakFill, FILL_FADE_SECONDS } from './radio-break-fill.mjs?v=20261110-fill-off';
 
 const AD_URL = '/assets/ads/new-leaf-ad.m4a';
-const fill = resolveBreakFill(null);
+// Isolated preview tone. The station player never receives this URL.
+function testToneUrl(seconds = 12) {
+  const rate = 8000;
+  const count = rate * seconds;
+  const bytes = 44 + count * 2;
+  const buffer = new ArrayBuffer(bytes);
+  const view = new DataView(buffer);
+  const text = (offset, value) => { for (let i = 0; i < value.length; i++) view.setUint8(offset + i, value.charCodeAt(i)); };
+  text(0, 'RIFF'); view.setUint32(4, bytes - 8, true); text(8, 'WAVE'); text(12, 'fmt ');
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true); view.setUint32(28, rate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+  text(36, 'data'); view.setUint32(40, count * 2, true);
+  for (let i = 0; i < count; i++) {
+    const sample = Math.sin(2 * Math.PI * 440 * (i / rate)) * 0.2;
+    view.setInt16(44 + i * 2, sample < 0 ? sample * 32768 : sample * 32767, true);
+  }
+  return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
+}
+const fill = { enabled: true, audioUrl: testToneUrl(12), durationSeconds: 12, label: 'Simulated test tone', source: 'preview-test' };
 const scenarios = {
   'sim-ads-0': { adSeconds: 0, note: 'No paid ad. The bed covers the whole minute.' },
   'sim-ads-1': { adSeconds: 18, note: 'One 18-second ad plays first. The bed starts at 18s.' },

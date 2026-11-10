@@ -1,13 +1,12 @@
 // Shared-clock bed for the unused tail of a 60-second between-show break.
-// Paid ads keep the front of the minute. This module only describes the fill.
-// It does not write Firestore or Storage and it does not start audio by itself.
+// Paid ads keep the front of the minute. Real playback stays off unless
+// __stationControl.breakFill is an explicit, enabled Firebase Storage upload.
+// This module does not write Firestore or Storage and does not start audio by itself.
 import { planCommercialBreak } from './radio-break-planner.mjs';
 
 export const BREAK_LENGTH_SECONDS = 60;
 export const FILL_FADE_SECONDS = 1.25;
-export const DEFAULT_BREAK_FILL_URL = '/assets/radio/break-fill-default.wav';
-export const DEFAULT_BREAK_FILL_SECONDS = 12;
-export const DEFAULT_BREAK_FILL_LABEL = 'BANDtroductions station bed';
+export const REJECTED_FILL_MARK = 'break-fill-default';
 
 const CONTENT_TYPES = {
   mp3: 'audio/mpeg',
@@ -33,27 +32,66 @@ export function paidAdSeconds(config) {
   return Math.max(1, Math.min(BREAK_LENGTH_SECONDS, Number(config.durationSeconds) || 40));
 }
 
-// Missing config means "use the built-in bed". enabled:false turns the bed off
-// and leaves today's post-ad silence (or the rotation, when no ad is scheduled).
+export function isApprovedFillUrl(url) {
+  const value = typeof url === 'string' ? url.trim() : '';
+  if (!value || /break-fill-default/i.test(value)) return false;
+  let parsed;
+  try { parsed = new URL(value); } catch { return false; }
+  if (parsed.protocol !== 'https:') return false;
+  const host = parsed.hostname.toLowerCase();
+  return host === 'firebasestorage.googleapis.com' || host.endsWith('.firebasestorage.app');
+}
+
+// Missing map, enabled not exactly true, placeholder/relative/foreign URL, or
+// bad duration: stay off. Never substitute a generated tone.
 export function resolveBreakFill(stored) {
-  if (stored && typeof stored === 'object' && stored.enabled === false) return null;
-  const custom = stored && typeof stored.audioUrl === 'string' ? stored.audioUrl.trim() : '';
-  if (custom) {
-    const duration = Number(stored.durationSeconds);
-    return {
-      enabled: true,
-      audioUrl: custom,
-      durationSeconds: Number.isFinite(duration) && duration > 0 ? duration : null,
-      label: String(stored.label || 'Station bed').slice(0, 120),
-      source: 'custom'
-    };
-  }
+  if (!stored || typeof stored !== 'object' || stored.enabled !== true) return null;
+  const audioUrl = typeof stored.audioUrl === 'string' ? stored.audioUrl.trim() : '';
+  if (!isApprovedFillUrl(audioUrl)) return null;
+  const duration = Number(stored.durationSeconds);
+  if (!Number.isFinite(duration) || duration <= 0 || duration > 600) return null;
   return {
     enabled: true,
-    audioUrl: DEFAULT_BREAK_FILL_URL,
-    durationSeconds: DEFAULT_BREAK_FILL_SECONDS,
-    label: DEFAULT_BREAK_FILL_LABEL,
-    source: 'default'
+    audioUrl,
+    durationSeconds: duration,
+    label: String(stored.label || 'Station bed').slice(0, 120),
+    source: 'custom'
+  };
+}
+
+// Enabling requires a new upload or an already approved Storage URL.
+// Disabling is allowed and clears any placeholder URL. This does not write.
+export function planBreakFillSave({ enabled, existing, fileReady, durationSeconds, label = '' } = {}) {
+  const name = String(label || existing?.label || '').trim().slice(0, 120);
+  if (enabled !== true) {
+    const keep = resolveBreakFill({ ...existing, enabled: true });
+    return {
+      ok: true,
+      needsUpload: false,
+      breakFill: {
+        enabled: false,
+        audioUrl: keep ? keep.audioUrl : '',
+        durationSeconds: keep ? keep.durationSeconds : 0,
+        label: name
+      }
+    };
+  }
+  if (fileReady) {
+    const duration = Number(durationSeconds);
+    if (!Number.isFinite(duration) || duration <= 0 || duration > 600) return { ok: false, reason: 'duration' };
+    return { ok: true, needsUpload: true, breakFill: { enabled: true, durationSeconds: duration, label: name } };
+  }
+  const approved = resolveBreakFill(existing);
+  if (!approved) return { ok: false, reason: 'upload-required' };
+  return {
+    ok: true,
+    needsUpload: false,
+    breakFill: {
+      enabled: true,
+      audioUrl: approved.audioUrl,
+      durationSeconds: approved.durationSeconds,
+      label: name || approved.label
+    }
   };
 }
 
@@ -70,7 +108,7 @@ export function planBreakFill({
   if (!Number.isFinite(offset)) return { phase: 'none', reason: 'bad-offset' };
   if (offset < 0 || offset >= breakSeconds) return { phase: 'none', reason: 'outside-break' };
   if (ads >= breakSeconds - 1e-6) return { phase: 'none', reason: 'ads-fill-minute', adSeconds: ads };
-  if (offset < ads) {
+  if (offset < ads - 1e-9) {
     return { phase: 'ad', adSeconds: ads, fillStartsAt: ads, reason: 'ad-still-playing' };
   }
   const elapsed = offset - ads;
@@ -78,11 +116,9 @@ export function planBreakFill({
   const window = breakSeconds - ads;
   const clip = Number(fill.durationSeconds);
   const known = Number.isFinite(clip) && clip > 0.05;
-  // Loop when the clip cannot cover the leftover window. The default bed is
-  // written to loop cleanly. A custom clip uses the same single audio element
-  // (loop=true) so iPhone keeps the one unlocked player; the clock fade below
-  // still ends the break. A clip longer than the window does not loop: every
-  // listener seeks to the same elapsed point and fades out at the minute.
+  // A clip shorter than the leftover window loops on the one unlocked audio
+  // element. A longer clip does not loop: every listener seeks to the same
+  // elapsed point. The fade is a function of time left on the shared clock.
   const loop = !known || clip < window - 0.05;
   let clipOffset = elapsed;
   if (known) clipOffset = loop ? elapsed % clip : Math.min(elapsed, Math.max(0, clip - 0.05));
@@ -90,7 +126,7 @@ export function planBreakFill({
   return {
     phase: 'fill',
     audioUrl: fill.audioUrl,
-    label: fill.label || DEFAULT_BREAK_FILL_LABEL,
+    label: fill.label || 'Station bed',
     source: fill.source || 'custom',
     clipOffsetSeconds: clipOffset,
     elapsedFillSeconds: elapsed,
@@ -148,8 +184,27 @@ export function clampFillSeek(fill, duration) {
   return time;
 }
 
+function absoluteFillUrl(url) {
+  try { return new URL(url, location.href).href; } catch { return url; }
+}
+
+export function fillBlockedByFailure(audio, fill) {
+  if (!audio?.dataset?.breakFillFailed || !fill?.audioUrl) return false;
+  const failed = audio.dataset.breakFillFailed;
+  return failed === fill.audioUrl || failed === absoluteFillUrl(fill.audioUrl);
+}
+
+export function releaseFillAudio(audio) {
+  if (!audio) return;
+  try { audio.pause(); } catch { /* already stopped */ }
+  try { audio.removeAttribute?.('src'); } catch { /* mock or detached */ }
+  try { audio.load?.(); } catch { /* ignore */ }
+  clearBreakFillAudio(audio);
+}
+
 export function syncBreakFillAudio(audio, fill, options = {}) {
-  if (!audio || !fill || fill.phase !== 'fill' || !fill.audioUrl) return false;
+  if (!audio || !fill || fill.phase !== 'fill' || !isApprovedFillUrl(fill.audioUrl)) return false;
+  if (fillBlockedByFailure(audio, fill)) return false;
   const shouldPlay = options.shouldPlay !== false;
   audio.playsInline = true;
   if (audio.setAttribute) audio.setAttribute('playsinline', '');
@@ -157,21 +212,36 @@ export function syncBreakFillAudio(audio, fill, options = {}) {
   audio.muted = !!options.muted;
   const volume = Math.max(0, Math.min(1, Number(fill.volume) || 0));
   try { audio.volume = volume; } catch { /* iOS may ignore volume until playback starts */ }
-  let absolute = fill.audioUrl;
-  try { absolute = new URL(fill.audioUrl, location.href).href; } catch { /* relative URL in non-browser tests */ }
-  if (audio.dataset?.breakFillUrl !== absolute) {
-    if (audio.dataset) audio.dataset.breakFillUrl = absolute;
+  const absolute = absoluteFillUrl(fill.audioUrl);
+  if (!audio.dataset.breakFillGuard) {
+    audio.dataset.breakFillGuard = '1';
+    audio.addEventListener('error', () => {
+      const failed = audio.dataset.breakFillUrl || absolute;
+      releaseFillAudio(audio);
+      audio.dataset.breakFillFailed = failed;
+    });
+  }
+  if (audio.dataset.breakFillUrl !== absolute) {
+    if (audio.dataset.breakFillFailed && audio.dataset.breakFillFailed !== absolute) delete audio.dataset.breakFillFailed;
+    audio.dataset.breakFillUrl = absolute;
     audio.src = fill.audioUrl;
     audio.load();
     const seekAndPlay = () => {
-      const fresh = typeof options.current === 'function' ? options.current() : null;
-      const active = fresh && fresh.phase === 'fill' ? fresh : fill;
+      const fresh = typeof options.current === 'function' ? options.current() : fill;
+      const active = fresh && fresh.phase === 'fill' ? fresh : null;
+      if (!active || active.audioUrl !== fill.audioUrl) {
+        if (audio.dataset.breakFillUrl === absolute) releaseFillAudio(audio);
+        return;
+      }
       try { audio.currentTime = clampFillSeek(active, audio.duration); } catch { /* metadata not seekable yet */ }
       audio.loop = !!active.loop;
       try { audio.volume = Math.max(0, Math.min(1, Number(active.volume) || 0)); } catch { /* ignore */ }
       if (shouldPlay && audio.volume > 0.001) audio.play().catch(() => {});
     };
     audio.addEventListener('loadedmetadata', seekAndPlay, { once: true });
+    // play() in this turn keeps the listener's LISTEN gesture on iPhone.
+    // If the file is still loading when the minute ends, releaseFillAudio
+    // drops the src so a late decode cannot start over the next show.
     if (shouldPlay) audio.play().catch(() => {});
     return true;
   }
@@ -185,7 +255,7 @@ export function syncBreakFillAudio(audio, fill, options = {}) {
     if (!audio.paused) audio.pause();
     return true;
   }
-  if (shouldPlay && audio.paused) audio.play().catch(() => {});
+  if (shouldPlay && audio.paused && audio.readyState > 0) audio.play().catch(() => {});
   return true;
 }
 

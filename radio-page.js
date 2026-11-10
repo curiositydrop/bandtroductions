@@ -3,7 +3,7 @@
 import { db as devDb } from './firebase-dev.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak, withPreviewTestBreak, betweenShowGap, previewBreakOffset, previewDemoAdSeconds } from './radio-schedule-engine.js?v=7';
-import { currentBreakFill, syncBreakFillAudio, clearBreakFillAudio } from './radio-break-fill.mjs';
+import { currentBreakFill, syncBreakFillAudio, clearBreakFillAudio, releaseFillAudio, fillBlockedByFailure } from './radio-break-fill.mjs?v=20261110-fill-off';
 
 const STATION_CONTROL_ID='__stationControl';
 const DEFAULT_COVER='bt-radio-logo-280.webp';
@@ -23,9 +23,11 @@ function currentFill(date=new Date()){
   const preview=previewBreakOffset(date);
   if(preview!=null){
     const now=easternClock(date);
-    return currentBreakFill({stationEnabled,sponsorConfig:c,fillConfig:stationSettings.breakFill,previewOffset:preview,previewAdSeconds:previewDemoAdSeconds(c),previewNextStart:(now.minutes+1)%1440});
+    const previewFill=currentBreakFill({stationEnabled,sponsorConfig:c,fillConfig:stationSettings.breakFill,previewOffset:preview,previewAdSeconds:previewDemoAdSeconds(c),previewNextStart:(now.minutes+1)%1440});
+    return fillBlockedByFailure(audio,previewFill)?null:previewFill;
   }
-  return currentBreakFill({stationEnabled,sponsorConfig:c,fillConfig:stationSettings.breakFill,gap:betweenShowGap(playlists,date)});
+  const fill=currentBreakFill({stationEnabled,sponsorConfig:c,fillConfig:stationSettings.breakFill,gap:betweenShowGap(playlists,date)});
+  return fillBlockedByFailure(audio,fill)?null:fill;
 }
 // Sponsor audio through the same (already tap-unlocked) <audio> element as the music, so iPhone plays it with no extra tap.
 function breakAudio(b){return !!(b&&b.audioUrl&&listening);}
@@ -224,8 +226,7 @@ onSnapshot(collection(devDb,'radioPlaylists'),snap=>{
 let lastMin=-1,fillBoundary=0;
 function stopFillIfMinuteEnded(){
   if(currentFill()||!audio?.dataset.breakFillUrl)return false;
-  audio.pause();
-  clearBreakFillAudio(audio);
+  releaseFillAudio(audio);
   currentKey='';
   return true;
 }

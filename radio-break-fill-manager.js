@@ -3,7 +3,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/f
 import { doc, onSnapshot, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
 import { isAdminAccount } from './admin-access.js';
-import { breakFillContentType, DEFAULT_BREAK_FILL_URL, DEFAULT_BREAK_FILL_SECONDS } from './radio-break-fill.mjs';
+import { breakFillContentType, planBreakFillSave, resolveBreakFill, isApprovedFillUrl } from './radio-break-fill.mjs?v=20261110-fill-off';
 
 const host = document.getElementById('cr-radio-body');
 if (host) {
@@ -20,25 +20,24 @@ if (host) {
     #break-fill-manager button{min-height:44px}
     #break-fill-manager input[type="text"],#break-fill-manager input[type="file"]{display:block;box-sizing:border-box;width:100%;max-width:100%;padding:10px;margin-top:4px;border-radius:8px;background:#101717;color:white;border:1px solid #456}
     #break-fill-manager .break-fill-actions{display:flex;flex-wrap:wrap;gap:8px}
-    #break-fill-manager .break-fill-actions button{flex:1 1 140px}
+    #break-fill-manager .break-fill-actions button{flex:1 1 160px}
   </style>
   <h3 style="color:#0ccfbd;margin:0 0 5px">Between-Show Fill Bed</h3>
   <button type="button" id="break-fill-toggle" class="crr-btn" aria-expanded="false" style="margin:8px 0;min-height:44px">+ Expand</button>
   <div id="break-fill-body" hidden>
-    <p class="crr-muted" style="margin:0 0 10px;line-height:1.45">Paid ads still play first, in full (up to two). This bed only covers the seconds left in the 60-second break, then fades out as the next show starts. Every listener, including late joiners, follows the same station clock. Nothing is written per listener.</p>
+    <p class="crr-muted" style="margin:0 0 10px;line-height:1.45">The bed is off until you upload promotional audio and save it. Paid ads still play first, in full (up to two). A saved bed covers only the seconds left in the 60-second break, then fades out as the next show starts. Listeners share the station clock. Nothing is written per listener, and no placeholder tone is played.</p>
     <p id="break-fill-source" class="crr-muted" style="margin:0 0 10px;line-height:1.45"></p>
-    <label style="display:flex;align-items:center;gap:8px;margin:8px 0"><input id="break-fill-enabled" type="checkbox" checked style="width:auto"> Play a bed in the unused break time</label>
+    <label style="display:flex;align-items:center;gap:8px;margin:8px 0"><input id="break-fill-enabled" type="checkbox" style="width:auto"> Play the uploaded bed in the unused break time</label>
     <label>Bed name (Control Room only)<input id="break-fill-label" type="text" maxlength="120" placeholder="Station promo"></label>
     <label style="margin-top:8px">Upload or replace (MP3, M4A, WAV, AAC, max 15 MB)<input id="break-fill-file" type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/aac,.mp3,.m4a,.wav,.aac,audio/*"></label>
-    <p class="crr-muted" style="margin:8px 0;line-height:1.45">iPhone Voice Memos (.m4a) are welcome. AAC needs the Storage rules update in this branch before an upload will succeed; that rules change is not deployed. MP3, M4A, and WAV use the rules already live. A clip shorter than the leftover time loops. A longer clip is heard from the matching moment in the break. Either way it fades out over about 1.25 seconds at the end of the minute and does not play into the next show.</p>
+    <p class="crr-muted" style="margin:8px 0;line-height:1.45">iPhone Voice Memos (.m4a) are welcome. AAC needs the Storage rules update in this branch before an upload will succeed; that rules change is not deployed. MP3, M4A, and WAV use the rules already live. Turning this on requires the file you upload here. A shorter clip loops. A longer clip is heard from the matching moment in the break. Either way it fades out over about 1.25 seconds at the end of the minute.</p>
     <audio id="break-fill-preview-audio" playsinline webkit-playsinline preload="none" style="display:none"></audio>
     <div class="break-fill-actions">
-      <button type="button" id="break-fill-play" class="crr-btn">Preview bed</button>
-      <button type="button" id="break-fill-default" class="crr-btn">Use built-in bed</button>
+      <button type="button" id="break-fill-play" class="crr-btn">Preview selected audio</button>
       <button type="button" id="break-fill-save" class="crr-btn primary">Save fill bed</button>
     </div>
     <p id="break-fill-status" role="status" aria-live="polite" style="color:#aab;font-size:.9rem;line-height:1.4"></p>
-    <p class="crr-muted" style="margin:8px 0 0"><a id="break-fill-sim-link" href="radio-break-fill-sim.html" style="color:#0ccfbd">Open the break-timing preview</a> (plays in this browser only; saves nothing).</p>
+    <p class="crr-muted" style="margin:8px 0 0"><a id="break-fill-sim-link" href="radio-break-fill-sim.html" style="color:#0ccfbd">Open the break-timing preview</a> (a generated test tone on this page only; saves nothing and is not the station).</p>
   </div>`;
   const body = panel.querySelector('#break-fill-body');
   const toggle = panel.querySelector('#break-fill-toggle');
@@ -66,37 +65,38 @@ if (host) {
   const saveButton = panel.querySelector('#break-fill-save');
   previewAudio.setAttribute('playsinline', '');
   let stored = null;
-  let preferDefault = false;
   let dirty = false;
   let objectUrl = '';
-  const DEFAULT_COPY = `No custom bed is saved, so the station uses a built-in ${DEFAULT_BREAK_FILL_SECONDS}-second tone (${DEFAULT_BREAK_FILL_URL}). It is an original synthesized placeholder, not a song and not a commercial. Upload a BANDtroductions promo, station ID, or another bed you have the rights to play.`;
+  let detectedDuration = 0;
+  const OFF_COPY = 'Fill is off. Listeners hear the ads, then silence for the rest of the minute, until you upload promotional audio and save with the bed enabled.';
 
   function describe(data) {
-    if (data && data.enabled === false) return 'Fill is off. After the ads, the break goes quiet again until you turn this back on.';
-    if (data && data.audioUrl) return `Custom bed is on${data.durationSeconds ? ` (${data.durationSeconds}s)` : ''}${data.label ? `: ${data.label}` : ''}.`;
-    return DEFAULT_COPY;
+    const approved = resolveBreakFill(data);
+    if (approved) return `Uploaded bed is on (${approved.durationSeconds}s)${approved.label ? `: ${approved.label}` : ''}.`;
+    if (data && data.enabled === true) return 'A bed was marked on, but it is not an approved upload, so the station will not play it.';
+    return OFF_COPY;
   }
   function applyStored(data) {
     stored = data && typeof data === 'object' ? data : null;
     if (dirty) return;
-    enabled.checked = !(stored && stored.enabled === false);
+    enabled.checked = !!resolveBreakFill(stored);
     label.value = stored?.label || '';
-    preferDefault = false;
     source.textContent = describe(stored);
   }
   function previewSrc() {
-    if (objectUrl && !preferDefault) return objectUrl;
-    if (!preferDefault && stored?.audioUrl) return stored.audioUrl;
-    return DEFAULT_BREAK_FILL_URL;
+    if (objectUrl) return objectUrl;
+    const approved = resolveBreakFill(stored);
+    return approved ? approved.audioUrl : '';
   }
   function stopPreview() {
     previewAudio.pause();
     try { previewAudio.currentTime = 0; } catch { /* not seekable yet */ }
-    playButton.textContent = 'Preview bed';
+    playButton.textContent = 'Preview selected audio';
   }
   playButton.addEventListener('click', () => {
     if (!previewAudio.paused) { stopPreview(); return; }
     const src = previewSrc();
+    if (!src) { status.textContent = 'Choose an audio file to preview. The station stays silent until a real upload is saved.'; return; }
     if (previewAudio.getAttribute('src') !== src) previewAudio.src = src;
     previewAudio.playsInline = true;
     playButton.textContent = 'Stop preview';
@@ -106,9 +106,13 @@ if (host) {
     });
   });
   previewAudio.addEventListener('ended', stopPreview);
+  previewAudio.addEventListener('error', () => {
+    if (playButton.textContent.startsWith('Stop')) status.textContent = 'That audio could not be loaded. The station will not play it.';
+    stopPreview();
+  });
   fileInput.addEventListener('change', async () => {
     dirty = true;
-    preferDefault = false;
+    detectedDuration = 0;
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     objectUrl = '';
     const file = fileInput.files[0];
@@ -126,22 +130,12 @@ if (host) {
         probe.src = objectUrl;
       });
       if (!Number.isFinite(seconds) || seconds <= 0) throw Error('Cannot read this audio duration.');
+      detectedDuration = seconds;
       status.textContent = `Detected ${seconds.toFixed(1)} seconds. Preview it, then save. ${file.name.toLowerCase().endsWith('.aac') ? 'AAC still needs the Storage rules deploy before save will succeed.' : ''}`.trim();
     } catch (error) {
+      detectedDuration = 0;
       status.textContent = error.message;
     }
-  });
-  panel.querySelector('#break-fill-default').addEventListener('click', () => {
-    dirty = true;
-    preferDefault = true;
-    fileInput.value = '';
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
-    objectUrl = '';
-    stopPreview();
-    status.textContent = preview
-      ? 'Built-in bed selected for this preview. Saving is off here, so the live station is unchanged.'
-      : 'Built-in bed selected. Save to use it for every listener.';
-    source.textContent = DEFAULT_COPY;
   });
   enabled.addEventListener('change', () => { dirty = true; });
   label.addEventListener('input', () => { dirty = true; });
@@ -151,16 +145,16 @@ if (host) {
   }
   saveButton.disabled = preview;
   if (sim) {
-    source.textContent = DEFAULT_COPY;
-    status.textContent = 'Preview is read-only. No station data changed. You can still preview the bed on this device.';
+    source.textContent = OFF_COPY;
+    status.textContent = 'Preview is read-only. No station data changed. Choose a file if you want to preview it on this device.';
   } else {
     onAuthStateChanged(auth, user => {
       if (!isAdminAccount(user)) { panel.hidden = true; return; }
       panel.hidden = false;
-      if (preview) status.textContent = 'Preview is read-only. No station data changed. You can still preview the bed on this device.';
+      if (preview) status.textContent = 'Preview is read-only. No station data changed. Choose a file if you want to preview it on this device.';
       onSnapshot(doc(db, 'radioPlaylists', '__stationControl'), snap => {
         applyStored(snap.data()?.breakFill);
-        if (preview && !dirty) status.textContent = 'Preview is read-only. No station data changed. You can still preview the bed on this device.';
+        if (preview && !dirty) status.textContent = 'Preview is read-only. No station data changed. Choose a file if you want to preview it on this device.';
       }, error => { status.textContent = 'Unable to load the fill bed: ' + error.message; });
     });
   }
@@ -168,25 +162,32 @@ if (host) {
     if (preview) { status.textContent = 'Preview is read-only. No station data changed.'; return; }
     const user = auth.currentUser;
     if (!canPublish(user)) { status.textContent = 'Verified admin sign-in required.'; return; }
-    const file = preferDefault ? null : fileInput.files[0];
+    const file = fileInput.files[0] || null;
     if (file) {
       const type = breakFillContentType(file.name);
       if (!type) { status.textContent = 'Use an MP3, M4A, WAV, or AAC file.'; return; }
       if (!file.size || file.size > 15 * 1024 * 1024) { status.textContent = 'Audio must be under 15 MB.'; return; }
     }
-    if (!confirm('Update the between-show fill bed for every listener?')) return;
+    const plan = planBreakFillSave({
+      enabled: enabled.checked,
+      existing: stored,
+      fileReady: !!file,
+      durationSeconds: detectedDuration,
+      label: label.value
+    });
+    if (!plan.ok) {
+      status.textContent = plan.reason === 'duration'
+        ? 'Preview the file so its duration can be read before saving.'
+        : 'Upload promotional audio before turning the bed on. Nothing was saved.';
+      return;
+    }
+    if (!confirm(plan.breakFill.enabled ? 'Play this uploaded bed after the ads for every listener?' : 'Turn the between-show bed off for every listener?')) return;
     saveButton.disabled = true;
     try {
-      const next = {
-        enabled: enabled.checked,
-        label: label.value.trim().slice(0, 120),
-        audioUrl: preferDefault ? '' : (stored?.audioUrl || ''),
-        durationSeconds: preferDefault ? 0 : (Number(stored?.durationSeconds) || 0),
-        updatedAt: Date.now()
-      };
+      const next = { ...plan.breakFill, label: label.value.trim().slice(0, 120), updatedAt: Date.now() };
       if (file) {
         status.textContent = 'Reading audio…';
-        const seconds = await new Promise((resolve, reject) => {
+        const seconds = detectedDuration || await new Promise((resolve, reject) => {
           const probe = new Audio();
           probe.preload = 'metadata';
           probe.onloadedmetadata = () => resolve(probe.duration);
@@ -203,15 +204,18 @@ if (host) {
         await uploadBytes(fileRef, file, { contentType: breakFillContentType(file.name) });
         next.audioUrl = await getDownloadURL(fileRef);
       }
-      if (next.enabled && next.audioUrl && !(next.durationSeconds > 0)) throw Error('Duration is missing. Choose the file again.');
+      if (next.enabled && !isApprovedFillUrl(next.audioUrl)) throw Error('The upload did not return an approved Storage URL. The bed stays off.');
+      if (next.enabled && !resolveBreakFill(next)) throw Error('This bed is not approved for air. Nothing was changed.');
       status.textContent = 'Saving…';
       await setDoc(doc(db, 'radioPlaylists', '__stationControl'), { breakFill: next, updatedAt: Date.now() }, { merge: true });
-      preferDefault = false;
       dirty = false;
       fileInput.value = '';
+      detectedDuration = 0;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = '';
       status.textContent = next.enabled
-        ? (next.audioUrl ? 'Custom bed saved. Listeners pick it up on the next break.' : 'Built-in bed saved. Listeners pick it up on the next break.')
-        : 'Fill turned off. Breaks go quiet after the ads again.';
+        ? 'Uploaded bed saved. Listeners pick it up on the next break.'
+        : 'Fill turned off. Nothing plays after the ads.';
     } catch (error) {
       const aac = file && breakFillContentType(file.name) === 'audio/aac';
       status.textContent = 'Not saved: ' + error.message + (aac ? ' AAC needs the Storage rules deploy from this branch (audio/aac) before it can upload.' : '');
