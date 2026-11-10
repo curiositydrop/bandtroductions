@@ -1,5 +1,5 @@
 /* BANDtroductions shared Google Analytics loader (G-60112G8RH3).
-   - One tag for every page: <script src="bt-analytics.js?v=3"></script>
+   - One tag for every page: <script src="bt-analytics.js?v=4"></script>
    - Internal testing: open one page in this tab with ?bt_internal=1. The flag stays in
      sessionStorage for this tab only, including the return from checkout. ?bt_internal=0 clears it.
      A permanent localStorage flag is removed so a later normal visit is not labeled internal.
@@ -35,19 +35,22 @@
   window.btTrack=function(name,params,options){
     return new Promise(function(resolve){
       var done=false;
+      var useBeacon=!!(options&&options.beacon);
       function finish(){if(done)return;done=true;resolve();}
+      var timer=setTimeout(finish,useBeacon?800:1000);
       try{
         var p=Object.assign({},params||{});
         if(debug)p.debug_mode=true;
-        // Beacon is for a click that navigates immediately. Events we can wait for
-        // use the normal transport so they leave while the page is still open.
-        // Forcing beacon on every event holds radio_listen until the tab closes.
-        if(options&&options.beacon)p.transport_type='beacon';
-        p.event_callback=finish;
-        p.event_timeout=800;
+        // Beacon is only for a hit sent immediately before same-tab navigation.
+        // radio_listen stays on the normal transport so it is not held until the tab closes.
+        // traffic_type=internal is a config label only; it does not drop the event.
+        if(useBeacon){
+          p.transport_type='beacon';
+          p.event_timeout=800;
+        }
+        p.event_callback=function(){clearTimeout(timer);finish();};
         window.gtag('event',name,p);
-      }catch(e){finish();return;}
-      setTimeout(finish,1000);
+      }catch(e){clearTimeout(timer);finish();}
     });
   };
   window.btRememberCheckout=function(plan){

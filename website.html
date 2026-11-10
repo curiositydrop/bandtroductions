@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="bt-analytics.js?v=3"></script>
+<script src="bt-analytics.js?v=4"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0b100f">
 <meta name="robots" content="noindex,follow">
@@ -115,6 +115,8 @@ else onAuthStateChanged(auth,async user=>{
    if(!agreement.checked){status.className='status error';status.textContent='Check the seller responsibility agreement to continue.';return;}
    const offer=showOffer();
    if(offer.paused||!offer.checkoutUrl){status.className='status error';status.textContent=PAUSED_MESSAGE;return;}
+   if(button.dataset.checkoutStarted==='1')return;
+   button.dataset.checkoutStarted='1';
    button.disabled=true;status.className='status';status.textContent='Preparing your Website + Merch upgrade…';
    try{
     const prepare=httpsCallable(getFunctions(app,'us-central1'),'prepareArtistUpgrade');
@@ -126,10 +128,10 @@ else onAuthStateChanged(auth,async user=>{
     if(email)checkout.searchParams.set('prefilled_email',email);
     try{localStorage.setItem('btWebsiteMerchUpgradeProfileId',profileId);}catch{}
     if(window.btRememberCheckout)window.btRememberCheckout('website-merch');
-    if(window.btTrack)await window.btTrack('begin_checkout',checkoutParams(offer));
+    if(window.btTrack)await window.btTrack('begin_checkout',checkoutParams(offer),{beacon:true});
     location.href=checkout.toString();
    }catch(error){
-    console.error(error);button.disabled=false;status.className='status error';status.textContent=String(error?.message||'The upgrade could not be started. Please try again.').replace(/^Firebase(?:Error)?:\s*/i,'').replace(/\s*\([^)]*\)\.?$/,'');
+    console.error(error);button.dataset.checkoutStarted='';button.disabled=false;status.className='status error';status.textContent=String(error?.message||'The upgrade could not be started. Please try again.').replace(/^Firebase(?:Error)?:\s*/i,'').replace(/\s*\([^)]*\)\.?$/,'');
    }
   };
  }catch(error){console.error(error);loading.textContent='The artist website could not be loaded. Please try again.';}

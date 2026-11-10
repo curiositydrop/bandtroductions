@@ -488,7 +488,7 @@ async function requestStore(event) {
       requestStoreButton.disabled = false;
     } else if (checkoutUrl && !ACTIVE_STATUSES.has(status)) {
       if (window.btRememberCheckout) window.btRememberCheckout('website-merch');
-      if (window.btTrack) await window.btTrack('begin_checkout', checkoutParams(offer));
+      if (window.btTrack) await window.btTrack('begin_checkout', checkoutParams(offer), { beacon: true });
       location.href = checkoutUrl;
     }
     else {

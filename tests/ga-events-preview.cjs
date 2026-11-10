@@ -272,6 +272,45 @@ async function fillSignup(page) {
       await session.context.close();
     }
 
+    {
+      const beacon = await open(browser, base);
+      await beacon.page.goto(`${base}/website.html`, { waitUntil: 'domcontentloaded' });
+      const result = await beacon.page.evaluate(async () => {
+        const seen = [];
+        window.gtag = function() {
+          const args = Array.from(arguments);
+          if (args[0] === 'event' && args[1] === 'begin_checkout') {
+            const body = args[2] || {};
+            seen.push({
+              transport: body.transport_type,
+              timeout: body.event_timeout,
+              hasCallback: typeof body.event_callback === 'function',
+              plan: body.plan,
+              value: body.value,
+              currency: body.currency
+            });
+          }
+        };
+        const started = Date.now();
+        await window.btTrack('begin_checkout', {
+          plan: 'website-merch',
+          currency: 'USD',
+          value: 15,
+          items: [{ item_id: 'website-merch', item_name: 'Website + Merch', price: 15, quantity: 1 }]
+        }, { beacon: true });
+        return { seen, waited: Date.now() - started };
+      });
+      assert.equal(result.seen.length, 1);
+      assert.equal(result.seen[0].transport, 'beacon');
+      assert.equal(result.seen[0].timeout, 800);
+      assert.equal(result.seen[0].hasCallback, true);
+      assert.equal(result.seen[0].plan, 'website-merch');
+      assert.equal(result.seen[0].value, 15);
+      assert.equal(result.seen[0].currency, 'USD');
+      assert.ok(result.waited >= 700 && result.waited < 1200, `beacon wait ${result.waited}ms`);
+      await beacon.context.close();
+    }
+
     console.log('PASS ga events preview');
   } finally {
     await browser.close();

@@ -25,8 +25,11 @@ test('signup and checkout events are tied to the successful action', () => {
   assert.match(read('dashboard-radio-firestore.js'), /btTrack\('radio_listen'/);
   assert.match(read('radio-page.js'), /btTrack\('radio_listen'/);
   assert.match(analytics, /upload_song_click/);
-  assert.match(analytics, /transport_type='beacon'/);
-  assert.match(analytics, /options&&options\.beacon/);
+  assert.match(analytics, /p\.transport_type='beacon'/);
+  assert.match(analytics, /p\.event_timeout=800/);
+  assert.match(website, /\{beacon:true\}/);
+  assert.match(read('merch.js'), /beacon:\s*true/);
+  assert.match(read('gear-payment.js'), /\{beacon:true\}/);
 });
 
 test('internal traffic is tab-scoped and an old permanent flag is cleared', () => {

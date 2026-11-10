@@ -6,6 +6,6 @@ link?.addEventListener('click',async event=>{
   if(!/buy\.stripe\.com/i.test(href))return;
   event.preventDefault();
   if(window.btRememberCheckout)window.btRememberCheckout('gear-feature');
-  if(window.btTrack)await window.btTrack('begin_checkout',{plan:'gear-feature',currency:'USD',value:5,items:[{item_id:'gear-feature',item_name:'Gear Exchange feature',price:5,quantity:1}]});
+  if(window.btTrack)await window.btTrack('begin_checkout',{plan:'gear-feature',currency:'USD',value:5,items:[{item_id:'gear-feature',item_name:'Gear Exchange feature',price:5,quantity:1}]},{beacon:true});
   location.href=link.href;
 });

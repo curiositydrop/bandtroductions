@@ -122,10 +122,11 @@ test('plans page sells the existing offer and only tracked upgrade intent', () =
   assert.equal(website.includes('buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g'), false);
   assert.match(website, /ACTIVE=new Set\(\['active','trialing','comped'\]\)/);
   assert.match(website, /launchSite\(params\.get\('edit'\)==='1'\)/);
-  assert.match(website, /await window\.btTrack\('begin_checkout',checkoutParams\(offer\)\)/);
+  assert.match(website, /await window\.btTrack\('begin_checkout',checkoutParams\(offer\),\{beacon:true\}\)/);
   assert.equal(website.includes("plan:'website_merch'"), false);
   assert.equal(fs.readFileSync(new URL('../merch.js', import.meta.url), 'utf8').includes("plan: 'website_merch'"), false);
-  assert.match(analytics, /options&&options\.beacon\)p\.transport_type='beacon'/);
+  assert.match(analytics, /p\.transport_type='beacon'/);
+  assert.match(analytics, /p\.event_timeout=800/);
   assert.match(analytics, /sessionStorage/);
   assert.match(analytics, /localStorage\.removeItem\('bt_internal'\)/);
   assert.match(analytics, /btTrackPurchase/);
