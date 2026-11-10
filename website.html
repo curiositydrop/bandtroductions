@@ -113,7 +113,8 @@ else onAuthStateChanged(auth,async user=>{
     const email=result.data?.contactEmail||user.email||'';
     if(email)checkout.searchParams.set('prefilled_email',email);
     try{localStorage.setItem('btWebsiteMerchUpgradeProfileId',profileId);}catch{}
-    window.btTrack&&window.btTrack('begin_checkout',{plan:'website_merch'});
+    if(window.btRememberCheckout)window.btRememberCheckout('website-merch');
+    if(window.btTrack)await window.btTrack('begin_checkout',{plan:'website_merch',currency:'USD',value:15,items:[{item_id:'website-merch',item_name:'Website + Merch',price:15,quantity:1}]});
     location.href=checkout.toString();
    }catch(error){
     console.error(error);button.disabled=false;status.className='status error';status.textContent=String(error?.message||'The upgrade could not be started. Please try again.').replace(/^Firebase(?:Error)?:\s*/i,'').replace(/\s*\([^)]*\)\.?$/,'');

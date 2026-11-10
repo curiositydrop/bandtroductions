@@ -245,6 +245,7 @@
   <script src="global.js?v=2"></script>
   <script type="module">
     import { auth, db } from './firebase-dev.js';
+    import { isUpgradeReturn, safeSameOriginReturn } from './safe-return.js';
     import { sendAdminApprovalEmail } from './admin-approval-email.js?v=3';
     import { createWelcomePost } from './welcome-profile-post.js?v=2';
     import { notifySiteAdmins, signupNoticeMessage } from './admin-notify.js?v=1';
@@ -253,9 +254,9 @@
 
     const params = new URLSearchParams(location.search);
     const requestedReturn = params.get('returnTo') || '';
-    const safeReturn = requestedReturn && !requestedReturn.startsWith('//') && !requestedReturn.includes('://')
-      ? requestedReturn
-      : 'index.html';
+    const validatedReturn = safeSameOriginReturn(requestedReturn, '');
+    const safeReturn = validatedReturn || 'index.html';
+    const upgradeIntent = params.get('upgrade') === '1' || isUpgradeReturn(validatedReturn);
     const isClaimReturn = /^claim-profile\.html(?:\?|$)/i.test(safeReturn);
 
     let claimType = '';
@@ -289,7 +290,7 @@
     const changeLoginButton = document.getElementById('change-login-button');
     let createdUser = null;
 
-    if (requestedReturn) loginLink.href = `login.html?returnTo=${encodeURIComponent(safeReturn)}`;
+    if (validatedReturn) loginLink.href = `login.html?returnTo=${encodeURIComponent(validatedReturn)}`;
 
     const value = id => document.getElementById(id)?.value.trim() || '';
     const normalizeUrl = raw => {
@@ -307,6 +308,13 @@
       } catch {
         return {};
       }
+    }
+
+    let signupTracked = false;
+    async function trackSignup(method, type) {
+      if (signupTracked || typeof window.btTrack !== 'function') return;
+      signupTracked = true;
+      await window.btTrack('sign_up', { method, account_type: type || 'unknown' });
     }
 
     function finishWelcomeLocalState() {
@@ -350,6 +358,7 @@
       const eligible = type === 'band' || type === 'musician';
       websiteUpgradeOffer.hidden = !eligible;
       if (!eligible) clearWebsiteUpgradeSelection();
+      else if (upgradeIntent) websiteUpgradeInterest.checked = true;
     }
 
     function artistUpgradeSelected() {
@@ -430,7 +439,6 @@
       try {
         const credential = await createUserWithEmailAndPassword(auth, emailInput.value.trim(), passwordInput.value);
         const accountType = ['band', 'musician', 'venue'].includes(claimType) ? claimType : 'fan';
-        window.btTrack && window.btTrack('sign_up', { method: 'email_claim', account_type: accountType });
         const displayName = claimName || emailInput.value.trim().split('@')[0] || 'BANDtroductions Member';
         await updateProfile(credential.user, { displayName }).catch(() => {});
         await setDoc(doc(db, 'users', credential.user.uid), {
@@ -448,6 +456,7 @@
           createdAt: serverTimestamp()
         });
         finishWelcomeLocalState();
+        await trackSignup('email_claim', accountType);
         const notice = await notifySiteAdmins({
           type: 'new_account',
           subjectId: credential.user.uid,
@@ -523,7 +532,6 @@
         if (!createdUser) {
           const credential = await createUserWithEmailAndPassword(auth, email, password);
           createdUser = credential.user;
-          window.btTrack && window.btTrack('sign_up', { method: 'email', account_type: accountType || 'unknown' });
           changeLoginButton.disabled = true;
           await setDoc(doc(db, 'users', createdUser.uid), {
             uid: createdUser.uid,
@@ -584,6 +592,7 @@
           profileComplete: true,
           updatedAt: serverTimestamp()
         });
+        await trackSignup('email', accountType);
         await updateProfile(createdUser, { displayName }).catch(error => console.warn('Firebase display name update failed:', error));
         await sendEmailVerification(createdUser).catch(error => console.warn('Verification email could not be sent:', error));
         const notice = await notifySiteAdmins({
@@ -606,11 +615,14 @@
 
         await createWelcomePost({ profileId: createdUser.uid, displayName, accountType });
         const upgradeSelected = artistUpgradeSelected();
-        const destination = (!upgradeSelected && /^band-of-the-week\.html(?:\?|$)/i.test(safeReturn))
-          ? safeReturn
-          : upgradeSelected
-            ? `website.html?id=${encodeURIComponent(createdUser.uid)}&from=signup`
-            : `profile.html?id=${encodeURIComponent(createdUser.uid)}&fresh=${Date.now()}`;
+        const artistAccount = accountType === 'band' || accountType === 'musician';
+        const destination = (upgradeSelected || (upgradeIntent && artistAccount))
+          ? `website.html?id=${encodeURIComponent(createdUser.uid)}&from=signup`
+          : (!upgradeSelected && /^band-of-the-week\.html(?:\?|$)/i.test(safeReturn))
+            ? safeReturn
+            : upgradeIntent
+              ? 'plans.html?upgrade=1'
+              : `profile.html?id=${encodeURIComponent(createdUser.uid)}&fresh=${Date.now()}`;
         if (!notice.ok) {
           signupMessage.textContent = `Your free account is ready. ${notice.message} The admin email was only attempted and is not confirmed.`;
           const cont = document.getElementById('signup-notice-continue');

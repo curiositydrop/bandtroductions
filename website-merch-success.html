@@ -27,9 +27,11 @@
 </section>
 </main>
 <script type="module">
+import { trackReturnPurchase } from './checkout-return.js';
 import { auth,db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { doc,getDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+void trackReturnPurchase('website-merch');
 const status=document.getElementById('status');
 const edit=document.getElementById('edit-site');
 const merch=document.getElementById('manage-merch');

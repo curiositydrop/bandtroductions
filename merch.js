@@ -481,7 +481,11 @@ async function requestStore(event) {
     const status = result.data?.subscriptionStatus || 'pending';
     await loadOwnerState(currentUser);
     const checkoutUrl = storeSubscriptionCheckoutUrl();
-    if (checkoutUrl && !ACTIVE_STATUSES.has(status)) location.href = checkoutUrl;
+    if (checkoutUrl && !ACTIVE_STATUSES.has(status)) {
+      if (window.btRememberCheckout) window.btRememberCheckout('website-merch');
+      if (window.btTrack) await window.btTrack('begin_checkout', { plan: 'website_merch', currency: 'USD', value: 15, items: [{ item_id: 'website-merch', item_name: 'Website + Merch', price: 15, quantity: 1 }] });
+      location.href = checkoutUrl;
+    }
     else {
       if (ownedStore) storeForm.hidden = true;
       setOwnerMessage(ACTIVE_STATUSES.has(status) ? 'Store details saved.' : 'Store submitted. Add your merchandise below while it awaits approval.');

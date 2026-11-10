@@ -28,18 +28,18 @@
   <script src="global.js?v=2"></script>
   <script type="module">
     import { auth, db } from './firebase-dev.js';
+    import { isUpgradeReturn, safeSameOriginReturn } from './safe-return.js';
     import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
     import { doc, getDoc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
     const params = new URLSearchParams(location.search);
     const requestedReturn = params.get('returnTo') || '';
-    const safeReturn = requestedReturn && !requestedReturn.startsWith('//') && !requestedReturn.includes('://')
-      ? requestedReturn
-      : 'index.html';
+    const validatedReturn = safeSameOriginReturn(requestedReturn, '');
+    const safeReturn = validatedReturn || 'index.html';
     const isClaimReturn = /^claim-profile\.html(?:\?|$)/i.test(safeReturn);
 
     const signupLink = document.getElementById('signup-link');
-    if (requestedReturn) signupLink.href = `signup.html?returnTo=${encodeURIComponent(safeReturn)}`;
+    if (validatedReturn) signupLink.href = `signup.html?returnTo=${encodeURIComponent(validatedReturn)}`;
 
     const form = document.getElementById('login-form');
     const button = document.getElementById('login-button');
@@ -109,7 +109,10 @@
           const userData = userSnapshot.exists() ? userSnapshot.data() : {};
           const profileComplete = userData.profileComplete === true && profileSnapshot.exists();
           if (!profileComplete && !isClaimReturn) {
-            window.location.href = 'profile-setup.html?resume=1';
+            const setup = new URL('profile-setup.html', location.href);
+            setup.searchParams.set('resume', '1');
+            if (isUpgradeReturn(validatedReturn)) setup.searchParams.set('returnTo', validatedReturn);
+            window.location.href = `profile-setup.html${setup.search}`;
             return;
           }
         } catch (profileCheckError) {
