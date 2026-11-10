@@ -1,5 +1,5 @@
 /* BANDtroductions shared Google Analytics loader (G-60112G8RH3).
-   - One tag for every page: <script src="bt-analytics.js?v=1"></script>
+   - One tag for every page: <script src="bt-analytics.js?v=3"></script>
    - Internal testing: open one page in this tab with ?bt_internal=1. The flag stays in
      sessionStorage for this tab only, including the return from checkout. ?bt_internal=0 clears it.
      A permanent localStorage flag is removed so a later normal visit is not labeled internal.

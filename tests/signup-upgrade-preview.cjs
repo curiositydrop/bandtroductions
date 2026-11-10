@@ -34,12 +34,13 @@ function staticChecks() {
     'Merch storefront listed in the Merch Hub',
     'Shows, booking, music, photos and videos',
     'Your existing profile information carries over automatically',
-    '$15 today. Includes your first month. Your next 2 months are free, then $15/month. Cancel anytime.'
+    'Pay just $15 for your first month. Months 2 and 3 are FREE, then just $15/month. Offer ends December 31, 2026.'
   ]) {
     assert.equal(signup.includes(benefit), true, benefit);
   }
   assert.equal(signup.includes('custom domain'), false, 'do not add a custom-domain benefit the upgrade page does not list');
-  assert.equal(read('website.html').includes('buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g'), true, 'existing checkout link preserved');
+  assert.equal(read('bt-offer.js').includes('buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g'), true, 'promo checkout link lives in bt-offer.js');
+  assert.equal(read('website.html').includes('buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g'), false, 'website.html must not hard-code the promo link');
   assert.equal(read('website.html').includes('prepareArtistUpgrade'), true);
   assert.equal(read('functions/main.js').includes("new Set(['band', 'musician'])"), true, 'callable already allows bands and musicians');
 

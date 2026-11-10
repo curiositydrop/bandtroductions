@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-<script src="bt-analytics.js?v=1"></script>
+<script src="bt-analytics.js?v=3"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Log In | BANDtroductions</title>
 <meta name="description" content="Log in to your BANDtroductions account.">
@@ -37,9 +37,17 @@
     const validatedReturn = safeSameOriginReturn(requestedReturn, '');
     const safeReturn = validatedReturn || 'index.html';
     const isClaimReturn = /^claim-profile\.html(?:\?|$)/i.test(safeReturn);
+    const requestedType = (params.get('type') || '').trim().toLowerCase();
+    const safeType = ['band', 'musician', 'venue', 'fan'].includes(requestedType) ? requestedType : '';
+    const upgradeRequested = params.get('upgrade') === '1' || isUpgradeReturn(validatedReturn);
+    const signupQuery = new URLSearchParams();
+    if (safeType) signupQuery.set('type', safeType);
+    else if (upgradeRequested) signupQuery.set('type', 'band');
+    if (upgradeRequested) signupQuery.set('upgrade', '1');
+    if (validatedReturn) signupQuery.set('returnTo', validatedReturn);
 
     const signupLink = document.getElementById('signup-link');
-    if (validatedReturn) signupLink.href = `signup.html?returnTo=${encodeURIComponent(validatedReturn)}`;
+    if ([...signupQuery.keys()].length) signupLink.href = `signup.html?${signupQuery.toString()}`;
 
     const form = document.getElementById('login-form');
     const button = document.getElementById('login-button');

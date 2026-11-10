@@ -8,7 +8,7 @@ export function signupUpgradeHref() {
 }
 
 export function loginUpgradeHref() {
-  return `login.html?returnTo=${encodeURIComponent(UPGRADE_RETURN)}`;
+  return `login.html?type=band&upgrade=1&returnTo=${encodeURIComponent(UPGRADE_RETURN)}`;
 }
 
 export function profileOwnerId(profile, profileId) {

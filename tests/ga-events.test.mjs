@@ -17,6 +17,7 @@ test('signup and checkout events are tied to the successful action', () => {
   assert.ok(created > 0 && profileSaved > created && tracked > profileSaved);
   assert.match(website, /if\(!agreement\.checked\)/);
   const checkout = website.indexOf("await window.btTrack('begin_checkout'");
+  assert.equal(website.includes("website_merch"), false);
   const redirect = website.indexOf('location.href=checkout.toString()');
   assert.ok(checkout > 0 && redirect > checkout);
   assert.match(success, /trackReturnPurchase\('website-merch'\)/);

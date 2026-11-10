@@ -174,9 +174,10 @@ async function overflow(page) {
       const href = await session.page.locator('#upgrade-account-link').getAttribute('href');
       const loginHref = await session.page.locator('#upgrade-login-link').getAttribute('href');
       assert.equal(href, 'signup.html?type=band&upgrade=1&returnTo=plans.html%3Fupgrade%3D1');
-      assert.equal(loginHref, 'login.html?returnTo=plans.html%3Fupgrade%3D1');
+      assert.equal(loginHref, 'login.html?type=band&upgrade=1&returnTo=plans.html%3Fupgrade%3D1');
       assert.match(await session.page.locator('h1').innerText(), /official website, without building one/);
-      assert.match(await session.page.locator('.offer').innerText(), /Pay for month one, get months two and three free/);
+      assert.match(await session.page.locator('#launch-offer').innerText(), /LIMITED-TIME LAUNCH OFFER/);
+      assert.match(await session.page.locator('#launch-offer').innerText(), /Get 2 Months FREE!/);
       const box = await session.page.locator('#upgrade-account-link').boundingBox();
       assert.ok(box.height >= 44, `upgrade button ${box.height}px`);
       const width = await overflow(session.page);
@@ -192,8 +193,11 @@ async function overflow(page) {
         };
       });
       await session.page.locator('#upgrade-account-link').click();
-      await session.page.waitForURL(/signup\.html\?type=band&upgrade=1&returnTo=/);
+      await session.page.waitForURL(/signup\.html\?type=band&upgrade=1&returnTo=/, { waitUntil: 'domcontentloaded' });
       assert.equal(new URL(session.page.url()).searchParams.get('returnTo'), 'plans.html?upgrade=1');
+      assert.equal(await session.page.locator('#claim-notice-continue').count(), 0);
+      const continueBox = await session.page.locator('#continue-button').boundingBox();
+      assert.ok(continueBox && continueBox.height >= 44);
       assert.equal(recorded.includes('upgrade_intent'), true);
       await session.page.locator('#email').fill('artist@example.com');
       await session.page.locator('#password').fill('password123');
@@ -210,9 +214,12 @@ async function overflow(page) {
       const session = await openPhone(browser, base);
       await session.page.goto(`${base}/plans.html`, { waitUntil: 'domcontentloaded' });
       await session.page.locator('#upgrade-login-link').click();
-      await session.page.waitForURL(/login\.html\?returnTo=/);
+      await session.page.waitForURL(/login\.html\?/, { waitUntil: 'domcontentloaded' });
       const signup = await session.page.locator('#signup-link').getAttribute('href');
-      assert.equal(new URL(signup, session.page.url()).searchParams.get('returnTo'), 'plans.html?upgrade=1');
+      const signupUrl = new URL(signup, session.page.url());
+      assert.equal(signupUrl.searchParams.get('type'), 'band');
+      assert.equal(signupUrl.searchParams.get('upgrade'), '1');
+      assert.equal(signupUrl.searchParams.get('returnTo'), 'plans.html?upgrade=1');
       await session.context.close();
     }
 
@@ -276,7 +283,7 @@ async function overflow(page) {
       assert.equal(session.state.stripe.length, 0);
       await session.page.locator('#seller-agreement').check();
       await session.page.locator('#upgrade-button').click();
-      await session.page.waitForURL(/buy\.stripe\.com\/14AaEQbcy0tsfzP3mj6oo0g/);
+      await session.page.waitForURL(/buy\.stripe\.com\/14AaEQbcy0tsfzP3mj6oo0g/, { waitUntil: 'domcontentloaded' });
       const checkout = new URL(session.state.stripe[0]);
       assert.equal(checkout.origin + checkout.pathname, 'https://buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g');
       assert.equal(checkout.searchParams.get('client_reference_id'), 'band-owner');

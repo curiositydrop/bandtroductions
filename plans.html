@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="bt-analytics.js?v=2"></script>
+<script src="bt-analytics.js?v=3"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Band Website Plans | BANDtroductions</title>
 <meta name="description" content="Your band’s official website, without building one. $15 a month. Pay for month one, get months two and three free.">
@@ -25,10 +25,10 @@
 body{margin:0;background:radial-gradient(ellipse at top,#17302e,var(--bg) 65%);color:#f2f7f6;font:16px/1.5 Arial,sans-serif}
 a{color:inherit}
 .wrap{max-width:1050px;margin:auto;padding:16px}
-.hero{padding:28px 4px 8px}
-.eyebrow{color:var(--teal);font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:12px;margin:0 0 8px}
-.hero h1{font-size:clamp(32px,8vw,58px);line-height:1.08;margin:0 auto 12px;max-width:18ch}
-.hero p{max-width:40rem;margin:0;color:var(--muted)}
+.hero{padding:28px 0 8px;text-align:left}
+.eyebrow{color:var(--teal);font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:12px;margin:0 0 8px;text-align:left}
+.hero h1{font-size:clamp(32px,8vw,58px);line-height:1.08;margin:0 0 12px;max-width:16em;text-align:left}
+.hero p{max-width:40rem;margin:0;color:var(--muted);text-align:left}
 .plans{display:grid;gap:14px;margin:22px 0}
 .plan{border:1px solid var(--line);background:linear-gradient(160deg,#182321,#0c1110);border-radius:18px;padding:22px 18px;display:flex;flex-direction:column;min-width:0}
 .plan.paid{border:2px solid var(--teal);box-shadow:0 0 35px #25c7c11a}
@@ -55,7 +55,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:28px 0}
 @media (max-width:799px){.plan.paid{order:-1}}
 @media (min-width:800px){
   .wrap{padding:20px}
-  .hero{padding:48px 10px 12px}
+  .hero{padding:48px 0 12px}
   .plans{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
   .plan{padding:28px}
 }
@@ -86,10 +86,10 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:28px 0}
   </article>
   <article class="plan paid">
     <p class="eyebrow">For bands and musicians</p>
-    <h2>Band website</h2>
+    <h2>Band Website + Merch</h2>
     <div class="price">$15 <small>/ month</small></div>
-    <p class="offer-line">Pay for month one, get months two and three free.</p>
-    <p>Then $15/month.</p>
+    <p class="offer-line" id="plan-offer-line">Pay just $15 for your first month. Months 2 and 3 are FREE, then just $15/month.</p>
+    <p id="plan-offer-ends">Offer ends December 31, 2026.</p>
     <p id="upgrade-status" class="upgrade-status" role="status" hidden></p>
     <ul>
       <li>A finished public website. Your name, story, location, banner, and videos come from your BANDtroductions profile.</li>
@@ -104,11 +104,16 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:28px 0}
     <a class="button" id="upgrade-login-link" data-bt-event="upgrade_intent" href="login.html?returnTo=plans.html%3Fupgrade%3D1">I already have an account</a>
   </article>
 </section>
-<div class="offer"><strong>$15/month.</strong> Pay for month one, get months two and three free. Then $15/month.</div>
+<section class="offer" id="launch-offer" aria-label="Launch offer">
+  <p class="eyebrow" id="offer-label">LIMITED-TIME LAUNCH OFFER</p>
+  <h2 id="offer-heading">Get 2 Months FREE!</h2>
+  <p id="offer-text">Pay just $15 for your first month. Months 2 and 3 are FREE, then just $15/month.</p>
+  <p id="offer-ends"><strong>Offer ends December 31, 2026.</strong></p>
+</section>
 <section class="section examples" id="live-examples">
   <h2>See a real band website</h2>
   <p class="muted">This is a published BANDtroductions band site, not a mockup.</p>
-  <a class="button" id="live-example-link" href="website-pilot.html?id=EH63rrsL2kPDjevdR5GsWEtsne92">Lethal CreeD</a>
+  <a class="button" id="live-example-link" href="website.html?id=EH63rrsL2kPDjevdR5GsWEtsne92">Lethal CreeD</a>
 </section>
 <section class="section">
   <h2>Free to join. Upgrade when the website is worth it.</h2>
@@ -122,7 +127,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:28px 0}
   </details>
   <details>
     <summary>What does $15 include?</summary>
-    <p>Pay for month one, get months two and three free. Then $15/month. Checkout does not start on this page. The next page asks the artist to accept the seller agreement before payment.</p>
+    <p id="faq-price">Pay just $15 for your first month. Months 2 and 3 are FREE, then just $15/month. Offer ends December 31, 2026. Checkout does not start on this page. The next page asks the artist to accept the seller agreement before payment.</p>
   </details>
   <details>
     <summary>Who can buy the website?</summary>
@@ -141,14 +146,59 @@ import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { decideUpgrade } from './plans-upgrade.js';
+import { PAUSED_MESSAGE, currentOffer } from './bt-offer.js';
 
 const link = document.getElementById('upgrade-account-link');
 const loginLink = document.getElementById('upgrade-login-link');
 const status = document.getElementById('upgrade-status');
 const resumeUpgrade = new URLSearchParams(location.search).get('upgrade') === '1';
 
+function renderOffer(offer) {
+  const label = document.getElementById('offer-label');
+  const heading = document.getElementById('offer-heading');
+  const text = document.getElementById('offer-text');
+  const ends = document.getElementById('offer-ends');
+  const line = document.getElementById('plan-offer-line');
+  const planEnds = document.getElementById('plan-offer-ends');
+  const faq = document.getElementById('faq-price');
+  label.hidden = !offer.promo;
+  heading.hidden = offer.paused;
+  ends.hidden = !offer.promo;
+  if (offer.promo) {
+    label.textContent = offer.label;
+    heading.textContent = offer.heading;
+    text.textContent = offer.text;
+    ends.textContent = offer.ends;
+  } else if (offer.paused) {
+    heading.textContent = '';
+    text.textContent = PAUSED_MESSAGE;
+  } else {
+    heading.textContent = offer.heading;
+    text.textContent = offer.text;
+  }
+  if (line) line.textContent = offer.promo ? offer.text : offer.short;
+  if (planEnds) {
+    planEnds.hidden = !offer.promo;
+    planEnds.textContent = offer.ends;
+  }
+  if (faq) {
+    faq.textContent = offer.paused
+      ? `${PAUSED_MESSAGE} Free membership stays free.`
+      : `${offer.short} Checkout does not start on this page. The next page asks the artist to accept the seller agreement before payment.`;
+  }
+}
+
 function apply(decision) {
-  document.documentElement.dataset.upgradeState = decision.state;
+  const offer = currentOffer();
+  renderOffer(offer);
+  document.documentElement.dataset.upgradeState = offer.paused ? 'paused' : decision.state;
+  if (offer.paused) {
+    status.hidden = false;
+    status.textContent = PAUSED_MESSAGE;
+    link.hidden = true;
+    loginLink.hidden = true;
+    return;
+  }
   status.hidden = !decision.message;
   status.textContent = decision.message || '';
   if (decision.href) {

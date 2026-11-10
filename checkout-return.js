@@ -21,17 +21,26 @@ const OFFERS = {
   'gear-feature': { value: 5, item_name: 'Gear Exchange feature' }
 };
 
+export function hasCheckoutReturn(plan) {
+  if (queryTransactionId()) return true;
+  if (!stripeReferrer()) return false;
+  try {
+    const pending = JSON.parse(sessionStorage.getItem('bt_checkout_pending') || 'null');
+    return Boolean(pending && pending.plan === plan && /^[A-Za-z0-9_-]{8,200}$/.test(pending.nonce || ''));
+  } catch {
+    return false;
+  }
+}
+
 export async function trackReturnPurchase(plan) {
   const offer = OFFERS[plan];
-  if (!offer || typeof window.btTrackPurchase !== 'function') return false;
+  if (!offer || typeof window.btTrackPurchase !== 'function' || !hasCheckoutReturn(plan)) return false;
   let transactionId = queryTransactionId();
-  if (!transactionId && stripeReferrer()) {
+  if (!transactionId) {
     try {
       const pending = JSON.parse(sessionStorage.getItem('bt_checkout_pending') || 'null');
-      if (pending && pending.plan === plan && /^[A-Za-z0-9_-]{8,200}$/.test(pending.nonce || '')) {
-        transactionId = pending.nonce;
-      }
-    } catch {}
+      transactionId = pending?.nonce || '';
+    } catch { transactionId = ''; }
   }
   if (!transactionId) return false;
   try { sessionStorage.removeItem('bt_checkout_pending'); } catch {}
