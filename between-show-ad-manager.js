@@ -165,7 +165,7 @@ if(!only&&!vf&&!im&&!current.videoUrl&&!current.posterUrl){status.textContent='S
 if(af&&!['audio/mp4','audio/x-m4a','audio/m4a','audio/mpeg','audio/wav'].includes(af.type)){status.textContent='Audio must be MP3, M4A, or extracted WAV.';return;}
 if((vf&&vf.size>40*1024*1024)||(im&&im.size>5*1024*1024)||(af&&af.size>15*1024*1024)){status.textContent='Max file sizes: video 40 MB, image 5 MB, audio 15 MB.';return;}
 const duration=Number(form.elements.durationSeconds.value);if(!Number.isInteger(duration)||duration<1||duration>60){status.textContent='Duration must be 1–60 seconds.';return;}
-try{if(vf&&vf.type==='video/mp4'&&(await metadata(vf))>duration+1)throw Error('Video exceeds configured duration.');if(af&&(await metadata(af))>duration+1)throw Error('Audio exceeds configured duration.');
+try{if(vf&&vf.type==='video/mp4'&&(await metadata(vf))>duration+1)throw Error('Video exceeds configured duration.');if(af){const seconds=await metadata(af);if(seconds>60)throw Error('This file is longer than the 60-second break, so it cannot finish before the next show. Nothing was saved.');if(seconds>duration+1)throw Error('Audio exceeds configured duration. Nothing was shortened.');}
 const button=panel.querySelector('#bt-ad-save');button.disabled=true;status.textContent='Uploading and saving…';
 const next={...current,sponsorName:form.elements.sponsorName.value.trim(),clickUrl:form.elements.clickUrl.value.trim(),durationSeconds:duration,active:form.elements.active.checked};
 if(!/^https:\/\//i.test(next.clickUrl))throw Error('Sponsor link must use HTTPS.');

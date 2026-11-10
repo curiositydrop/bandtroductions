@@ -2,7 +2,8 @@
 // schedule engine as the homepage player. Read-only: never writes to Firestore.
 import { db as devDb } from './firebase-dev.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak, withPreviewTestBreak } from './radio-schedule-engine.js?v=6';
+import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak, withPreviewTestBreak, betweenShowGap, previewBreakOffset, previewDemoAdSeconds, previewAdSecondsOverride } from './radio-schedule-engine.js?v=7';
+import { currentBreakFill, syncBreakFillAudio, clearBreakFillAudio, releaseFillAudio, fillBlockedByFailure, configuredBreakAds, planPaidAdPlayback, holdPaidAd, noteMeasuredAdDuration, primeAdDuration, actualDurationFor } from './radio-break-fill.mjs?v=20261110-ad-file-length';
 
 const STATION_CONTROL_ID='__stationControl';
 const DEFAULT_COVER='bt-radio-logo-280.webp';
@@ -15,20 +16,47 @@ const safeUrl=u=>{try{const x=new URL(u,location.href);return /^https?:$/.test(x
 let playlists={},stationEnabled=true,stationSettings={},loaded=false;
 let audio=null,listening=false,currentKey='',selectedDay='';
 
-function currentBreak(){if(!stationEnabled)return null;const c=effectiveSponsorBreak(stationSettings);return withPreviewTestBreak(sponsorBreak(playlists,c),c);}
+function sponsorConfig(){return effectiveSponsorBreak(stationSettings);}
+function paidRun(date=new Date()){
+  if(previewAdSecondsOverride()!=null)return null;
+  const preview=previewBreakOffset(date);
+  const gap=preview==null?betweenShowGap(playlists,date):null;
+  const offset=preview!=null?preview:gap?.offsetSecondsExact;
+  if(offset==null)return null;
+  const parsed=configuredBreakAds(sponsorConfig());
+  if(!parsed.ok||!parsed.ads.length)return null;
+  for(const ad of parsed.ads)if(ad.audioUrl)primeAdDuration(ad.audioUrl);
+  return planPaidAdPlayback({ads:parsed.ads,actualDurations:parsed.ads.map(ad=>ad.audioUrl?actualDurationFor(ad.audioUrl):null),breakOffset:offset});
+}
+function currentBreak(){if(!stationEnabled)return null;const c=sponsorConfig();return holdPaidAd(withPreviewTestBreak(sponsorBreak(playlists,c),c),paidRun())||null;}
+function currentFill(date=new Date()){
+  const run=paidRun(date);
+  if(run&&run.allowFill===false)return null;
+  const c=sponsorConfig();
+  const actualAdSeconds=run&&run.allowFill?run.fillStartsAt:null;
+  const preview=previewBreakOffset(date);
+  if(preview!=null){
+    const now=easternClock(date);
+    const previewFill=currentBreakFill({stationEnabled,sponsorConfig:c,fillConfig:stationSettings.breakFill,previewOffset:preview,previewAdSeconds:previewDemoAdSeconds(c),previewNextStart:(now.minutes+1)%1440,actualAdSeconds});
+    return fillBlockedByFailure(audio,previewFill)?null:previewFill;
+  }
+  const fill=currentBreakFill({stationEnabled,sponsorConfig:c,fillConfig:stationSettings.breakFill,gap:betweenShowGap(playlists,date),actualAdSeconds});
+  return fillBlockedByFailure(audio,fill)?null:fill;
+}
 // Sponsor audio through the same (already tap-unlocked) <audio> element as the music, so iPhone plays it with no extra tap.
 function breakAudio(b){return !!(b&&b.audioUrl&&listening);}
 function playBreakAudio(b){
   ensureAudio();
+  clearBreakFillAudio(audio);
   if(currentKey!==b.key){currentKey=b.key;audio.src=b.audioUrl;audio.load();
-    audio.addEventListener('loadedmetadata',()=>{const f=currentBreak();if(f&&f.key===b.key){try{audio.currentTime=f.offsetSeconds;}catch{}if(f.clipPlaying)audio.play().catch(()=>{});}},{once:true});
+    audio.addEventListener('loadedmetadata',()=>{noteMeasuredAdDuration(b.audioUrl,audio.duration);const f=currentBreak();if(f&&f.key===b.key){try{audio.currentTime=f.offsetSeconds;}catch{}if(f.clipPlaying&&!audio.ended)audio.play().catch(()=>{});}},{once:true});
     audio.play().catch(()=>{});return;}
   if(!b.clipPlaying){if(!audio.paused)audio.pause();return;}
   if(audio.readyState>0&&Math.abs((audio.currentTime||0)-b.offsetSeconds)>1.5){try{audio.currentTime=b.offsetSeconds;}catch{}}
-  if(audio.paused&&audio.readyState>0&&(audio.currentTime||0)<(audio.duration||99)-.3)audio.play().catch(()=>{});
+  if(!audio.ended&&audio.paused&&audio.readyState>0&&(audio.currentTime||0)<(audio.duration||99)-.3)audio.play().catch(()=>{});
 }
 function state(){
-  if(!stationEnabled||currentBreak())return null;
+  if(!stationEnabled||currentBreak()||currentFill())return null;
   const p=activePlaylist(playlists);if(!p)return null;
   const pos=playlistPosition(p);if(!pos)return null;
   const item=p.items?.[pos.index];if(!item?.audioUrl)return null;
@@ -60,8 +88,28 @@ function renderBreak(b){
   $('rpProgress').hidden=true;$('rpUpNext').innerHTML='';$('rpOff').hidden=true;
 }
 function hideBreak(){const v=$('rpAd');v?.pause();if(v)v.hidden=true;const img=$('rpSponsorImage');if(img){img.hidden=true;img.style.display='none';}$('rpCover').hidden=false;}
+function renderFill(fill){
+  hideBreak();
+  const card=$('rpPlayer');card.classList.add('is-live');
+  $('rpStatus').textContent='● ON AIR';$('rpStatus').className='rp-status live';
+  setImg(DEFAULT_COVER,'BANDtroductions Radio');
+  $('rpLabel').textContent='STATION BREAK';
+  $('rpTrack').textContent='BANDtroductions Radio';
+  $('rpArtist').textContent='';
+  $('rpShow').textContent=`Up next: ${fill.nextShow} at ${formatMinutes(fill.nextStartMinutes)} ET`;
+  $('rpProfile').hidden=true;
+  $('rpListen').disabled=false;$('rpListen').textContent=listening?'❚❚ PAUSE':'▶ LISTEN LIVE';
+  $('rpProgress').hidden=true;$('rpUpNext').innerHTML='';$('rpOff').hidden=true;
+  if(listening){
+    ensureAudio();
+    syncBreakFillAudio(audio,fill,{shouldPlay:true,muted:false,current:currentFill});
+  }else if(audio&&!audio.paused)audio.pause();
+}
 function renderPlayer(){
   const b=currentBreak();
+  const fill=currentFill();
+  if(b&&b.clipPlaying){renderBreak(b);return;}
+  if(fill){renderFill(fill);return;}
   if(b){renderBreak(b);return;}
   hideBreak();
   const s=state();
@@ -134,7 +182,27 @@ function ensureAudio(){
 }
 async function sync(){
   const br=currentBreak();
-  if(br){if(breakAudio(br))return;if(audio&&!audio.paused)audio.pause();currentKey='';return;}
+  const fill=currentFill();
+  if(br&&br.clipPlaying){
+    if(audio)clearBreakFillAudio(audio);
+    if(breakAudio(br))return;
+    if(audio&&!audio.paused)audio.pause();
+    currentKey='';
+    return;
+  }
+  if(fill){
+    if(!listening){if(audio&&!audio.paused)audio.pause();return;}
+    ensureAudio();
+    syncBreakFillAudio(audio,fill,{shouldPlay:true,muted:false,current:currentFill});
+    currentKey=fill.key;
+    return;
+  }
+  if(br){
+    if(audio){clearBreakFillAudio(audio);if(!audio.paused)audio.pause();}
+    currentKey='';
+    return;
+  }
+  if(audio)clearBreakFillAudio(audio);
   const s=state();
   if(!s){if(audio&&!audio.paused){audio.pause();}currentKey='';return;}
   if(!listening)return;
@@ -151,9 +219,12 @@ async function sync(){
 }
 $('rpListen').addEventListener('click',async()=>{
   const br=currentBreak();
-  if(br){listening=!listening;if(listening)window.btTrack&&window.btTrack('radio_listen',{player:'radio_page'});const v=$('rpAd');if(br.audioUrl){if(listening)playBreakAudio(br);else audio?.pause();v.muted=true;if(br.videoUrl&&br.clipPlaying)v.play().catch(()=>{});}else{v.muted=!listening;if(listening)v.play().catch(()=>{});else audio?.pause();}renderPlayer();return;}
+  const fill=currentFill();
+  if(br&&br.clipPlaying){listening=!listening;if(listening)window.btTrack&&window.btTrack('radio_listen',{player:'radio_page'});const v=$('rpAd');if(br.audioUrl){if(listening)playBreakAudio(br);else audio?.pause();v.muted=true;if(br.videoUrl)v.play().catch(()=>{});}else{v.muted=!listening;if(listening)v.play().catch(()=>{});else audio?.pause();}renderPlayer();return;}
+  if(fill){listening=!listening;if(listening){window.btTrack&&window.btTrack('radio_listen',{player:'radio_page'});ensureAudio();syncBreakFillAudio(audio,fill,{shouldPlay:true,muted:false,current:currentFill});}else audio?.pause();renderPlayer();return;}
+  if(br){listening=!listening;if(!listening)audio?.pause();renderPlayer();return;}
   if(listening){listening=false;audio?.pause();renderPlayer();return;}
-  listening=true;window.btTrack&&window.btTrack('radio_listen',{player:'radio_page'});ensureAudio();currentKey='';await sync();renderPlayer();
+  listening=true;window.btTrack&&window.btTrack('radio_listen',{player:'radio_page'});ensureAudio();clearBreakFillAudio(audio);currentKey='';await sync();renderPlayer();
 });
 
 loadStaticSponsorBreak();setInterval(()=>loadStaticSponsorBreak(),60000);
@@ -166,5 +237,28 @@ onSnapshot(collection(devDb,'radioPlaylists'),snap=>{
   $('rpTrack').textContent='Radio is unavailable right now';$('rpOff').hidden=false;$('rpOff').textContent='Please refresh in a minute.';
   $('rpSchedule').innerHTML='<li class="empty">Schedule unavailable. Please refresh.</li>';
 });
-let lastMin=-1;
-setInterval(()=>{renderPlayer();sync();const m=easternClock().minutes;if(m!==lastMin){lastMin=m;if(loaded)renderSchedule();}},1000);
+let lastMin=-1,fillBoundary=0;
+function stopFillIfMinuteEnded(){
+  if(currentFill()||!audio?.dataset.breakFillUrl)return false;
+  releaseFillAudio(audio);
+  currentKey='';
+  return true;
+}
+function armFillBoundary(){
+  clearTimeout(fillBoundary);
+  if(!currentFill())return;
+  const ms=60000-(Date.now()%60000);
+  fillBoundary=setTimeout(()=>{
+    if(currentFill()){armFillBoundary();return;}
+    const stopped=stopFillIfMinuteEnded();
+    if(stopped){renderPlayer();sync();}
+  },ms);
+}
+setInterval(()=>{
+  if(stopFillIfMinuteEnded()){renderPlayer();sync();}
+  else{
+    const fill=currentFill();
+    if(fill&&listening&&audio)syncBreakFillAudio(audio,fill,{shouldPlay:true,muted:false,current:currentFill});
+  }
+},100);
+setInterval(()=>{renderPlayer();sync();armFillBoundary();const m=easternClock().minutes;if(m!==lastMin){lastMin=m;if(loaded)renderSchedule();}},1000);
