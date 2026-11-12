@@ -39,8 +39,9 @@ function staticChecks() {
     assert.equal(signup.includes(benefit), true, benefit);
   }
   assert.equal(signup.includes('custom domain'), false, 'do not add a custom-domain benefit the upgrade page does not list');
-  assert.equal(read('bt-offer.js').includes('buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g'), true, 'promo checkout link lives in bt-offer.js');
-  assert.equal(read('website.html').includes('buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g'), false, 'website.html must not hard-code the promo link');
+  assert.equal(read('bt-offer.js').includes('buy.stripe.com/dRmbIU1BYekifzP2if6oo0f'), true, 'promo checkout link lives in bt-offer.js');
+  assert.equal(read('website.html').includes('buy.stripe.com/dRmbIU1BYekifzP2if6oo0f'), false, 'website.html must not hard-code the promo link');
+  assert.equal(read('bt-offer.js').includes('14AaEQbcy0tsfzP3mj6oo0g'), false, 'the retired promo link is gone');
   assert.equal(read('website.html').includes('prepareArtistUpgrade'), true);
   assert.equal(read('functions/main.js').includes("new Set(['band', 'musician'])"), true, 'callable already allows bands and musicians');
 

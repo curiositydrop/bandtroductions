@@ -271,9 +271,9 @@ async function overflow(page) {
       assert.equal(recorded.includes('upgrade_intent'), true);
       await shot(session.page, 'flow-band-checkout-iphone.png');
       await session.page.evaluate(() => {
-        const original = window.btTrack;
-        window.btTrack = function(name, params) {
-          window.__recordEvent(name);
+        const original = window.btTrackCheckout;
+        window.btTrackCheckout = function(params) {
+          window.__recordEvent('begin_checkout');
           return original.apply(this, arguments);
         };
       });
@@ -283,9 +283,9 @@ async function overflow(page) {
       assert.equal(session.state.stripe.length, 0);
       await session.page.locator('#seller-agreement').check();
       await session.page.locator('#upgrade-button').click();
-      await session.page.waitForURL(/buy\.stripe\.com\/14AaEQbcy0tsfzP3mj6oo0g/, { waitUntil: 'domcontentloaded' });
+      await session.page.waitForURL(/buy\.stripe\.com\/dRmbIU1BYekifzP2if6oo0f/, { waitUntil: 'domcontentloaded' });
       const checkout = new URL(session.state.stripe[0]);
-      assert.equal(checkout.origin + checkout.pathname, 'https://buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g');
+      assert.equal(checkout.origin + checkout.pathname, 'https://buy.stripe.com/dRmbIU1BYekifzP2if6oo0f');
       assert.equal(checkout.searchParams.get('client_reference_id'), 'band-owner');
       assert.equal(prepared[0].sellerAgreementAccepted, true);
       assert.equal(prepared[0].profileId, 'band-owner');
@@ -313,9 +313,9 @@ async function overflow(page) {
       assert.match(await standard.page.locator('#offer-detail').innerText(), /\$15\/month\. Cancel anytime\./);
       assert.equal(/FREE|activation fee/i.test(await standard.page.locator('#offer-detail').innerText()), false);
       await standard.page.evaluate(() => {
-        const original = window.btTrack;
-        window.btTrack = function(name, params) {
-          window.__recordCheckout(name, params);
+        const original = window.btTrackCheckout;
+        window.btTrackCheckout = function(params) {
+          window.__recordCheckout('begin_checkout', params);
           return original.apply(this, arguments);
         };
       });

@@ -16,7 +16,7 @@ test('signup and checkout events are tied to the successful action', () => {
   const tracked = signup.indexOf("await trackSignup('email', accountType)");
   assert.ok(created > 0 && profileSaved > created && tracked > profileSaved);
   assert.match(website, /if\(!agreement\.checked\)/);
-  const checkout = website.indexOf("await window.btTrack('begin_checkout'");
+  const checkout = website.indexOf('await window.btTrackCheckout(checkoutParams(offer))');
   assert.equal(website.includes("website_merch"), false);
   const redirect = website.indexOf('location.href=checkout.toString()');
   assert.ok(checkout > 0 && redirect > checkout);
@@ -27,9 +27,12 @@ test('signup and checkout events are tied to the successful action', () => {
   assert.match(analytics, /upload_song_click/);
   assert.match(analytics, /p\.transport_type='beacon'/);
   assert.match(analytics, /p\.event_timeout=800/);
-  assert.match(website, /\{beacon:true\}/);
-  assert.match(read('merch.js'), /beacon:\s*true/);
-  assert.match(read('gear-payment.js'), /\{beacon:true\}/);
+  assert.match(website, /btTrackCheckout\(checkoutParams\(offer\)\)/);
+  assert.match(website, /dataset\.checkoutStarted==='1'/);
+  assert.match(read('merch.js'), /btTrackCheckout\(checkoutParams\(offer\)\)/);
+  assert.match(read('merch.js'), /dataset\.checkoutStarted === '1'/);
+  assert.match(read('gear-payment.js'), /btTrackCheckout\(/);
+  assert.match(analytics, /delete p\.transport_type/);
 });
 
 test('internal traffic is tab-scoped and an old permanent flag is cleared', () => {

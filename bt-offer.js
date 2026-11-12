@@ -2,7 +2,7 @@
 // Do not copy the promo wording or the Stripe links into other files.
 export const PROMO_ENDS_AT = '2026-12-31T23:59:59-05:00';
 export const PROMO_DEADLINE_MS = Date.parse(PROMO_ENDS_AT);
-export const PROMO_CHECKOUT_URL = 'https://buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g';
+export const PROMO_CHECKOUT_URL = 'https://buy.stripe.com/dRmbIU1BYekifzP2if6oo0f';
 export const STANDARD_CHECKOUT_URL = 'https://buy.stripe.com/9B6dR23K6ccaevL6yv6oo0h';
 export const PLAN_ID = 'website-merch';
 export const PLAN_PRICE = 15;

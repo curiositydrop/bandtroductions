@@ -11,7 +11,7 @@ test('promo is on through the last second of 2026 ET and off on January 1', () =
   const nextSecond = currentOffer(new Date('2027-01-01T00:00:00-05:00'), { hostname: 'bandtroductions.com', search: '' });
   assert.equal(lastSecond.promo, true);
   assert.equal(lastSecond.checkoutUrl, PROMO_CHECKOUT_URL);
-  assert.equal(lastSecond.checkoutUrl, 'https://buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g');
+  assert.equal(lastSecond.checkoutUrl, 'https://buy.stripe.com/dRmbIU1BYekifzP2if6oo0f');
   assert.match(lastSecond.text, /Months 2 and 3 are FREE/);
   assert.equal(lastSecond.value, 15);
   assert.equal(lastSecond.plan, 'website-merch');

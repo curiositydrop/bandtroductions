@@ -487,8 +487,11 @@ async function requestStore(event) {
       setOwnerMessage(PAUSED_MESSAGE, true);
       requestStoreButton.disabled = false;
     } else if (checkoutUrl && !ACTIVE_STATUSES.has(status)) {
+      if (requestStoreButton.dataset.checkoutStarted === '1') return;
+      requestStoreButton.dataset.checkoutStarted = '1';
+      requestStoreButton.disabled = true;
       if (window.btRememberCheckout) window.btRememberCheckout('website-merch');
-      if (window.btTrack) await window.btTrack('begin_checkout', checkoutParams(offer), { beacon: true });
+      if (window.btTrackCheckout) await window.btTrackCheckout(checkoutParams(offer));
       location.href = checkoutUrl;
     }
     else {
@@ -499,6 +502,7 @@ async function requestStore(event) {
     console.error(error);
     const callableMessage = String(error?.message || '').replace(/^Firebase(?:Error)?:\s*/i, '').replace(/\s*\([^)]*\)\.?$/, '').trim();
     setOwnerMessage(callableMessage || 'Your store request could not be saved. Please try again.', true);
+    requestStoreButton.dataset.checkoutStarted = '';
     requestStoreButton.disabled = false;
   }
 }

@@ -283,6 +283,7 @@ async function fillSignup(page) {
             const body = args[2] || {};
             seen.push({
               transport: body.transport_type,
+              sendTo: body.send_to,
               timeout: body.event_timeout,
               hasCallback: typeof body.event_callback === 'function',
               plan: body.plan,
@@ -292,22 +293,23 @@ async function fillSignup(page) {
           }
         };
         const started = Date.now();
-        await window.btTrack('begin_checkout', {
+        await window.btTrackCheckout({
           plan: 'website-merch',
           currency: 'USD',
           value: 15,
           items: [{ item_id: 'website-merch', item_name: 'Website + Merch', price: 15, quantity: 1 }]
-        }, { beacon: true });
+        });
         return { seen, waited: Date.now() - started };
       });
       assert.equal(result.seen.length, 1);
-      assert.equal(result.seen[0].transport, 'beacon');
+      assert.equal(result.seen[0].transport, undefined);
+      assert.equal(result.seen[0].sendTo, 'G-60112G8RH3');
       assert.equal(result.seen[0].timeout, 800);
       assert.equal(result.seen[0].hasCallback, true);
       assert.equal(result.seen[0].plan, 'website-merch');
       assert.equal(result.seen[0].value, 15);
       assert.equal(result.seen[0].currency, 'USD');
-      assert.ok(result.waited >= 700 && result.waited < 1200, `beacon wait ${result.waited}ms`);
+      assert.ok(result.waited >= 700 && result.waited < 1300, `checkout wait ${result.waited}ms`);
       await beacon.context.close();
     }
 

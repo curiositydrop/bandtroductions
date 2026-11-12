@@ -119,11 +119,13 @@ test('plans page sells the existing offer and only tracked upgrade intent', () =
   assert.equal(plans.includes('website-pilot.html?id=EH63rrsL2kPDjevdR5GsWEtsne92'), false);
   assert.equal(plans.includes('profile.html?id='), false);
   assert.match(analytics, /upgrade_intent/);
-  assert.match(fs.readFileSync(new URL('../bt-offer.js', import.meta.url), 'utf8'), /buy\.stripe\.com\/14AaEQbcy0tsfzP3mj6oo0g/);
+  assert.match(fs.readFileSync(new URL('../bt-offer.js', import.meta.url), 'utf8'), /buy\.stripe\.com\/dRmbIU1BYekifzP2if6oo0f/);
+  assert.equal(website.includes('buy.stripe.com/dRmbIU1BYekifzP2if6oo0f'), false);
   assert.equal(website.includes('buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g'), false);
   assert.match(website, /ACTIVE=new Set\(\['active','trialing','comped'\]\)/);
   assert.match(website, /launchSite\(params\.get\('edit'\)==='1'\)/);
-  assert.match(website, /await window\.btTrack\('begin_checkout',checkoutParams\(offer\),\{beacon:true\}\)/);
+  assert.match(website, /await window\.btTrackCheckout\(checkoutParams\(offer\)\)/);
+  assert.match(website, /dataset\.checkoutStarted==='1'/);
   assert.equal(website.includes("plan:'website_merch'"), false);
   assert.equal(fs.readFileSync(new URL('../merch.js', import.meta.url), 'utf8').includes("plan: 'website_merch'"), false);
   assert.match(analytics, /p\.transport_type='beacon'/);

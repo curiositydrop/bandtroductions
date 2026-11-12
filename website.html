@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="bt-analytics.js?v=4"></script>
+<script src="bt-analytics.js?v=5"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0b100f">
 <meta name="robots" content="noindex,follow">
@@ -128,7 +128,7 @@ else onAuthStateChanged(auth,async user=>{
     if(email)checkout.searchParams.set('prefilled_email',email);
     try{localStorage.setItem('btWebsiteMerchUpgradeProfileId',profileId);}catch{}
     if(window.btRememberCheckout)window.btRememberCheckout('website-merch');
-    if(window.btTrack)await window.btTrack('begin_checkout',checkoutParams(offer),{beacon:true});
+    if(window.btTrackCheckout)await window.btTrackCheckout(checkoutParams(offer));
     location.href=checkout.toString();
    }catch(error){
     console.error(error);button.dataset.checkoutStarted='';button.disabled=false;status.className='status error';status.textContent=String(error?.message||'The upgrade could not be started. Please try again.').replace(/^Firebase(?:Error)?:\s*/i,'').replace(/\s*\([^)]*\)\.?$/,'');

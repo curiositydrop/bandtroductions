@@ -4,8 +4,9 @@
      sessionStorage for this tab only, including the return from checkout. ?bt_internal=0 clears it.
      A permanent localStorage flag is removed so a later normal visit is not labeled internal.
    - Debug: ?bt_debug=1 stays for this tab the same way. A Firebase preview hostname is always debug.
-   - window.btTrack(name, params) returns a promise that resolves when gtag accepts the hit
-     (or after a short cap). Hits use beacon so a following navigation does not drop them.
+   - window.btTrack(name, params) returns a promise. Checkout uses btTrackCheckout,
+     which does not set transport_type. It asks gtag to send begin_checkout, flushes
+     the tag batch, then resolves on event_callback or within 800ms.
    - window.btRememberCheckout(plan) marks this tab as having started checkout.
    - window.btTrackPurchase(transactionId, params) sends purchase once per transaction id. */
 (function(){
@@ -51,6 +52,41 @@
         p.event_callback=function(){clearTimeout(timer);finish();};
         window.gtag('event',name,p);
       }catch(e){clearTimeout(timer);finish();}
+    });
+  };
+  function flushTagBatch(){
+    try{window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:false}));}catch(e){}
+  }
+  window.btTrackCheckout=function(params){
+    return new Promise(function(resolve){
+      var settled=false;
+      function finish(){if(settled)return;settled=true;resolve();}
+      var cap=setTimeout(function(){flushTagBatch();finish();},800);
+      var sent=false;
+      function send(){
+        if(sent)return;sent=true;
+        try{
+          var p=Object.assign({send_to:ID},params||{});
+          delete p.transport_type;
+          if(debug)p.debug_mode=true;
+          p.event_timeout=800;
+          p.event_callback=function(){
+            clearTimeout(cap);
+            setTimeout(function(){
+              flushTagBatch();
+              setTimeout(finish,100);
+            },0);
+          };
+          window.gtag('event','begin_checkout',p);
+        }catch(e){clearTimeout(cap);finish();}
+      }
+      var waited=0;
+      (function ready(){
+        if(window.google_tag_manager&&window.google_tag_manager[ID]){send();return;}
+        if(waited>=400){send();return;}
+        waited+=50;
+        setTimeout(ready,50);
+      })();
     });
   };
   window.btRememberCheckout=function(plan){
