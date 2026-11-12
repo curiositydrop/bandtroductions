@@ -1,4 +1,5 @@
 import './profile-media-editor.js?v=2';
+import { isUpgradeReturn, safeSameOriginReturn } from './safe-return.js';
 import { createWelcomePost } from './welcome-profile-post.js?v=1';
 import { sendAdminApprovalEmail } from './admin-approval-email.js?v=3';
 import { auth, db, storage } from './firebase-dev.js';
@@ -40,6 +41,7 @@ if(!params.has('adminProfile')){
       return;
     }
     if(!existingProfile?.welcomePostCreated){await createWelcomePost({profileId:targetProfileId,displayName:profileData.displayName,accountType})}
-    location.href=`profile.html?id=${encodeURIComponent(targetProfileId)}&fresh=${Date.now()}`
+    const upgradeReturn=safeSameOriginReturn(params.get('returnTo')||'','');
+    location.href=(published&&isUpgradeReturn(upgradeReturn))?upgradeReturn:`profile.html?id=${encodeURIComponent(targetProfileId)}&fresh=${Date.now()}`
   }catch(error){console.error(error);status.textContent=error.message||'Your profile could not be saved.';saveButton.disabled=false}},{capture:true});
 }

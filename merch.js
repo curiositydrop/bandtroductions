@@ -16,6 +16,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { uploadUserImage, validateImageFile, storageUnavailableMessage } from './storage-upload.js';
 import { isAdminAccount } from './admin-access.js';
+import { PAUSED_MESSAGE, checkoutParams, currentOffer } from './bt-offer.js';
 
 const MAX_PRODUCTS = 20;
 const ACTIVE_STATUSES = new Set(['active', 'trialing', 'comped']);
@@ -25,9 +26,8 @@ const MERCH_PROFILE_TYPES = new Set(['band', 'musician']);
 const HIDDEN_PUBLIC_STORE_NAMES = new Set(['test band.']);
 const functions = getFunctions(app, 'us-central1');
 const saveMerchStoreRequest = httpsCallable(functions, 'saveMerchStoreRequest');
-// Website + Merch uses the same live checkout as the artist upgrade flow.
+// Website + Merch uses the same checkout as the artist upgrade flow.
 // Platform-product checkout and the customer billing portal are still separate.
-const STORE_SUBSCRIPTION_CHECKOUT_URL = 'https://buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g';
 const PLATFORM_HOODIE_CHECKOUT_URL = '';
 const BILLING_PORTAL_URL = '';
 
@@ -132,8 +132,9 @@ function isValidWebUrl(value) {
 }
 
 function storeSubscriptionCheckoutUrl() {
-  if (!STORE_SUBSCRIPTION_CHECKOUT_URL || !ownedBand) return '';
-  const checkout = new URL(STORE_SUBSCRIPTION_CHECKOUT_URL);
+  const offer = currentOffer();
+  if (!offer.checkoutUrl || !ownedBand) return '';
+  const checkout = new URL(offer.checkoutUrl);
   checkout.searchParams.set('client_reference_id', ownedBand.id);
   const checkoutEmail = ownedStore?.contactEmail || currentUser?.email || '';
   if (checkoutEmail) checkout.searchParams.set('prefilled_email', checkoutEmail);
@@ -480,8 +481,19 @@ async function requestStore(event) {
     });
     const status = result.data?.subscriptionStatus || 'pending';
     await loadOwnerState(currentUser);
+    const offer = currentOffer();
     const checkoutUrl = storeSubscriptionCheckoutUrl();
-    if (checkoutUrl && !ACTIVE_STATUSES.has(status)) location.href = checkoutUrl;
+    if (!ACTIVE_STATUSES.has(status) && offer.paused) {
+      setOwnerMessage(PAUSED_MESSAGE, true);
+      requestStoreButton.disabled = false;
+    } else if (checkoutUrl && !ACTIVE_STATUSES.has(status)) {
+      if (requestStoreButton.dataset.checkoutStarted === '1') return;
+      requestStoreButton.dataset.checkoutStarted = '1';
+      requestStoreButton.disabled = true;
+      if (window.btRememberCheckout) window.btRememberCheckout('website-merch');
+      if (window.btTrackCheckout) await window.btTrackCheckout(checkoutParams(offer));
+      location.href = checkoutUrl;
+    }
     else {
       if (ownedStore) storeForm.hidden = true;
       setOwnerMessage(ACTIVE_STATUSES.has(status) ? 'Store details saved.' : 'Store submitted. Add your merchandise below while it awaits approval.');
@@ -490,6 +502,7 @@ async function requestStore(event) {
     console.error(error);
     const callableMessage = String(error?.message || '').replace(/^Firebase(?:Error)?:\s*/i, '').replace(/\s*\([^)]*\)\.?$/, '').trim();
     setOwnerMessage(callableMessage || 'Your store request could not be saved. Please try again.', true);
+    requestStoreButton.dataset.checkoutStarted = '';
     requestStoreButton.disabled = false;
   }
 }

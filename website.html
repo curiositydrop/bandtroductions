@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="bt-analytics.js?v=1"></script>
+<script src="bt-analytics.js?v=5"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0b100f">
 <meta name="robots" content="noindex,follow">
@@ -35,8 +35,8 @@
   <p id="signup-free-note" hidden style="margin:0 0 14px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;color:var(--ink)">Your free account is already active. This upgrade is optional. Closing checkout, or a checkout error, leaves that free profile in place.</p>
   <h1>Website + Merch</h1>
   <p id="artist-copy">Turn your free artist profile into a full band website and merch storefront.</p>
-  <p class="price"><strong>$15</strong> today</p>
-  <p>Includes your first month. Your next 2 months are free, then $15/month. Cancel anytime.</p>
+  <p class="price"><strong id="offer-price">$15</strong> <span id="offer-price-suffix">/ month</span></p>
+  <p id="offer-detail">$15/month. Cancel anytime.</p>
   <ul class="features">
     <li>Full customizable artist website</li>
     <li>Merch storefront listed in the Merch Hub</li>
@@ -58,9 +58,9 @@ import { app,auth,db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { doc,getDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { getFunctions,httpsCallable } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-functions.js';
+import { PAUSED_MESSAGE, checkoutParams, currentOffer } from './bt-offer.js';
 
 const PILOT='19MH0ZzVlPVN4ediF4PesZR5TY13';
-const CHECKOUT='https://buy.stripe.com/14AaEQbcy0tsfzP3mj6oo0g';
 const ACTIVE=new Set(['active','trialing','comped']);
 const params=new URLSearchParams(location.search);
 const profileId=params.get('id')||'';
@@ -73,6 +73,16 @@ const agreement=document.getElementById('seller-agreement');
 const profileHref=`profile.html?id=${encodeURIComponent(profileId)}&classic=1`;
 document.getElementById('back-profile').href=profileHref;
 document.getElementById('public-profile').href=profileHref;
+
+function showOffer(){
+ const offer=currentOffer();
+ const suffix=document.getElementById('offer-price-suffix');
+ const detail=document.getElementById('offer-detail');
+ if(suffix)suffix.textContent=offer.promo?'today':'/ month';
+ if(detail)detail.textContent=offer.paused?PAUSED_MESSAGE:offer.short;
+ return offer;
+}
+showOffer();
 
 function launchSite(edit=false){
  const target=new URL('website-pilot.html',location.href);
@@ -103,20 +113,25 @@ else onAuthStateChanged(auth,async user=>{
   document.getElementById('artist-copy').textContent=`Upgrade ${profile.displayName||'your artist profile'} to a full website and merch storefront. Your current profile content becomes the starting point.`;
   button.onclick=async()=>{
    if(!agreement.checked){status.className='status error';status.textContent='Check the seller responsibility agreement to continue.';return;}
+   const offer=showOffer();
+   if(offer.paused||!offer.checkoutUrl){status.className='status error';status.textContent=PAUSED_MESSAGE;return;}
+   if(button.dataset.checkoutStarted==='1')return;
+   button.dataset.checkoutStarted='1';
    button.disabled=true;status.className='status';status.textContent='Preparing your Website + Merch upgrade…';
    try{
     const prepare=httpsCallable(getFunctions(app,'us-central1'),'prepareArtistUpgrade');
     const result=await prepare({profileId,sellerAgreementAccepted:true});
     if(ACTIVE.has(String(result.data?.subscriptionStatus||'').toLowerCase())){launchSite(true);return;}
-    const checkout=new URL(CHECKOUT);
+    const checkout=new URL(offer.checkoutUrl);
     checkout.searchParams.set('client_reference_id',profileId);
     const email=result.data?.contactEmail||user.email||'';
     if(email)checkout.searchParams.set('prefilled_email',email);
     try{localStorage.setItem('btWebsiteMerchUpgradeProfileId',profileId);}catch{}
-    window.btTrack&&window.btTrack('begin_checkout',{plan:'website_merch'});
+    if(window.btRememberCheckout)window.btRememberCheckout('website-merch');
+    if(window.btTrackCheckout)await window.btTrackCheckout(checkoutParams(offer));
     location.href=checkout.toString();
    }catch(error){
-    console.error(error);button.disabled=false;status.className='status error';status.textContent=String(error?.message||'The upgrade could not be started. Please try again.').replace(/^Firebase(?:Error)?:\s*/i,'').replace(/\s*\([^)]*\)\.?$/,'');
+    console.error(error);button.dataset.checkoutStarted='';button.disabled=false;status.className='status error';status.textContent=String(error?.message||'The upgrade could not be started. Please try again.').replace(/^Firebase(?:Error)?:\s*/i,'').replace(/\s*\([^)]*\)\.?$/,'');
    }
   };
  }catch(error){console.error(error);loading.textContent='The artist website could not be loaded. Please try again.';}

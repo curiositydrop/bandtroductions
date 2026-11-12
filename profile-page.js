@@ -266,7 +266,22 @@ async function loadProfile(user) {
       if(!profileLocationComplete(loadedProfile)){editButton.title='Profile update needed: add City / Town, State / Province / Region, and Country.';editButton.style.borderColor='#8a3d3d';editButton.style.color='#ffb4b4'}
       editButton.hidden = !isOwner;
     const planLink = document.getElementById('profile-plan-link');
-    if (planLink) planLink.hidden = !(isOwner && type === 'band');
+    if (planLink) {
+      const artist = type === 'band' || type === 'musician';
+      if (!(isOwner && artist)) {
+        planLink.hidden = true;
+      } else if (loadedProfile.published !== true) {
+        planLink.hidden = false;
+        planLink.href = `profile-setup.html?id=${encodeURIComponent(profileId)}&returnTo=${encodeURIComponent('plans.html?upgrade=1')}`;
+        planLink.textContent = 'Publish your profile before upgrading';
+      } else {
+        const planStatus = String(loadedProfile.websitePlanStatus || loadedProfile.artistPlan?.status || '').toLowerCase();
+        const active = loadedProfile.websiteEnabled === true && ['active', 'trialing', 'comped'].includes(planStatus);
+        planLink.hidden = false;
+        planLink.href = `website.html?id=${encodeURIComponent(profileId)}`;
+        planLink.textContent = active ? 'View Website' : 'Upgrade: Website + Merch';
+      }
+    }
     }
 
     content.dataset.assetsReady = 'true';
