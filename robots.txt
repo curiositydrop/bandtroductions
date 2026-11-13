@@ -8,4 +8,17 @@ User-agent: OAI-SearchBot
 Allow: /
 Disallow: /globalold.html
 
+# Link-preview crawlers. They already match User-agent: *, including /og/.
+User-agent: facebookexternalhit
+Allow: /
+Disallow: /globalold.html
+
+User-agent: Facebot
+Allow: /
+Disallow: /globalold.html
+
+User-agent: Twitterbot
+Allow: /
+Disallow: /globalold.html
+
 Sitemap: https://bandtroductions.com/sitemap.xml
