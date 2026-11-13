@@ -167,7 +167,7 @@ def card_radio():
         card,
         "ON AIR",
         "RADIO",
-        "Independent music discovery. Local bands, no algorithms, just the song.",
+        "Independent artists, no algorithms, just the music.",
         TEAL,
         x=64,
         y=150,
