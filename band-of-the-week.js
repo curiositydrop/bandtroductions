@@ -47,10 +47,15 @@ function renderFeature() {
     const fin = rounds.find(r => r.weekId === round.weekId && !r.seed);
     id = (fin?.winners || ranked.winners)[0];
     const co = (fin?.winners || ranked.winners).length > 1;
-    tag = `🏆 Band of the Week · ${round.shortLabel}`; line = `${co ? 'Co-winner · ' : ''}${ranked.list.find(x => x.bandId === id)?.votes || 0} votes${fin ? '' : ' · unofficial until finalized'}`;
+    tag = `🏆 Band of the Week · ${round.shortLabel}`;
+    const bits = [];
+    if (co) bits.push('Co-winner');
+    bits.push('Band of the Week champion');
+    if (!fin) bits.push('unofficial until finalized');
+    line = bits.join(' · ');
   } else if (round.state === 'prelaunch') {
     const seed = rounds.find(r => r.seed); if (!seed) { el.hidden = true; return; }
-    id = seed.winners[0]; tag = '👑 Reigning Champ'; line = `Pre-revamp leader with ${seed.results[0].votes} votes. Can anyone dethrone them?`;
+    id = seed.winners[0]; tag = '👑 Reigning Champ'; line = 'Pre-revamp leader. Can anyone dethrone them?';
   } else { el.hidden = true; return; }
   const b = info(id);
   el.innerHTML = `<img class="ft-img" src="${esc(b.image)}" alt="${esc(b.name)}" onerror="this.onerror=null;this.src='${FALLBACK}'"><div class="ft-body"><div class="ft-tag">${esc(tag)}</div><h2>${esc(b.name)}</h2><p>${esc(line)}</p><a class="bw-btn gold" href="${esc(b.url)}">View ${esc(b.name)} →</a></div>`;
@@ -95,8 +100,8 @@ function renderList() {
 function renderHof() {
   const items = rounds.filter(r => r.winners?.length).flatMap(r => r.winners.map(w => ({ r, w })));
   $('bwHof').innerHTML = items.length ? items.map(({ r, w }) => {
-    const b = info(w), res = (r.results || []).find(x => x.bandId === w);
-    return `<a href="${esc(b.url)}"><img src="${esc(b.image)}" alt="${esc(b.name)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK}'"><div><small>${esc(r.title || (r.winners.length > 1 ? 'Co-winner' : 'Champion'))}</small><b>${esc(b.name)}</b><em>${esc(r.label)}${res ? ` · ${res.votes} votes` : ''}</em></div></a>`;
+    const b = info(w);
+    return `<a href="${esc(b.url)}"><img src="${esc(b.image)}" alt="${esc(b.name)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK}'"><div><small>${esc(r.title || (r.winners.length > 1 ? 'Co-winner' : 'Champion'))}</small><b>${esc(b.name)}</b><em>${esc(r.label)}</em></div></a>`;
   }).join('') : '<p class="bw-empty">The first champion will be crowned Sunday, Nov 15.</p>';
 }
 
