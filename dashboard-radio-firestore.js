@@ -1,6 +1,7 @@
 import { db as devDb } from './firebase-dev.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak, withPreviewTestBreak, betweenShowGap, previewBreakOffset, previewDemoAdSeconds, previewAdSecondsOverride } from './radio-schedule-engine.js?v=7';
+import { sessionShuffledPlaylist } from './radio-rotation-shuffle.mjs?v=20261117-rotation-shuffle';
 import { currentBreakFill, syncBreakFillAudio, clearBreakFillAudio, releaseFillAudio, fillBlockedByFailure, configuredBreakAds, planPaidAdPlayback, holdPaidAd, noteMeasuredAdDuration, primeAdDuration, actualDurationFor } from './radio-break-fill.mjs?v=20261110-ad-file-length';
 
 const oldPanel=document.querySelector('.radio-panel');
@@ -145,7 +146,7 @@ function currentFill(date=new Date()){
 function state(){
   if(!stationEnabled)return null;
   if(currentBreak()||currentFill())return null;
-  const p=activePlaylist(playlists);
+  const p=sessionShuffledPlaylist(activePlaylist(playlists));
   if(!p)return null;
   const pos=playlistPosition(p);
   if(!pos)return null;
