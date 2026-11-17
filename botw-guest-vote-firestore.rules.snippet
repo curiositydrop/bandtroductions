@@ -1,29 +1,32 @@
-// Guest Band of the Week votes.
-// Paste this INSIDE the existing `match /databases/{database}/documents` block.
-// Do NOT replace the live rules file with this snippet, and do NOT deploy it
-// as the only ruleset — that would lock every other collection.
+// Minimal edit to the LIVE Firestore rules.
+// Do NOT replace the live rules file with this snippet.
+// Do NOT deploy hosting or functions from it.
+// Publish rules only, after editing the live ruleset in place.
 //
-// Add it only if the live `botwVotes` create rule rejects anonymous users
-// (for example it requires an email or email_verified). If the live rule
-// already allows any signed-in user whose uid matches the document, enabling
-// Anonymous sign-in is enough and this block is unnecessary.
-//
-// Overlapping match blocks are OR'd. This allows a create; it does not
-// loosen reads, updates, or any other collection. Cheers stay as they are
-// (no account). Do not add an auth requirement to botwCheers.
+// Three changes. Leave every other line byte-for-byte the same,
+// including hasAdminEmail() (it calls isSignedIn(), so anonymous
+// users stay out of admin checks).
 
-match /botwVotes/{voteId} {
-  allow read: if true;
-  allow create: if request.auth != null
-    && request.auth.uid == request.resource.data.uid
-    && voteId == request.resource.data.weekId + '_' + request.auth.uid
-    && request.resource.data.keys().hasOnly(['weekId', 'bandId', 'uid', 'createdAt'])
-    && request.resource.data.weekId is string
-    && request.resource.data.weekId.matches('^\\d{4}-\\d{2}-\\d{2}$')
-    && request.resource.data.bandId is string
-    && request.resource.data.bandId.size() > 0
-    && request.resource.data.bandId.size() < 120
-    && request.resource.data.createdAt == request.time
-    && !exists(/databases/$(database)/documents/botwVotes/$(voteId));
-  allow update, delete: if false;
+// 1. Replace the current isSignedIn().
+function isSignedIn() {
+  return request.auth != null
+    && request.auth.token.firebase.sign_in_provider != 'anonymous';
 }
+
+// 2. Add this immediately after isSignedIn().
+function isGuestOrSignedIn() {
+  return request.auth != null;
+}
+
+// 3. In match /botwVotes/{voteId}, change only the create rule's
+//    isSignedIn() call to isGuestOrSignedIn().
+//
+//    Before:
+//      allow create: if isSignedIn()
+//        && <the existing uid, weekId, band, and time checks>
+//
+//    After:
+//      allow create: if isGuestOrSignedIn()
+//        && <those same checks, unchanged>
+//
+// Every other isSignedIn() use stays isSignedIn().
