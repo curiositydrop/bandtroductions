@@ -1,11 +1,9 @@
-// Shared daily order for the all-day general rotation.
-// The ET calendar date seeds mulberry32, so every listener derives the same
-// permutation. playlistPosition then maps seconds since local midnight onto
-// that order, which is how tuning in joins the song already in progress.
-// Nothing here is stored per listener. Scheduled shows are returned unchanged.
-const ROTATION_TIMEZONE = 'America/New_York';
-const ROTATION_EPOCH = '2026-01-01';
-const playedCache = new Map();
+// Shared weekly order for Metal Mayhem Monday only.
+// The Monday ET date seeds mulberry32, so every listener derives the same
+// permutation that week. playlistPosition then maps the show clock onto that
+// order. The general rotation and every other show are returned unchanged.
+const SHOW_TIMEZONE = 'America/New_York';
+const orderCache = new Map();
 
 export function songKey(item) {
   if (item?.id) return `id:${item.id}`;
@@ -22,9 +20,13 @@ export function sameSong(a, b) {
   return title !== '' && title === String(b.title || '').trim().toLowerCase() && artist === String(b.artist || '').trim().toLowerCase();
 }
 
+export function bandKey(item) {
+  return String(item?.artist || '').trim().toLowerCase();
+}
+
 export function easternDateKey(date = new Date()) {
   const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: ROTATION_TIMEZONE,
+    timeZone: SHOW_TIMEZONE,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
@@ -33,16 +35,9 @@ export function easternDateKey(date = new Date()) {
   return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
-export function previousDateKey(dateKey) {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  const utc = new Date(Date.UTC(year, month - 1, day));
-  utc.setUTCDate(utc.getUTCDate() - 1);
-  return utc.toISOString().slice(0, 10);
-}
-
 export function seedFromDateKey(dateKey) {
   let hash = 2166136261;
-  const text = `bandtroductions-rotation:${dateKey}`;
+  const text = `bandtroductions-metal-mayhem-monday:${dateKey}`;
   for (let i = 0; i < text.length; i++) {
     hash ^= text.charCodeAt(i);
     hash = Math.imul(hash, 16777619);
@@ -60,73 +55,84 @@ export function mulberry32(seed) {
   };
 }
 
-function windowMinutes(playlist) {
-  const start = Number(playlist.startMinutes || 0);
-  const end = Number(playlist.endMinutes ?? 1440);
-  return end > start ? end - start : 1440 - start + end;
-}
-
-function isSong(item) {
+function isTrack(item) {
   return (item?.type || 'track') === 'track';
 }
 
-// Full-day playlist whose name is the rotation, made only of songs.
-// Metal Mayhem Monday, Quick Mix, and the other dayparts are shorter shows.
-export function isGeneralRotation(playlist) {
+// The Monday 7:00–10:00 PM ET show only. A same-named show in another window
+// stays in saved order so its clock does not get a surprise permutation.
+export function isMetalMayhemMonday(playlist) {
   if (!playlist || !Array.isArray(playlist.items) || playlist.items.length < 2) return false;
-  if (windowMinutes(playlist) < 1439) return false;
   const name = `${playlist.name || ''} ${playlist.upNextDisplayName || ''}`;
-  if (!/rotation/i.test(name)) return false;
-  if (playlist.items.some(item => !isSong(item))) return false;
+  if (!/metal\s+mayhem\s+monday/i.test(name)) return false;
+  const days = Array.isArray(playlist.days) && playlist.days.length ? playlist.days : ['every'];
+  if (days.length !== 1 || days[0] !== 'mon') return false;
+  if (Number(playlist.startMinutes) !== 1140 || Number(playlist.endMinutes) !== 1320) return false;
+  if (playlist.items.some(item => !isTrack(item))) return false;
   return true;
 }
 
-function separateWrap(items) {
-  if (items.length < 3 || !sameSong(items[0], items[items.length - 1])) return items;
-  for (let i = 1; i < items.length - 1; i++) {
-    if (sameSong(items[i], items[0])) continue;
-    [items[i], items[items.length - 1]] = [items[items.length - 1], items[i]];
-    return items;
-  }
-  return items;
-}
-
-function avoidBoundaryRepeat(items, previousSong) {
-  if (!previousSong || items.length < 2 || !sameSong(items[0], previousSong)) return items;
-  for (let i = 1; i < items.length; i++) {
-    const candidate = items[i];
-    if (sameSong(candidate, previousSong)) continue;
-    const lastAfterSwap = i === items.length - 1 ? items[0] : items[items.length - 1];
-    if (sameSong(candidate, lastAfterSwap)) continue;
-    [items[0], items[i]] = [items[i], items[0]];
-    return items;
-  }
-  return items;
-}
-
-export function shuffleRotationItems(items, random = Math.random) {
+function fisherYates(items, random) {
   const next = items.slice();
   for (let i = next.length - 1; i > 0; i--) {
     const j = Math.min(i, Math.max(0, Math.floor(random() * (i + 1))));
     [next[i], next[j]] = [next[j], next[i]];
   }
-  return separateWrap(next);
+  return next;
 }
 
-function songAtElapsed(items, elapsedSeconds) {
-  const durations = items.map(item => Number(item?.durationSeconds));
-  if (!durations.length || durations.some(duration => !Number.isFinite(duration) || duration <= 0)) return null;
-  const total = durations.reduce((sum, duration) => sum + duration, 0);
-  let offset = ((elapsedSeconds % total) + total) % total;
-  for (let index = 0; index < items.length; index++) {
-    if (offset < durations[index]) return { index, item: items[index], offsetSeconds: offset };
-    offset -= durations[index];
+function sameBand(a, b) {
+  const left = bandKey(a);
+  const right = bandKey(b);
+  return left !== '' && left === right;
+}
+
+// Spread bands apart. Always take the band with the most songs still waiting,
+// skipping the band that just played when another band still has songs.
+export function arrangeMetalMayhem(items, random) {
+  const groups = new Map();
+  for (const item of items) {
+    const band = bandKey(item) || `\0${songKey(item)}`;
+    if (!groups.has(band)) groups.set(band, []);
+    groups.get(band).push(item);
   }
-  return { index: 0, item: items[0], offsetSeconds: 0 };
+  for (const [band, list] of groups) groups.set(band, fisherYates(list, random));
+  const rank = new Map();
+  for (const band of groups.keys()) rank.set(band, random());
+  const remaining = new Map([...groups].map(([band, list]) => [band, list.slice()]));
+  const result = [];
+  let previous = '';
+  while (result.length < items.length) {
+    const available = [...remaining.keys()].filter(band => remaining.get(band).length);
+    const different = available.filter(band => band !== previous);
+    const pool = different.length ? different : available;
+    pool.sort((a, b) => remaining.get(b).length - remaining.get(a).length || rank.get(a) - rank.get(b) || a.localeCompare(b));
+    const band = pool[0];
+    result.push(remaining.get(band).shift());
+    previous = band;
+  }
+  return separateIdenticalSongs(result);
 }
 
-function rotationSignature(items) {
-  return items.map(item => `${songKey(item)}@${Number(item?.durationSeconds)}`).join('\n');
+function separateIdenticalSongs(items) {
+  const next = items.slice();
+  for (let i = 1; i < next.length; i++) {
+    if (!sameSong(next[i - 1], next[i])) continue;
+    for (let j = i + 1; j < next.length; j++) {
+      if (sameSong(next[i - 1], next[j]) || sameBand(next[i - 1], next[j])) continue;
+      if (i + 1 < next.length && j !== i + 1 && (sameSong(next[j], next[i + 1]) || sameBand(next[j], next[i + 1]))) continue;
+      const left = j - 1 === i ? next[j] : next[j - 1];
+      if (sameSong(next[i], left) || sameBand(next[i], left)) continue;
+      if (j + 1 < next.length && (sameSong(next[i], next[j + 1]) || sameBand(next[i], next[j + 1]))) continue;
+      [next[i], next[j]] = [next[j], next[i]];
+      break;
+    }
+  }
+  return next;
+}
+
+function showSignature(items) {
+  return items.map(item => `${songKey(item)}@${Number(item?.durationSeconds)}|${bandKey(item)}`).join('\n');
 }
 
 function rebuild(items, order) {
@@ -146,26 +152,17 @@ function rebuild(items, order) {
   return rebuilt.length === items.length ? rebuilt : null;
 }
 
-function playedKeys(items, dateKey, signature) {
-  const cacheKey = `${signature}\n${dateKey}`;
-  const cached = playedCache.get(cacheKey);
-  if (cached) return cached;
-  let order = shuffleRotationItems(items, mulberry32(seedFromDateKey(dateKey)));
-  if (dateKey > ROTATION_EPOCH) {
-    const previous = rebuild(items, playedKeys(items, previousDateKey(dateKey), signature));
-    const ending = previous ? songAtElapsed(previous, 86399) : null;
-    order = avoidBoundaryRepeat(order, ending?.item);
-  }
-  const keys = order.map(songKey);
-  playedCache.set(cacheKey, keys);
-  return keys;
-}
-
-export function sharedRotationPlaylist(playlist, date = new Date()) {
-  if (!isGeneralRotation(playlist)) return playlist;
+export function sharedMetalMayhemPlaylist(playlist, date = new Date()) {
+  if (!isMetalMayhemMonday(playlist)) return playlist;
   const dateKey = easternDateKey(date);
-  const signature = rotationSignature(playlist.items);
-  const items = rebuild(playlist.items, playedKeys(playlist.items, dateKey, signature));
+  const signature = showSignature(playlist.items);
+  const cacheKey = `${signature}\n${dateKey}`;
+  let keys = orderCache.get(cacheKey);
+  if (!keys) {
+    keys = arrangeMetalMayhem(playlist.items, mulberry32(seedFromDateKey(dateKey))).map(songKey);
+    orderCache.set(cacheKey, keys);
+  }
+  const items = rebuild(playlist.items, keys);
   if (!items) return playlist;
-  return { ...playlist, items, rotationDate: dateKey };
+  return { ...playlist, items, showDate: dateKey };
 }

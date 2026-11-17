@@ -5,20 +5,21 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { register } from 'node:module';
 import {
+  bandKey,
   easternDateKey,
-  isGeneralRotation,
+  isMetalMayhemMonday,
   mulberry32,
   sameSong,
   seedFromDateKey,
-  sharedRotationPlaylist,
-  shuffleRotationItems,
+  sharedMetalMayhemPlaylist,
   songKey
 } from '../radio-rotation-shuffle.mjs';
 
 register(new URL('./radio-engine-loader.mjs', import.meta.url), import.meta.url);
 const { activePlaylist, playlistPosition, betweenShowGap } = await import('../radio-schedule-engine.js');
 
-const song = (id, durationSeconds = 180) => ({ type: 'track', id, title: id, artist: id, audioUrl: `${id}.mp3`, durationSeconds });
+const song = (id, artist = id, durationSeconds = 180) => ({ type: 'track', id, title: id, artist, audioUrl: `${id}.mp3`, durationSeconds });
+const tracks = (band, count, durationSeconds = 180) => Array.from({ length: count }, (_, n) => song(`${band}-${n}`, band, durationSeconds));
 const rotation = {
   id: 'playlist-rotation',
   name: 'BANDtroductions Rotation',
@@ -28,6 +29,7 @@ const rotation = {
   active: true,
   items: ['a', 'b', 'c', 'd', 'e', 'f'].map(id => song(id))
 };
+const metalItems = [...tracks('Lethal CreeD', 4, 200), ...tracks('Ascent To Power', 2, 180), ...tracks('DR Groove', 2, 220)];
 const metal = {
   id: 'playlist-metal',
   name: 'Metal Mayhem Monday',
@@ -35,7 +37,7 @@ const metal = {
   startMinutes: 1140,
   endMinutes: 1320,
   active: true,
-  items: [song('m1', 200), { type: 'stationId', id: 'id-metal', audioUrl: 'id.mp3', durationSeconds: 12, linkedSongId: 'm2' }, song('m2', 180), song('m3', 210)]
+  items: metalItems
 };
 const quick = {
   id: 'playlist-quick',
@@ -44,7 +46,7 @@ const quick = {
   startMinutes: 1321,
   endMinutes: 1378,
   active: true,
-  items: [song('q1', 160), song('q2', 170), song('q3', 150)]
+  items: [song('q1'), song('q2'), song('q3')]
 };
 const blended = {
   id: 'playlist-blended',
@@ -53,138 +55,138 @@ const blended = {
   startMinutes: 1385,
   endMinutes: 2,
   active: true,
-  items: [song('blend1', 240), song('blend2', 240), song('blend3', 240)]
+  items: [song('blend1', 'Blend', 240), song('blend2', 'Blend', 240), song('blend3', 'Blend', 240)]
 };
 const playlists = { rotation, metal, quick, blended };
 const mondayNight = new Date('2026-11-17T00:30:00Z'); // Monday 7:30 PM ET
+const mondayLater = new Date('2026-11-17T02:00:00Z'); // Monday 9:00 PM ET
+const nextMonday = new Date('2026-11-24T00:30:00Z'); // Monday 7:30 PM ET, one week later
 const mondayBreak = new Date('2026-11-17T03:00:00Z'); // Monday 10:00 PM ET
 const mondayEarly = new Date('2026-11-16T08:00:00Z'); // Monday 3:00 AM ET
-const beforeMidnight = new Date('2026-11-17T04:59:59Z'); // Monday 11:59:59 PM ET
-const midnight = new Date('2026-11-17T05:00:00Z'); // Tuesday 12:00:00 AM ET
 
-test('scheduled shows are not the general rotation', () => {
-  assert.equal(isGeneralRotation(rotation), true);
-  assert.equal(isGeneralRotation(metal), false);
-  assert.equal(isGeneralRotation(quick), false);
-  assert.equal(isGeneralRotation(blended), false);
-  assert.equal(isGeneralRotation({ ...rotation, name: 'All Request Day' }), false);
-  assert.equal(isGeneralRotation({ ...metal, name: 'Rotation Special' }), false);
-  assert.equal(isGeneralRotation({ ...rotation, items: [song('a'), { type: 'stationId', id: 'id1', audioUrl: 'id.mp3', durationSeconds: 8 }, song('b')] }), false);
-  assert.equal(isGeneralRotation({ ...rotation, items: [song('a'), { type: 'sponsor', id: 'ad', audioUrl: 'ad.mp3', durationSeconds: 20 }] }), false);
+function adjacentSameBand(items) {
+  let count = 0;
+  for (let i = 1; i < items.length; i++) if (bandKey(items[i - 1]) && bandKey(items[i - 1]) === bandKey(items[i])) count++;
+  return count;
+}
+function adjacentSameSong(items) {
+  let count = 0;
+  for (let i = 1; i < items.length; i++) if (sameSong(items[i - 1], items[i])) count++;
+  return count;
+}
+const duration = items => items.reduce((sum, item) => sum + Number(item.durationSeconds), 0);
+
+test('only Metal Mayhem Monday is eligible', () => {
+  assert.equal(isMetalMayhemMonday(metal), true);
+  assert.equal(isMetalMayhemMonday(rotation), false);
+  assert.equal(isMetalMayhemMonday(quick), false);
+  assert.equal(isMetalMayhemMonday(blended), false);
+  assert.equal(isMetalMayhemMonday({ ...metal, startMinutes: 1160 }), false);
+  assert.equal(isMetalMayhemMonday({ ...metal, days: ['mon', 'tue'] }), false);
+  assert.equal(isMetalMayhemMonday({ ...metal, items: [...metal.items, { type: 'stationId', id: 'id1', artist: 'Lethal CreeD', audioUrl: 'id.mp3', durationSeconds: 12 }] }), false);
 });
 
-test('the daily order is a pure function of the ET date', () => {
-  assert.equal(easternDateKey(mondayEarly), '2026-11-16');
-  assert.equal(easternDateKey(beforeMidnight), '2026-11-16');
-  assert.equal(easternDateKey(midnight), '2026-11-17');
-  assert.notEqual(seedFromDateKey('2026-11-16'), seedFromDateKey('2026-11-17'));
-  const random = mulberry32(seedFromDateKey('2026-11-16'));
-  assert.equal(random(), mulberry32(seedFromDateKey('2026-11-16'))());
+test('the general rotation and the other shows stay in saved order', () => {
+  assert.equal(sharedMetalMayhemPlaylist(rotation, mondayEarly), rotation);
+  assert.deepEqual(rotation.items.map(item => item.id), ['a', 'b', 'c', 'd', 'e', 'f']);
+  const early = activePlaylist(playlists, mondayEarly);
+  assert.equal(early.id, rotation.id);
+  assert.equal(sharedMetalMayhemPlaylist(early, mondayEarly), early);
 
-  const first = sharedRotationPlaylist(rotation, mondayEarly);
-  const second = sharedRotationPlaylist(rotation, new Date(mondayEarly.getTime()));
-  const later = sharedRotationPlaylist(rotation, new Date('2026-11-16T09:00:00Z'));
-  assert.equal(first.rotationDate, '2026-11-16');
+  const duringQuick = new Date('2026-11-17T03:05:00Z');
+  const quickShow = activePlaylist(playlists, duringQuick);
+  assert.equal(quickShow.name, 'Quick MIx');
+  assert.equal(sharedMetalMayhemPlaylist(quickShow, duringQuick), quickShow);
+  assert.equal(sharedMetalMayhemPlaylist(blended, mondayNight), blended);
+
+  const gapBefore = betweenShowGap(playlists, mondayBreak);
+  sharedMetalMayhemPlaylist(metal, mondayBreak);
+  assert.deepEqual(betweenShowGap(playlists, mondayBreak), gapBefore);
+  assert.equal(gapBefore.endedId, metal.id);
+  assert.equal(gapBefore.nextId, quick.id);
+  assert.equal(metal.startMinutes, 1140);
+  assert.equal(metal.endMinutes, 1320);
+});
+
+test('Monday listeners share one order, and next Monday is different', () => {
+  assert.equal(easternDateKey(mondayNight), '2026-11-16');
+  assert.equal(easternDateKey(nextMonday), '2026-11-23');
+  assert.notEqual(seedFromDateKey('2026-11-16'), seedFromDateKey('2026-11-23'));
+  assert.equal(mulberry32(seedFromDateKey('2026-11-16'))(), mulberry32(seedFromDateKey('2026-11-16'))());
+
+  const show = activePlaylist(playlists, mondayNight);
+  assert.equal(show.id, metal.id);
+  const first = sharedMetalMayhemPlaylist(show, mondayNight);
+  const second = sharedMetalMayhemPlaylist(show, new Date(mondayNight.getTime()));
+  const later = sharedMetalMayhemPlaylist(show, mondayLater);
+  assert.equal(first.showDate, '2026-11-16');
+  assert.equal(first.startMinutes, 1140);
+  assert.equal(first.endMinutes, 1320);
   assert.deepEqual(first.items.map(songKey), second.items.map(songKey));
   assert.deepEqual(first.items.map(songKey), later.items.map(songKey));
-  assert.deepEqual(first.items.map(songKey).sort(), rotation.items.map(songKey).sort());
-  assert.equal(sameSong(first.items[0], first.items.at(-1)), false);
-  assert.notDeepEqual(first.items.map(songKey), sharedRotationPlaylist(rotation, midnight).items.map(songKey));
-  assert.deepEqual(rotation.items.map(item => item.id), ['a', 'b', 'c', 'd', 'e', 'f']);
-  assert.deepEqual(playlistPosition(first, mondayEarly), playlistPosition(second, mondayEarly));
+  assert.deepEqual(first.items.map(songKey).sort(), show.items.map(songKey).sort());
+  assert.equal(duration(first.items), duration(show.items));
+  assert.equal(adjacentSameBand(first.items), 0);
+  assert.equal(adjacentSameSong(first.items), 0);
+  assert.deepEqual(show.items.map(item => item.id), metalItems.map(item => item.id));
+  const at730 = playlistPosition(first, new Date('2026-11-17T00:31:07Z'));
+  const at900 = playlistPosition(later, new Date('2026-11-17T02:07:13Z'));
+  assert.deepEqual(at730, playlistPosition(second, new Date('2026-11-17T00:31:07Z')));
+  assert.notDeepEqual([at900.index, at900.offsetSeconds], [at730.index, at730.offsetSeconds]);
+  assert.notDeepEqual(first.items.map(songKey), sharedMetalMayhemPlaylist(show, nextMonday).items.map(songKey));
 
   globalThis.sessionStorage = {
     getItem() { throw new Error('sessionStorage read'); },
     setItem() { throw new Error('sessionStorage write'); }
   };
-  assert.equal(sharedRotationPlaylist(rotation, mondayEarly).rotationDate, '2026-11-16');
+  assert.equal(sharedMetalMayhemPlaylist(show, mondayNight).showDate, '2026-11-16');
   delete globalThis.sessionStorage;
 });
 
-test('two sessions hear the same song and offset', () => {
+test('two sessions hear the same Metal Mayhem song and offset', () => {
   const root = join(dirname(fileURLToPath(import.meta.url)), '..');
   const probe = iso => {
     const run = spawnSync(process.execPath, ['tests/radio-rotation-session-probe.mjs', iso], { cwd: root, encoding: 'utf8' });
     assert.equal(run.status, 0, run.stderr);
     return JSON.parse(run.stdout);
   };
-  const left = probe('2026-11-16T08:00:00Z');
-  const right = probe('2026-11-16T08:00:00Z');
+  const left = probe('2026-11-17T00:30:00Z');
+  const right = probe('2026-11-17T00:30:00Z');
   assert.deepEqual(left, right);
   assert.equal(left.date, '2026-11-16');
-  assert.equal(typeof left.index, 'number');
+  assert.equal(left.start, 1140);
+  assert.equal(left.end, 1320);
   assert.equal(typeof left.offset, 'number');
   assert.ok(left.song);
-  const tenMinutesLater = probe('2026-11-16T08:10:00Z');
-  assert.deepEqual(tenMinutesLater.order, left.order);
-  assert.notEqual(tenMinutesLater.offset, left.offset);
+  const later = probe('2026-11-17T02:07:13Z');
+  assert.deepEqual(later.order, left.order);
+  assert.notDeepEqual([later.index, later.offset], [left.index, left.offset]);
 });
 
-test('midnight keeps a show continuous and does not replay the rotation song', () => {
-  const duplicates = [song('same', 100), song('same', 100), song('other', 100), song('third', 100), song('fourth', 100)];
-  for (let day = 2; day <= 28; day++) {
-    const atMidnight = new Date(Date.UTC(2026, 10, day, 5, 0, 0));
-    const lastSecond = new Date(atMidnight.getTime() - 1000);
-    const nightOrder = sharedRotationPlaylist({ ...rotation, items: duplicates }, lastSecond);
-    const morningOrder = sharedRotationPlaylist({ ...rotation, items: duplicates }, atMidnight);
-    const endingSong = nightOrder.items[playlistPosition(nightOrder, lastSecond).index];
-    assert.equal(playlistPosition(morningOrder, atMidnight).offsetSeconds, 0);
-    assert.equal(sameSong(endingSong, morningOrder.items[0]), false);
-    assert.equal(sameSong(morningOrder.items[0], morningOrder.items.at(-1)), false);
+test('the live band mix can be spread without changing a 3 hour runtime', () => {
+  const liveMix = [
+    ...tracks('Lethal CreeD', 16, 235),
+    ...tracks('Ascent To Power', 9, 230),
+    ...tracks('DR Groove', 9, 225),
+    ...tracks('Prophecy Of Ash', 6, 240),
+    ...tracks('Burning Time', 2, 200),
+    ...tracks('ANGEL DOWN', 2, 210),
+    ...tracks('Pressured Speech', 2, 250)
+  ];
+  liveMix.push(song('Lethal CreeD-0', 'Lethal CreeD', 235));
+  const threeHours = liveMix.map((item, index) => ({ ...item, durationSeconds: index === 0 ? 10800 - 200 * (liveMix.length - 1) : 200 }));
+  assert.equal(duration(threeHours), 10800);
+  const show = { ...metal, items: threeHours };
+  for (const iso of ['2026-11-16', '2026-11-23', '2026-11-30']) {
+    const played = sharedMetalMayhemPlaylist(show, new Date(`${iso}T23:30:00Z`));
+    assert.equal(duration(played.items), 10800);
+    assert.equal(played.startMinutes, 1140);
+    assert.equal(played.endMinutes, 1320);
+    assert.equal(adjacentSameBand(played.items), 0);
+    assert.equal(adjacentSameSong(played.items), 0);
+    assert.deepEqual(played.items.map(songKey).sort(), show.items.map(songKey).sort());
   }
-  const night = sharedRotationPlaylist(rotation, beforeMidnight);
-  const morning = sharedRotationPlaylist(rotation, midnight);
-  const ending = playlistPosition(night, beforeMidnight);
-  const starting = playlistPosition(morning, midnight);
-  assert.equal(starting.index, 0);
-  assert.equal(starting.offsetSeconds, 0);
-  assert.equal(sameSong(night.items[ending.index], morning.items[0]), false);
-  assert.equal(sameSong(morning.items[0], morning.items.at(-1)), false);
-
-  const showBefore = activePlaylist(playlists, beforeMidnight);
-  const showAfter = activePlaylist(playlists, midnight);
-  assert.equal(showBefore.id, blended.id);
-  assert.equal(showAfter.id, blended.id);
-  const savedBefore = playlistPosition(showBefore, beforeMidnight);
-  const savedAfter = playlistPosition(showAfter, midnight);
-  assert.deepEqual(sharedRotationPlaylist(showBefore, beforeMidnight).items.map(item => item.id), ['blend1', 'blend2', 'blend3']);
-  assert.equal(savedAfter.index, savedBefore.index);
-  assert.equal(savedAfter.offsetSeconds, savedBefore.offsetSeconds + 1);
-});
-
-test('Metal Mayhem Monday and Quick Mix keep their order, timing, and break', () => {
-  const show = activePlaylist(playlists, mondayNight);
-  assert.equal(show.id, metal.id);
-  const before = playlistPosition(show, mondayNight);
-  const played = sharedRotationPlaylist(show, mondayNight);
-  assert.equal(played, show);
-  assert.deepEqual(played.items.map(item => item.id), ['m1', 'id-metal', 'm2', 'm3']);
-  assert.deepEqual(playlistPosition(played, mondayNight), before);
-
-  const duringQuick = new Date('2026-11-17T03:05:00Z'); // Monday 10:05 PM ET
-  const quickShow = activePlaylist(playlists, duringQuick);
-  assert.equal(quickShow.name, 'Quick MIx');
-  assert.deepEqual(sharedRotationPlaylist(quickShow, duringQuick).items.map(item => item.id), ['q1', 'q2', 'q3']);
-
-  const gapBefore = betweenShowGap(playlists, mondayBreak);
-  sharedRotationPlaylist(rotation, mondayBreak);
-  const gapAfter = betweenShowGap(playlists, mondayBreak);
-  assert.equal(gapBefore.endedId, metal.id);
-  assert.equal(gapBefore.nextId, quick.id);
-  assert.deepEqual(gapAfter, gapBefore);
-
-  const overnight = activePlaylist(playlists, mondayEarly);
-  assert.equal(overnight.id, rotation.id);
-  const heard = sharedRotationPlaylist(overnight, mondayEarly);
-  assert.equal(heard.rotationDate, '2026-11-16');
-  assert.deepEqual(playlistPosition(heard, mondayEarly).index, playlistPosition(sharedRotationPlaylist(rotation, mondayEarly), mondayEarly).index);
-  assert.deepEqual(playlistPosition(metal, mondayNight), before);
-});
-
-test('Fisher-Yates wrap guard is deterministic', () => {
-  const items = [song('a'), song('b'), song('a')];
-  const shuffled = shuffleRotationItems(items, () => 0.999);
-  assert.deepEqual(shuffled.map(songKey), ['id:a', 'id:a', 'id:b']);
-  assert.equal(sameSong(shuffled[0], shuffled.at(-1)), false);
-  assert.deepEqual(shuffleRotationItems(items, () => 0.999).map(songKey), shuffled.map(songKey));
+  const oneBand = sharedMetalMayhemPlaylist({ ...metal, items: tracks('Lethal CreeD', 6, 1800) }, mondayNight);
+  assert.equal(oneBand.items.length, 6);
+  assert.equal(duration(oneBand.items), 10800);
 });
