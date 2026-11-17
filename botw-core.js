@@ -1,6 +1,7 @@
 // Band of the Week (revamp) shared logic: ET week math, tallying, tie-breaks, data access.
 // Per-round official votes live in Firestore (bandtroductions-dev, same project as accounts)
-// so rules can enforce one vote per account per round. Legacy all-time RTDB Bands/{id}/votes are never written.
+// so rules can enforce one vote per voter per round. A voter is either a member account
+// or a per-browser anonymous uid. Legacy all-time RTDB Bands/{id}/votes are never written.
 import { db } from './firebase-dev.js';
 import { collection, doc, getDoc, getDocs, query, where, setDoc, serverTimestamp, runTransaction, orderBy } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
@@ -98,13 +99,16 @@ export async function loadVotes(weekId) {
   return snap.docs.map(d => ({ bandId: d.get('bandId'), uid: d.get('uid'), t: d.get('createdAt')?.toMillis?.() || Date.now() }));
 }
 
-export async function castVote(weekId, bandId, uid) {
+// opts.firestore writes with a different Firebase app (the per-browser guest).
+// Member votes keep using the default app, so a signed-in account stays one vote per week.
+export async function castVote(weekId, bandId, uid, opts = {}) {
   if (DRY_RUN) {
     const all = lsGet('votes:' + weekId, []);
     if (all.some(v => v.uid === uid)) throw Object.assign(new Error('already'), { code: 'already-voted' });
     all.push({ bandId, uid, t: Date.now() }); lsSet('votes:' + weekId, all); return;
   }
-  const ref = doc(db, 'botwVotes', `${weekId}_${uid}`);
+  const store = opts.firestore || db;
+  const ref = doc(store, 'botwVotes', `${weekId}_${uid}`);
   const ex = await getDoc(ref);
   if (ex.exists()) throw Object.assign(new Error('already'), { code: 'already-voted', bandId: ex.get('bandId') });
   await setDoc(ref, { weekId, bandId, uid, createdAt: serverTimestamp() });

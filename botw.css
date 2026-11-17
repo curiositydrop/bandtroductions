@@ -63,12 +63,14 @@
 .bw-hof em{display:block;color:#888;font-style:normal;font-size:.72rem;margin-top:2px}
 .bw-rules ul{color:#aaa;font-size:.85rem;line-height:1.5;padding-left:18px}
 .bw-modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;display:flex;align-items:flex-end;justify-content:center}
-.bw-sheet{width:100%;max-width:480px;background:#141416;border:1px solid #333;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));text-align:center}
+.bw-sheet{width:100%;max-width:480px;max-height:92vh;overflow:auto;background:#141416;border:1px solid #333;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));text-align:center}
 @media(min-width:700px){.bw-modal{align-items:center}.bw-sheet{border-radius:20px}}
 .bw-sheet h3{margin:6px 0;font-size:1.4rem;color:#fff}
 .bw-sheet p{color:#aaa;margin:6px 0 14px}
 .bw-sheet img.av{width:84px;height:84px;border-radius:14px;object-fit:cover}
 .bw-sheet .row{display:grid;gap:8px;margin-top:10px}
+.bw-choice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 4px}
+.bw-choice .bw-btn{min-height:48px}
 .bw-sheet canvas{width:100%;max-width:300px;border-radius:12px;border:1px solid #333}
 .bw-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#18c7b6;color:#001;font-weight:900;padding:11px 16px;border-radius:999px;z-index:1000;max-width:90vw;text-align:center}
 .bw-admin{border:1px dashed #18c7b6;border-radius:14px;padding:14px;background:#081312}

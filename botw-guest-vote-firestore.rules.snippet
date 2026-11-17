@@ -1,0 +1,29 @@
+// Guest Band of the Week votes.
+// Paste this INSIDE the existing `match /databases/{database}/documents` block.
+// Do NOT replace the live rules file with this snippet, and do NOT deploy it
+// as the only ruleset — that would lock every other collection.
+//
+// Add it only if the live `botwVotes` create rule rejects anonymous users
+// (for example it requires an email or email_verified). If the live rule
+// already allows any signed-in user whose uid matches the document, enabling
+// Anonymous sign-in is enough and this block is unnecessary.
+//
+// Overlapping match blocks are OR'd. This allows a create; it does not
+// loosen reads, updates, or any other collection. Cheers stay as they are
+// (no account). Do not add an auth requirement to botwCheers.
+
+match /botwVotes/{voteId} {
+  allow read: if true;
+  allow create: if request.auth != null
+    && request.auth.uid == request.resource.data.uid
+    && voteId == request.resource.data.weekId + '_' + request.auth.uid
+    && request.resource.data.keys().hasOnly(['weekId', 'bandId', 'uid', 'createdAt'])
+    && request.resource.data.weekId is string
+    && request.resource.data.weekId.matches('^\\d{4}-\\d{2}-\\d{2}$')
+    && request.resource.data.bandId is string
+    && request.resource.data.bandId.size() > 0
+    && request.resource.data.bandId.size() < 120
+    && request.resource.data.createdAt == request.time
+    && !exists(/databases/$(database)/documents/botwVotes/$(voteId));
+  allow update, delete: if false;
+}

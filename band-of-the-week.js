@@ -1,8 +1,10 @@
 // Band of the Week revamp page controller.
-import { auth } from './firebase-dev.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+import { app, auth } from './firebase-dev.js';
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInAnonymously, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { isAdminAccount } from './admin-access.js';
-import { BOTW, DRY_RUN, now, currentRound, roundFor, countdownParts, rankRound, loadVotes, castVote, loadCheers, cheer, loadRounds, loadConfig, finalizeRound, restingBands, loadDirectory, voteLink, slugify } from './botw-core.js';
+import { BOTW, DRY_RUN, now, currentRound, roundFor, countdownParts, rankRound, loadVotes, castVote, loadCheers, cheer, loadRounds, loadConfig, finalizeRound, restingBands, loadDirectory, voteLink, slugify } from './botw-core.js?v=10';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -10,11 +12,18 @@ const params = new URLSearchParams(location.search);
 const PENDING = 'botwPendingVote';
 const FALLBACK = 'IMG_9367.png';
 
-let user = null, round = currentRound(), dir = new Map(), likes = {}, votes = [], cheers = {}, rounds = [], config = { cooldownWeeks: 0 }, ranked = { list: [], winners: [] }, resting = new Set();
+let user = null, guestUid = '', voteBusy = false, pendingBand = '', round = currentRound(), dir = new Map(), likes = {}, votes = [], cheers = {}, rounds = [], config = { cooldownWeeks: 0 }, ranked = { list: [], winners: [] }, resting = new Set();
 const focusBand = slugify(params.get('vote') || '');
+// Guest votes use a second Firebase app so anonymous auth never looks like a
+// site login. The header, community, and profiles keep using the default app.
+const GUEST_APP = 'botw-guest';
+const GUEST_KEY = 'botwGuestUid';
+let guestAuth = null, guestDb = null;
 
 const info = id => dir.get(id) || { name: id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), image: FALLBACK, url: `${id}.html`, meta: 'Independent Music' };
-const myVote = () => user && votes.find(v => v.uid === user.uid);
+const memberUid = () => (user && user.isAnonymous !== true && user.uid) ? user.uid : '';
+const activeUid = () => memberUid() || guestUid;
+const myVote = () => { const uid = activeUid(); return uid && votes.find(v => v.uid === uid); };
 function toast(msg) { const t = $('bwToast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2600); }
 
 async function loadLikes() {
@@ -87,6 +96,7 @@ function renderList() {
     const voteBtn = !open ? `<button class="bw-btn vote" disabled>${round.state === 'prelaunch' ? 'Opens Nov 9' : 'Closed'}</button>`
       : rest ? `<button class="bw-btn vote" disabled>Resting champ</button>`
       : mine ? (mine.bandId === id ? `<button class="bw-btn voted" disabled>✓ Your vote</button>` : `<button class="bw-btn vote" disabled>Voted this week</button>`)
+      : voteBusy ? `<button class="bw-btn vote" disabled>${pendingBand === id ? 'Voting…' : '🤘 Vote'}</button>`
       : `<button class="bw-btn vote" data-vote="${esc(id)}">🤘 Vote</button>`;
     return `<article class="bw-band${lead ? ' lead' : ''}${id === focusBand ? ' focus' : ''}${mine?.bandId === id ? ' mine' : ''}" id="band-${esc(id)}">
       <div class="bw-rank">${rank}</div><img src="${esc(b.image)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK}'">
@@ -127,21 +137,93 @@ function renderAdmin() {
 function sheet(html) { $('bwSheet').innerHTML = html; $('bwModal').hidden = false; }
 $('bwModal').addEventListener('click', e => { if (e.target.id === 'bwModal' || e.target.dataset.close != null) $('bwModal').hidden = true; });
 
-function joinPrompt(id) {
-  const b = info(id);
-  localStorage.setItem(PENDING, JSON.stringify({ bandId: id, weekId: round.weekId }));
-  const ret = encodeURIComponent(`band-of-the-week.html?vote=${encodeURIComponent(id)}&autovote=1`);
-  sheet(`<img class="av" src="${esc(b.image)}" alt=""><h3 id="bwModalTitle">Join free to vote for ${esc(b.name)}</h3><p>Takes 30 seconds. We'll bring you right back and lock in your vote.</p>
-    <div class="row"><a class="bw-btn vote" href="signup.html?returnTo=${ret}">Join free & vote</a><a class="bw-btn" href="login.html?returnTo=${ret}">I already have an account</a>
-    ${DRY_RUN ? '<button class="bw-btn" id="bwSim">Preview: simulate signup</button>' : ''}<button class="bw-btn" data-close>Not now — just cheer 🔥</button></div>`);
-  $('bwSim')?.addEventListener('click', () => { user = { uid: 'preview-fan', email: 'fan@example.test' }; sessionStorage.setItem('botwPreviewUser', '1'); $('bwModal').hidden = true; applyPending(); });
+function guestServices() {
+  if (guestAuth) return { guestAuth, guestDb };
+  const existing = getApps().find(a => a.name === GUEST_APP);
+  const opts = app.options || {};
+  const guestApp = existing || initializeApp({
+    apiKey: opts.apiKey, authDomain: opts.authDomain, projectId: opts.projectId,
+    storageBucket: opts.storageBucket, messagingSenderId: opts.messagingSenderId, appId: opts.appId
+  }, GUEST_APP);
+  guestAuth = getAuth(guestApp);
+  guestDb = getFirestore(guestApp);
+  return { guestAuth, guestDb };
+}
+
+function readStoredGuest() {
+  try { return localStorage.getItem(GUEST_KEY) || ''; } catch { return ''; }
+}
+
+// One anonymous uid per browser. Created on the first vote, then reused so
+// the same browser cannot cast a second vote that week.
+async function ensureGuest() {
+  if (DRY_RUN) {
+    let uid = readStoredGuest();
+    if (!uid) {
+      uid = `guest-${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(GUEST_KEY, uid);
+    }
+    guestUid = uid;
+    return { uid, firestore: null };
+  }
+  const services = guestServices();
+  await services.guestAuth.authStateReady();
+  let current = services.guestAuth.currentUser;
+  if (!current) {
+    try { await setPersistence(services.guestAuth, browserLocalPersistence); } catch (e) { console.warn('Guest vote will last for this visit only.', e); }
+    current = (await signInAnonymously(services.guestAuth)).user;
+  }
+  await current.getIdToken();
+  guestUid = current.uid;
+  return { uid: current.uid, firestore: services.guestDb };
+}
+
+function watchGuest() {
+  if (DRY_RUN) { guestUid = readStoredGuest(); renderList(); return; }
+  onAuthStateChanged(guestServices().guestAuth, u => { guestUid = u?.uid || ''; renderList(); });
+}
+
+async function resolveVoter() {
+  if (!DRY_RUN) {
+    await auth.authStateReady();
+    const member = auth.currentUser;
+    if (member && !member.isAnonymous) { user = member; return { uid: member.uid, guest: false }; }
+  } else if (memberUid()) {
+    return { uid: memberUid(), guest: false };
+  } else if (sessionStorage.getItem('botwPreviewUser')) {
+    user = { uid: 'preview-fan', email: 'fan@example.test' };
+    return { uid: user.uid, guest: false };
+  }
+  const guest = await ensureGuest();
+  return { uid: guest.uid, guest: true, firestore: guest.firestore };
 }
 
 async function doVote(id) {
-  if (!user) return joinPrompt(id);
+  if (voteBusy) return;
   if (round.state !== 'voting') return toast('Voting is closed for this week.');
-  try { await castVote(round.weekId, id, user.uid); localStorage.removeItem(PENDING); votes = await loadVotes(round.weekId); recompute(); renderList(); votedCard(id); }
-  catch (e) { if (e.code === 'already-voted') { toast('You already voted this week. Come back Monday!'); votes = await loadVotes(round.weekId); recompute(); renderList(); } else { console.error(e); toast('Vote failed — please try again.'); } }
+  if (myVote()) return toast('You already voted this week. Come back Monday!');
+  voteBusy = true; pendingBand = id; renderList();
+  let counted = null;
+  try {
+    const voter = await resolveVoter();
+    if (!DRY_RUN && voter.guest && !voter.firestore) throw Object.assign(new Error('guest-db-missing'), { code: 'guest-db-missing' });
+    await castVote(round.weekId, id, voter.uid, voter.guest && voter.firestore ? { firestore: voter.firestore } : undefined);
+    localStorage.removeItem(PENDING);
+    counted = voter;
+    votes = await loadVotes(round.weekId);
+    recompute();
+  } catch (e) {
+    votes = await loadVotes(round.weekId).catch(() => votes);
+    recompute();
+    if (!counted) {
+      if (e.code === 'already-voted' || (e.code === 'permission-denied' && myVote())) toast('You already voted this week. Come back Monday!');
+      else { console.error(e); toast('Vote failed — please try again.'); }
+    }
+  } finally {
+    voteBusy = false; pendingBand = '';
+  }
+  renderList();
+  if (counted) votedCard(id, { offerJoin: counted.guest });
 }
 
 async function applyPending() {
@@ -163,12 +245,15 @@ function drawCard(b, rankText) {
   return new Promise(res => { const im = new Image(); im.onload = () => { const s = Math.min(im.width, im.height); x.save(); x.beginPath(); x.roundRect(240, 170, 600, 600, 40); x.clip(); x.drawImage(im, (im.width - s) / 2, (im.height - s) / 2, s, s, 240, 170, 600, 600); x.restore(); finish(); res(c); }; im.onerror = () => { finish(); res(c); }; im.src = b.image; });
 }
 
-async function votedCard(id) {
+async function votedCard(id, { offerJoin = false } = {}) {
   const b = info(id), pos = ranked.list.findIndex(x => x.bandId === id) + 1, me = ranked.list[pos - 1];
   const behind = (ranked.list[0]?.votes || 0) - (me?.votes || 0);
   const rankText = pos === 1 ? 'Currently #1!' : `#${pos} · ${behind} vote${behind === 1 ? '' : 's'} behind #1`;
-  sheet(`<h3 id="bwModalTitle">Vote locked in for ${esc(b.name)} 🤘</h3><p>${esc(rankText)}. Share it — every share brings more votes.</p><div id="bwCanvasWrap"></div>
-    <div class="row"><button class="bw-btn vote" id="bwShareCard">Share my "I voted" card</button><button class="bw-btn" data-share="${esc(id)}">Copy vote link</button><button class="bw-btn" data-close>Done</button></div>`);
+  const ret = encodeURIComponent(`band-of-the-week.html?vote=${encodeURIComponent(id)}`);
+  const join = offerJoin ? `<p>Want a free BANDtroductions profile?</p><div class="bw-choice"><a class="bw-btn vote" href="signup.html?returnTo=${ret}">Join free</a><button class="bw-btn" type="button" data-close>No thanks</button></div>` : '';
+  const title = offerJoin ? 'Your vote counted!' : `Vote locked in for ${esc(b.name)} 🤘`;
+  sheet(`<h3 id="bwModalTitle">${title}</h3>${join}<p>${offerJoin ? `Vote locked in for ${esc(b.name)}. ` : ''}${esc(rankText)}. Share it — every share brings more votes.</p><div id="bwCanvasWrap"></div>
+    <div class="row"><button class="bw-btn vote" id="bwShareCard">Share my "I voted" card</button><button class="bw-btn" data-share="${esc(id)}">Copy vote link</button>${offerJoin ? '' : '<button class="bw-btn" data-close>Done</button>'}</div>`);
   const c = await drawCard(b, rankText); $('bwCanvasWrap').appendChild(c);
   $('bwShareCard').onclick = () => c.toBlob(async blob => {
     const file = new File([blob], `i-voted-${id}.png`, { type: 'image/png' });
@@ -208,9 +293,11 @@ async function refresh() {
 
 (async () => {
   renderHero(); setInterval(tick, 1000);
+  if (DRY_RUN) guestUid = readStoredGuest();
   [dir, likes] = await Promise.all([loadDirectory(), loadLikes()]);
   await refresh();
   if (focusBand) document.getElementById('band-' + focusBand)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   if (DRY_RUN && sessionStorage.getItem('botwPreviewUser')) user = { uid: 'preview-fan', email: 'fan@example.test' };
+  watchGuest();
   onAuthStateChanged(auth, u => { if (u || !DRY_RUN) user = u || null; if (!user && DRY_RUN && sessionStorage.getItem('botwPreviewUser')) user = { uid: 'preview-fan' }; renderAdmin(); params.get('autovote') === '1' || localStorage.getItem(PENDING) ? applyPending() : renderList(); });
 })();
