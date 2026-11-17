@@ -1,0 +1,32 @@
+// Minimal edit to the LIVE Firestore rules.
+// Do NOT replace the live rules file with this snippet.
+// Do NOT deploy hosting or functions from it.
+// Publish rules only, after editing the live ruleset in place.
+//
+// Three changes. Leave every other line byte-for-byte the same,
+// including hasAdminEmail() (it calls isSignedIn(), so anonymous
+// users stay out of admin checks).
+
+// 1. Replace the current isSignedIn().
+function isSignedIn() {
+  return request.auth != null
+    && request.auth.token.firebase.sign_in_provider != 'anonymous';
+}
+
+// 2. Add this immediately after isSignedIn().
+function isGuestOrSignedIn() {
+  return request.auth != null;
+}
+
+// 3. In match /botwVotes/{voteId}, change only the create rule's
+//    isSignedIn() call to isGuestOrSignedIn().
+//
+//    Before:
+//      allow create: if isSignedIn()
+//        && <the existing uid, weekId, band, and time checks>
+//
+//    After:
+//      allow create: if isGuestOrSignedIn()
+//        && <those same checks, unchanged>
+//
+// Every other isSignedIn() use stays isSignedIn().
