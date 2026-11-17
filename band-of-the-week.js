@@ -108,10 +108,13 @@ function renderList() {
 }
 
 function renderHof() {
-  const items = rounds.filter(r => r.winners?.length).flatMap(r => r.winners.map(w => ({ r, w })));
+  const shown = rounds.filter(r => r.winners?.length);
+  const newestId = shown[0]?.weekId;
+  const items = shown.flatMap(r => r.winners.map(w => ({ r, w })));
   $('bwHof').innerHTML = items.length ? items.map(({ r, w }) => {
     const b = info(w);
-    return `<a href="${esc(b.url)}"><img src="${esc(b.image)}" alt="${esc(b.name)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK}'"><div><small>${esc(r.title || (r.winners.length > 1 ? 'Co-winner' : 'Champion'))}</small><b>${esc(b.name)}</b><em>${esc(r.label)}</em></div></a>`;
+    const label = r.winners.length > 1 ? 'Co-winner' : (r.weekId === newestId ? 'Reigning Champ' : 'Champion');
+    return `<a href="${esc(b.url)}"><img src="${esc(b.image)}" alt="${esc(b.name)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK}'"><div><small>${esc(label)}</small><b>${esc(b.name)}</b><em>${esc(r.label)}</em></div></a>`;
   }).join('') : '<p class="bw-empty">The first champion will be crowned Sunday, Nov 15.</p>';
 }
 
