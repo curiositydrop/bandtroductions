@@ -29,6 +29,7 @@
 .bw-prize h2{margin:0 0 8px;font-size:1.05rem;letter-spacing:.04em;text-transform:uppercase;color:#ffcc33}
 .bw-prize p{margin:0 0 8px;color:#eee;font-size:.95rem;line-height:1.45}
 .bw-prize p:last-child{margin-bottom:0}
+.bw-prize-ask{color:#ffcc33!important;font-weight:700}
 .bw-prize-rules{color:#aaa!important;font-size:.78rem!important;margin-top:4px}
 .bw-howto div{display:flex;gap:10px;align-items:center;background:#121214;border:1px solid #242428;border-radius:12px;padding:10px 12px;font-size:.88rem;color:#bbb}
 .bw-howto b{flex:0 0 28px;height:28px;border-radius:50%;background:#ff004c;color:#fff;display:grid;place-items:center}
