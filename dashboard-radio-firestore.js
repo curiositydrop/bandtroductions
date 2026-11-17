@@ -1,7 +1,7 @@
 import { db as devDb } from './firebase-dev.js';
 import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { activePlaylist, nextPlaylist, playlistPosition, formatMinutes, easternClock, sponsorBreak, effectiveSponsorBreak, loadStaticSponsorBreak, withPreviewTestBreak, betweenShowGap, previewBreakOffset, previewDemoAdSeconds, previewAdSecondsOverride } from './radio-schedule-engine.js?v=7';
-import { sessionShuffledPlaylist } from './radio-rotation-shuffle.mjs?v=20261117-rotation-shuffle';
+import { sharedRotationPlaylist } from './radio-rotation-shuffle.mjs?v=20261117-shared-day';
 import { currentBreakFill, syncBreakFillAudio, clearBreakFillAudio, releaseFillAudio, fillBlockedByFailure, configuredBreakAds, planPaidAdPlayback, holdPaidAd, noteMeasuredAdDuration, primeAdDuration, actualDurationFor } from './radio-break-fill.mjs?v=20261110-ad-file-length';
 
 const oldPanel=document.querySelector('.radio-panel');
@@ -146,7 +146,7 @@ function currentFill(date=new Date()){
 function state(){
   if(!stationEnabled)return null;
   if(currentBreak()||currentFill())return null;
-  const p=sessionShuffledPlaylist(activePlaylist(playlists));
+  const p=sharedRotationPlaylist(activePlaylist(playlists));
   if(!p)return null;
   const pos=playlistPosition(p);
   if(!pos)return null;
@@ -358,7 +358,7 @@ async function synchronize(forcePlay=false){
   ensureAudio();
   const {p,pos,item}=s;
   const src=item.audioUrl;
-  const key=`${p.id}|${pos.index}|${item.id||item.title}`;
+  const key=`${p.rotationDate||'scheduled'}|${p.id}|${pos.index}|${item.id||item.title}`;
   const abs=new URL(src,location.href).href;
   if(audio.src!==abs||currentKey!==key){
     currentKey=key;

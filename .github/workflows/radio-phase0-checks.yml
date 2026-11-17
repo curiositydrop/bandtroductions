@@ -21,6 +21,7 @@ on:
       - 'dashboard-radio-firestore.js'
       - 'radio-rotation-shuffle.mjs'
       - 'tests/radio-rotation-shuffle.test.mjs'
+      - 'tests/radio-rotation-session-probe.mjs'
       - 'tests/radio-break-fill.test.mjs'
       - '.github/workflows/radio-phase0-checks.yml'
 permissions:
