@@ -4,8 +4,9 @@
 // collection and query, then keeps only a finalized round (saved by
 // finalizeRound, not the display-only Hall of Fame seed).
 
-export const LAUNCH_WEEK = '2026-11-09';
 export const SHOW_DELAY_MS = 2000;
+// First Band of the Week Hour airs Monday Nov 23, 2026, for the Nov 16–22 winner.
+export const RADIO_HOUR_WEEK = '2026-11-16';
 const CSS_HREF = 'botw-spotlight.css?v=1';
 const SEEN_PREFIX = 'btBotwSpotlight:';
 const PLACEHOLDER_PHOTO = /(?:^|\/)IMG_9367\.png(?:\?.*)?$/i;
@@ -80,9 +81,9 @@ export function seenStorageKey(round) {
   return `${SEEN_PREFIX}${round?.weekId || ''}:${ids.join(',')}`;
 }
 
-export function mentionsRadioHour(round, launchWeek = LAUNCH_WEEK) {
+export function mentionsRadioHour(round, radioHourWeek = RADIO_HOUR_WEEK) {
   if (!round || round.seed === true || !round.finalizedAt || !round.weekId) return false;
-  return String(round.weekId) >= String(launchWeek);
+  return String(round.weekId) >= String(radioHourWeek);
 }
 
 export function bandPhotoAvailable(src) {

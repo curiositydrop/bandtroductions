@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
-  LAUNCH_WEEK,
+  RADIO_HOUR_WEEK,
   bandPhotoAvailable,
   escapeHtml,
   joinNames,
@@ -33,13 +33,15 @@ test('reigning champ is the newest finalized round, never the seed', () => {
   assert.equal(pickFinalizedChamp(null), null);
 });
 
-test('radio hour line is only for rounds finalized from the revamp forward', () => {
-  assert.equal(LAUNCH_WEEK, '2026-11-09');
-  assert.equal(mentionsRadioHour(finalized('2026-11-09', ['ascent-to-power'])), true);
-  assert.equal(mentionsRadioHour(finalized('2026-11-16', ['next'])), true);
+test('radio hour line starts with the week of November 16, 2026', () => {
+  assert.equal(RADIO_HOUR_WEEK, '2026-11-16');
+  assert.equal(mentionsRadioHour(finalized('2026-11-09', ['ascent-to-power'])), false);
+  assert.equal(mentionsRadioHour(finalized('2026-11-15', ['day-before'])), false);
+  assert.equal(mentionsRadioHour(finalized('2026-11-16', ['first-hour'])), true);
+  assert.equal(mentionsRadioHour(finalized('2026-11-23', ['next'])), true);
   assert.equal(mentionsRadioHour(finalized('2026-11-02', ['old'])), false);
   assert.equal(mentionsRadioHour({ seed: true, weekId: '2026-11-16', winners: ['x'], finalizedAt: 1 }), false);
-  assert.equal(mentionsRadioHour({ weekId: '2026-11-09', winners: ['x'] }), false);
+  assert.equal(mentionsRadioHour({ weekId: '2026-11-16', winners: ['x'] }), false);
 });
 
 test('seen key is the round plus sorted winner ids', () => {
@@ -96,11 +98,11 @@ test('pages that should show it reference the spotlight, and blocked flows do no
   const globalJs = read('global.js');
   const header = read('global-header-v2.js');
   const spotlight = read('botw-spotlight.js');
-  assert.match(globalJs, /import\('\.\/botw-spotlight\.js\?v=1'\)/);
-  assert.match(header, /import\('\.\/botw-spotlight\.js\?v=1'\)/);
-  assert.match(read('index.html'), /global-header-v2\.js\?v=20261119-botw/);
-  assert.match(read('bands.html'), /global\.js\?v=20261119-botw/);
-  assert.match(read('musicians.html'), /global\.js\?v=20261119-botw/);
+  assert.match(globalJs, /import\('\.\/botw-spotlight\.js\?v=2'\)/);
+  assert.match(header, /import\('\.\/botw-spotlight\.js\?v=2'\)/);
+  assert.match(read('index.html'), /global-header-v2\.js\?v=20261119-botw2/);
+  assert.match(read('bands.html'), /global\.js\?v=20261119-botw2/);
+  assert.match(read('musicians.html'), /global\.js\?v=20261119-botw2/);
   assert.equal(spotlight.includes('totalVotes'), false);
   assert.equal(spotlight.includes('.pause('), false);
   assert.equal(spotlight.includes('audioPlayer'), false);
