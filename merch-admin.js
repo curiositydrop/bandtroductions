@@ -1,7 +1,8 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
-import { collection, doc, getDocs, onSnapshot, query, serverTimestamp, updateDoc, where, writeBatch } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { collection, deleteField, doc, getDocs, onSnapshot, query, serverTimestamp, updateDoc, where, writeBatch } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { isAdminAccount } from './admin-access.js';
+import { compAccess } from './botw-comp-access.mjs?v=1';
 
 const container = document.getElementById('cr-merch-body');
 let stopStores = null;
@@ -9,8 +10,17 @@ let stopProducts = null;
 let allStores = [];
 let allProducts = [];
 
+function prizeActive(store) {
+  return compAccess({ expiresOn: store.botwCompExpiresOn, revoked: store.botwCompRevoked === true }) === 'active';
+}
+
 function statusLabel(store) {
   if (store.subscriptionStatus === 'comped' || store.launchPartner === true) return 'Launch partner';
+  if (store.botwCompExpiresOn && store.launchPartner !== true && !['active', 'trialing'].includes(store.subscriptionStatus)) {
+    return prizeActive(store)
+      ? `Band of the Week comp through ${store.botwCompExpiresOn}`
+      : `Band of the Week comp ended ${store.botwCompExpiresOn}`;
+  }
   if (store.applicationStatus === 'payment_review') return 'Payment needs review';
   if (store.applicationStatus === 'payment_verified' && store.published !== true) return 'Payment verified — ready for approval';
   return ({ active: 'Active', trialing: 'Free trial', pending: 'Awaiting payment', past_due: 'Past due', paused: 'Paused', canceled: 'Canceled' })[store.subscriptionStatus] || 'Not started';
@@ -55,6 +65,9 @@ async function setStoreStatus(store, subscriptionStatus, billingPlan = store.bil
       || (subscriptionStatus === 'paused' && store.billingPlan === 'launch-partner');
     const wasApproved = store.adminApproved === true || store.applicationStatus === 'approved' || store.published === true;
     const adminApproved = isPublic || (subscriptionStatus === 'paused' && wasApproved);
+    const clearPrize = isPublic && (store.botwCompExpiresOn || store.botwCompRevoked === true)
+      ? { botwCompExpiresOn: deleteField(), botwCompRevoked: deleteField() }
+      : {};
     const batch = writeBatch(db);
     batch.update(doc(db, 'merchStores', store.id), {
       subscriptionStatus,
@@ -66,7 +79,8 @@ async function setStoreStatus(store, subscriptionStatus, billingPlan = store.bil
       billingEnforcement: exemptLaunchPartner ? 'exempt-launch-partner' : 'stripe',
       published: isPublic,
       adminUpdatedAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
+      ...clearPrize
     });
     batch.set(doc(db, 'merchStorefronts', store.id), {
       profileId: store.profileId || store.id,
@@ -75,7 +89,8 @@ async function setStoreStatus(store, subscriptionStatus, billingPlan = store.bil
       websiteUrl: store.websiteUrl || '',
       storeDescription: store.storeDescription || '',
       published: isPublic,
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
+      ...clearPrize
     }, { merge: true });
     await batch.commit();
   } catch (error) {
@@ -217,9 +232,10 @@ function render(stores) {
     return;
   }
 
+  const awaitingPayment = store => store.subscriptionStatus === 'pending' && !store.botwCompExpiresOn;
   stores.sort((a, b) => {
-    if (a.subscriptionStatus === 'pending' && b.subscriptionStatus !== 'pending') return -1;
-    if (b.subscriptionStatus === 'pending' && a.subscriptionStatus !== 'pending') return 1;
+    if (awaitingPayment(a) && !awaitingPayment(b)) return -1;
+    if (awaitingPayment(b) && !awaitingPayment(a)) return 1;
     return (a.bandName || '').localeCompare(b.bandName || '');
   }).forEach(store => {
     const card = document.createElement('article');
@@ -249,20 +265,21 @@ function render(stores) {
     actions.className = 'welcome-actions';
     actions.style.marginTop = '10px';
     const isAdminTestStore = store.id === 'admin-merch-preview';
-    if (!isAdminTestStore && store.subscriptionStatus !== 'comped') actions.appendChild(actionButton('COMP LAUNCH STORE', 'approve-button', () => setStoreStatus(store, 'comped', 'launch-partner')));
+    const prize = prizeActive(store);
+    if (!isAdminTestStore && store.subscriptionStatus !== 'comped' && !prize) actions.appendChild(actionButton('COMP LAUNCH STORE', 'approve-button', () => setStoreStatus(store, 'comped', 'launch-partner')));
     const verifiedStatus = store.billingStatus === 'trialing' ? 'trialing' : 'active';
     const canApproveVerifiedStore = store.billingVerified === true && store.published !== true && store.subscriptionStatus !== 'comped';
     if (!isAdminTestStore && canApproveVerifiedStore) actions.appendChild(actionButton('APPROVE STORE', 'approve-button', () => setStoreStatus(store, verifiedStatus, 'monthly')));
-    if (!isAdminTestStore && !canApproveVerifiedStore && !['active', 'comped'].includes(store.subscriptionStatus)) actions.appendChild(actionButton('ACTIVATE OVERRIDE', '', () => setStoreStatus(store, 'active', 'monthly')));
-    if (!isAdminTestStore && store.subscriptionStatus !== 'pending') actions.appendChild(actionButton('MARK PENDING', '', () => setStoreStatus(store, 'pending', '')));
-    if (!isAdminTestStore && store.subscriptionStatus !== 'paused') actions.appendChild(actionButton('PAUSE', '', () => setStoreStatus(store, 'paused')));
+    if (!isAdminTestStore && !canApproveVerifiedStore && !prize && !['active', 'comped'].includes(store.subscriptionStatus)) actions.appendChild(actionButton('ACTIVATE OVERRIDE', '', () => setStoreStatus(store, 'active', 'monthly')));
+    if (!isAdminTestStore && !prize && store.subscriptionStatus !== 'pending') actions.appendChild(actionButton('MARK PENDING', '', () => setStoreStatus(store, 'pending', '')));
+    if (!isAdminTestStore && !prize && store.subscriptionStatus !== 'paused') actions.appendChild(actionButton('PAUSE', '', () => setStoreStatus(store, 'paused')));
     const manage = document.createElement('a');
     manage.className = 'auth-button';
     manage.style.width = 'auto';
     manage.href = `merch.html?manage=${encodeURIComponent(store.id)}#sell-merch`;
     manage.textContent = 'MANAGE / PREVIEW';
     actions.appendChild(manage);
-    if (!isAdminTestStore && ['active', 'trialing', 'comped'].includes(store.subscriptionStatus)) {
+    if (!isAdminTestStore && (prize || ['active', 'trialing', 'comped'].includes(store.subscriptionStatus))) {
       const view = document.createElement('a');
       view.className = 'auth-button';
       view.style.width = 'auto';
@@ -282,7 +299,11 @@ function render(stores) {
     remove.style.borderColor = '#8f3030';
     remove.style.color = '#ff9b9b';
     actions.appendChild(remove);
-    card.append(name, details, contact, products, actions);
+    const prizeNote = document.createElement('span');
+    prizeNote.style.display = prize ? 'block' : 'none';
+    prizeNote.style.marginTop = '5px';
+    prizeNote.textContent = 'Extend or revoke this prize from the band profile. It is not a launch-partner comp.';
+    card.append(name, details, contact, products, prizeNote, actions);
     container.appendChild(card);
   });
 }

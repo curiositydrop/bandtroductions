@@ -17,6 +17,7 @@ import {
 import { uploadUserImage, validateImageFile, storageUnavailableMessage } from './storage-upload.js';
 import { isAdminAccount } from './admin-access.js';
 import { PAUSED_MESSAGE, checkoutParams, currentOffer } from './bt-offer.js';
+import { compAccess, compNote, keepPromptMessage, storefrontVisible } from './botw-comp-access.mjs?v=1';
 
 const MAX_PRODUCTS = 20;
 const ACTIVE_STATUSES = new Set(['active', 'trialing', 'comped']);
@@ -84,10 +85,30 @@ let publicStores = [];
 let currentUser = null;
 let ownedBand = null;
 let ownedStore = null;
+let ownedComp = null;
 let ownedProducts = [];
 let editingProductId = null;
 let currentUserIsAdmin = false;
 let adminManagedStoreId = '';
+
+function prizeLive() {
+  return compAccess(ownedComp) === 'active';
+}
+
+function merchLive(status) {
+  return ACTIVE_STATUSES.has(status) || prizeLive();
+}
+
+async function loadOwnedComp(profileId) {
+  ownedComp = null;
+  if (!profileId) return;
+  try {
+    const snap = await getDoc(doc(db, 'botwWebsiteComps', profileId));
+    ownedComp = snap.exists() ? snap.data() : null;
+  } catch (error) {
+    console.warn('Band of the Week comp could not be loaded.', error);
+  }
+}
 
 function isAdminManagingStore() {
   return currentUserIsAdmin && Boolean(adminManagedStoreId) && ownedStore?.id === adminManagedStoreId;
@@ -326,7 +347,7 @@ function renderAdminStorePreview() {
   if (!isAdminManagingStore() || !ownedStore) return;
   selectedStoreSection.hidden = false;
   selectedProductGrid.replaceChildren();
-  const visibility = ACTIVE_STATUSES.has(ownedStore.subscriptionStatus)
+  const visibility = merchLive(ownedStore.subscriptionStatus)
     ? 'This is the current fan-facing storefront.'
     : 'ADMIN PREVIEW — this storefront is still hidden from fans.';
   renderSelectedStorePresentation(ownedStore, visibility);
@@ -343,7 +364,7 @@ function renderAdminStorePreview() {
 
 onSnapshot(query(collection(db, 'merchStorefronts'), where('published', '==', true)), snapshot => {
   const liveStores = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
-    .filter(store => store.published === true && store.storeKind !== 'business' && !HIDDEN_PUBLIC_STORE_NAMES.has(String(store.bandName || '').trim().toLowerCase()))
+    .filter(store => storefrontVisible(store) && store.storeKind !== 'business' && !HIDDEN_PUBLIC_STORE_NAMES.has(String(store.bandName || '').trim().toLowerCase()))
     .sort((a, b) => (a.bandName || '').localeCompare(b.bandName || ''));
   publicStores = fillStoreRow(liveStores);
   renderBandStores();
@@ -450,6 +471,14 @@ function renderStoreApplication(status) {
     return;
   }
 
+  if (!isAdminManagingStore() && prizeLive() && !ACTIVE_STATUSES.has(status)) {
+    ownerSummary.textContent = `${ownedBand.displayName}: ${compNote(ownedComp)} It ends automatically that day, with no charge.`;
+    return;
+  }
+  if (!isAdminManagingStore() && compAccess(ownedComp) === 'ended' && !ACTIVE_STATUSES.has(status)) {
+    ownerSummary.textContent = keepPromptMessage(ownedComp);
+    return;
+  }
   if (status === 'pending' && ownedStore?.applicationStatus === 'payment_review') ownerSummary.textContent = `${ownedBand.displayName}'s checkout was received, but the billing email needs review. Your draft products remain saved.`;
   else if (status === 'pending' && ownedStore?.billingVerified === true) ownerSummary.textContent = `${ownedBand.displayName}'s subscription is confirmed and the store is awaiting final approval. You can add and update draft products below.`;
   else if (status === 'pending') ownerSummary.textContent = `${ownedBand.displayName}'s store submission is awaiting payment verification and approval. You can add and update draft products below.`;
@@ -619,6 +648,7 @@ async function loadOwnerState(user) {
     : '';
   ownedBand = null;
   ownedStore = null;
+  ownedComp = null;
   ownedProducts = [];
   editingProductId = null;
   productForm.reset();
@@ -662,6 +692,7 @@ async function loadOwnerState(user) {
             bannerImageUrl: ''
           };
       const status = ownedStore.subscriptionStatus || 'pending';
+      await loadOwnedComp(managedProfileId);
       renderStoreApplication(status);
 
       const back = document.createElement('a');
@@ -675,7 +706,7 @@ async function loadOwnerState(user) {
       }));
 
       productEditor.hidden = false;
-      productPublishLabel.textContent = ACTIVE_STATUSES.has(status)
+      productPublishLabel.textContent = merchLive(status)
         ? 'Publish this product immediately'
         : 'Show this item when the store is approved';
       await loadOwnerProducts();
@@ -697,6 +728,7 @@ async function loadOwnerState(user) {
       return;
     }
     ownedStore = await findOwnedMerchStore(user, ownedBand.id);
+    await loadOwnedComp(ownedBand.id);
     const status = ownedStore?.subscriptionStatus || 'not_started';
 
     renderStoreApplication(status);
@@ -710,7 +742,7 @@ async function loadOwnerState(user) {
       }, 'button secondary'));
     }
 
-    if (ACTIVE_STATUSES.has(status)) {
+    if (merchLive(status)) {
       const viewStore = document.createElement('a');
       viewStore.className = 'button primary';
       viewStore.href = `merch.html?band=${encodeURIComponent(ownedBand.id)}`;
@@ -725,9 +757,17 @@ async function loadOwnerState(user) {
       }, 'button secondary'));
     }
 
-    if (ownedStore && PRODUCT_EDIT_STATUSES.has(status)) {
+    if (compAccess(ownedComp) === 'ended' && !ACTIVE_STATUSES.has(status)) {
+      const keep = document.createElement('a');
+      keep.className = 'button primary';
+      keep.href = `website.html?id=${encodeURIComponent(ownedBand.id)}`;
+      keep.textContent = 'Keep Website + Merch?';
+      ownerActions.appendChild(keep);
+    }
+
+    if (ownedStore && (PRODUCT_EDIT_STATUSES.has(status) || prizeLive())) {
       productEditor.hidden = false;
-      productPublishLabel.textContent = ACTIVE_STATUSES.has(status)
+      productPublishLabel.textContent = merchLive(status)
         ? 'Publish this product immediately'
         : 'Show this item when the store is approved';
       await loadOwnerProducts();
@@ -752,7 +792,7 @@ cancelProductEditButton.addEventListener('click', () => {
 
 productForm.addEventListener('submit', async event => {
   event.preventDefault();
-  if (!currentUser || !ownedBand || !ownedStore || (!PRODUCT_EDIT_STATUSES.has(ownedStore.subscriptionStatus) && !isAdminManagingStore())) {
+  if (!currentUser || !ownedBand || !ownedStore || (!PRODUCT_EDIT_STATUSES.has(ownedStore.subscriptionStatus) && !prizeLive() && !isAdminManagingStore())) {
     setOwnerMessage('Submit your artist store before adding products.', true);
     return;
   }
@@ -810,7 +850,7 @@ productForm.addEventListener('submit', async event => {
     resetProductForm();
     await loadOwnerProducts();
     if (wasEditing) setOwnerMessage('Product changes saved.');
-    else setOwnerMessage(ACTIVE_STATUSES.has(ownedStore.subscriptionStatus)
+    else setOwnerMessage(merchLive(ownedStore.subscriptionStatus)
       ? 'Product added to your store.'
       : 'Draft product saved. It will stay hidden until your store is approved.');
   } catch (error) {

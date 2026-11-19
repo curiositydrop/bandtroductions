@@ -14,6 +14,7 @@ const {
   subscriptionIdFromInvoice,
   verifyStripeSignature
 } = require('./stripe-webhook-utils');
+const { storefrontListing } = require('./botw-comp-access');
 
 const db = getFirestore();
 const REGION = 'us-central1';
@@ -88,6 +89,22 @@ function storefrontData(store, published) {
   };
 }
 
+async function compRecord(profileId) {
+  const snap = await db.collection('botwWebsiteComps').doc(profileId).get();
+  return snap.exists ? snap.data() : null;
+}
+
+function applyCompMarkers(payload, listing) {
+  if (listing.clearCompMarker) {
+    payload.botwCompExpiresOn = FieldValue.delete();
+    payload.botwCompRevoked = FieldValue.delete();
+  } else if (listing.expiresOn) {
+    payload.botwCompExpiresOn = listing.expiresOn;
+    payload.botwCompRevoked = false;
+  }
+  return payload;
+}
+
 async function setArtistPlan(profileId, status, eventId, batch, profileSnapshot = null) {
   const snap = profileSnapshot || await db.collection('profiles').doc(profileId).get();
   if (!snap.exists) return;
@@ -128,8 +145,9 @@ async function applySubscriptionStatus(storeSnapshot, stripeStatus, eventId, ext
   const store = { id: storeSnapshot.id, ...storeSnapshot.data() };
   const status = isLaunchPartner(store) ? 'comped' : merchStatusFromStripe(stripeStatus);
   const active = ACTIVE_PLAN_STATUSES.has(status) && store.adminPaused !== true;
+  const listing = storefrontListing({ active, comp: store.adminPaused === true ? null : await compRecord(store.id) });
   const batch = db.batch();
-  batch.set(storeSnapshot.ref, {
+  batch.set(storeSnapshot.ref, applyCompMarkers({
     ...extra,
     subscriptionStatus: status,
     billingStatus: status,
@@ -141,8 +159,8 @@ async function applySubscriptionStatus(storeSnapshot, stripeStatus, eventId, ext
     lastStripeEventId: cleanString(eventId, 200),
     billingUpdatedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
-  batch.set(db.collection('merchStorefronts').doc(store.id), storefrontData(store, active), { merge: true });
+  }, listing), { merge: true });
+  batch.set(db.collection('merchStorefronts').doc(store.id), applyCompMarkers(storefrontData(store, listing.published), listing), { merge: true });
   await setArtistPlan(store.id, status, eventId, batch);
   await batch.commit();
   return store.id;
@@ -165,10 +183,11 @@ async function handleCheckout(session, eventId) {
   const customerId = cleanStripeId(session.customer);
   const status = isLaunchPartner(store) ? 'comped' : 'trialing';
   const active = emailMatches;
+  const listing = storefrontListing({ active, comp: await compRecord(profileId) });
   const profileSnapshot = await db.collection('profiles').doc(profileId).get();
   const batch = db.batch();
 
-  batch.set(storeSnapshot.ref, {
+  batch.set(storeSnapshot.ref, applyCompMarkers({
     stripeCustomerId: customerId,
     stripeSubscriptionId: subscriptionId,
     stripeCheckoutSessionId: cleanStripeId(session.id),
@@ -186,7 +205,7 @@ async function handleCheckout(session, eventId) {
     checkoutCompletedAt: FieldValue.serverTimestamp(),
     billingUpdatedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
+  }, listing), { merge: true });
 
   if (subscriptionId) {
     batch.set(db.collection('stripeMerchSubscriptions').doc(subscriptionId), {
@@ -197,7 +216,7 @@ async function handleCheckout(session, eventId) {
     }, { merge: true });
   }
 
-  batch.set(db.collection('merchStorefronts').doc(profileId), storefrontData(store, active), { merge: true });
+  batch.set(db.collection('merchStorefronts').doc(profileId), applyCompMarkers(storefrontData(store, listing.published), listing), { merge: true });
   if (active) await setArtistPlan(profileId, status, eventId, batch, profileSnapshot);
   await batch.commit();
   return profileId;
@@ -283,7 +302,9 @@ exports.prepareArtistUpgrade = onCall({ region: REGION }, async request => {
   const batch = db.batch();
   batch.set(storeRef, store, { merge: true });
   if (ACTIVE_PLAN_STATUSES.has(existingStatus)) {
-    batch.set(db.collection('merchStorefronts').doc(profileId), storefrontData(store, true), { merge: true });
+    const clearPrize = { botwCompExpiresOn: FieldValue.delete(), botwCompRevoked: FieldValue.delete() };
+    batch.set(storeRef, clearPrize, { merge: true });
+    batch.set(db.collection('merchStorefronts').doc(profileId), { ...storefrontData(store, true), ...clearPrize }, { merge: true });
     await setArtistPlan(profileId, existingStatus, 'upgrade-sync', batch, profileSnapshot);
   }
   await batch.commit();

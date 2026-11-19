@@ -7,7 +7,7 @@
   "main": "launch-entry.js",
   "scripts": {
     "generate-vapid": "node generate-vapid.js",
-    "test": "node --test stripe-webhook-utils.test.js"
+    "test": "node --test stripe-webhook-utils.test.js botw-comp-access.test.js && node --experimental-detect-module --test botw-upgrade-prompt.test.mjs"
   },
   "dependencies": {
     "firebase-admin": "latest",
