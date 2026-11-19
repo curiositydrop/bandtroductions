@@ -2,9 +2,9 @@
    never fetches, never changes rendering or load logic.
    Robots stays noindex (from the static HTML) unless this is a published, plan-active public site
    opened without owner/editor parameters. */
+import { websiteMerchAccess } from './botw-comp-access.mjs?v=1';
 const SITE='https://bandtroductions.com/';
 const PILOT='19MH0ZzVlPVN4ediF4PesZR5TY13';
-const ACTIVE=new Set(['active','trialing','comped']);
 const SOCIAL_KEYS=['website','youtubeUrl','youtube','instagram','instagramUrl','facebook','facebookUrl','spotify','spotifyUrl','bandcamp','bandcampUrl','soundcloud','soundcloudUrl','tiktok','tiktokUrl','twitter','twitterUrl','appleMusicUrl'];
 function https(v){try{const u=new URL(String(v||''));return u.protocol==='https:'?u.href:'';}catch{return '';}}
 function meta(attr,key,val){if(!val)return;let el=document.head.querySelector(`meta[${attr}="${key}"]`);if(!el){el=document.createElement('meta');el.setAttribute(attr,key);document.head.appendChild(el);}el.setAttribute('content',val);}
@@ -13,8 +13,9 @@ export function isPublicIndexable(profileId,profile){
  if(!profileId||!profile||profile.published!==true)return false;
  const q=new URLSearchParams(location.search);
  if(q.get('edit')==='1'||q.has('area')||q.has('preview')||q.has('draft'))return false;
- const plan=String(profile.websitePlanStatus||profile.artistPlan?.status||'').toLowerCase();
- return profileId===PILOT||(profile.websiteEnabled===true&&ACTIVE.has(plan));
+ if(profileId===PILOT)return true;
+ const access=websiteMerchAccess(profile,profile.botwComp);
+ return access==='paid'||access==='comp';
 }
 export function applyWebsiteSeo({profileId,profile,view}){
  try{
