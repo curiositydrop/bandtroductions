@@ -119,14 +119,6 @@ function clearLibraryFilters(){
   applyLibraryFilters();
 }
 
-function findAddButton(item){
-  const id=String(item?.id||'');
-  if(!id)return null;
-  const root=item.type==='sponsor'?document.getElementById('crr-sponsor-library'):document.getElementById('crr-track-library');
-  if(!root)return null;
-  return [...root.querySelectorAll('[data-action="add-library"]')].find(button=>String(button.dataset.key||'')===id)||null;
-}
-
 function resetSaveButton(){
   const save=document.getElementById('crr-save');
   if(!save)return;
@@ -154,19 +146,19 @@ function loadPlaylist(id,{duplicate=false}={}){
   save.dataset.stationEditId=duplicate?'':id;
   save.textContent=duplicate?'Create Copy':'Save Changes';
 
-  let restored=0;
-  let missing=0;
-  (playlist.items||[]).forEach(item=>{
-    const add=findAddButton(item);
-    if(add){add.click();restored++;}else missing++;
-  });
+  // Saved order, including repeats and legacy tracks that are not in the
+  // library yet. Library Add clicks resolve each row from whichever source
+  // has loaded and append it when audio metadata returns.
+  const items=Array.isArray(playlist.items)?playlist.items:[];
+  window.dispatchEvent(new CustomEvent('bandtroductions:restore-playlist-draft',{detail:{items}}));
+  const restored=items.length;
 
   const status=document.getElementById('crr-builder-status');
   if(status){
     status.style.color='#72e7d9';
     status.textContent=duplicate
-      ? `Loaded “${playlist.name||'Playlist'}” as a copy. ${restored} item${restored===1?'':'s'} restored${missing?`; ${missing} unavailable item${missing===1?'':'s'} skipped`:''}.`
-      : `Loaded “${playlist.name||'Playlist'}” for editing. ${restored} item${restored===1?'':'s'} restored${missing?`; ${missing} unavailable item${missing===1?'':'s'} skipped`:''}.`;
+      ? `Loaded “${playlist.name||'Playlist'}” as a copy. ${restored} item${restored===1?'':'s'} restored in saved order.`
+      : `Loaded “${playlist.name||'Playlist'}” for editing. ${restored} item${restored===1?'':'s'} restored in saved order.`;
   }
 
   document.querySelector('.crr-builder')?.scrollIntoView({behavior:'smooth',block:'start'});
