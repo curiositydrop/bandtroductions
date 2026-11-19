@@ -269,11 +269,12 @@ body:not([data-view=home]).music-playing{padding-bottom:130px}
 })();
 </script>
 <script type="module">
-import { websiteProfile, applyWebsiteStyle, initWebsiteEditor, DEFAULT_TAGLINE } from './website-review-editor.js?v=11';
-import { loadWebsiteProfile } from './website-profile-loader.js?v=1';
+import { websiteProfile, applyWebsiteStyle, initWebsiteEditor, DEFAULT_TAGLINE } from './website-review-editor.js?v=12';
+import { loadWebsiteProfile } from './website-profile-loader.js?v=2';
 import { initialMembers } from './website-review-members.js?v=2';
 import { initWebsiteBooking, renderBookingSummary } from './website-booking.js?v=5';
-import { applyWebsiteSeo } from './website-seo-meta.js?v=1';
+import { applyWebsiteSeo } from './website-seo-meta.js?v=2';
+import { storefrontVisible } from './botw-comp-access.mjs?v=1';
 // Public rendering reads profile data. Only the owner editor can publish website settings.
 let activeSettings = {};
 let activeProfile = {};
@@ -297,7 +298,7 @@ function siteMerchCard(product,store){
 async function loadSiteMerch(db,firestore){
  const {collection,doc,getDoc,getDocs,query,where}=firestore;
  const storeSnap=await getDoc(doc(db,'merchStorefronts',PROFILE_ID));
- if(!storeSnap.exists()||storeSnap.data().published!==true)return;
+ if(!storeSnap.exists()||!storefrontVisible(storeSnap.data()))return;
  const store={id:storeSnap.id,...storeSnap.data()};const grid=el('site-merch-grid');grid.replaceChildren();
  const productsSnap=await getDocs(query(collection(db,'merchProducts'),where('storeId','==',PROFILE_ID),where('published','==',true)));
  const products=productsSnap.docs.map(item=>({id:item.id,...item.data()})).filter(product=>product.published===true).sort((a,b)=>(Number(a.sortOrder)||999)-(Number(b.sortOrder)||999));

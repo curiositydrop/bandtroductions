@@ -1,12 +1,13 @@
+import { websiteMerchAccess } from './botw-comp-access.mjs?v=1';
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { collection, deleteDoc, doc, getDoc, onSnapshot, query, serverTimestamp, setDoc, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const profileId = new URLSearchParams(location.search).get('id');
 const PILOT_PROFILE = '19MH0ZzVlPVN4ediF4PesZR5TY13';
-const ACTIVE_WEBSITE_STATUSES = new Set(['active','trialing','comped']);
 let currentUser = null;
 let loadedProfile = null;
+let loadedComp = null;
 
 const style = document.createElement('style');
 style.textContent = `
@@ -25,11 +26,10 @@ const formatDate = timestamp => !timestamp?.toDate ? 'Just now' : new Intl.DateT
 const followId = (followerId, targetId) => `${followerId}_${targetId}`;
 const favoriteId = (userId, targetId) => `${userId}_${targetId}`;
 const ownsLoadedProfile = () => Boolean(currentUser && loadedProfile && (currentUser.uid === profileId || loadedProfile.ownerId === currentUser.uid || loadedProfile.userId === currentUser.uid || loadedProfile.uid === currentUser.uid));
-const websiteActive = () => {
-  if (!loadedProfile) return false;
-  if (profileId === PILOT_PROFILE) return true;
-  const status = String(loadedProfile.websitePlanStatus || loadedProfile.artistPlan?.status || '').toLowerCase();
-  return loadedProfile.websiteEnabled === true && ACTIVE_WEBSITE_STATUSES.has(status);
+const websiteAccess = () => {
+  if (!loadedProfile) return 'free';
+  if (profileId === PILOT_PROFILE) return 'paid';
+  return websiteMerchAccess(loadedProfile, loadedComp);
 };
 
 function updateWebsiteAction() {
@@ -39,13 +39,14 @@ function updateWebsiteAction() {
   if (!artist) { link.hidden = true; return; }
   link.href = `website.html?id=${encodeURIComponent(profileId)}`;
   if (ownsLoadedProfile()) {
-    const active = websiteActive();
+    const access = websiteAccess();
+    const active = access === 'paid' || access === 'comp';
     link.hidden = false;
-    link.textContent = active ? 'View Website' : 'Upgrade: Website + Merch';
+    link.textContent = access === 'comp-ended' ? 'Keep Website + Merch?' : (active ? 'View Website' : 'Upgrade: Website + Merch');
     link.classList.toggle('profile-upgrade-cta', !active);
-    link.title = active ? 'Open your artist website' : 'Unlock your website and merch storefront';
+    link.title = access === 'comp-ended' ? 'The Band of the Week prize ended. Continue to the normal checkout if you want to keep it.' : (active ? 'Open your artist website' : 'Unlock your website and merch storefront');
   } else {
-    link.hidden = !websiteActive();
+    link.hidden = websiteAccess() !== 'paid' && websiteAccess() !== 'comp';
     link.textContent = 'View Website';
     link.classList.remove('profile-upgrade-cta');
   }
@@ -61,6 +62,13 @@ async function waitForProfile() {
   const snap = await getDoc(doc(db,'profiles',profileId));
   if (!snap.exists()) return;
   loadedProfile = { id: snap.id, ...snap.data() };
+  try {
+    const compSnap = await getDoc(doc(db, 'botwWebsiteComps', profileId));
+    loadedComp = compSnap.exists() ? compSnap.data() : null;
+  } catch (compError) {
+    console.warn('Band of the Week comp could not be loaded.', compError);
+    loadedComp = null;
+  }
   updateWebsiteAction();
   installActions();
   installPosts();

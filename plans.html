@@ -148,7 +148,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:28px 0}
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { decideUpgrade } from './plans-upgrade.js';
+import { decideUpgrade } from './plans-upgrade.js?v=20261119-botw-comp';
 import { PAUSED_MESSAGE, currentOffer } from './bt-offer.js';
 
 const link = document.getElementById('upgrade-account-link');
@@ -260,7 +260,14 @@ onAuthStateChanged(auth, async user => {
   }
   try {
     const loaded = await resolveProfile(user);
-    apply(decideUpgrade({ user, profile: loaded.profile, profileId: loaded.profileId }));
+    let comp = null;
+    try {
+      const compSnap = await getDoc(doc(db, 'botwWebsiteComps', loaded.profileId));
+      comp = compSnap.exists() ? compSnap.data() : null;
+    } catch (compError) {
+      console.warn('Band of the Week comp could not be loaded.', compError);
+    }
+    apply(decideUpgrade({ user, profile: loaded.profile, profileId: loaded.profileId, comp }));
   } catch (error) {
     console.error(error);
     document.documentElement.dataset.upgradeState = 'error';

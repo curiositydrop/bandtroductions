@@ -5,8 +5,10 @@
 // truth for its admin authorization and partner-matching logic.
 const existing = require('./main');
 const { grantLaunchPartnerAccess } = require('./launch-partner-grant');
+const { setBotwWebsiteComp } = require('./botw-comp');
 
 module.exports = {
   ...existing,
-  grantLaunchPartnerAccess
+  grantLaunchPartnerAccess,
+  setBotwWebsiteComp
 };

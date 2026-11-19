@@ -1,8 +1,8 @@
 import { seedVenomousPilotMedia, installVenomousPilotPlayer, installVenomousPilotEditorHints } from './venomous-pilot-media.js?v=3';
+import { websiteMerchAccess } from './botw-comp-access.mjs?v=1';
 
 // Public website reads only. Uses existing Firestore rules; no credentials or writes.
 const VENOMOUS_PILOT_PROFILE='19MH0ZzVlPVN4ediF4PesZR5TY13';
-const ACTIVE_WEBSITE_STATUSES=new Set(['active','trialing','comped']);
 function decode(value){
  if('nullValue' in value)return null;
  for(const key of ['stringValue','booleanValue','timestampValue','referenceValue'])if(key in value)return value[key];
@@ -18,9 +18,18 @@ function deadline(promise,ms){
 function websiteAllowed(profile,profileId){
  if(!profile||profile.published!==true)return false;
  if(profileId===VENOMOUS_PILOT_PROFILE)return true;
- const status=String(profile.websitePlanStatus||profile.artistPlan?.status||'').toLowerCase();
- return profile.websiteEnabled===true&&ACTIVE_WEBSITE_STATUSES.has(status);
+ const access=websiteMerchAccess(profile,profile.botwComp);
+ return access==='paid'||access==='comp';
 }
+async function readComp(profileId,fetcher){
+ try{
+  const response=await fetcher('https://firestore.googleapis.com/v1/projects/bandtroductions-dev/databases/(default)/documents/botwWebsiteComps/'+encodeURIComponent(profileId),{credentials:'omit',cache:'no-store'});
+  if(!response.ok)return null;
+  const document=await response.json();
+  return document.fields?fields(document.fields):null;
+ }catch{return null;}
+}
+function withComp(profile,comp){return comp?{...profile,botwComp:comp}:profile;}
 function withPilotMedia(snapshot,profileId){
  if(!snapshot?.exists?.())return snapshot;
  const original=snapshot.data();
@@ -79,11 +88,13 @@ if(typeof document!=='undefined'){
 }
 
 export async function loadWebsiteProfile(read,{sdkTimeout=4500,fetchTimeout=12000,profileId,fetcher=fetch}={}){
+ const compPromise=deadline(readComp(profileId,fetcher),sdkTimeout).catch(()=>null);
  try{
   const snapshot=await deadline(Promise.resolve().then(read),sdkTimeout);
   if(!snapshot?.exists?.())return snapshot;
-  if(!websiteAllowed(snapshot.data(),profileId))return {exists:()=>false};
-  return withPilotMedia(snapshot,profileId);
+  const profile=withComp(snapshot.data(),await compPromise);
+  if(!websiteAllowed(profile,profileId))return {exists:()=>false};
+  return withPilotMedia({...snapshot,exists:()=>true,data:()=>profile},profileId);
  }
  catch(error){
   if(error.code==='permission-denied'||error.code==='not-found')throw error;
@@ -95,7 +106,8 @@ export async function loadWebsiteProfile(read,{sdkTimeout=4500,fetchTimeout=1200
    if(!response.ok)throw new Error('The profile connection is unavailable. Please try again.');
    const document=await deadline(response.json(),fetchTimeout);
    if(!document.fields)throw new Error('The profile response was incomplete. Please try again.');
-   const profile=fields(document.fields);
+   const comp=await deadline(readComp(profileId,fetcher),fetchTimeout).catch(()=>null);
+   const profile=withComp(fields(document.fields),comp);
    if(!websiteAllowed(profile,profileId))return {exists:()=>false};
    const seeded=seedVenomousPilotMedia(profile,profileId);
    installVenomousPilotPlayer(profileId);

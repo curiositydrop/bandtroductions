@@ -1,6 +1,7 @@
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { addDoc, collection, doc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { compNote, storefrontVisible, websiteMerchAccess } from './botw-comp-access.mjs?v=1';
 
 let profileId = new URLSearchParams(location.search).get('id');
 const content = document.getElementById('profile-content');
@@ -111,7 +112,7 @@ async function updateProfileMerchLink(profileType) {
   try {
     const storeSnapshot = await getDoc(doc(db, 'merchStorefronts', profileId));
     const store = storeSnapshot.exists() ? storeSnapshot.data() : null;
-    if (!store || store.published !== true) return;
+    if (!storefrontVisible(store)) return;
     shopMerchButton.href = `merch.html?band=${encodeURIComponent(profileId)}`;
     shopMerchButton.hidden = false;
   } catch (error) {
@@ -275,11 +276,30 @@ async function loadProfile(user) {
         planLink.href = `profile-setup.html?id=${encodeURIComponent(profileId)}&returnTo=${encodeURIComponent('plans.html?upgrade=1')}`;
         planLink.textContent = 'Publish your profile before upgrading';
       } else {
-        const planStatus = String(loadedProfile.websitePlanStatus || loadedProfile.artistPlan?.status || '').toLowerCase();
-        const active = loadedProfile.websiteEnabled === true && ['active', 'trialing', 'comped'].includes(planStatus);
+        let comp = null;
+        try {
+          const compSnap = await getDoc(doc(db, 'botwWebsiteComps', profileId));
+          comp = compSnap.exists() ? compSnap.data() : null;
+        } catch (compError) {
+          console.warn('Band of the Week comp could not be loaded.', compError);
+        }
+        const access = websiteMerchAccess(loadedProfile, comp);
         planLink.hidden = false;
         planLink.href = `website.html?id=${encodeURIComponent(profileId)}`;
-        planLink.textContent = active ? 'View Website' : 'Upgrade: Website + Merch';
+        planLink.textContent = access === 'comp-ended' ? 'Keep Website + Merch?' : (access === 'paid' || access === 'comp' ? 'View Website' : 'Upgrade: Website + Merch');
+        let note = document.getElementById('botw-comp-note');
+        if (access === 'comp') {
+          if (!note) {
+            note = document.createElement('p');
+            note.id = 'botw-comp-note';
+            note.style.cssText = 'margin:8px auto 0;max-width:460px;color:#b7fff8;font-size:.82rem;font-weight:700;';
+            planLink.insertAdjacentElement('afterend', note);
+          }
+          note.hidden = false;
+          note.textContent = compNote(comp);
+        } else if (note) {
+          note.hidden = true;
+        }
       }
     }
     }
