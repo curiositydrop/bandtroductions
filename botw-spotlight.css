@@ -1,0 +1,229 @@
+/* Band of the Week winner spotlight. Scoped to the popup root. */
+#bt-botw-spotlight {
+  position: fixed;
+  inset: 0;
+  z-index: 110000;
+  display: grid;
+  place-items: end center;
+  padding:
+    max(12px, env(safe-area-inset-top))
+    max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
+  background: rgba(0, 0, 0, .78);
+  font-family: Arial, Helvetica, sans-serif;
+  color: #f7f4ea;
+}
+
+#bt-botw-spotlight .card {
+  position: relative;
+  width: min(100%, 440px);
+  max-height: min(92dvh, 780px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-radius: 22px;
+  border: 1px solid #a7842e;
+  background:
+    radial-gradient(120% 70% at 50% -8%, rgba(255, 204, 51, .28), transparent 52%),
+    radial-gradient(80% 50% at 100% 110%, rgba(255, 0, 76, .2), transparent 46%),
+    linear-gradient(180deg, #1c1812 0%, #0d0d10 72%);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, .78), inset 0 0 0 1px rgba(255, 226, 140, .14);
+  padding: 26px 18px 18px;
+  text-align: center;
+  animation: btBotwIn .48s cubic-bezier(.16, .84, .24, 1);
+}
+
+#bt-botw-spotlight .card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(115deg, transparent 0 12px, rgba(255, 255, 255, .025) 12px 13px);
+  border-radius: inherit;
+}
+
+#bt-botw-spotlight .close {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  right: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #ffcc33;
+  background: #16130c;
+  color: #fff;
+  font: 700 28px/1 Arial, Helvetica, sans-serif;
+  cursor: pointer;
+}
+
+#bt-botw-spotlight .badge {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto 12px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 204, 51, .7);
+  background: rgba(20, 16, 8, .85);
+  color: #ffcc33;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+#bt-botw-spotlight .crown {
+  width: 28px;
+  height: 22px;
+  display: block;
+  filter: drop-shadow(0 0 6px rgba(255, 204, 51, .45));
+}
+
+#bt-botw-spotlight .photo {
+  position: relative;
+  z-index: 1;
+  width: 132px;
+  height: 132px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(160deg, #ffe27a, #ffcc33 40%, #ff004c);
+  box-shadow: 0 0 28px rgba(255, 204, 51, .28);
+}
+
+#bt-botw-spotlight .photo img,
+#bt-botw-spotlight .initials {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  object-fit: cover;
+  background: #1b1b1f;
+  border: 3px solid #100e0a;
+}
+
+#bt-botw-spotlight .initials {
+  color: #ffcc33;
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: .04em;
+}
+
+#bt-botw-spotlight h2 {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.25rem, 5vw, 1.7rem);
+  line-height: 1.25;
+  font-weight: 800;
+  text-wrap: balance;
+}
+
+#bt-botw-spotlight h2 .band {
+  display: block;
+  margin: 6px 0 2px;
+  color: #ffcc33;
+  font-weight: 900;
+  font-size: clamp(1.55rem, 6.2vw, 2.05rem);
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+#bt-botw-spotlight .week {
+  position: relative;
+  z-index: 1;
+  margin: 10px 0 0;
+  color: #f0e2b8;
+  font-size: .82rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+#bt-botw-spotlight .prize {
+  position: relative;
+  z-index: 1;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 204, 51, .35);
+  background: rgba(0, 0, 0, .35);
+  color: #f6f1e4;
+  font-size: .92rem;
+  line-height: 1.45;
+}
+
+#bt-botw-spotlight .go {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #ffcc33;
+  color: #1a1200;
+  font-weight: 900;
+  letter-spacing: .03em;
+  text-decoration: none;
+  box-shadow: 0 8px 22px rgba(255, 204, 51, .22);
+}
+
+#bt-botw-spotlight .go:hover { background: #ffd85c; }
+#bt-botw-spotlight .go:active { transform: scale(.98); }
+
+#bt-botw-spotlight .co {
+  position: relative;
+  z-index: 1;
+  margin: 10px 0 0;
+  color: #f0e2b8;
+  font-size: .85rem;
+}
+
+#bt-botw-spotlight .co a {
+  color: #fff;
+  font-weight: 800;
+}
+
+#bt-botw-spotlight .vote {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  margin-top: 12px;
+  color: #d7fffb;
+  font-size: .92rem;
+  font-weight: 800;
+  text-underline-offset: 3px;
+}
+
+#bt-botw-spotlight :focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+@keyframes btBotwIn {
+  from { opacity: 0; transform: translateY(18px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (min-width: 720px) {
+  #bt-botw-spotlight { place-items: center; }
+  #bt-botw-spotlight .card { padding: 32px 28px 24px; }
+  #bt-botw-spotlight .photo { width: 156px; height: 156px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #bt-botw-spotlight,
+  #bt-botw-spotlight * {
+    animation: none !important;
+    transition: none !important;
+  }
+  #bt-botw-spotlight .go:active { transform: none; }
+}
