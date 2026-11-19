@@ -1,7 +1,7 @@
 import { UPGRADE_RETURN } from './safe-return.js';
+import { compNote, keepPromptMessage, websiteMerchAccess } from './botw-comp-access.mjs';
 
 const ARTISTS = new Set(['band', 'musician']);
-const ACTIVE = new Set(['active', 'trialing', 'comped']);
 
 export function signupUpgradeHref() {
   return `signup.html?type=band&upgrade=1&returnTo=${encodeURIComponent(UPGRADE_RETURN)}`;
@@ -19,12 +19,7 @@ export function websiteCheckoutHref(profileId) {
   return `website.html?id=${encodeURIComponent(profileId)}`;
 }
 
-function planActive(profile) {
-  const status = String(profile?.websitePlanStatus || profile?.artistPlan?.status || '').toLowerCase();
-  return profile?.websiteEnabled === true && ACTIVE.has(status);
-}
-
-export function decideUpgrade({ user, profile, profileId }) {
+export function decideUpgrade({ user, profile, profileId, comp = null }) {
   if (!user) {
     return {
       state: 'logged-out',
@@ -62,13 +57,33 @@ export function decideUpgrade({ user, profile, profileId }) {
     };
   }
 
-  const active = planActive(profile);
+  const access = websiteMerchAccess(profile, comp);
+  if (access === 'paid' || access === 'comp') {
+    return {
+      state: 'active',
+      href: websiteCheckoutHref(id),
+      loginHref: '',
+      label: 'Open your website',
+      message: access === 'comp' ? compNote(comp) : '',
+      redirect: true
+    };
+  }
+  if (access === 'comp-ended') {
+    return {
+      state: 'eligible',
+      href: websiteCheckoutHref(id),
+      loginHref: '',
+      label: 'Keep Website + Merch?',
+      message: keepPromptMessage(comp),
+      redirect: true
+    };
+  }
   return {
-    state: active ? 'active' : 'eligible',
+    state: 'eligible',
     href: websiteCheckoutHref(id),
     loginHref: '',
-    label: active ? 'Open your website' : 'Continue to website checkout',
-    message: active ? '' : 'The next page asks you to accept the seller agreement before any payment.',
+    label: 'Continue to website checkout',
+    message: 'The next page asks you to accept the seller agreement before any payment.',
     redirect: true
   };
 }

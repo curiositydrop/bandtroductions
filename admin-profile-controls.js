@@ -1,7 +1,9 @@
-import { auth, db } from './firebase-dev.js';
+import { app, auth, db } from './firebase-dev.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { deleteDoc, doc, getDoc, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-functions.js';
 import { isAdminAccount } from './admin-access.js';
+import { compAccess, compNote, defaultCompExpiresOn, formatCompDate } from './botw-comp-access.mjs?v=1';
 
 const profileId=new URLSearchParams(location.search).get('id');
 
@@ -64,5 +66,104 @@ onAuthStateChanged(auth,async user=>{
     try{await deleteDoc(doc(db,'profiles',profileId));alert(`The profile listing for "${label}" was deleted. The member login and other content were left intact.`);location.href='community.html';}
     catch(error){console.error(error);alert('The profile listing could not be deleted. Nothing else was changed.');remove.disabled=false;}
   });
-  actions.append(edit,media,publish,remove);panel.append(heading,note,actions);content.appendChild(panel);
+  actions.append(edit,media,publish,remove);panel.append(heading,note,actions);
+  mountPrizeComp(panel, profile);
+  content.appendChild(panel);
 });
+
+function callableError(error) {
+  return String(error?.message || 'The comp could not be saved.').replace(/^Firebase(?:Error)?:\s*/i, '').replace(/\s*\([^)]*\)\.?$/, '');
+}
+
+function mountPrizeComp(panel, profile) {
+  const type = String(profile.accountType || '').toLowerCase();
+  if (type !== 'band' && type !== 'musician') return;
+  const box = document.createElement('div');
+  box.style.marginTop = '14px';
+  const label = document.createElement('p');
+  label.className = 'profile-side-note';
+  const date = document.createElement('input');
+  date.type = 'date';
+  date.setAttribute('aria-label', 'Website + Merch comp end date');
+  date.value = defaultCompExpiresOn();
+  date.style.cssText = 'padding:8px 10px;border:1px solid #356b66;border-radius:8px;background:#090909;color:#eee;font:inherit;';
+  const grant = document.createElement('button');
+  grant.type = 'button';
+  grant.className = 'auth-button';
+  const revoke = document.createElement('button');
+  revoke.type = 'button';
+  revoke.className = 'auth-button admin-danger';
+  revoke.textContent = 'Revoke Website + Merch comp';
+  revoke.hidden = true;
+  const status = document.createElement('p');
+  status.className = 'profile-side-note';
+  const actions = document.createElement('div');
+  actions.className = 'admin-profile-actions';
+  actions.style.marginTop = '8px';
+  const setComp = httpsCallable(getFunctions(app, 'us-central1'), 'setBotwWebsiteComp');
+  const name = profile.displayName || 'this profile';
+  const refreshGrantLabel = () => {
+    grant.textContent = `Comp Website + Merch until ${formatCompDate(date.value) || date.value}`;
+  };
+  date.addEventListener('input', refreshGrantLabel);
+  refreshGrantLabel();
+  async function loadComp() {
+    const snap = await getDoc(doc(db, 'botwWebsiteComps', profileId));
+    const comp = snap.exists() ? snap.data() : null;
+    const state = compAccess(comp);
+    if (state === 'active') {
+      label.textContent = compNote(comp);
+      date.value = comp.expiresOn;
+      refreshGrantLabel();
+      revoke.hidden = false;
+    } else if (state === 'ended') {
+      label.textContent = `The Band of the Week prize for ${name} has ended. Granting again replaces it. No card is stored.`;
+      revoke.hidden = true;
+    } else {
+      label.textContent = 'Grant Website + Merch with no card. It ends on the date below and is not charged. Launch partners and Stripe subscribers are left unchanged.';
+      revoke.hidden = true;
+    }
+  }
+  grant.addEventListener('click', async () => {
+    const pretty = formatCompDate(date.value) || date.value;
+    if (!confirm(`Grant Website + Merch to ${name} through ${pretty}? No card, and no charge. It ends automatically that day.`)) return;
+    grant.disabled = true;
+    revoke.disabled = true;
+    status.textContent = 'Saving the comp…';
+    try {
+      await setComp({ profileId, expiresOn: date.value });
+      status.textContent = `Website + Merch is comped through ${pretty}.`;
+      await loadComp();
+    } catch (error) {
+      console.error(error);
+      status.textContent = callableError(error);
+    } finally {
+      grant.disabled = false;
+      revoke.disabled = false;
+    }
+  });
+  revoke.addEventListener('click', async () => {
+    if (!confirm(`End the Band of the Week Website + Merch comp for ${name} now? Stripe subscribers and launch partners are not changed.`)) return;
+    grant.disabled = true;
+    revoke.disabled = true;
+    status.textContent = 'Revoking the comp…';
+    try {
+      await setComp({ profileId, revoke: true });
+      status.textContent = 'The Band of the Week comp has ended.';
+      await loadComp();
+    } catch (error) {
+      console.error(error);
+      status.textContent = callableError(error);
+    } finally {
+      grant.disabled = false;
+      revoke.disabled = false;
+    }
+  });
+  actions.append(grant, revoke);
+  box.append(label, date, actions, status);
+  panel.append(box);
+  loadComp().catch(error => {
+    console.error(error);
+    status.textContent = 'The current comp could not be loaded.';
+  });
+}

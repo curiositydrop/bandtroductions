@@ -1,3 +1,4 @@
+import { compNote, websiteMerchAccess } from './botw-comp-access.mjs?v=1';
 import { auth, db } from './firebase-dev.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { addDoc, collection, doc, getDoc, getDocs, onSnapshot, query, serverTimestamp, setDoc, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
@@ -316,7 +317,7 @@ function ensureProfileSummary(){
   return summary;
 }
 
-function renderProfileSummary(user, profile={}){
+function renderProfileSummary(user, profile={}, comp=null){
   const summary=ensureProfileSummary();
   if(!summary)return;
   const name=profile.displayName||profile.name||profile.bandName||profile.venueName||user?.displayName||'My Profile';
@@ -328,20 +329,22 @@ function renderProfileSummary(user, profile={}){
   const effectiveImage=image||(isAdmin?adminAvatarFallback:'');
   const uid=encodeURIComponent(user.uid);
   const profileUrl=`profile.html?id=${uid}`;
-  const planStatus=String(profile.websitePlanStatus||profile.artistPlan?.status||'').toLowerCase();
-  const isUpgraded=profile.websiteEnabled===true&&['active','trialing','comped'].includes(planStatus);
+  const access=websiteMerchAccess(profile,comp);
+  const isUpgraded=access==='paid'||access==='comp';
   const isArtist=accountType==='band'||accountType==='musician';
   const isSiteOwner=user.uid==='19MH0ZzVlPVN4ediF4PesZR5TY13';
   // One profile link: the whole card (avatar + name + type) opens the profile.
   summary.innerHTML=`<a class="dashboard-profile-main" href="${profileUrl}" aria-label="View or edit my profile"><span class="dashboard-profile-avatar">${effectiveImage?`<img src="${safeText(effectiveImage)}" alt="${safeText(name)}">`:safeText(initialsFor(name))}</span><span><span class="dashboard-profile-name">${safeText(name)}</span><span class="dashboard-profile-type">${safeText(type)}</span><span class="dashboard-profile-view">View / edit profile →</span></span></a>`;
-  // Account-specific actions (no extra database reads: uses the profile already loaded).
+  // Account actions use the profile and optional Band of the Week comp already loaded.
   let actions=profilePanel.querySelector('.dashboard-account-actions');
   if(!actions){actions=document.createElement('div');actions.className='dashboard-account-actions';summary.insertAdjacentElement('afterend',actions);}
   let html='';
   if(isArtist){
     html+='<a class="dashboard-action-primary" href="radio-submit.html">⬆ Upload a Song</a>';
     if(isUpgraded)html+=`<a href="website.html?id=${uid}">My Website</a>`;
+    else if(!isSiteOwner&&access==='comp-ended')html+=`<a class="dashboard-action-upgrade" href="website.html?id=${uid}">Keep Website + Merch?</a>`;
     else if(!isSiteOwner)html+='<a class="dashboard-action-upgrade" href="plans.html">Upgrade: Get Your Website</a>';
+    if(access==='comp')html+=`<span class="dashboard-profile-type">${safeText(compNote(comp))}</span>`;
   }else if(accountType==='venue'){
     html+='<a class="dashboard-action-primary" href="show-event.html">📅 Post a Show / Event</a>';
   }else if(accountType==='fan'){
@@ -601,13 +604,15 @@ onAuthStateChanged(auth,async user=>{
   try{
     const [profileSnap,userSnap]=await Promise.all([getDoc(doc(db,'profiles',user.uid)),getDoc(doc(db,'users',user.uid))]);
     const profile=profileSnap.exists()?profileSnap.data():(userSnap.exists()?userSnap.data():{});
+    let comp=null;
+    try{const compSnap=await getDoc(doc(db,'botwWebsiteComps',user.uid));comp=compSnap.exists()?compSnap.data():null;}catch(compError){console.warn('Band of the Week comp could not be loaded.',compError);}
     signedInProfile=profile;
     try{
       const tagSnap=await getDocs(query(collection(db,'profiles'),where('published','==',true)));
       dashboardTagProfiles=tagSnap.docs.map(d=>{const p=d.data()||{};return{profileId:d.id,recipientId:p.ownerId||d.id,displayName:String(p.displayName||'').trim(),accountType:p.accountType||'member'}}).filter(p=>p.displayName);
     }catch(tagError){console.warn('Profile tagging list unavailable.',tagError);dashboardTagProfiles=[];}
     if(title)title.textContent='My Profile';
-    renderProfileSummary(user,profile);
+    renderProfileSummary(user,profile,comp);
     if(profileLink){profileLink.textContent='View / Edit Profile';profileLink.href=`profile.html?id=${encodeURIComponent(user.uid)}`;profileLink.style.display='none';}
   }catch(error){
     console.warn('Could not load profile for dashboard.',error);

@@ -1,0 +1,37 @@
+// Band of the Week Website + Merch comp.
+//
+// DO NOT replace the live Firestore rules with this file.
+// DO NOT deploy hosting, functions, or rules from this snippet.
+// Publish rules only, as a separate manual step, after editing the live ruleset in place.
+//
+// The comp document is the only record the website trusts. Admin SDK writes it.
+// Clients must not be able to create, extend, or revoke it.
+//
+// Firestore allows a request if ANY matching allow rule allows it.
+// Earlier notes in this repo say the live rules end in a catch-all deny.
+// Confirm that is still true before publishing. A wildcard allow-write would
+// override the write deny below, and this prize would not be server-trusted.
+
+match /botwWebsiteComps/{profileId} {
+  // Public read: the band website and merch pages decide access from this date.
+  // The document stores an end date, a reason, and admin ids. No payment data.
+  allow read: if true;
+  allow create, update, delete: if false;
+}
+
+// The grant function also writes these marker fields on merchStores/{id} and
+// merchStorefronts/{id}: botwCompExpiresOn, botwCompRevoked.
+// Cloud Functions bypass rules. If a band or musician can already update those
+// documents, add this helper and require it on their update rule so they cannot
+// extend the prize. Leave the administrator update path able to change them.
+//
+// function botwCompMarkersUnchanged() {
+//   return !request.resource.data.diff(resource.data).affectedKeys()
+//     .hasAny(['botwCompExpiresOn', 'botwCompRevoked']);
+// }
+//
+// allow update: if isOwner() && botwCompMarkersUnchanged();
+//
+// If only isAdmin() can write merchStores and merchStorefronts, no further
+// edit is required. Do not put the prize end date on the profile document;
+// profile saves are client merges and are not the source of truth.
