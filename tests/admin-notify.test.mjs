@@ -10,6 +10,7 @@ import {
   collageNoticeMessage,
   deliverAdminNotices
 } from '../admin-notify-core.mjs';
+import { sendAdminApprovalEmail } from '../admin-approval-email.js';
 
 const admins = [
   { id: 'profile-mike', ownerId: 'uid-mike' },
@@ -153,4 +154,132 @@ assert.match(signup, /notifySiteAdmins\(/);
 assert.doesNotMatch(signup, /await sendAdminApprovalEmail/);
 assert.match(signup, /needsApproval = false/);
 
-console.log('PASS admin notice recipients, idempotency, links, permission failures, and upload gates');
+function assertApprovalEmailNotAwaited(source, kind) {
+  const call = new RegExp(`sendAdminApprovalEmail\\(\\{[\\s\\S]*?kind:\\s*['"]${kind}['"][\\s\\S]*?\\}\\)\\.catch\\(`);
+  assert.match(source, call, `${kind} approval email is attempted and errors are caught`);
+  assert.doesNotMatch(source, /await\s+sendAdminApprovalEmail/, `${kind} approval email is not awaited`);
+}
+
+assertApprovalEmailNotAwaited(btv, 'btv');
+assert.ok(btvSubmit.indexOf("gallery: 'btv'") < btvSubmit.indexOf("kind: 'btv'"));
+assert.ok(btvSubmit.indexOf("kind: 'btv'") < btvSubmit.indexOf('notifySiteAdmins'));
+assert.match(btv, /notifySiteAdmins/);
+
+assertApprovalEmailNotAwaited(radio, 'radio-song');
+assert.ok(radio.indexOf('addDoc(collection(db,"radioSubmissions")') < radio.indexOf("kind:'radio-song'"));
+assert.ok(radio.indexOf("kind:'radio-song'") < radio.indexOf('await notifyAdminsOfRadioSubmission'));
+
+assertApprovalEmailNotAwaited(website, 'radio-song');
+assert.ok(website.indexOf("collection(db,'radioSubmissions')") < website.indexOf("kind:'radio-song'"));
+assert.ok(website.indexOf("kind:'radio-song'") < website.indexOf('await notifyAdmins('));
+assert.match(website, /songNoticeMessage\(\{artist,title,source:'website'\}\)/);
+
+const FORM_ENDPOINT = 'https://formsubmit.co/ajax/mbergeron79%40gmail.com';
+
+async function captureEmail(payload, response = { ok: true, status: 200 }) {
+  const calls = [];
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url, options, body: JSON.parse(options.body) });
+    if (response instanceof Error) throw response;
+    return response;
+  };
+  try {
+    const started = sendAdminApprovalEmail(payload);
+    assert.equal(typeof started.then, 'function');
+    const result = await started;
+    return { result, call: calls[0], calls };
+  } finally {
+    globalThis.fetch = previous;
+  }
+}
+
+const signupMail = await captureEmail({ kind: 'signup', name: 'Test Act', accountType: 'band', submittedBy: 'fan@example.com', details: 'New profile saved and is now live (auto-approved).' });
+assert.equal(signupMail.result, true);
+assert.equal(signupMail.call.url, FORM_ENDPOINT);
+assert.equal(signupMail.call.options.method, 'POST');
+assert.equal(signupMail.call.options.headers['Content-Type'], 'application/json');
+assert.equal(signupMail.call.body._template, 'table');
+assert.equal(signupMail.call.body._captcha, 'false');
+assert.equal(signupMail.call.body._subject, 'BANDtroductions new account: Test Act');
+assert.equal(signupMail.call.body.name, 'Test Act');
+assert.equal(signupMail.call.body.accountType, 'band');
+assert.equal(signupMail.call.body.submittedBy, 'fan@example.com');
+assert.match(signupMail.call.body.message, /A new BANDtroductions account was created\./);
+assert.match(signupMail.call.body.message, /Review BANDtroductions admin: https:\/\/bandtroductions\.com\/admin\.html/);
+assert.equal(signupMail.call.body.Band, undefined);
+
+const auditionMail = await captureEmail({ kind: 'audition', name: 'Night Shift', accountType: 'band', submittedBy: 'band@example.com', details: 'Looking for guitar.' });
+assert.equal(auditionMail.call.body._subject, 'BANDtroductions Audition Room approval: Night Shift');
+assert.match(auditionMail.call.body.message, /https:\/\/bandtroductions\.com\/admin-auditions\.html/);
+
+for (const [btvType, label] of [['video', 'Music Video'], ['interview', 'Band Interview'], ['live', 'Live Set']]) {
+  const mailed = await captureEmail({
+    kind: 'btv',
+    band: 'Night Shift',
+    title: 'Alley Light',
+    btvType,
+    videoUrl: 'https://youtu.be/abcdefghijk',
+    submitterEmail: 'band@example.com'
+  });
+  assert.equal(mailed.result, true);
+  assert.equal(mailed.calls.length, 1);
+  assert.equal(mailed.call.url, FORM_ENDPOINT);
+  assert.equal(mailed.call.body._subject, 'BANDtroductions BTV approval needed: Night Shift');
+  assert.equal(mailed.call.body._template, 'table');
+  assert.equal(mailed.call.body._captcha, 'false');
+  assert.equal(mailed.call.body.Band, 'Night Shift');
+  assert.equal(mailed.call.body.Title, 'Alley Light');
+  assert.equal(mailed.call.body.Type, label);
+  assert.equal(mailed.call.body['Video link'], 'https://youtu.be/abcdefghijk');
+  assert.equal(mailed.call.body['Submitter email'], 'band@example.com');
+  assert.equal(mailed.call.body.name, undefined);
+  assert.equal(mailed.call.body.accountType, undefined);
+  assert.equal(mailed.call.body.submittedBy, undefined);
+  assert.match(mailed.call.body.message, /A new BTV video is waiting for approval\./);
+  assert.match(mailed.call.body.message, new RegExp(`Type: ${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+  assert.match(mailed.call.body.message, /Review BANDtroductions admin: https:\/\/bandtroductions\.com\/btv\.html#btv-admin/);
+}
+
+const partialBtv = await captureEmail({ kind: 'btv', band: 'Night Shift', title: '  ', btvType: 'video', videoUrl: '', submitterEmail: '' });
+assert.equal(partialBtv.call.body.Band, 'Night Shift');
+assert.equal(partialBtv.call.body.Type, 'Music Video');
+assert.equal(partialBtv.call.body.Title, undefined);
+assert.equal(partialBtv.call.body['Video link'], undefined);
+assert.equal(partialBtv.call.body['Submitter email'], undefined);
+assert.doesNotMatch(partialBtv.call.body.message, /Title:/);
+assert.doesNotMatch(partialBtv.call.body.message, /Video link:/);
+assert.doesNotMatch(partialBtv.call.body.message, /Submitter email:/);
+
+const songMail = await captureEmail({ kind: 'radio-song', band: 'Night Shift', title: 'Alley Light', genre: 'Metal', submitter: 'band@example.com' });
+assert.equal(songMail.result, true);
+assert.equal(songMail.call.url, FORM_ENDPOINT);
+assert.equal(songMail.call.body._subject, 'BANDtroductions radio song approval needed: Night Shift - Alley Light');
+assert.equal(songMail.call.body._template, 'table');
+assert.equal(songMail.call.body._captcha, 'false');
+assert.equal(songMail.call.body.Band, 'Night Shift');
+assert.equal(songMail.call.body.Title, 'Alley Light');
+assert.equal(songMail.call.body.Genre, 'Metal');
+assert.equal(songMail.call.body.Submitter, 'band@example.com');
+assert.equal(songMail.call.body.name, undefined);
+assert.equal(songMail.call.body['Video link'], undefined);
+assert.match(songMail.call.body.message, /A new radio song is waiting for approval\./);
+assert.match(songMail.call.body.message, /Review BANDtroductions admin: https:\/\/bandtroductions\.com\/admin\.html/);
+assert.doesNotMatch(songMail.call.body.message, /btv\.html/);
+
+const sparseSong = await captureEmail({ kind: 'radio-song', band: 'Night Shift', title: 'Alley Light', genre: '', submitter: '   ' });
+assert.equal(sparseSong.call.body.Genre, undefined);
+assert.equal(sparseSong.call.body.Submitter, undefined);
+assert.match(sparseSong.call.body.message, /Band: Night Shift/);
+assert.match(sparseSong.call.body.message, /Title: Alley Light/);
+assert.doesNotMatch(sparseSong.call.body.message, /Genre:/);
+assert.doesNotMatch(sparseSong.call.body.message, /Submitter:/);
+
+const failed = await captureEmail({ kind: 'btv', band: 'Night Shift', title: 'Alley Light', btvType: 'video' }, new Error('network down'));
+assert.equal(failed.result, false);
+assert.equal(failed.calls.length, 1);
+
+const rejected = await captureEmail({ kind: 'radio-song', band: 'Night Shift', title: 'Alley Light' }, { ok: false, status: 522 });
+assert.equal(rejected.result, false);
+
+console.log('PASS admin notice recipients, idempotency, links, permission failures, upload gates, and approval emails');

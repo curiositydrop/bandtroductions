@@ -3,6 +3,7 @@ import { app, auth, db, storage } from './firebase-dev.js';
 import { collection, doc, getDoc, onSnapshot, query, where, setDoc, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
 import { notifySiteAdmins, songNoticeMessage } from './admin-notify.js?v=1';
+import { sendAdminApprovalEmail } from './admin-approval-email.js?v=20261126-email';
 
 const RADIO_LOGO='5C9409EE-59F6-4151-9624-2998D7DDF2D0.png';
 // A different ?v= on this file creates a second module. The public calendar and
@@ -233,6 +234,7 @@ export function mountWebsiteTools({container,profileId,profile,user,canEdit}){
    await verify();
    const record={artist,title,album:value(songForm,'album').value.trim()||'Single',genre:value(songForm,'genre').value.trim(),location:value(songForm,'location').value.trim(),contactName:value(songForm,'contactName').value.trim(),contactEmail:value(songForm,'contactEmail').value.trim(),memberDisplayName:account.data().displayName||artist,memberAccountType:account.data().accountType||'',submittedByUid:user.uid,submittedByVerifiedAccount:true,profileUrl:new URL('profile.html?id='+encodeURIComponent(profileId),location.href).href,websiteProfileId:profileId,submissionSource:'profile-website',coverUrl,coverStoragePath,originalCoverFileName:coverFile?.name||'',audioUrl,audioStoragePath:audioPath,originalAudioFileName:audioFile.name,durationSeconds:Math.round(durationSeconds*10)/10,signedToLabel:value(songForm,'signedToLabel').value==='true',labelContact:value(songForm,'labelContact').value.trim(),notes:value(songForm,'notes').value.trim(),permissionConfirmed:true,broadcastPermission:true,agreementAccepted:true,websiteRadioPermission:true,websiteRadioPermissionText:permissions[3][1],approved:false,reviewStatus:'pending',submittedAt:Date.now(),createdAt:serverTimestamp(),isrc:'',label:'',releaseYear:'',songwriter:'',publisher:'',explicit:false};
    await setDoc(attempt,record);committed=true;const submissionId=attempt.id;attempt=null;
+   sendAdminApprovalEmail({kind:'radio-song',band:artist,title,genre:record.genre,submitter:record.contactEmail}).catch(()=>{});
    songForm.reset();songStatus.textContent='Submitted for admin approval! After approval, this song appears in your player and is available for BANDtroductions Radio scheduling.';
    const notice=await notifyAdmins({user,artist,title,submissionId});
    if(!notice.ok)songStatus.textContent+=` ${notice.message}`;
