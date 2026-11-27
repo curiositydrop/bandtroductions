@@ -1,0 +1,50 @@
+/**
+ * PREPARED ONLY — DO NOT DEPLOY until Mike approves this rules change.
+ * This is not wired into firebase.json and will not apply on a hosting deploy.
+ *
+ * Purpose: musician auditions still require a non-empty video. Band openings
+ * may be created without videoUrl / videoStoragePath.
+ *
+ * Current live create rule (for comparison) requires:
+ *   request.resource.data.videoUrl is string
+ *   request.resource.data.videoStoragePath is string
+ * Those checks allow empty strings. This snippet tightens musician posts
+ * (non-empty video required) and makes video optional for type == "band".
+ *
+ * Replace the allow create block inside match /auditions/{auditionId}
+ * with the block below when approved. Do not run firebase deploy for this
+ * until that approval is explicit.
+ */
+
+function auditionHasVideo() {
+  return request.resource.data.videoUrl is string
+         && request.resource.data.videoUrl.size() > 0
+         && request.resource.data.videoStoragePath is string
+         && request.resource.data.videoStoragePath.size() > 0;
+}
+
+function auditionVideoOptionalAndValid() {
+  return (!("videoUrl" in request.resource.data)
+          || request.resource.data.videoUrl is string)
+         && (!("videoStoragePath" in request.resource.data)
+             || request.resource.data.videoStoragePath is string);
+}
+
+allow create: if isSignedIn()
+              && request.resource.data.ownerId == request.auth.uid
+              && request.resource.data.submittedByUid == request.auth.uid
+              && request.resource.data.type in ["musician", "band"]
+              && (
+                (
+                  request.resource.data.type == "musician"
+                  && auditionHasVideo()
+                )
+                ||
+                (
+                  request.resource.data.type == "band"
+                  && auditionVideoOptionalAndValid()
+                )
+              )
+              && request.resource.data.approved == false
+              && request.resource.data.published == false
+              && request.resource.data.reviewStatus == "pending";

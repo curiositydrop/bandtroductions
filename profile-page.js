@@ -35,7 +35,7 @@ const burningTimeMedia = {
 };
 
 const layouts = {
-  band: { kicker:'BAND PROFILE', about:'About the Band', snapshot:'Band Status & Information', links:'Links & Booking', details:[['genre','Genre'],['yearFormed','Year formed'],['members','Members'],['bookingEmail','Booking email']], badges:['genre','location'] },
+  band: { kicker:'BAND PROFILE', about:'About the Band', snapshot:'Band Status & Information', links:'Links & Booking', details:[['genre','Genre'],['yearFormed','Year formed'],['members','Members'],['lookingForMembers','Looking for members'],['bookingEmail','Booking email']], badges:['genre','location'] },
   musician: { kicker:'MUSICIAN PROFILE', about:'About the Musician', snapshot:'Musician Status & Information', links:'Links & Contact', details:[['instruments','Instrument(s) / Role'],['experience','Experience'],['lookingForBand','Availability']], badges:['instruments','location'] },
   venue: { kicker:'VENUE PROFILE', about:'About the Venue', snapshot:'Venue Status & Information', links:'Links & Booking', details:[['venueType','Venue type'],['capacity','Capacity'],['venueBooking','Booking information']], badges:['venueType','location'] },
   fan: { kicker:'SCENE SUPPORTER', about:'About This Music Fan', snapshot:'Music Profile', links:'Links', details:[['favoriteGenres','Favorite genres'],['fanInterests','What they’re here for']], badges:[] }

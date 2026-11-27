@@ -188,6 +188,7 @@
         <div id="band-fields" class="signup-fields" hidden>
           <div class="auth-grid"><label>Genre<input id="genre" type="text" maxlength="120" placeholder="Rock / Metal"></label><label>Year formed<input id="year-formed" type="number" min="1900" max="2100"></label></div>
           <label>Band members<textarea id="members" rows="4" maxlength="800" placeholder="Names and roles"></textarea></label>
+          <label>Looking for members<textarea id="looking-for-members" rows="3" maxlength="300" placeholder="Example: Need a drummer in Portland, ME"></textarea></label>
           <label>Booking/contact email<input id="booking-email" type="email"></label>
         </div>
 
@@ -578,6 +579,7 @@
           genre: value('genre'),
           yearFormed: value('year-formed'),
           members: value('members'),
+          lookingForMembers: value('looking-for-members'),
           bookingEmail: value('booking-email'),
           instruments: value('instruments'),
           experience: value('experience'),

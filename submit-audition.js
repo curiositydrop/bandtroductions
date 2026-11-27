@@ -3,6 +3,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/f
 import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { getDownloadURL, ref, uploadBytesResumable } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
 import { sendAdminApprovalEmail } from './admin-approval-email.js?v=3';
+import { buildBandOpeningRecord } from './audition-room-utils.mjs?v=20261127-looking';
 
 const gate=document.getElementById('memberGate');
 const area=document.getElementById('submissionArea');
@@ -52,6 +53,12 @@ function setType(type){
   roleLabel.firstChild.textContent=type==='band'?'Position Needed ':'Instrument / Vocals ';
   lookingLabel.firstChild.textContent=type==='band'?'Tell musicians what you are looking for ':'What are you looking for? ';
   notes.placeholder=type==='band'?'Style, influences, rehearsal expectations, goals, availability, etc.':'Availability, influences, goals, what kind of band you want to join, etc.';
+  const videoLabel=document.getElementById('videoLabelText');
+  const videoNote=document.getElementById('videoNote');
+  const optional=type==='band';
+  videoFile.required=!optional;
+  if(videoLabel)videoLabel.textContent=optional?'Performance Video (optional)':'Performance Video *';
+  if(videoNote)videoNote.textContent=optional?'Optional. You can post a band opening without a video. If you include a clip, it must be a video file of 150 MB or less.':'Upload a performance/rehearsal clip that represents you accurately. Maximum file size: 150 MB.';
 }
 async function findOwnedProfile(user){
   const direct=await getDoc(doc(db,'profiles',user.uid));
@@ -103,22 +110,29 @@ onAuthStateChanged(auth,async user=>{
 form.addEventListener('submit',async event=>{
   event.preventDefault();
   if(!currentUser||!currentProfile||!currentProfileId){setStatus('A verified BANDtroductions profile is required.',true);return}
-  const file=videoFile.files?.[0];
-  if(!file){setStatus('Please choose a performance video.',true);return}
-  if(!file.type.startsWith('video/')){setStatus('The audition upload must be a video file.',true);return}
-  if(file.size>=150*1024*1024){setStatus('That video is over the 150 MB limit. Please choose a smaller clip.',true);return}
   const type=typeSelect.value;
   if(type==='band'&&!canSubmitBandOpening){setStatus('Band openings can only be submitted from a BANDtroductions Band profile.',true);setType('musician');return}
   if(type!=='musician'&&type!=='band'){setStatus('Please choose a valid Audition Room submission type.',true);return}
+  const file=videoFile.files?.[0];
+  if(type==='musician'&&!file){setStatus('Please choose a performance video.',true);return}
+  if(file&&!file.type.startsWith('video/')){setStatus('The audition upload must be a video file.',true);return}
+  if(file&&file.size>=150*1024*1024){setStatus('That video is over the 150 MB limit. Please choose a smaller clip.',true);return}
   submitButton.disabled=true;
   try{
-    setStatus('Uploading your audition video…');
-    const path=`auditions/${currentUser.uid}/${Date.now()}-${safeName(file.name)}`;
-    const objectRef=ref(storage,path);
-    const task=uploadBytesResumable(objectRef,file,{contentType:file.type,customMetadata:{ownerId:currentUser.uid,profileId:currentProfileId,submissionType:type}});
-    await new Promise((resolve,reject)=>task.on('state_changed',snap=>{const pct=Math.round((snap.bytesTransferred/snap.totalBytes)*100);setStatus(`Uploading your audition video… ${pct}%`)},reject,resolve));
-    const videoUrl=await getDownloadURL(objectRef);
-    setStatus('Video uploaded. Creating your review submission…');
+    let videoFields={};
+    if(file){
+      setStatus('Uploading your audition video…');
+      const path=`auditions/${currentUser.uid}/${Date.now()}-${safeName(file.name)}`;
+      const objectRef=ref(storage,path);
+      const task=uploadBytesResumable(objectRef,file,{contentType:file.type,customMetadata:{ownerId:currentUser.uid,profileId:currentProfileId,submissionType:type}});
+      await new Promise((resolve,reject)=>task.on('state_changed',snap=>{const pct=Math.round((snap.bytesTransferred/snap.totalBytes)*100);setStatus(`Uploading your audition video… ${pct}%`)},reject,resolve));
+      const videoUrl=await getDownloadURL(objectRef);
+      setStatus('Video uploaded. Creating your review submission…');
+      videoFields=buildBandOpeningRecord({type,hasVideo:true,videoUrl,videoStoragePath:path,videoContentType:file.type,originalVideoFileName:file.name,videoBytes:file.size});
+    }else{
+      setStatus('Creating your review submission…');
+      videoFields=buildBandOpeningRecord({type,hasVideo:false});
+    }
     const record={
       type,
       ownerId:currentUser.uid,
@@ -133,11 +147,7 @@ form.addEventListener('submit',async event=>{
       genre:genre.value.trim(),
       role:role.value,
       notes:notes.value.trim(),
-      videoUrl,
-      videoStoragePath:path,
-      videoContentType:file.type,
-      originalVideoFileName:file.name,
-      videoBytes:file.size,
+      ...videoFields,
       approved:false,
       published:false,
       reviewStatus:'pending',
@@ -152,6 +162,7 @@ form.addEventListener('submit',async event=>{
     console.error('Audition submission failed:',error);
     const code=String(error?.code||'');
     if(code.includes('storage/unauthorized'))setStatus('The video upload is blocked by Firebase Storage permissions. The Audition Room storage rule still needs to be deployed.',true);
+    else if(code.includes('permission-denied')&&!file)setStatus('This band opening could not be saved yet. Posting an opening without a video still needs a one-time database permission update. You can add a video and try again, or wait until that update is approved.',true);
     else if(code.includes('permission-denied'))setStatus('Your video uploaded, but the Audition Room review collection is not allowed by the current Firestore rules yet.',true);
     else setStatus(error?.message||'The audition could not be submitted. Please try again.',true);
   }finally{submitButton.disabled=false}

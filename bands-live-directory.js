@@ -1,5 +1,6 @@
 import { db } from './firebase-dev.js';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { publicListingText } from './audition-room-utils.mjs?v=20261127-looking';
 
 function applyDirectoryCardLayout(){
   if(document.getElementById('bt-directory-card-layout'))return;
@@ -156,6 +157,15 @@ function makeCard(id,profile){
   genreLabel.textContent='Genre: ';
   genre.append(genreLabel,text(profile.genre));
   card.appendChild(genre);
+
+  const looking=publicListingText(profile.lookingForMembers);
+  if(looking){
+    const need=document.createElement('p');
+    const needLabel=document.createElement('strong');
+    needLabel.textContent='Looking for members: ';
+    need.append(needLabel,looking);
+    card.appendChild(need);
+  }
 
   if(profile.bio){
     const bio=document.createElement('p');

@@ -18,7 +18,7 @@ function render(items){
   sorted.forEach(item=>{
     const card=document.createElement('article');card.className='card';
     const video=document.createElement('div');video.className='video';
-    if(item.videoUrl){const el=document.createElement('video');el.src=item.videoUrl;el.controls=true;el.playsInline=true;el.preload='metadata';video.appendChild(el)}
+    if(item.videoUrl){const el=document.createElement('video');el.src=item.videoUrl;el.controls=true;el.playsInline=true;el.preload='metadata';video.appendChild(el)}else{const missing=document.createElement('p');missing.style.cssText='padding:16px;color:#9ca7a7';missing.textContent=item.type==='band'?'No video (text-only band opening).':'No video uploaded.';video.appendChild(missing)}
 
     const meta=document.createElement('div');meta.className='meta';
     const title=document.createElement('h2');title.textContent=clean(item.displayName)||'Unnamed submission';meta.appendChild(title);
