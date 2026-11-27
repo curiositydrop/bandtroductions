@@ -102,6 +102,26 @@ function applyDirectoryCardLayout(){
       margin-top:12px!important;
     }
     .musician-directory .profile-card .band-actions .button{margin:0 8px}
+    .musician-directory .profile-card .demo-upgrade-tag{
+      display:block;
+      margin:0;
+      padding:7px 10px 6px;
+      background:#102222;
+      border:0;
+      border-bottom:1px solid #25d7d7;
+      color:#25d7d7;
+      font-size:clamp(10px,1.1vw,13px);
+      font-weight:700;
+      letter-spacing:.02em;
+      line-height:1.25;
+      text-align:center;
+      text-decoration:none;
+    }
+    .musician-directory .profile-card .demo-upgrade-tag:hover,
+    .musician-directory .profile-card .demo-upgrade-tag:focus-visible{
+      background:rgba(37,215,215,.12);
+      outline:none;
+    }
     @media (max-width:700px){
       .musician-directory{padding:22px 6px 36px}
       .musician-directory .profile-grid{gap:6px}
@@ -112,6 +132,7 @@ function applyDirectoryCardLayout(){
       .musician-directory .profile-card > p,
       .musician-directory .profile-card .band-info p{margin:2px 5px;font-size:clamp(8px,2.55vw,11px);line-height:1.2}
       .musician-directory .profile-card .button{margin:8px 4px 0;padding:2px 2px 0;font-size:clamp(8px,2.6vw,11px)}
+      .musician-directory .profile-card .demo-upgrade-tag{padding:5px 6px 4px;font-size:clamp(8px,2.3vw,11px)}
     }
   `;
   document.head.appendChild(style);
@@ -119,6 +140,7 @@ function applyDirectoryCardLayout(){
 
 applyDirectoryCardLayout();
 
+const VENOMOUS_DEMO_PROFILE='19MH0ZzVlPVN4ediF4PesZR5TY13';
 const grid=document.querySelector('.musician-directory .profile-grid');
 const filter=document.getElementById('genreFilter');
 
@@ -132,6 +154,14 @@ function makeCard(id,profile){
   card.className='profile-card firebase-profile-card';
   card.dataset.profileId=id;
   card.dataset.genre=String(profile.genre||'').toLowerCase();
+
+  if(id===VENOMOUS_DEMO_PROFILE){
+    const tag=document.createElement('a');
+    tag.className='demo-upgrade-tag';
+    tag.href=`website.html?id=${encodeURIComponent(id)}`;
+    tag.textContent='Demo: see what a $15 website looks like';
+    card.appendChild(tag);
+  }
 
   if(profile.imageUrl){
     const image=document.createElement('img');
