@@ -126,7 +126,7 @@ function isSitePage(file){const page=(location.pathname.replace(/\/+$/,'')||'/')
 if(isSitePage('bands.html'))import('./bands-live-directory.js?v=3').catch(error=>console.error('Error loading live Bands directory:',error));
 if(isSitePage('musicians.html'))import('./musicians-live-directory.js?v=1').catch(error=>console.error('Error loading live Musicians directory:',error));
 if(isSitePage('venues.html'))import('./venues-live-directory.js?v=1').catch(error=>console.error('Error loading live Venues directory:',error));
-if(isSitePage('bands.html')||isSitePage('musicians.html')||isSitePage('venues.html'))import('./legacy-profile-claim-links.js?v=3').catch(error=>console.error('Error loading legacy profile claim links:',error));
+if(isSitePage('bands.html')||isSitePage('musicians.html')||isSitePage('venues.html'))import('./legacy-profile-claim-links.js?v=4').catch(error=>console.error('Error loading legacy profile claim links:',error));
 if(location.pathname==='/'||location.pathname.endsWith('/index.html')){import('./home-social-hero.js?v=2').catch(error=>console.error('Error loading home social hero:',error));import('./home-sponsor-rotator.js?v=1').catch(error=>console.error('Error loading home sponsor rotator:',error));import('./home-community-card.js?v=1').catch(error=>console.error('Error loading home community card:',error))}
 import('./admin-access.js?v=3').catch(error=>console.error('Error loading account role rules:',error));
 import('./account-role-ui-fix.js?v=1').catch(error=>console.error('Error loading resilient account controls:',error));
