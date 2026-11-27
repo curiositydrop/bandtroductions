@@ -1,8 +1,8 @@
 import { db } from './firebase-dev.js';
 import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
-const path=location.pathname.toLowerCase();
-const directoryType=path.endsWith('/bands.html')?'band':path.endsWith('/musicians.html')?'musician':path.endsWith('/venues.html')?'venue':'';
+function isSitePage(file){const page=(location.pathname.replace(/\/+$/,'')||'/').split('/').pop();const base=String(file).replace(/\.html$/,'');return page===file||page===base}
+const directoryType=isSitePage('bands.html')?'band':isSitePage('musicians.html')?'musician':isSitePage('venues.html')?'venue':'';
 let statusByPage=new Map();
 let installQueued=false;
 
