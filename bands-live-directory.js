@@ -1,5 +1,6 @@
 import { db } from './firebase-dev.js';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { websiteMerchAccess } from './botw-comp-access.mjs';
 
 function applyDirectoryCardLayout(){
   if(document.getElementById('bt-directory-card-layout'))return;
@@ -102,25 +103,23 @@ function applyDirectoryCardLayout(){
       margin-top:12px!important;
     }
     .musician-directory .profile-card .band-actions .button{margin:0 8px}
-    .musician-directory .profile-card .demo-upgrade-tag{
-      display:block;
-      margin:0;
-      padding:7px 10px 6px;
-      background:#102222;
-      border:0;
-      border-bottom:1px solid #25d7d7;
-      color:#25d7d7;
-      font-size:clamp(10px,1.1vw,13px);
-      font-weight:700;
-      letter-spacing:.02em;
-      line-height:1.25;
-      text-align:center;
-      text-decoration:none;
+    .musician-directory .directory-featured[hidden]{display:none!important}
+    .musician-directory .directory-featured{
+      width:min(1180px,100%);
+      margin:0 auto 28px;
     }
-    .musician-directory .profile-card .demo-upgrade-tag:hover,
-    .musician-directory .profile-card .demo-upgrade-tag:focus-visible{
-      background:rgba(37,215,215,.12);
-      outline:none;
+    .musician-directory .directory-featured-heading{
+      margin:0 0 16px;
+      color:#ffcc33;
+      font-size:clamp(16px,2.2vw,26px);
+      font-weight:900;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      text-align:center;
+    }
+    .musician-directory .profile-card.is-featured{
+      border:2px solid #a7842e;
+      box-shadow:0 12px 30px rgba(0,0,0,.18),0 0 18px rgba(255,204,51,.18),inset 0 0 0 1px rgba(255,226,140,.14);
     }
     @media (max-width:700px){
       .musician-directory{padding:22px 6px 36px}
@@ -132,7 +131,8 @@ function applyDirectoryCardLayout(){
       .musician-directory .profile-card > p,
       .musician-directory .profile-card .band-info p{margin:2px 5px;font-size:clamp(8px,2.55vw,11px);line-height:1.2}
       .musician-directory .profile-card .button{margin:8px 4px 0;padding:2px 2px 0;font-size:clamp(8px,2.6vw,11px)}
-      .musician-directory .profile-card .demo-upgrade-tag{padding:5px 6px 4px;font-size:clamp(8px,2.3vw,11px)}
+      .musician-directory .directory-featured{margin-bottom:18px}
+      .musician-directory .directory-featured-heading{margin-bottom:10px}
     }
   `;
   document.head.appendChild(style);
@@ -140,28 +140,27 @@ function applyDirectoryCardLayout(){
 
 applyDirectoryCardLayout();
 
-const VENOMOUS_DEMO_PROFILE='19MH0ZzVlPVN4ediF4PesZR5TY13';
-const grid=document.querySelector('.musician-directory .profile-grid');
+const featuredSection=document.getElementById('directory-featured');
+const featuredGrid=document.getElementById('directory-featured-grid')
+  ||featuredSection?.querySelector('.profile-grid');
+const grid=document.querySelector('.musician-directory > .profile-grid');
 const filter=document.getElementById('genreFilter');
+
+function hasUpgradedWebsite(profile){
+  const access=websiteMerchAccess(profile,profile?.botwComp);
+  return access==='paid'||access==='comp';
+}
 
 function text(value,fallback='Not specified'){
   const clean=String(value||'').trim();
   return clean||fallback;
 }
 
-function makeCard(id,profile){
+function makeCard(id,profile,featured=false){
   const card=document.createElement('div');
-  card.className='profile-card firebase-profile-card';
+  card.className='profile-card firebase-profile-card'+(featured?' is-featured':'');
   card.dataset.profileId=id;
   card.dataset.genre=String(profile.genre||'').toLowerCase();
-
-  if(id===VENOMOUS_DEMO_PROFILE){
-    const tag=document.createElement('a');
-    tag.className='demo-upgrade-tag';
-    tag.href=`website.html?id=${encodeURIComponent(id)}`;
-    tag.textContent='Demo: see what a $15 website looks like';
-    card.appendChild(tag);
-  }
 
   if(profile.imageUrl){
     const image=document.createElement('img');
@@ -202,13 +201,29 @@ function makeCard(id,profile){
   return card;
 }
 
+function syncFeaturedVisibility(){
+  if(!featuredSection)return;
+  const cards=featuredGrid?featuredGrid.querySelectorAll('.profile-card'):[];
+  if(!cards.length){
+    featuredSection.hidden=true;
+    return;
+  }
+  const anyVisible=[...cards].some(card=>card.style.display!=='none');
+  featuredSection.hidden=!anyVisible;
+}
+
 function applyCurrentFilter(){
   if(!filter)return;
   const selected=filter.value.toLowerCase();
-  document.querySelectorAll('.profile-grid .profile-card').forEach(card=>{
+  document.querySelectorAll('.musician-directory .profile-grid .profile-card').forEach(card=>{
     const genres=String(card.dataset.genre||'').toLowerCase();
     card.style.display=selected==='all'||genres.includes(selected)?'':'none';
   });
+  syncFeaturedVisibility();
+}
+
+function alreadyRendered(id){
+  return !!document.querySelector(`.musician-directory [data-profile-id="${CSS.escape(id)}"]`);
 }
 
 async function loadApprovedBands(){
@@ -223,8 +238,16 @@ async function loadApprovedBands(){
       }
     });
     bands.sort((a,b)=>text(a.profile.displayName,'').localeCompare(text(b.profile.displayName,'')));
-    bands.forEach(({id,profile})=>{
-      if(grid.querySelector(`[data-profile-id="${CSS.escape(id)}"]`))return;
+    const featured=bands.filter(({profile})=>hasUpgradedWebsite(profile));
+    const regular=bands.filter(({profile})=>!hasUpgradedWebsite(profile));
+    if(featuredGrid){
+      featured.forEach(({id,profile})=>{
+        if(alreadyRendered(id))return;
+        featuredGrid.appendChild(makeCard(id,profile,true));
+      });
+    }
+    regular.forEach(({id,profile})=>{
+      if(alreadyRendered(id))return;
       grid.appendChild(makeCard(id,profile));
     });
     applyCurrentFilter();
