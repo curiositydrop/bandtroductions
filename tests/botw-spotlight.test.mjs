@@ -98,11 +98,12 @@ test('pages that should show it reference the spotlight, and blocked flows do no
   const globalJs = read('global.js');
   const header = read('global-header-v2.js');
   const spotlight = read('botw-spotlight.js');
-  assert.match(globalJs, /import\('\.\/botw-spotlight\.js\?v=2'\)/);
-  assert.match(header, /import\('\.\/botw-spotlight\.js\?v=2'\)/);
-  assert.match(read('index.html'), /global-header-v2\.js\?v=20261119-botw2/);
-  assert.match(read('bands.html'), /global\.js\?v=20261119-botw2/);
-  assert.match(read('musicians.html'), /global\.js\?v=20261119-botw2/);
+  assert.match(globalJs, /import\('\.\/botw-spotlight\.js\?v=3'\)/);
+  assert.match(header, /import\('\.\/botw-spotlight\.js\?v=3'\)/);
+  assert.match(spotlight, /import\('\.\/botw-core\.js\?v=11'\)/);
+  assert.match(read('index.html'), /global-header-v2\.js\?v=20261127-botwphoto/);
+  assert.match(read('bands.html'), /global\.js\?v=20261127-botwphoto/);
+  assert.match(read('musicians.html'), /global\.js\?v=20261127-botwphoto/);
   assert.equal(spotlight.includes('totalVotes'), false);
   assert.equal(spotlight.includes('.pause('), false);
   assert.equal(spotlight.includes('audioPlayer'), false);

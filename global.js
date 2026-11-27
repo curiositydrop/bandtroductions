@@ -133,4 +133,4 @@ import('./account-role-ui-fix.js?v=1').catch(error=>console.error('Error loading
 import('./admin-navigation.js?v=3').catch(error=>console.error('Error loading admin navigation:',error));
 import('./social-interactions.js?v=3').catch(error=>console.error('Error loading social interactions:',error));
 import('./presence.js?v=1').catch(error=>console.error('Error loading online presence:',error));
-import('./botw-spotlight.js?v=2').catch(()=>{});
+import('./botw-spotlight.js?v=3').catch(()=>{});

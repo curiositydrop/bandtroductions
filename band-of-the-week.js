@@ -4,7 +4,7 @@ import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16
 import { getAuth, onAuthStateChanged, signInAnonymously, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { isAdminAccount } from './admin-access.js';
-import { BOTW, DRY_RUN, now, currentRound, roundFor, countdownParts, rankRound, loadVotes, castVote, loadCheers, cheer, loadRounds, loadConfig, finalizeRound, restingBands, loadDirectory, voteLink, slugify } from './botw-core.js?v=10';
+import { BOTW, DRY_RUN, now, currentRound, roundFor, countdownParts, rankRound, loadVotes, castVote, loadCheers, cheer, loadRounds, loadConfig, finalizeRound, restingBands, loadDirectory, voteLink, slugify } from './botw-core.js?v=11';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

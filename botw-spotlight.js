@@ -296,7 +296,7 @@ async function boot() {
   let directory = new Map();
   let slugify = value => String(value || '').toLowerCase();
   try {
-    const core = await import('./botw-core.js?v=10');
+    const core = await import('./botw-core.js?v=11');
     if (typeof core.slugify === 'function') slugify = core.slugify;
     directory = await Promise.race([
       core.loadDirectory(),
