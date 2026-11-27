@@ -95,4 +95,4 @@
     }
   }
 })();
-import('./botw-spotlight.js?v=2').catch(()=>{});
+import('./botw-spotlight.js?v=3').catch(()=>{});

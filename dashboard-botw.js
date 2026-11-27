@@ -1,5 +1,5 @@
 // Homepage Band of the Week card (revamp): pre-launch champ / voting week + leader / Sunday winner.
-import { currentRound, roundFor, rankRound, loadVotes, loadRounds, loadDirectory, slugify } from './botw-core.js?v=1';
+import { currentRound, roundFor, rankRound, loadVotes, loadRounds, loadDirectory, slugify } from './botw-core.js?v=11';
 
 const panel = [...document.querySelectorAll('.right .panel')].find(p => p.querySelector('h3')?.textContent.trim() === 'Band of the Week');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

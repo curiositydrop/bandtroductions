@@ -3,6 +3,7 @@
 // so rules can enforce one vote per voter per round. A voter is either a member account
 // or a per-browser anonymous uid. Legacy all-time RTDB Bands/{id}/votes are never written.
 import { db } from './firebase-dev.js';
+import { mergePublishedProfiles } from './botw-directory-merge.js?v=1';
 import { collection, doc, getDoc, getDocs, query, where, setDoc, serverTimestamp, runTransaction, orderBy } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 export const BOTW = {
@@ -160,7 +161,7 @@ export function restingBands(rounds, weekId, cooldownWeeks) {
   return new Set(recent.flatMap(r => r.winners || []));
 }
 
-// Directory of band names/images/profile links (static band pages).
+// Directory of band names/images/profile links (static cards, then published profiles).
 export async function loadDirectory() {
   const map = new Map();
   for (const page of ['bands.html', 'musicians.html']) {
@@ -173,6 +174,10 @@ export async function loadDirectory() {
       });
     } catch (e) { console.warn('directory', page, e); }
   }
+  try {
+    const snap = await getDocs(query(collection(db, 'profiles'), where('published', '==', true)));
+    mergePublishedProfiles(map, snap.docs.map(d => ({ id: d.id, ...d.data() })), slugify);
+  } catch (e) { console.warn('directory profiles', e); }
   return map;
 }
 export const voteLink = bandId => `${BOTW.siteOrigin}/band-of-the-week.html?vote=${encodeURIComponent(bandId)}`;
