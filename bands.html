@@ -22,7 +22,7 @@
 
 <style>
 .genre-dropdown-wrap {
-  margin-top: 15px;
+  margin-top: 8px;
 }
 
 .genre-dropdown {
@@ -32,6 +32,31 @@
   border: 1px solid #ccc;
   max-width: 320px;
   width: 100%;
+}
+
+/* Tighten vertical space above the directory cards on this page only. */
+.bands-page .page-hero {
+  padding: 30px 20px 16px;
+}
+.bands-page .page-hero h1.page-title,
+.bands-page .page-hero h2 {
+  margin-top: 0.4em;
+  margin-bottom: 10px;
+}
+.bands-page .filters {
+  padding: 10px 20px;
+}
+.bands-page .filters h3 {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+.bands-page .musician-directory {
+  padding: 17px 18px 50px;
+}
+@media (max-width: 700px) {
+  .bands-page .musician-directory {
+    padding: 11px 6px 36px;
+  }
 }
 </style>
 
@@ -209,7 +234,7 @@
 <meta name="twitter:image:alt" content="Independent bands on BANDtroductions">
 </head>
 
-<body>
+<body class="bands-page">
 
 <div id="global-header"></div>
 
