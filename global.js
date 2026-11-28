@@ -123,7 +123,7 @@ if(location.pathname.endsWith('/profile.html')){import('./profile-owner-guard.js
 if(location.pathname.endsWith('/profile-setup.html')){import('./profile-image-processing.js?v=2').catch(error=>console.error('Error loading profile image processing:',error));import('./profile-submission-flow.js?v=5').catch(error=>console.error('Error loading profile submission workflow:',error))}
 if(location.pathname.endsWith('/profile-setup.html')&&new URLSearchParams(location.search).has('adminProfile'))import('./profile-admin-edit.js?v=2').catch(error=>console.error('Error loading admin profile editor:',error));
 function isSitePage(file){const page=(location.pathname.replace(/\/+$/,'')||'/').split('/').pop();const base=String(file).replace(/\.html$/,'');return page===file||page===base}
-if(isSitePage('bands.html'))import('./bands-live-directory.js?v=20261127-demotag').catch(error=>console.error('Error loading live Bands directory:',error));
+if(isSitePage('bands.html'))import('./bands-live-directory.js?v=20261127-featured').catch(error=>console.error('Error loading live Bands directory:',error));
 if(isSitePage('musicians.html'))import('./musicians-live-directory.js?v=1').catch(error=>console.error('Error loading live Musicians directory:',error));
 if(isSitePage('venues.html'))import('./venues-live-directory.js?v=1').catch(error=>console.error('Error loading live Venues directory:',error));
 if(isSitePage('bands.html')||isSitePage('musicians.html')||isSitePage('venues.html'))import('./legacy-profile-claim-links.js?v=4').catch(error=>console.error('Error loading legacy profile claim links:',error));
