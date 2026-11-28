@@ -53,6 +53,34 @@
 .bands-page .musician-directory {
   padding: 17px 18px 50px;
 }
+/* Gold divider + All Bands heading, only when Featured is visible. */
+.bands-page .directory-featured[hidden] + .directory-all-header {
+  display: none !important;
+}
+.bands-page .directory-all-header {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+}
+.bands-page .musician-directory .directory-featured {
+  margin-bottom: 8px;
+}
+.bands-page .directory-featured-divider {
+  display: block;
+  height: 2px;
+  border: 0;
+  background: #a7842e;
+  margin: 4px 32px 12px;
+}
+.bands-page .directory-all-heading {
+  margin: 0 0 16px;
+  color: #cfcfcf;
+  font-size: clamp(14px, 1.9vw, 22px);
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
 @media (max-width: 700px) {
   .bands-page .page-hero {
     padding: 16px 20px 8px;
@@ -91,6 +119,15 @@
   }
   .bands-page .musician-directory {
     padding: 11px 6px 36px;
+  }
+  .bands-page .musician-directory .directory-featured {
+    margin-bottom: 6px;
+  }
+  .bands-page .directory-featured-divider {
+    margin: 2px 16px 8px;
+  }
+  .bands-page .directory-all-heading {
+    margin: 0 0 10px;
   }
 }
 </style>
@@ -324,6 +361,11 @@ Explore local bands, discover new music, and connect with musicians worldwide.
 
 <div class="profile-grid" id="directory-featured-grid"></div>
 
+</div>
+
+<div class="directory-all-header" id="directory-all-header">
+  <hr class="directory-featured-divider" aria-hidden="true">
+  <h2 class="directory-all-heading">All Bands</h2>
 </div>
 
 <div class="profile-grid">
