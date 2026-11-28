@@ -1,0 +1,80 @@
+# BANDtroductions _redirects (Cloudflare Pages)
+# Files are kept on purpose. Pages follows these rules even when the
+# source file still exists (no force flag needed). Do not add rules for
+# /submit-band or /submit-band.html — that is the live Add Your Band landing.
+
+# Stub: folder index for submit-band only (not the landing page itself)
+/submit-band/                     /submit-band.html                  301
+/submit-band/index.html           /submit-band.html                  301
+/submit-band/index                /submit-band.html                  301
+
+# Stub: test copy of the old submit-band redirect
+/submit-band-test                 /submit-band.html                  301
+/submit-band-test.html            /submit-band.html                  301
+/submit-band-test/                /submit-band.html                  301
+
+# Stub: musician signup interstitial
+/submit-musician                  /signup.html?type=musician         301
+/submit-musician.html             /signup.html?type=musician         301
+/submit-musician/                 /signup.html?type=musician         301
+/submit-musician/index.html       /signup.html?type=musician         301
+/submit-musician/index            /signup.html?type=musician         301
+
+# Stub: venue signup interstitial
+/submit-venue                     /signup.html?type=venue            301
+/submit-venue.html                /signup.html?type=venue            301
+/submit-venue/                    /signup.html?type=venue            301
+/submit-venue/index.html          /signup.html?type=venue            301
+/submit-venue/index               /signup.html?type=venue            301
+
+# Stub: hyphenated sign-up typo/legacy URL
+/sign-up                          /signup.html                       301
+/sign-up.html                     /signup.html                       301
+/sign-up/                         /signup.html                       301
+
+# Stub: Community feed now lives on the home dashboard
+/community                        /                                  301
+/community.html                   /                                  301
+/community/                       /                                  301
+
+# Orphan: homepage test/preview copies
+/index-test                       /index.html                        301
+/index-test.html                  /index.html                        301
+/index-test/                      /index.html                        301
+/index-v2-test                    /index.html                        301
+/index-v2-test.html               /index.html                        301
+/index-v2-test/                   /index.html                        301
+/index5                           /index.html                        301
+/index5.html                      /index.html                        301
+/index5/                          /index.html                        301
+/underground-preview              /index.html                        301
+/underground-preview.html         /index.html                        301
+/underground-preview/             /index.html                        301
+
+# Orphan: Puzzle Drop test copy
+/puzzle-test                      /puzzle.html                       301
+/puzzle-test.html                 /puzzle.html                       301
+/puzzle-test/                     /puzzle.html                       301
+
+# Orphan: identical website preview copies
+/website-upgrade-preview          /website.html                      301
+/website-upgrade-preview.html     /website.html                      301
+/website-upgrade-preview/         /website.html                      301
+/website-navigation-preview       /website.html                      301
+/website-navigation-preview.html  /website.html                      301
+/website-navigation-preview/      /website.html                      301
+
+# Orphan: venue-discovery previews
+/preview/venue-discovery          /discover-original-music.html      301
+/preview/venue-discovery/         /discover-original-music.html      301
+/preview/venue-discovery/index.html  /discover-original-music.html      301
+/preview/venue-discovery/index    /discover-original-music.html      301
+/_preview/venue-discovery         /discover-original-music.html      301
+/_preview/venue-discovery/        /discover-original-music.html      301
+/_preview/venue-discovery/index.html /discover-original-music.html      301
+/_preview/venue-discovery/index   /discover-original-music.html      301
+
+# Orphan: unused legacy header fragment
+/globalold                        /                                  301
+/globalold.html                   /                                  301
+/globalold/                       /                                  301
