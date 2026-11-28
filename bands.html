@@ -81,17 +81,108 @@
   text-align: center;
 }
 
-/* Equal-height cards in each grid row; View Band lines up at the bottom. */
+/* Equal-height cards in each grid row; View Band lines up at the bottom.
+   These layout rules also live in bands.html so the Featured skeleton
+   holds the same 3-column space before the directory script loads. */
 .bands-page .musician-directory .profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  width: min(1180px, 100%);
+  margin: 0 auto;
   align-items: stretch;
 }
 .bands-page .musician-directory .profile-card {
+  box-sizing: border-box;
+  width: auto;
+  max-width: none;
+  min-width: 0;
   height: 100%;
+  padding: 0 0 18px;
+  margin: 0;
   display: flex;
   flex-direction: column;
+  background: #0d1010;
+  border: 1px solid #343b3b;
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0,0,0,.18);
+  text-align: center;
+}
+.bands-page .musician-directory .directory-featured-heading {
+  margin: 0 0 16px;
+  color: #ffcc33;
+  font-size: clamp(16px, 2.2vw, 26px);
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.bands-page .musician-directory .profile-card > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center;
+  background: #171b1b;
+  margin: 0 0 16px;
+  border: 0;
 }
 .bands-page .musician-directory .profile-card > .button {
   margin-top: auto;
+}
+
+.bands-page .musician-directory .profile-card.is-featured {
+  border: 2px solid #a7842e;
+  box-shadow: 0 12px 30px rgba(0,0,0,.18), 0 0 18px rgba(255,204,51,.18), inset 0 0 0 1px rgba(255,226,140,.14);
+}
+.bands-page .profile-card.is-featured-skeleton {
+  pointer-events: none;
+  min-height: 0;
+}
+.bands-page .featured-skeleton-photo {
+  flex: 0 0 auto;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  margin: 0 0 16px;
+  background-color: #171b1b;
+}
+.bands-page .featured-skeleton-line {
+  flex: 0 0 auto;
+  height: 10px;
+  margin: 6px auto;
+  border-radius: 2px;
+  background-color: #222;
+}
+.bands-page .featured-skeleton-line.featured-skeleton-name {
+  width: 68%;
+  height: 14px;
+  margin: 0 auto 10px;
+}
+.bands-page .featured-skeleton-line.featured-skeleton-meta {
+  width: 82%;
+}
+.bands-page .featured-skeleton-line.featured-skeleton-cta {
+  width: 46%;
+  margin-top: auto;
+  margin-bottom: 2px;
+}
+.bands-page .featured-skeleton-photo,
+.bands-page .featured-skeleton-line {
+  background-image: linear-gradient(90deg, transparent 0%, rgba(167,132,46,.22) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: bt-featured-shimmer 1.6s ease-in-out infinite;
+}
+@keyframes bt-featured-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bands-page .featured-skeleton-photo,
+  .bands-page .featured-skeleton-line {
+    animation: none;
+  }
 }
 
 @media (max-width: 700px) {
@@ -132,6 +223,24 @@
   }
   .bands-page .musician-directory {
     padding: 11px 6px 36px;
+  }
+  .bands-page .musician-directory .profile-grid {
+    gap: 6px;
+  }
+  .bands-page .musician-directory .profile-card {
+    padding-bottom: 9px;
+  }
+  .bands-page .musician-directory .profile-card > img {
+    margin-bottom: 9px;
+  }
+  .bands-page .musician-directory .directory-featured-heading {
+    margin-bottom: 10px;
+  }
+  .bands-page .featured-skeleton-photo {
+    margin-bottom: 9px;
+  }
+  .bands-page .featured-skeleton-line.featured-skeleton-name {
+    margin-bottom: 6px;
   }
   .bands-page .musician-directory .directory-featured {
     margin-bottom: 6px;
@@ -368,11 +477,34 @@ Explore local bands, discover new music, and connect with musicians worldwide.
 
 <section class="musician-directory">
 
-<div class="directory-featured" id="directory-featured" hidden>
+<div class="directory-featured" id="directory-featured" aria-busy="true">
 
 <h2 class="directory-featured-heading">Featured</h2>
 
-<div class="profile-grid" id="directory-featured-grid"></div>
+<div class="profile-grid" id="directory-featured-grid">
+<div class="profile-card is-featured is-featured-skeleton" aria-hidden="true">
+  <div class="featured-skeleton-photo"></div>
+  <div class="featured-skeleton-line featured-skeleton-name"></div>
+  <div class="featured-skeleton-line featured-skeleton-meta"></div>
+  <div class="featured-skeleton-line featured-skeleton-meta"></div>
+  <div class="featured-skeleton-line featured-skeleton-cta"></div>
+</div>
+<div class="profile-card is-featured is-featured-skeleton" aria-hidden="true">
+  <div class="featured-skeleton-photo"></div>
+  <div class="featured-skeleton-line featured-skeleton-name"></div>
+  <div class="featured-skeleton-line featured-skeleton-meta"></div>
+  <div class="featured-skeleton-line featured-skeleton-meta"></div>
+  <div class="featured-skeleton-line featured-skeleton-cta"></div>
+</div>
+<div class="profile-card is-featured is-featured-skeleton" aria-hidden="true">
+  <div class="featured-skeleton-photo"></div>
+  <div class="featured-skeleton-line featured-skeleton-name"></div>
+  <div class="featured-skeleton-line featured-skeleton-meta"></div>
+  <div class="featured-skeleton-line featured-skeleton-meta"></div>
+  <div class="featured-skeleton-line featured-skeleton-cta"></div>
+</div>
+
+</div>
 
 </div>
 
@@ -723,7 +855,7 @@ genreFilter.addEventListener('change', function() {
 });
 </script>
 
-<script src="global.js?v=20261127-featured"></script>
+<script src="global.js?v=20261127-featured-instant"></script>
 
 </body>
 </html>
