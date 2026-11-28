@@ -1,36 +1,262 @@
 <!DOCTYPE html>
-<html lang="en" data-signup-type="band">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Create a Free Band Account | BANDtroductions</title>
-<meta name="robots" content="noindex">
-<link rel="canonical" href="https://bandtroductions.com/signup.html?type=band">
-<meta http-equiv="refresh" content="0; url=/signup.html?type=band">
-<meta name="description" content="The band submission form has moved. Create a free BANDtroductions band account.">
-<script src="bt-analytics.js?v=4"></script>
-<script src="/legacy-signup-redirect.js"></script>
-<meta property="og:title" content="Create a Free Band Account | BANDtroductions">
-<meta property="og:description" content="The band submission form has moved. Create a free BANDtroductions band account.">
-<meta property="og:url" content="https://bandtroductions.com/signup.html?type=band">
+<title>Add Your Band | Get Featured on BANDtroductions</title>
+<meta name="description" content="Create a free BANDtroductions profile for your band, musician page, or venue. Get found by fans and venues, and get on radio, BTV, and Band of the Week.">
+<link rel="canonical" href="https://bandtroductions.com/submit-band.html">
+<meta property="og:title" content="Add Your Band | Get Featured on BANDtroductions">
+<meta property="og:description" content="Create a free profile for your band, musician page, or venue. Get found by fans and venues.">
+<meta property="og:url" content="https://bandtroductions.com/submit-band.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BANDtroductions">
 <meta property="og:image" content="https://bandtroductions.com/og/join.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Join BANDtroductions as a band">
+<meta property="og:image:alt" content="Add your band on BANDtroductions">
 <meta property="og:image:type" content="image/jpeg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Create a Free Band Account | BANDtroductions">
-<meta name="twitter:description" content="The band submission form has moved. Create a free BANDtroductions band account.">
+<meta name="twitter:title" content="Add Your Band | Get Featured on BANDtroductions">
+<meta name="twitter:description" content="Create a free profile for your band, musician page, or venue. Get found by fans and venues.">
 <meta name="twitter:image" content="https://bandtroductions.com/og/join.jpg">
-<meta name="twitter:image:alt" content="Join BANDtroductions as a band">
+<meta name="twitter:image:alt" content="Add your band on BANDtroductions">
+<link rel="stylesheet" href="style.css?v=4">
+<style>
+.addband-page {
+  text-align: left;
+  color: #eee;
+  background: #111;
+}
+.addband-page a {
+  color: #e2c36a;
+}
+.addband {
+  width: min(720px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 0 0 56px;
+}
+.addband-hero {
+  padding: 20px 0 8px;
+}
+.addband-hero h1 {
+  margin: 0 0 14px;
+  color: #fff;
+  font-size: 1.7rem;
+  line-height: 1.2;
+  font-weight: 800;
+  text-align: left;
+}
+.addband-benefits {
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+.addband-benefits li {
+  position: relative;
+  margin: 0 0 8px;
+  padding: 0 0 0 18px;
+  color: #ddd;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+.addband-benefits li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #a7842e;
+}
+.addband-page a.addband-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 20px;
+  background: #a7842e;
+  color: #111;
+  font-weight: 800;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 4px;
+}
+.addband-page a.addband-cta:hover,
+.addband-page a.addband-cta:focus {
+  background: #c49a3a;
+  color: #111;
+}
+.addband-alt {
+  margin: 12px 0 0;
+  color: #aaa;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.addband-alt a {
+  color: #e2c36a;
+}
+.addband h2 {
+  margin: 0 0 10px;
+  color: #fff;
+  font-size: 1.15rem;
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: left;
+}
+.addband-steps,
+.addband-upgrade,
+.addband-proof,
+.addband-again {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid #2a2a2a;
+}
+.addband-steps ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: addband-step;
+}
+.addband-steps li {
+  counter-increment: addband-step;
+  display: flex;
+  gap: 12px;
+  margin: 0 0 12px;
+  color: #ddd;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.addband-steps li::before {
+  content: counter(addband-step);
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #a7842e;
+  color: #e2c36a;
+  font-weight: 800;
+  font-size: 0.9rem;
+  line-height: 26px;
+  text-align: center;
+  border-radius: 50%;
+}
+.addband-upgrade p,
+.addband-again p {
+  margin: 0 0 10px;
+  color: #ccc;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+.addband-proof-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.addband-proof-list a {
+  display: inline-block;
+  padding: 8px 12px;
+  border: 1px solid #a7842e;
+  color: #eee;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.92rem;
+  border-radius: 4px;
+}
+.addband-proof-list a:hover,
+.addband-proof-list a:focus {
+  background: #1a160c;
+  color: #fff;
+}
+.addband-again .addband-cta {
+  margin-bottom: 12px;
+}
+@media (min-width: 768px) {
+  .addband {
+    width: min(760px, calc(100% - 48px));
+    padding-bottom: 72px;
+  }
+  .addband-hero {
+    padding: 32px 0 12px;
+  }
+  .addband-hero h1 {
+    font-size: 2.15rem;
+  }
+  .addband-page a.addband-cta {
+    display: inline-flex;
+    width: auto;
+    min-width: 280px;
+  }
+  .addband-steps,
+  .addband-upgrade,
+  .addband-proof,
+  .addband-again {
+    margin-top: 36px;
+    padding-top: 28px;
+  }
+}
+</style>
+<script src="bt-analytics.js?v=4"></script>
 </head>
-<body>
-<main style="max-width:40rem;margin:2rem auto;padding:0 1rem;font-family:Arial,sans-serif">
-  <h1>This page has moved</h1>
-  <p>Band submissions now use a free BANDtroductions account. This page no longer emails a form.</p>
-  <p><a href="/signup.html?type=band">Continue to free band sign up</a></p>
+<body class="addband-page">
+
+<div id="global-header"></div>
+
+<main class="addband">
+
+<section class="addband-hero">
+  <h1>A free profile for bands, musicians, and venues.</h1>
+  <ul class="addband-benefits">
+    <li>Free profile. No charge to join.</li>
+    <li>Get found by fans and venues.</li>
+    <li>Radio, BTV, and Band of the Week.</li>
+  </ul>
+  <a class="addband-cta" href="signup.html?type=band">Create your free profile</a>
+  <p class="addband-alt">Musician or venue? <a href="signup.html?type=musician">Join as a musician</a> or <a href="signup.html?type=venue">add your venue</a>.</p>
+</section>
+
+<section class="addband-steps">
+  <h2>How it works</h2>
+  <ol>
+    <li>Create your free account. Takes about a minute.</li>
+    <li>Add a photo, your music, and a short bio.</li>
+    <li>Show up in the directory so fans and venues can find you.</li>
+  </ol>
+</section>
+
+<section class="addband-upgrade">
+  <h2>Want your own band website later?</h2>
+  <p>Optional Website + Merch is $15 a month. Your free profile stays free either way.</p>
+  <p><a href="plans.html">See the $15 upgrade</a></p>
+</section>
+
+<section class="addband-proof">
+  <h2>Already on BANDtroductions</h2>
+  <ul class="addband-proof-list">
+    <li><a href="ascent-to-power.html">Ascent To Power</a></li>
+    <li><a href="continental-shakedown.html">Continental Shakedown</a></li>
+    <li><a href="mean-streak.html">Mean Streak</a></li>
+    <li><a href="sparrow.html">Sparrow</a></li>
+  </ul>
+</section>
+
+<section class="addband-again">
+  <a class="addband-cta" href="signup.html?type=band">Create your free profile</a>
+  <p>Already have an account? <a href="login.html">Log in</a>. Already listed? <a href="claim-existing-profile.html">Claim your profile</a>.</p>
+</section>
+
 </main>
+
+<div id="global-footer"></div>
+<script src="global.js?v=20261127-featured-instant"></script>
 </body>
 </html>
