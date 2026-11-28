@@ -2,6 +2,7 @@ import {onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/12.16.0/fir
 import {collection,addDoc,doc,getDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import {ref,uploadBytes} from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js';
 import {auth,db,storage} from './firebase-dev.js';
+import {sendAdminApprovalEmail} from './admin-approval-email.js?v=20261126-email';
 const form=document.getElementById('stationSubmitForm'),gate=document.getElementById('memberGate'),status=document.getElementById('stationStatus'),send=document.getElementById('stationSend');
 let user=null;
 const nameField=document.getElementById('personName'),bandField=document.getElementById('bandName'),titleField=document.getElementById('stationTitle');
@@ -33,6 +34,7 @@ form.addEventListener('submit',async e=>{
  const path='station-id-submissions/'+uid+'/station-id-'+nonce+'.'+ext;
  await uploadBytes(ref(storage,path),file,{contentType:allowedTypes[ext]});
  await addDoc(collection(db,'radioStationIdSubmissions'),{submittedByUid:uid,personName:name,artist:band,title:title,customTitle:'Station ID',durationSeconds:Math.round(seconds*100)/100,audioStoragePath:path,status:'pending',submittedAt:serverTimestamp()});
+ sendAdminApprovalEmail({kind:'station-id',band,title,type:'Station ID',submitterEmail:user.email||''}).catch(()=>{});
  form.reset();status.textContent='Station ID submitted! It will appear in the admin approval queue.';syncTitle();
  }catch(err){console.error(err);status.textContent='Submission not completed: '+err.message;}finally{send.disabled=false;}
 });

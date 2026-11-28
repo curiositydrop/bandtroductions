@@ -10,6 +10,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/f
 import { addDoc, collection, deleteDoc, doc, getDoc, limit, onSnapshot, query, serverTimestamp, updateDoc, where }
   from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { notifySiteAdmins, btvNoticeMessage } from './admin-notify.js?v=1';
+import { sendAdminApprovalEmail } from './admin-approval-email.js?v=20261126-email';
 
 const ADMIN_EMAILS = new Set(['mbergeron79@gmail.com', 'mbegeron79@gmail.com']);
 const ADMIN_UID = 'PJXufsvdCCgRpfKcLtxPH3jEQN83';
@@ -179,6 +180,14 @@ $('btv-form').addEventListener('submit', async (e) => {
       ownershipAccepted, noInappropriateContentAccepted, promoUseAccepted,
       published: true, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
     });
+    sendAdminApprovalEmail({
+      kind: 'btv',
+      band,
+      title,
+      btvType: kind,
+      videoUrl: url,
+      submitterEmail: user.email || ''
+    }).catch(() => {});
     e.target.reset();
     const notice = await notifySiteAdmins({
       type: 'btv-submission',
