@@ -81,6 +81,19 @@
   text-align: center;
 }
 
+/* Equal-height cards in each grid row; View Band lines up at the bottom. */
+.bands-page .musician-directory .profile-grid {
+  align-items: stretch;
+}
+.bands-page .musician-directory .profile-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.bands-page .musician-directory .profile-card > .button {
+  margin-top: auto;
+}
+
 @media (max-width: 700px) {
   .bands-page .page-hero {
     padding: 16px 20px 8px;
