@@ -102,7 +102,7 @@ test('pages that should show it reference the spotlight, and blocked flows do no
   assert.match(header, /import\('\.\/botw-spotlight\.js\?v=3'\)/);
   assert.match(spotlight, /import\('\.\/botw-core\.js\?v=11'\)/);
   assert.match(read('index.html'), /global-header-v2\.js\?v=20261127-botwphoto/);
-  assert.match(read('bands.html'), /global\.js\?v=20261127-featured/);
+  assert.match(read('bands.html'), /global\.js\?v=20261127-featured-instant/);
   assert.match(read('musicians.html'), /global\.js\?v=20261127-botwphoto/);
   assert.equal(spotlight.includes('totalVotes'), false);
   assert.equal(spotlight.includes('.pause('), false);

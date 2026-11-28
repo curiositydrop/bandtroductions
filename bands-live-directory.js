@@ -1,6 +1,14 @@
 import { db } from './firebase-dev.js';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { websiteMerchAccess } from './botw-comp-access.mjs';
+import {
+  featuredListsMatch,
+  isSafeFeaturedHref,
+  readFeaturedCache,
+  readRenderedFeatured,
+  toFeaturedCacheEntry,
+  writeFeaturedCache
+} from './featured-cache.mjs';
 
 function applyDirectoryCardLayout(){
   if(document.getElementById('bt-directory-card-layout'))return;
@@ -194,11 +202,43 @@ function makeCard(id,profile,featured=false){
 
   const link=document.createElement('a');
   link.className='button';
-  link.href=`profile.html?id=${encodeURIComponent(id)}`;
+  const href=isSafeFeaturedHref(profile.href)?profile.href:`profile.html?id=${encodeURIComponent(id)}`;
+  link.href=href;
   link.textContent='View Band';
   card.appendChild(link);
 
   return card;
+}
+
+function featuredFromEntry(entry){
+  return {
+    displayName:entry.name,
+    imageUrl:entry.imageUrl,
+    location:entry.location,
+    genre:entry.genre,
+    href:entry.href
+  };
+}
+
+function setFeaturedBusy(busy){
+  if(!featuredSection)return;
+  if(busy)featuredSection.setAttribute('aria-busy','true');
+  else featuredSection.removeAttribute('aria-busy');
+}
+
+function renderFeaturedEntries(entries){
+  if(!featuredGrid)return;
+  featuredGrid.replaceChildren(...entries.map(entry=>makeCard(entry.uid,featuredFromEntry(entry),true)));
+  if(featuredSection)featuredSection.hidden=false;
+  applyCurrentFilter();
+}
+
+function hideFeaturedSection(){
+  if(featuredGrid)featuredGrid.replaceChildren();
+  if(featuredSection){
+    featuredSection.hidden=true;
+    featuredSection.removeAttribute('aria-busy');
+  }
 }
 
 function syncFeaturedVisibility(){
@@ -216,6 +256,7 @@ function applyCurrentFilter(){
   if(!filter)return;
   const selected=filter.value.toLowerCase();
   document.querySelectorAll('.musician-directory .profile-grid .profile-card').forEach(card=>{
+    if(card.classList.contains('is-featured-skeleton'))return;
     const genres=String(card.dataset.genre||'').toLowerCase();
     card.style.display=selected==='all'||genres.includes(selected)?'':'none';
   });
@@ -238,13 +279,20 @@ async function loadApprovedBands(){
       }
     });
     bands.sort((a,b)=>text(a.profile.displayName,'').localeCompare(text(b.profile.displayName,'')));
-    const featured=bands.filter(({profile})=>hasUpgradedWebsite(profile));
+    const featured=bands
+      .filter(({profile})=>hasUpgradedWebsite(profile))
+      .map(({id,profile})=>toFeaturedCacheEntry(id,profile))
+      .filter(Boolean);
     const regular=bands.filter(({profile})=>!hasUpgradedWebsite(profile));
-    if(featuredGrid){
-      featured.forEach(({id,profile})=>{
-        if(alreadyRendered(id))return;
-        featuredGrid.appendChild(makeCard(id,profile,true));
-      });
+    if(featured.length){
+      const current=readRenderedFeatured(featuredGrid);
+      if(!featuredListsMatch(current,featured))renderFeaturedEntries(featured);
+      else applyCurrentFilter();
+      writeFeaturedCache(featured);
+      setFeaturedBusy(false);
+    }else{
+      writeFeaturedCache([]);
+      hideFeaturedSection();
     }
     regular.forEach(({id,profile})=>{
       if(alreadyRendered(id))return;
@@ -253,8 +301,16 @@ async function loadApprovedBands(){
     applyCurrentFilter();
   }catch(error){
     console.error('Could not load approved Firebase bands:',error);
+    const hasReal=featuredGrid&&featuredGrid.querySelector('.profile-card:not(.is-featured-skeleton)');
+    if(!hasReal)hideFeaturedSection();
+    else setFeaturedBusy(false);
   }
 }
 
 filter?.addEventListener('change',applyCurrentFilter);
+const cachedFeatured=readFeaturedCache();
+if(cachedFeatured.length){
+  renderFeaturedEntries(cachedFeatured);
+  setFeaturedBusy(true);
+}
 loadApprovedBands();
