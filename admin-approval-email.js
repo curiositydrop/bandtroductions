@@ -10,7 +10,7 @@ function filledRows(pairs) {
 }
 
 export async function sendAdminApprovalEmail({ kind = 'profile', name = 'New profile', accountType = '', submittedBy = '', details = '', band = '', title = '', btvType = '', type = '', videoUrl = '', videoLink = '', submitterEmail = '', genre = '', submitter = '' } = {}) {
-  if (kind === 'btv' || kind === 'radio-song') {
+  if (kind === 'btv' || kind === 'radio-song' || kind === 'station-id') {
     return sendQueueApprovalEmail({ kind, band, title, btvType, type, videoUrl, videoLink, submitterEmail, genre, submitter });
   }
 
@@ -74,17 +74,24 @@ export async function sendAdminApprovalEmail({ kind = 'profile', name = 'New pro
 
 async function sendQueueApprovalEmail({ kind, band, title, btvType, type, videoUrl, videoLink, submitterEmail, genre, submitter }) {
   const isBtv = kind === 'btv';
+  const isStationId = kind === 'station-id';
   const subject = isBtv
     ? `BANDtroductions BTV approval needed: ${band}`
-    : `BANDtroductions radio song approval needed: ${band} - ${title}`;
+    : isStationId
+      ? `BANDtroductions station ID approval needed: ${[band, title].map((value) => String(value ?? '').trim()).filter(Boolean).join(' - ')}`
+      : `BANDtroductions radio song approval needed: ${band} - ${title}`;
   const intro = isBtv
     ? 'A new BTV video is waiting for approval.'
-    : 'A new radio song is waiting for approval.';
+    : isStationId
+      ? 'A new radio station ID is waiting for approval.'
+      : 'A new radio song is waiting for approval.';
   const reviewUrl = isBtv ? BTV_REVIEW_URL : ADMIN_REVIEW_URL;
-  const typeLabel = BTV_TYPE_LABELS[btvType || type] || '';
+  const typeLabel = BTV_TYPE_LABELS[btvType || type] || type || '';
   const rows = filledRows(isBtv
     ? [['Band', band], ['Title', title], ['Type', typeLabel], ['Video link', videoUrl || videoLink], ['Submitter email', submitterEmail]]
-    : [['Band', band], ['Title', title], ['Genre', genre], ['Submitter', submitter]]);
+    : isStationId
+      ? [['Band', band], ['Title', title], ['Type', typeLabel || 'Station ID'], ['Submitter email', submitterEmail || submitter]]
+      : [['Band', band], ['Title', title], ['Genre', genre], ['Submitter', submitter]]);
   const lines = [
     intro,
     '',

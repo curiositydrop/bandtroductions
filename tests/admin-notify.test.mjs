@@ -174,6 +174,11 @@ assert.ok(website.indexOf("collection(db,'radioSubmissions')") < website.indexOf
 assert.ok(website.indexOf("kind:'radio-song'") < website.indexOf('await notifyAdmins('));
 assert.match(website, /songNoticeMessage\(\{artist,title,source:'website'\}\)/);
 
+const stationId = fs.readFileSync(new URL('../radio-station-id-submit.js', import.meta.url), 'utf8');
+assertApprovalEmailNotAwaited(stationId, 'station-id');
+assert.ok(stationId.indexOf("collection(db,'radioStationIdSubmissions')") < stationId.indexOf("kind:'station-id'"));
+assert.match(stationId, /status:'pending'/);
+
 const FORM_ENDPOINT = 'https://formsubmit.co/ajax/mbergeron79%40gmail.com';
 
 async function captureEmail(payload, response = { ok: true, status: 200 }) {
@@ -281,5 +286,29 @@ assert.equal(failed.calls.length, 1);
 
 const rejected = await captureEmail({ kind: 'radio-song', band: 'Night Shift', title: 'Alley Light' }, { ok: false, status: 522 });
 assert.equal(rejected.result, false);
+
+const stationMail = await captureEmail({ kind: 'station-id', band: 'Night Shift', title: 'Station ID - Mike - Night Shift', type: 'Station ID', submitterEmail: 'band@example.com' });
+assert.equal(stationMail.result, true);
+assert.equal(stationMail.call.url, FORM_ENDPOINT);
+assert.equal(stationMail.call.body._subject, 'BANDtroductions station ID approval needed: Night Shift - Station ID - Mike - Night Shift');
+assert.equal(stationMail.call.body._template, 'table');
+assert.equal(stationMail.call.body._captcha, 'false');
+assert.equal(stationMail.call.body.Band, 'Night Shift');
+assert.equal(stationMail.call.body.Title, 'Station ID - Mike - Night Shift');
+assert.equal(stationMail.call.body.Type, 'Station ID');
+assert.equal(stationMail.call.body['Submitter email'], 'band@example.com');
+assert.equal(stationMail.call.body.Genre, undefined);
+assert.match(stationMail.call.body.message, /A new radio station ID is waiting for approval\./);
+assert.match(stationMail.call.body.message, /Review BANDtroductions admin: https:\/\/bandtroductions\.com\/admin\.html/);
+assert.doesNotMatch(stationMail.call.body.message, /btv\.html/);
+
+const sparseStation = await captureEmail({ kind: 'station-id', band: 'Night Shift', title: '  ', type: 'Station ID', submitterEmail: '' });
+assert.equal(sparseStation.call.body.Band, 'Night Shift');
+assert.equal(sparseStation.call.body.Type, 'Station ID');
+assert.equal(sparseStation.call.body.Title, undefined);
+assert.equal(sparseStation.call.body['Submitter email'], undefined);
+assert.equal(sparseStation.call.body._subject, 'BANDtroductions station ID approval needed: Night Shift');
+assert.doesNotMatch(sparseStation.call.body.message, /Title:/);
+assert.doesNotMatch(sparseStation.call.body.message, /Submitter email:/);
 
 console.log('PASS admin notice recipients, idempotency, links, permission failures, upload gates, and approval emails');
